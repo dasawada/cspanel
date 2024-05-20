@@ -5,16 +5,20 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>南一查帳密</title>
 <style>
-/* 将 HTML 元素的默认显示比例设置为 50% */
 html, body {
-    transform: scale(0.7);
-    transform-origin: center center; /* 以页面的中心为缩放中心 */
-    width: 200%; /* 避免滚动条出现 */
-}
-iframe {
+    margin: 0;
+    padding: 0;
     width: 100%;
-    height: 200vh; /* 视窗高度的 200% */
-    border: none; /* 移除 iframe 边框 */
+    height: 100%;
+    overflow: hidden; /* 隐藏滚动条 */
+}
+
+iframe {
+    width: 125%; /* 将 iframe 的宽度设置为父元素宽度的125% */
+    height: 125%; /* 将 iframe 的高度设置为父元素高度的125% */
+    border: none; /* 移除边框 */
+    transform: scale(0.8); /* 将 iframe 缩小到80% */
+    transform-origin: 0 0; /* 以左上角为缩放中心 */
 }
 </style>
 </head>
