@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>★客服小工具★</title>
+    <title>★客服小工具ALL★</title>
 <style>
 
     body {
@@ -16,12 +16,7 @@
             
         }
         th, td {
-            
             text-align: left;
-        }
-
-        table#sa_title_form tr:nth-child(6) td {
-            height: 15px !important; /* 添加 !important 确保覆盖内联样式 */
         }
         /* 檔次提示語樣式 */
         #copyMessage { 
@@ -37,8 +32,7 @@
         .responsive-iframe {
             width: 100%;
             height: 600px;
-            overflow-y: hidden; /* 完全禁用卷轴 */
-            
+            overflow: hidden; /* 完全禁用卷轴 */
             border: none;
         }
         #content {
@@ -79,6 +73,10 @@
         border: 1px solid #ccc; /* 加上邊框 */
         padding: 5px; /* 加上內邊距 */
     }
+#optitleoutput {
+    height: 25px;
+    overflow: hidden;
+}
 
 </style>
 </head>
@@ -91,6 +89,7 @@
 <button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
 <button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
 <div id="copyMessage"></div>
+
     <table>
         <tr>
             <td class="left">
@@ -107,7 +106,7 @@
                     <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()">　
                     <button type="button" onclick="clearFields()">清除input欄位</button>
                 </form>
-                <br>
+                
                 <div id="optitleoutput"></div>
                 <button id="copyButton" onclick="copyText()">複製標題</button>
 <hr>
@@ -128,7 +127,8 @@
  <iframe id="logsearch" src="userlogframe_right.html"></iframe>
 <div>
             </td>
-    <td style="width: 20px;"></td>
+    <td style="width: 10px;"></td>
+
             <td class="right">
                 <input type="checkbox" id="toggleCheckbox">
                 <label for="toggleCheckbox">顧問組別清單</label>
