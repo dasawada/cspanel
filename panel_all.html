@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>★客服小工具ALL★</title>
+<style>
+
+    body {
+            font-size: 11pt; /* 设置文档的字体大小为11pt */
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            height: 900px; /* 设置表格高度 */
+            
+        }
+        th, td {
+            text-align: left;
+        }
+        /* 檔次提示語樣式 */
+        #copyMessage { 
+            font-size: 12px; 
+            color: #ff0000; 
+        }
+        /* OP標題複製、不可選取的按鈕樣式 */
+        .unclickable {
+            pointer-events: none;
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .responsive-iframe {
+            width: 200%;
+            height: 600px;
+            overflow: hidden; /* 完全禁用卷轴 */
+            border: none;
+        }
+        #content {
+            display: none;
+            height: 100%;
+        }
+        td {
+            border: 1px solid transparent;
+            vertical-align: top;
+        }
+        /* 调整td元素的宽度 */
+        td.left {
+            width: 400px; /* 确保左边列宽度为380px */
+            
+        }
+        td.right {
+            width: auto; /* 右边列宽度自动调整 */
+                        
+        }
+        /* iframe样式 */
+        #usersearch {
+            width: 100%;
+            height: 400px;
+            border: none;
+        }
+        #logsearch {
+            width: 100%;
+            height: 600px;
+            border: none;
+        }
+    
+    /* 設定包含卷軸的 div 的樣式 */
+    .Leftpanel {
+        width: 100%; /* 設定寬度 */
+        height: 100%; /* 設定高度 */
+
+        border: 1px solid #ccc; /* 加上邊框 */
+        padding: 5px; /* 加上內邊距 */
+    }
+#optitleoutput {
+    height: 25px;
+    overflow: hidden;
+}
+
+</style>
+</head>
+<body>
+<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/05/25</div>
+
+<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
+<button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
+<button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
+<div id="copyMessage"></div>
+
+    <table>
+        <tr>
+            <td class="left">
+                <div class="Leftpanel">
+                <div style="font-weight: bold;">OP標題生成</div>
+                <form id="consultantForm">
+                    <label for="consultantName">顧問名：</label>
+                    <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()"><br>
+                    <label for="studentName">學生名：</label>
+                    <input type="text" id="studentName" name="studentName" oninput="checkInputs()"><br>
+                    <label for="parentName">家長名：</label>
+                    <input type="text" id="parentName" name="parentName" oninput="checkInputs()"><br>
+                    <label for="invoiceNumber">單號：　</label>
+                    <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()">　
+                    <button type="button" onclick="clearFields()">清除input欄位</button>
+                </form>
+                
+                <div id="optitleoutput"></div>
+                <button id="copyButton" onclick="copyText()">複製標題</button>
+<hr>
+<!-- IP 地址查詢-->
+<form id="ipForm" onsubmit="return lookupIP()">
+    <label for="ipAddress">IP-ISP查詢：</label>
+    <input type="text" id="ipAddress" name="ipAddress" required>
+    <button type="submit">查詢</button>
+</form>
+<div id="result"></div>
+<br>
+<textarea id="myTextArea" rows="4" cols="22" style="width: 380px; height: 88px;" onclick="clearWatermark()">在這裡輸入文字...</textarea>
+<br>
+<!--南一id查詢-->
+<iframe id="usersearch" src="userlogframe_left.html"></iframe>
+    <br>
+<!--教室Log查詢-->
+ <iframe id="logsearch" src="userlogframe_right.html"></iframe>
+<div>
+            </td>
+    <td style="width: 10px;"></td>
+
+            <td class="right">
+                <input type="checkbox" id="toggleCheckbox">
+                <label for="toggleCheckbox">顧問組別清單</label>
+                <div id="content">
+                    <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+                </div>
+            </td>
+        </tr>
+    </table>
+
+
+<script>
+function checkInputs() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    
+    if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
+        generateText();
+    } else {
+        clearOutput(); // 當所有輸入框都為空時清除輸出內容
+    }
+}
+
+function generateText() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    
+    var outputText = "[顧問 " + consultantName + "] " + studentName + " / " + parentName;
+
+    if (invoiceNumber !== '') {
+        outputText += " #" + invoiceNumber;
+    }
+
+    document.getElementById("optitleoutput").innerText = outputText;
+}
+
+function clearOutput() {
+    document.getElementById("optitleoutput").innerText = "";
+}
+
+// 清除指定的輸入欄位
+function clearFields() {
+    document.getElementById("consultantName").value = "";
+    document.getElementById("studentName").value = "";
+    document.getElementById("parentName").value = "";
+    document.getElementById("invoiceNumber").value = "";
+    clearOutput(); // 清除輸出內容
+}
+
+function copyText() {
+    var textToCopy = document.getElementById("optitleoutput").innerText;
+    var tempInput = document.createElement("input");
+    tempInput.value = textToCopy;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+
+    // 將按鈕文字設置為已複製
+    var copyButton = document.getElementById("copyButton");
+    copyButton.innerText = "已複製";
+    copyButton.classList.add("unclickable"); // 添加不可選取的樣式
+
+    // 三秒後恢復按鈕為可選取
+    setTimeout(function() {
+        copyButton.innerText = "複製標題";
+        copyButton.classList.remove("unclickable"); // 移除不可選取的樣式
+    }, 3000);
+}
+
+function lookupIP() {
+    var ipAddress = document.getElementById('ipAddress').value;
+    var url = 'https://api.ipgeolocation.io/ipgeo?apiKey=204b59bb7d49446b849d25499a5f6aee&ip=' + ipAddress;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h3>查詢結果：</h3>' +
+                                  'IP 地址：' + data.ip + '<br>' +
+                                  '國家：' + data.country_name + '<br>' +
+                                  '城市：' + data.city + '<br>' +
+                                  'ISP：' + data.isp + '<br>';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>查詢失敗。請檢查輸入的 IP 地址並重試。</p>';
+        });
+
+    return false; // 防止表單提交
+}
+
+function clearWatermark() {
+    var textarea = document.getElementById("myTextArea");
+    if (textarea.value === "在這裡輸入文字...") {
+        textarea.value = "";
+    }
+}
+
+document.addEventListener("DOMContentLoaded", function() {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '　';
+});
+
+function copyToClipboard(text) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '檔次已複製：' + text;
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.textContent = '　';
+    }, 5000);
+}
+
+document.getElementById('toggleCheckbox').addEventListener('change', function() {
+    const content = document.getElementById('content');
+    if (this.checked) {
+        content.style.display = 'block';
+    } else {
+        content.style.display = 'none';
+    }
+});
+</script>
+</body>
+</html>
