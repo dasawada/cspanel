@@ -66,6 +66,15 @@
             height: 600px;
             border: none;
         }
+    
+    /* 設定包含卷軸的 div 的樣式 */
+    .Leftpanel {
+        width: 100%; /* 設定寬度 */
+        height: 100%; /* 設定高度 */
+        overflow-y: auto; /* 使用垂直卷軸 */
+        border: 1px solid #ccc; /* 加上邊框 */
+        padding: 5px; /* 加上內邊距 */
+    }
 
 </style>
 </head>
@@ -81,6 +90,7 @@
     <table>
         <tr>
             <td class="left">
+                <div class="Leftpanel">
                 <div style="font-weight: bold;">OP標題生成</div>
                 <form id="consultantForm">
                     <label for="consultantName">顧問名：</label>
@@ -112,6 +122,7 @@
     <br>
 <!--教室Log查詢-->
  <iframe id="logsearch" src="userlogframe_right.html"></iframe>
+<div>
             </td>
             <td class="right">
                 <input type="checkbox" id="toggleCheckbox">
