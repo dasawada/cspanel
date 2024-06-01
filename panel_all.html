@@ -1,5 +1,4 @@
-<!DOCTYPE html>
-<html lang="en">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -7,12 +6,12 @@
 <style>
 
     body {
-            font-size: 11pt; /* 设置文档的字体大小为11pt */
+            font-size: 11pt; /* 設置文檔的字體大小為11pt */
         }
         table {
             width: 100%;
             border-collapse: collapse;
-            height: 900px; /* 设置表格高度 */
+            height: 900px; /* 設置表格高度 */
             
         }
         th, td {
@@ -32,7 +31,7 @@
         .responsive-iframe {
             width: 200%;
             height: 600px;
-            overflow: hidden; /* 完全禁用卷轴 */
+            overflow: hidden; /* 完全禁用卷軸 */
             border: none;
         }
         #content {
@@ -43,9 +42,9 @@
             border: 1px solid transparent;
             vertical-align: top;
         }
-        /* 调整td元素的宽度 */
+        /*調整td元素的寬度 */
         td.left {
-            width: 400px; /* 确保左边列宽度为380px */
+            width: 400px; /* 確保左邊列寬度為400px */
             
         }
         td.right {
@@ -91,42 +90,42 @@
 <button onclick="copyToClipboard_F12script('\
 // 老師點名\n\
 function showRows() {\n\
-    // 选择所有具有类名 .MuiTableRow-root 的元素\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
     var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
-    // 遍历每个行元素\n\
+    // 遍歷每個行元素\n\
     rows.forEach(function(row) {\n\
         var cells = row.querySelectorAll(\'.MuiTableCell-root\');\n\
         var shouldShowRow = false;\n\
-        // 检查每个单元格中的内容\n\
+        // 檢查每個單元格中的內容\n\
         cells.forEach(function(cell) {\n\
-            // 在每个单元格元素中查找是否存在类名为 .MuiBox-root.css-1v9l4og 的子元素\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
             var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
-            // 在每个单元格元素中查找是否存在类名为 .MuiBox-root.css-1tqg586 的子元素\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
             var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
-            // 如果找到了符合条件的子元素，且第二个子元素没有其他子元素\n\
+            // 如果找到了符合條件的子元素，且第二個子元素沒有其他子元素\n\
             if (box1 && box2 && !box2.querySelector(\'.MuiBox-root\')) {\n\
                 shouldShowRow = true;\n\
             }\n\
         });\n\
-        // 根据 shouldShowRow 的值显示或隐藏整行\n\
+        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
         row.style.display = shouldShowRow ? \'table-row\' : \'none\';\n\
     });\n\
 }\n\
-// 在延迟1秒后执行显示/隐藏行的函数\n\
+// 在延遲1秒後執行顯示/隱藏行的函數\n\
 setTimeout(showRows, 1000);\n\
 ', '【函數已複製：點名】')" style="background-color: #daf5cc;">點名</button>
 
 <button onclick="copyToClipboard_F12script('\
 // 解除點名\n\
 function showAllRows() {\n\
-    // 选择所有具有类名 .MuiTableRow-root 的元素\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
     var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
-    // 将所有行显示\n\
+    // 將所有行顯示\n\
     rows.forEach(function(row) {\n\
-        row.style.display = \'\'; // 设置为空字符串，以使用默认的显示方式\n\
+        row.style.display = \'\'; // 設置為空字符串，以使用默認的顯示方式\n\
     });\n\
 }\n\
-// 在延迟1秒后执行完全显示所有行的函数\n\
+// 在延遲1秒後執行完全顯示所有行的函數\n\
 setTimeout(showAllRows, 1000);\n\
 ', '【函數已複製：解除點名】')" style="background-color: #ffe6d7;">解除點名</button>
 </p>
@@ -187,6 +186,7 @@ setTimeout(showAllRows, 1000);\n\
 
 
 <script>
+// 檔次複製成功的紅色提示
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製：' + text;
@@ -202,7 +202,7 @@ function copyToClipboard(text) {
         copyMessage.textContent = '　';
     }, 5000);
 }
-
+// 函數複製成功的紅色提示
 function copyToClipboard_F12script(text, message) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = message;
@@ -218,7 +218,7 @@ function copyToClipboard_F12script(text, message) {
         copyMessage.textContent = '　';
     }, 5000);
 }
-
+// 標題生成，輸入框有值生成文本，空時清除輸出
 function checkInputs() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
@@ -231,7 +231,7 @@ function checkInputs() {
         clearOutput(); // 當所有輸入框都為空時清除輸出內容
     }
 }
-
+// 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
 function generateText() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
@@ -259,7 +259,7 @@ function clearFields() {
     document.getElementById("invoiceNumber").value = "";
     clearOutput(); // 清除輸出內容
 }
-
+// 複製生成好的標題 按鈕樣式
 function copyText() {
     var textToCopy = document.getElementById("optitleoutput").innerText;
     var tempInput = document.createElement("input");
@@ -281,6 +281,7 @@ function copyText() {
     }, 3000);
 }
 
+// 查找IP服務商函數
 function lookupIP() {
     var ipAddress = document.getElementById('ipAddress').value;
     var url = 'https://api.ipgeolocation.io/ipgeo?apiKey=204b59bb7d49446b849d25499a5f6aee&ip=' + ipAddress;
@@ -303,20 +304,20 @@ function lookupIP() {
 
     return false; // 防止表單提交
 }
-
+//自由輸入欄的函數
 function clearWatermark() {
     var textarea = document.getElementById("myTextArea");
     if (textarea.value === "在這裡輸入文字...") {
         textarea.value = "";
     }
 }
-
+// 清空檔次提示語函數
 document.addEventListener("DOMContentLoaded", function() {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '　';
 });
 
-
+//顧問名單googlesheet勾選腳本
 document.getElementById('toggleCheckbox').addEventListener('change', function() {
     const content = document.getElementById('content');
     if (this.checked) {
