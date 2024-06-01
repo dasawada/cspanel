@@ -80,13 +80,59 @@
 </style>
 </head>
 <body>
-<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/05/25</div>
+<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/01</div>
 
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
 <button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
 <button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
 <button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
+<p>
+<button onclick="copyToClipboard_F12script('\
+// 老師點名\n\
+function showRows() {\n\
+    // 选择所有具有类名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 遍历每个行元素\n\
+    rows.forEach(function(row) {\n\
+        var cells = row.querySelectorAll(\'.MuiTableCell-root\');\n\
+        var shouldShowRow = false;\n\
+        // 检查每个单元格中的内容\n\
+        cells.forEach(function(cell) {\n\
+            // 在每个单元格元素中查找是否存在类名为 .MuiBox-root.css-1v9l4og 的子元素\n\
+            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
+            // 在每个单元格元素中查找是否存在类名为 .MuiBox-root.css-1tqg586 的子元素\n\
+            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
+            // 如果找到了符合条件的子元素，且第二个子元素没有其他子元素\n\
+            if (box1 && box2 && !box2.querySelector(\'.MuiBox-root\')) {\n\
+                shouldShowRow = true;\n\
+            }\n\
+        });\n\
+        // 根据 shouldShowRow 的值显示或隐藏整行\n\
+        row.style.display = shouldShowRow ? \'table-row\' : \'none\';\n\
+    });\n\
+}\n\
+// 在延迟1秒后执行显示/隐藏行的函数\n\
+setTimeout(showRows, 1000);\n\
+', '【腳本已複製：點名】')" style="background-color: #daf5cc;">點名腳本</button>
+
+<button onclick="copyToClipboard_F12script('\
+// 解除點名\n\
+function showAllRows() {\n\
+    // 选择所有具有类名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 将所有行显示\n\
+    rows.forEach(function(row) {\n\
+        row.style.display = \'\'; // 设置为空字符串，以使用默认的显示方式\n\
+    });\n\
+}\n\
+// 在延迟1秒后执行完全显示所有行的函数\n\
+setTimeout(showAllRows, 1000);\n\
+', '【腳本已複製：解除點名】')" style="background-color: #ffe6d7;">解除點名腳本</button>
+</p>
+
+
+
 <div id="copyMessage"></div>
 
     <table>
@@ -141,6 +187,39 @@
 
 
 <script>
+function copyToClipboard(text) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '檔次已複製：' + text;
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.textContent = '　';
+    }, 5000);
+}
+
+function copyToClipboard_F12script(text, message) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = message;
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.textContent = '　';
+    }, 5000);
+}
+</script>
+
 function checkInputs() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
@@ -238,21 +317,6 @@ document.addEventListener("DOMContentLoaded", function() {
     copyMessage.textContent = '　';
 });
 
-function copyToClipboard(text) {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = '檔次已複製：' + text;
-
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-
-    setTimeout(function() {
-        copyMessage.textContent = '　';
-    }, 5000);
-}
 
 document.getElementById('toggleCheckbox').addEventListener('change', function() {
     const content = document.getElementById('content');
