@@ -4,10 +4,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>★客服小工具ALL★</title>
 <style>
-
     body {
-            font-size: 11pt; /* 設置文檔的字體大小為11pt */
+            font-size: 10px; /* 設置文檔的字體大小為11pt */
         }
+
         table {
             width: 100%;
             border-collapse: collapse;
@@ -67,7 +67,7 @@
     .Leftpanel {
         width: 100%; /* 設定寬度 */
         height: 100%; /* 設定高度 */
-
+font-size: 14px;
         border: 1px solid #ccc; /* 加上邊框 */
         padding: 5px; /* 加上內邊距 */
     }
@@ -79,13 +79,13 @@
 </style>
 </head>
 <body>
-<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/01</div>
+<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/08</div>
 
-<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
-<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
-<button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
-<button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
-<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
+<button onclick="copyToClipboard('直播公開課_A')" style="font-size: 12px;">直播_A</button>
+<button onclick="copyToClipboard('電話進線_A')" style="font-size: 12px;">電話進線_A</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')" style="font-size: 12px;">MGM_B</button>
 <p>
 <button onclick="copyToClipboard_F12script('\
 // 老師點名\n\
@@ -113,7 +113,7 @@ function showRows() {\n\
 }\n\
 // 在延遲1秒後執行顯示/隱藏行的函數\n\
 setTimeout(showRows, 1000);\n\
-', '【函數已複製：點名】')" style="background-color: #daf5cc;">點名</button>
+', '【函數已複製：點名】')" style="background-color: #daf5cc; font-size: 12px;">點名</button>
 
 <button onclick="copyToClipboard_F12script('\
 // 解除點名\n\
@@ -127,7 +127,8 @@ function showAllRows() {\n\
 }\n\
 // 在延遲1秒後執行完全顯示所有行的函數\n\
 setTimeout(showAllRows, 1000);\n\
-', '【函數已複製：解除點名】')" style="background-color: #ffe6d7;">解除點名</button>
+', '【函數已複製：解除點名】')" style="background-color: #ffe6d7; font-size: 12px;">解除點名</button>
+<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" style="font-size: 12px;">老師未到</button>
 </p>
 
 
@@ -148,11 +149,11 @@ setTimeout(showAllRows, 1000);\n\
                     <input type="text" id="parentName" name="parentName" oninput="checkInputs()"><br>
                     <label for="invoiceNumber">單號：　</label>
                     <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()">　
-                    <button type="button" onclick="clearFields()">清除input欄位</button>
+                    <button type="button" onclick="clearFields()" style="font-size: 11px;">清除input欄位</button>
                 </form>
                 
                 <div id="optitleoutput"></div>
-                <button id="copyButton" onclick="copyText()">複製標題</button>
+                <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
 <hr>
 <!-- IP 地址、暫存隱藏
 <form id="ipForm" onsubmit="return lookupIP()">
