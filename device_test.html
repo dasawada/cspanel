@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虛擬記憶體測試</title>
+    <style>
+        .warning {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>虛擬記憶體測試</h1>
+    <button onclick="testVirtualMemory()">開始測試</button>
+    <p id="virtualMemory"></p>
+    <p id="performanceWarning" class="warning" style="display:none;">效能不足</p>
+
+    <script>
+        // 虛擬記憶體測試
+        function testVirtualMemory() {
+            var memoryInfo = navigator.deviceMemory || '不支援';
+            document.getElementById('virtualMemory').innerText = '虛擬記憶體：' + memoryInfo + ' GB';
+            if (memoryInfo < 7) {
+                document.getElementById('performanceWarning').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
