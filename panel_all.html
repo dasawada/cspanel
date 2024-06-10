@@ -209,7 +209,7 @@ function showRows() {\n\
 }\n\
 // 在延遲1秒後執行顯示/隱藏行的函數\n\
 setTimeout(showRows, 1000);\n\
-', '【函數已複製：點名】')">點名</button>
+', '【點名】函數已複製')">點名</button>
 
 <button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
 // 解除點名\n\
@@ -223,7 +223,7 @@ function showAllRows() {\n\
 }\n\
 // 在延遲1秒後執行完全顯示所有行的函數\n\
 setTimeout(showAllRows, 1000);\n\
-', '【函數已複製：解除點名】')">解除點名</button>
+', '【解除點名】函數已複製')">解除點名</button>
 <button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
 </p>
 
@@ -301,7 +301,7 @@ setTimeout(showAllRows, 1000);\n\
 // 檔次複製成功的紅色提示
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = '檔次已複製：' + text;
+    copyMessage.textContent = '檔次已複製【' + text + '】';
 
     var textarea = document.createElement('textarea');
     textarea.value = text;
