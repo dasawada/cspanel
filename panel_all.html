@@ -7,6 +7,8 @@
     body {
             font-size: 10px; /* 設置文檔的字體大小為11pt */
 overflow-x: hidden;
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+
         }
 
         table {
@@ -77,10 +79,95 @@ font-size: 14px;
     overflow: hidden;
 }
 
+button {
+    background-color: #f0f0f0;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+}
+
+/* 按鈕懸停時的效果 */
+button:hover {
+    background-color: #dbdbdb;
+}
+/* 按鈕點擊時的效果 */
+button:active {
+    background-color: #949494; 
+}
+
+/* 輸入框樣式 */
+input[type=text], input[type=password] {
+    width: 100%;
+    padding: 2px 2px;
+    margin: 0px 0;
+    display: inline-block;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */ 
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 輸入框陰影 */
+}
+
+/* 聚焦時的效果 */
+input[type=text]:focus, input[type=password]:focus {
+    border: 1px solid #949494 !important;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* 點名鈕基本樣式 */
+        .DienMing {
+            background-color: #daf5cc;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .DienMing:hover {
+            background-color: #93d470; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .DienMing:active {
+            background-color: #9cba8c; /* 按下時的背景顏色 */
+        }
+
+/* 解除點名鈕基本樣式 */
+        .deactiveDienMing {
+            background-color: #ffe6d7;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .deactiveDienMing:hover {
+            background-color: #f2b794; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .deactiveDienMing:active {
+            background-color: #c7a18b; /* 按下時的背景顏色 */
+        }
 </style>
 </head>
 <body>
-<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/08</div>
+<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/10</div>
 
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
@@ -88,7 +175,7 @@ font-size: 14px;
 <button onclick="copyToClipboard('電話進線_A')" style="font-size: 12px;">電話進線_A</button>
 <button onclick="copyToClipboard('2024年XX月_MGM名單_B')" style="font-size: 12px;">MGM_B</button>
 <p>
-<button onclick="copyToClipboard_F12script('\
+<button class="DienMing" onclick="copyToClipboard_F12script('\
 // 老師點名\n\
 function showRows() {\n\
     // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
@@ -114,9 +201,9 @@ function showRows() {\n\
 }\n\
 // 在延遲1秒後執行顯示/隱藏行的函數\n\
 setTimeout(showRows, 1000);\n\
-', '【函數已複製：點名】')" style="background-color: #daf5cc; font-size: 12px;">點名</button>
+', '【函數已複製：點名】')">點名</button>
 
-<button onclick="copyToClipboard_F12script('\
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
 // 解除點名\n\
 function showAllRows() {\n\
     // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
@@ -128,8 +215,8 @@ function showAllRows() {\n\
 }\n\
 // 在延遲1秒後執行完全顯示所有行的函數\n\
 setTimeout(showAllRows, 1000);\n\
-', '【函數已複製：解除點名】')" style="background-color: #ffe6d7; font-size: 12px;">解除點名</button>
-<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" style="font-size: 12px;">老師未到</button>
+', '【函數已複製：解除點名】')">解除點名</button>
+<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
 </p>
 
 
@@ -147,20 +234,20 @@ setTimeout(showAllRows, 1000);\n\
         <button type="button" onclick="clearFields()" style="font-size: 11px;">清除input欄位</button>
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="consultantName" style="width: 50px;">顧問：</label>
-        <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+        <label for="consultantName" style="width: 40px;">顧問 :</label>
+        <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()" style="width: calc(100% - 40px);">
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="studentName" style="width: 50px;">學生：</label>
-        <input type="text" id="studentName" name="studentName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+        <label for="studentName" style="width: 40px;">學生 :</label>
+        <input type="text" id="studentName" name="studentName" oninput="checkInputs()" style="width: calc(100% - 40px);">
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="parentName" style="width: 50px;">家長：</label>
-        <input type="text" id="parentName" name="parentName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+        <label for="parentName" style="width: 40px;">家長 :</label>
+        <input type="text" id="parentName" name="parentName" oninput="checkInputs()" style="width: calc(100% - 40px);">
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="invoiceNumber" style="width: 50px;">單號：</label>
-        <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()" style="width: calc(100% - 50px);">
+        <label for="invoiceNumber" style="width: 40px;">單號 :</label>
+        <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()" style="width: calc(100% - 40px);">
     </div>
 </form>
 
