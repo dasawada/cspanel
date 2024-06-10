@@ -140,22 +140,35 @@ setTimeout(showAllRows, 1000);\n\
         <tr>
             <td class="left">
                 <div class="Leftpanel">
-                <div style="font-weight: bold;">OP標題生成</div>
-                <form id="consultantForm">
-                    <label for="consultantName">顧問名：</label>
-                    <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()"><br>
-                    <label for="studentName">學生名：</label>
-                    <input type="text" id="studentName" name="studentName" oninput="checkInputs()"><br>
-                    <label for="parentName">家長名：</label>
-                    <input type="text" id="parentName" name="parentName" oninput="checkInputs()"><br>
-                    <label for="invoiceNumber">單號：　</label>
-                    <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()">　
-                    <button type="button" onclick="clearFields()" style="font-size: 11px;">清除input欄位</button>
-                </form>
+                
+<form id="consultantForm" style="margin: 0; width: 200px;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+        <b>OP標題生成</b>
+        <button type="button" onclick="clearFields()" style="font-size: 11px;">清除input欄位</button>
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <label for="consultantName" style="width: 50px;">顧問：</label>
+        <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <label for="studentName" style="width: 50px;">學生：</label>
+        <input type="text" id="studentName" name="studentName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <label for="parentName" style="width: 50px;">家長：</label>
+        <input type="text" id="parentName" name="parentName" oninput="checkInputs()" style="width: calc(100% - 50px);">
+    </div>
+    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
+        <label for="invoiceNumber" style="width: 50px;">單號：</label>
+        <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()" style="width: calc(100% - 50px);">
+    </div>
+</form>
+
                 
                 <div id="optitleoutput"></div>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
 <hr>
+
 <!-- IP 地址、暫存隱藏
 <form id="ipForm" onsubmit="return lookupIP()">
     <label for="ipAddress">IP-ISP查詢：</label>
