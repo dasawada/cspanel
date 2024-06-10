@@ -4,39 +4,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>★客服小工具ALL★</title>
 <style>
-    body {
-            font-size: 10px; /* 設置文檔的字體大小為11pt */
-overflow-x: hidden;
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+body {
+font-size: 10px; overflow-x: hidden;
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
 
-        }
+table {
+width: 100%;
+border-collapse: collapse;
+height: 900px;            
+}
 
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            height: 900px; /* 設置表格高度 */
-            
-        }
-        th, td {
-            text-align: left;
-        }
-        /* 檔次提示語樣式 */
-        #copyMessage { 
-            font-size: 12px; 
-            color: #ff0000; 
-        }
-        /* OP標題複製、不可選取的按鈕樣式 */
-        .unclickable {
-            pointer-events: none;
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        .responsive-iframe {
-            width: 200%;
-            height: 600px;
-            overflow: hidden; /* 完全禁用卷軸 */
-            border: none;
-        }
+th, td {
+text-align: left;
+}
+/* 檔次提示語樣式 */
+#copyMessage { 
+font-size: 12px; 
+color: #ff0000; 
+}
+/* OP標題複製、不可選取的按鈕樣式 */
+.unclickable {
+pointer-events: none;
+opacity: 0.6;
+cursor: not-allowed;
+}
+
+.responsive-iframe {
+width: 200%;
+height: 600px;
+overflow: hidden; /* 完全禁用卷軸 */
+border: none;
+}
         #content {
             display: none;
             height: 100%;
@@ -67,13 +66,22 @@ font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubun
         }
     
     /* 設定包含卷軸的 div 的樣式 */
-    .Leftpanel {
-        width: 100%; /* 設定寬度 */
-        height: 100%; /* 設定高度 */
-font-size: 14px;
-        border: 1px solid #ccc; /* 加上邊框 */
-        padding: 5px; /* 加上內邊距 */
-    }
+.Leftpanel {
+  width: 100%;
+  height: 100%; 
+  font-size: 14px;
+  color: #4d4d4d;
+  border: 1px solid #ccc; 
+  padding: 10px;
+  border-radius: 10px; /* 設定圓角半徑為 10px */
+}
+
+.RightPanel {
+  width: 100%;
+  height: 100%; 
+  padding: 0 10px 0 15px;
+}
+
 #optitleoutput {
     height: 25px;
     overflow: hidden;
@@ -231,7 +239,7 @@ setTimeout(showAllRows, 1000);\n\
 <form id="consultantForm" style="margin: 0; width: 200px;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <b>OP標題生成</b>
-        <button type="button" onclick="clearFields()" style="font-size: 11px;">清空欄位</button>
+        <button type="button" onclick="clearFields()" style="font-size: 11px;">清除input欄位</button>
     </div>
     <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
         <label for="consultantName" style="width: 40px;">顧問 :</label>
@@ -277,11 +285,13 @@ setTimeout(showAllRows, 1000);\n\
     <td style="width: 10px;"></td>
 
             <td class="right">
+<div class="RightPanel">
                 <input type="checkbox" id="toggleCheckbox">
                 <label for="toggleCheckbox">顧問組別清單</label>
                 <div id="content">
                     <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
                 </div>
+</div
             </td>
         </tr>
     </table>
