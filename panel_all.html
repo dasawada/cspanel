@@ -186,7 +186,7 @@ transition: background-color 0.1s ease;
 </style>
 </head>
 <body>
-<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/17</div>
+<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/10</div>
 
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
@@ -248,27 +248,30 @@ setTimeout(showAllRows, 1000);\n\
             <td class="left">
                 <div class="Leftpanel">
                 
-<form id="consultantForm" style="margin: 0; width: 200px;">
+<form id="consultantForm" style="margin: 0;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <b>OP標題生成</b>
         <button type="button" onclick="clearFields()" style="font-size: 11px;">清空欄位</button>
     </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="consultantName" style="width: 40px;">顧問 :</label>
-        <input type="text" id="consultantName" name="consultantName" oninput="checkInputs()" style="width: calc(100% - 40px);">
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="studentName" style="width: 40px;">學生 :</label>
-        <input type="text" id="studentName" name="studentName" oninput="checkInputs()" style="width: calc(100% - 40px);">
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="parentName" style="width: 40px;">家長 :</label>
-        <input type="text" id="parentName" name="parentName" oninput="checkInputs()" style="width: calc(100% - 40px);">
-    </div>
-    <div style="display: flex; justify-content: space-between; margin-bottom: 5px;">
-        <label for="invoiceNumber" style="width: 40px;">單號 :</label>
-        <input type="text" id="invoiceNumber" name="invoiceNumber" oninput="checkInputs()" style="width: calc(100% - 40px);">
-    </div>
+    <span>[顧問</span>
+    <label style="position: relative; display: inline-block; cursor: text;">
+        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
+    </label>
+    <label style="position: relative; display: inline-block; cursor: text;">
+        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
+    </label>
+    <span>/</span>
+    <label style="position: relative; display: inline-block; cursor: text;">
+        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
+    </label>
+    <span>#</span>
+    <label style="position: relative; display: inline-block; cursor: text;">
+        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
+    </label>
 </form>
 
                 
@@ -342,6 +345,29 @@ function copyToClipboard_F12script(text, message) {
         copyMessage.textContent = '　';
     }, 5000);
 }
+
+        document.querySelectorAll('.optitle-input').forEach(input => {
+            const placeholder = input.nextElementSibling;
+            if (input.value) {
+                placeholder.style.visibility = 'hidden';
+            }
+            input.addEventListener('focus', () => {
+                placeholder.style.visibility = 'hidden';
+            });
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    placeholder.style.visibility = 'visible';
+                }
+            });
+            input.addEventListener('input', () => {
+                if (input.value) {
+                    placeholder.style.visibility = 'hidden';
+                } else {
+                    placeholder.style.visibility = 'visible';
+                }
+            });
+        });
+
 // 標題生成，輸入框有值生成文本，空時清除輸出
 function checkInputs() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
@@ -383,6 +409,9 @@ function clearFields() {
     document.getElementById("invoiceNumber").value = "";
     clearOutput(); // 清除輸出內容
 }
+
+
+
 // 複製生成好的標題 按鈕樣式
 function copyText() {
     var textToCopy = document.getElementById("optitleoutput").innerText;
