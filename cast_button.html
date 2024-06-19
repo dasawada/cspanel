@@ -150,8 +150,73 @@ function showAllRows() {\n\
 // 在延遲1秒後執行完全顯示所有行的函數\n\
 setTimeout(showAllRows, 1000);\n\
 ', '【解除點名】函數已複製')">解除點名</button>
+
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
+// 即時觀課-老師點名\n\
+function showRows() {\n\
+    // 選擇所有具有特定類名的父元素\n\
+    var rows = document.querySelectorAll(\'.MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-3.css-1ha4th6\');\n\
+    console.log(\'Total rows found:\', rows.length);\n\
+\n\
+    // 遍歷每個行元素\n\
+    rows.forEach(function(row) {\n\
+        var cells = row.querySelectorAll(\'.css-hk0nmt\');\n\
+        var shouldShowRow = false;\n\
+\n\
+        console.log(\'Checking row:\', row);\n\
+\n\
+        // 檢查每個單元格中的內容\n\
+        cells.forEach(function(cell) {\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
+            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
+            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
+            // 檢查是否包含要排除的類名為 .css-1r5to7m 的子元素\n\
+            var containsExcludedElement = cell.querySelector(\'.MuiBox-root.css-1tqg586 .css-1r5to7m\');\n\
+\n\
+            console.log(\'Checking cell:\', cell);\n\
+            console.log(\'box1 found:\', !!box1);\n\
+            console.log(\'box2 found:\', !!box2);\n\
+            console.log(\'containsExcludedElement found:\', !!containsExcludedElement);\n\
+\n\
+            // 如果存在 box1 且 box2 不包含 containsExcludedElement\n\
+            if (box1 && box2 && !containsExcludedElement) {\n\
+                shouldShowRow = true;\n\
+            }\n\
+        });\n\
+\n\
+        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
+        row.style.display = shouldShowRow ? \'block\' : \'none\';\n\
+        console.log(\'Row display set to:\', shouldShowRow ? \'block\' : \'none\');\n\
+    });\n\
+}\n\
+\n\
+// 在延遲1秒後執行顯示/隱藏行的函數\n\
+setTimeout(showRows, 1000);\n\
+', '【觀課-點名】函數已複製')">觀課-點名</button>
+
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
+// 即時觀課-解除老師點名\n\
+function resetRows() {\n\
+    // 選擇所有具有特定類名的父元素\n\
+    var rows = document.querySelectorAll(\'.MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-3.css-1ha4th6\');\n\
+    console.log(\'Total rows found:\', rows.length);\n\
+\n\
+    // 遍歷每個行元素並顯示\n\
+    rows.forEach(function(row) {\n\
+        row.style.display = \'block\';\n\
+        console.log(\'Row display reset to block:\', row);\n\
+    });\n\
+}\n\
+\n\
+// 在延遲1秒後執行恢復顯示行的函數\n\
+setTimeout(resetRows, 1000);\n\
+', '【觀課-解除點名】函數已複製')">觀課-解除點名</button>
+
+
+
+
 <button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
-    <button onclick="copyToClipboard_F12script('查看老師已進入教室了，再麻煩老師補足上課時數哦，謝謝老師！', '【補足時數】話術已複製')" >補足時數</button>
 
 
 
