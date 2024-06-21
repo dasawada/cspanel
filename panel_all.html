@@ -14,81 +14,143 @@
     <title>★客服小工具ALL★</title>
 <style>
 body {
-font-size: 10px; overflow-x: hidden;
-font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    font-size: 10px;
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    position: relative; /* 確保 body 的內容在 header 之上 */
+    z-index: 1; /* 確保 body 的內容在 header 之上 */
+}
+
+.update-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    font-size: 10pt;
+    color: #888888;
+    z-index: -1; /* 確保在最底層 */
+    pointer-events: none; /* 禁止鼠標事件 */
+    background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
+    padding: 5px; /* 可選，增加內邊距 */
 }
 
 table {
-width: 100%;
-border-collapse: collapse;
-height: 900px;            
+    width: 100%;
+    border-collapse: collapse;
+    height: 900px;            
 }
 
 th, td {
-text-align: left;
+    text-align: left;
 }
+
 /* 檔次提示語樣式 */
 #copyMessage { 
-font-size: 12px; 
-color: #ff0000; 
+    font-size: 12px; 
+    color: #ff0000; 
 }
+
 /* OP標題複製、不可選取的按鈕樣式 */
 .unclickable {
-pointer-events: none;
-opacity: 0.6;
-cursor: not-allowed;
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: not-allowed;
 }
 
 .responsive-iframe {
-width: 200%;
-height: 600px;
-overflow: hidden; /* 完全禁用卷軸 */
-border: none;
+    width: 200%;
+    height: 600px;
+    overflow: hidden; /* 完全禁用卷軸 */
+    border: none;
 }
-        #content {
-            display: none;
-            height: 100%;
-        }
-        td {
-            border: 1px solid transparent;
-            vertical-align: top;
-        }
-        /*調整td元素的寬度 */
-        td.left {
-            width: 400px; /* 確保左邊列寬度為400px */
-            
-        }
-        td.right {
-            width: auto; /* 右邊列寬度自動調整 */
-                        
-        }
-        /* iframe样式 */
-        #usersearch {
-            width: 100%;
-            height: 400px;
-            border: none;
-        }
-        #logsearch {
-            width: 100%;
-            height: 600px;
-            border: none;
-        }
-    
-    /* 設定包含卷軸的 div 的樣式 */
-.Leftpanel {
-  width: 100%;
-  height: 100%; 
-  font-size: 14px;
-  color: #4d4d4d;
-  border: 1px solid #ccc; 
-  padding: 10px;
-  border-radius: 10px; /* 設定圓角半徑為 10px */
+
+#content {
+    display: none;
+    height: 100%;
+}
+
+td {
+    border: 1px solid transparent;
+    vertical-align: top;
+}
+
+/*調整td元素的寬度 */
+td.left {
+    width: 400px; /* 確保左邊列寬度為400px */
+}
+
+td.right {
+    width: auto; /* 右邊列寬度自動調整 */
+}
+
+/* iframe样式 */
+#usersearch {
+    width: 100%;
+    height: 400px;
+    border: none;
+}
+
+#logsearch {
+    width: 100%;
+    height: 600px;
+    border: none;
+}
+
+.roofbutton {
+    width: 400px;
+    height: auto; 
+    font-size: 14px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.potitlepanel {
+    width: 100%;
+    height: 100%; 
+    font-size: 14px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.spacer {
+    height: 8px;
+}
+
+.idsearchpanel {
+    width: 100%;
+    height: 100%; 
+    font-size: 14px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+}
+
+.ClassLogpanel {
+    width: 100%;
+    height: 100%; 
+    font-size: 14px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 .RightPanel {
-  width: 100%;
-  height: 100%; 
-  padding: 0 10px 0 15px;
+    width: 100%;
+    height: 100%; 
+    padding: 0 10px 0 15px;
 }
 
 #optitleoutput {
@@ -105,13 +167,14 @@ button {
     cursor: pointer;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
-transition: background-color 0.1s ease;
+    transition: background-color 0.1s ease;
 }
 
 /* 按鈕懸停時的效果 */
 button:hover {
     background-color: #dbdbdb;
 }
+
 /* 按鈕點擊時的效果 */
 button:active {
     background-color: #949494; 
@@ -131,64 +194,75 @@ input[type=text], input[type=password] {
     box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
 }
 
-
 /* 聚焦時的效果 */
 input[type=text]:focus, input[type=password]:focus {
     border: 1px solid #949494 !important;
-    color:#292828;
+    color: #292828;
     outline: none; /* 移除默認的 outline */
 }
 
 /* 點名鈕基本樣式 */
-        .DienMing {
-            background-color: #daf5cc;
-            color: #000000;
-            padding: 2px 6px;
-            border: 1px solid #bfbfbf;
-            border-radius: 4px;
-             cursor: pointer;
+.DienMing {
+    background-color: #daf5cc;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-transition: background-color 0.1s ease;
-        }
+    transition: background-color 0.1s ease;
+}
 
-        /* 滑鼠懸停時的效果 */
-        .DienMing:hover {
-            background-color: #93d470; /* 懸停時的背景顏色 */
-        }
+/* 滑鼠懸停時的效果 */
+.DienMing:hover {
+    background-color: #93d470; /* 懸停時的背景顏色 */
+}
 
-        /* 按下時的效果 */
-        .DienMing:active {
-            background-color: #9cba8c; /* 按下時的背景顏色 */
-        }
+/* 按下時的效果 */
+.DienMing:active {
+    background-color: #9cba8c; /* 按下時的背景顏色 */
+}
 
 /* 解除點名鈕基本樣式 */
-        .deactiveDienMing {
-            background-color: #ffe6d7;
-            color: #000000;
-            padding: 2px 6px;
-            border: 1px solid #bfbfbf;
-            border-radius: 4px;
-             cursor: pointer;
+.deactiveDienMing {
+    background-color: #ffe6d7;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-transition: background-color 0.1s ease;
-        }
+    transition: background-color 0.1s ease;
+}
 
-        /* 滑鼠懸停時的效果 */
-        .deactiveDienMing:hover {
-            background-color: #f2b794; /* 懸停時的背景顏色 */
-        }
+/* 滑鼠懸停時的效果 */
+.deactiveDienMing:hover {
+    background-color: #f2b794; /* 懸停時的背景顏色 */
+}
 
-        /* 按下時的效果 */
-        .deactiveDienMing:active {
-            background-color: #c7a18b; /* 按下時的背景顏色 */
-        }
-</style>
+/* 按下時的效果 */
+.deactiveDienMing:active {
+    background-color: #c7a18b; /* 按下時的背景顏色 */
+}
+
+.fade-out {
+    animation: fadeOut 4s forwards;
+}
+
+@keyframes fadeOut {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+}
+
+.hidden {
+    opacity: 0;
+}</style>
 </head>
 <body>
-<div style="float: right; font-size: 10pt; color: #888888;">※版本更新：2024/06/18</div>
-
+<div class="update-header">※版本更新：2024/06/21</div>
+<div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
 <button onclick="copyToClipboard('直播公開課_A')" style="font-size: 12px;">直播_A</button>
@@ -243,12 +317,13 @@ setTimeout(showAllRows, 1000);\n\
 
 
 <div id="copyMessage"></div>
-
+</div>
+<div class="spacer"></div>
     <table>
         <tr>
             <td class="left">
                 <div class="Leftpanel">
-                
+                <div class="potitlepanel">
 <form id="consultantForm" style="margin: 0;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
         <b>OP標題生成</b>
@@ -279,7 +354,7 @@ setTimeout(showAllRows, 1000);\n\
                 
                 <div id="optitleoutput"></div>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
-<hr>
+</div>
 
 <!-- IP 地址、暫存隱藏
 <form id="ipForm" onsubmit="return lookupIP()">
@@ -291,13 +366,18 @@ setTimeout(showAllRows, 1000);\n\
 <br>
 <textarea id="myTextArea" rows="4" cols="22" style="width: 380px; height: 88px;" onclick="clearWatermark()">在這裡輸入文字...</textarea>
 <br>
-                    -->
+-->
+<div class="spacer"></div>
+<div class="idsearchpanel">
 <!--南一id查詢-->
 <iframe id="usersearch" src="userlogframe_left.html"></iframe>
-    <br>
+</div>
+<div class="spacer"></div>
+<div class="ClassLogpanel">
 <!--教室Log查詢-->
  <iframe id="logsearch" src="userlogframe_right.html"></iframe>
-<div>
+</div>
+
             </td>
     <td style="width: 10px;"></td>
 
@@ -308,7 +388,6 @@ setTimeout(showAllRows, 1000);\n\
                 <div id="content">
                     <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
                 </div>
-</div
             </td>
         </tr>
     </table>
@@ -317,37 +396,55 @@ setTimeout(showAllRows, 1000);\n\
 <script>
 // 檔次複製成功的紅色提示
 function copyToClipboard(text) {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = '檔次已複製【' + text + '】';
+            var copyMessage = document.getElementById('copyMessage');
+            copyMessage.textContent = '檔次已複製【' + text + '】';
+            copyMessage.classList.remove('hidden'); // 顯示消息
 
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
 
-    setTimeout(function() {
-        copyMessage.textContent = '　';
-    }, 5000);
-}
-// 函數複製成功的紅色提示
+            // 確保每次觸發動畫前，移除舊的動畫類
+            copyMessage.classList.remove('fade-out');
+            
+            // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
+            setTimeout(function() {
+                copyMessage.classList.add('fade-out');
+                setTimeout(function() {
+                    copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+                }, 5000); // 與動畫持續時間匹配
+            }, 100); // 初始延遲，可根據需要調整
+        }
+
+// 函數、話術複製成功的紅色提示
 function copyToClipboard_F12script(text, message) {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = message;
+            var copyMessage = document.getElementById('copyMessage');
+            copyMessage.textContent = message;
+            copyMessage.classList.remove('hidden'); // 顯示消息
 
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
+            var textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
 
-    setTimeout(function() {
-        copyMessage.textContent = '　';
-    }, 5000);
-}
-
+            // 確保每次觸發動畫前，移除舊的動畫類
+            copyMessage.classList.remove('fade-out');
+            
+            // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
+            setTimeout(function() {
+                copyMessage.classList.add('fade-out');
+                setTimeout(function() {
+                    copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+                    copyMessage.classList.remove('fade-out'); // 清除類，以便未來可重複使用動畫效果
+                }, 5000); // 與動畫持續時間匹配
+            }, 100); // 初始延遲，可根據需要調整
+        }
+// 標題生成的浮水印
         document.querySelectorAll('.optitle-input').forEach(input => {
             const placeholder = input.nextElementSibling;
             if (input.value) {
@@ -390,15 +487,22 @@ function generateText() {
     var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
     var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
     
-    var outputText = "[顧問 " + consultantName + "] " + studentName + " / " + parentName;
+    var outputText = "[顧問 " + consultantName + "] " + studentName;
 
+    // 確保學生+家長皆有出現才加斜線
+    if (studentName !== '' && parentName !== '') {
+        outputText += " / " + parentName;
+    } else {
+        outputText += parentName;
+    }
+// 有單號才顯示井號
     if (invoiceNumber !== '') {
         outputText += " #" + invoiceNumber;
     }
-
+// 獲取並顯示標題
     document.getElementById("optitleoutput").innerText = outputText;
 }
-
+// input無值時清除標題
 function clearOutput() {
     document.getElementById("optitleoutput").innerText = "";
 }
