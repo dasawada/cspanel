@@ -13,19 +13,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>★客服小工具ALL★</title>
 <style>
+
 body {
-    font-size: 10px;
     overflow-x: hidden;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     position: relative; /* 確保 body 的內容在 header 之上 */
     z-index: 1; /* 確保 body 的內容在 header 之上 */
+    font-size: 12px; /* 設置所有字體大小為12px */
 }
 
 .update-header {
     position: fixed;
     top: 0;
     right: 0;
-    font-size: 10pt;
+    font-size: 12px; /* 設置所有字體大小為12px */
     color: #888888;
     z-index: -1; /* 確保在最底層 */
     pointer-events: none; /* 禁止鼠標事件 */
@@ -33,19 +34,101 @@ body {
     padding: 5px; /* 可選，增加內邊距 */
 }
 
-table {
-    width: 100%;
-    border-collapse: collapse;
-    height: 900px;            
+.container {
+    display: grid;
+    grid-template-columns: 430px auto; /* 左侧为430px，右侧为剩余空间 */
+    grid-template-rows: auto auto auto auto; /* 定义四行 */
+    gap: 10px; /* 定义列和行之间的间距 */
+    height: auto; /* 自动高度 */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
 }
 
-th, td {
-    text-align: left;
+.roofbutton {
+    grid-column: 1 / 3; /* 跨越兩列 */
+    width: 80%;
+    height: auto; 
+    font-size: 12px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+}
+
+.optitlepanel {
+    grid-column: 1 / 2; /* 左一 */
+    grid-row: 2 / 3;
+    background-color: #f9f9f9;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    height: 120px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+.idsearchpanel {
+    grid-column: 1 / 2; /* 左二 */
+    grid-row: 3 / 4;
+    background-color: #f9f9f9;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    height: 490px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+.ClassLogpanel {
+    grid-column: 1 / 2; /* 左三 */
+    grid-row: 4 / 5;
+    background-color: #f9f9f9;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+.consultantlistgooglesheet {
+    grid-column: 2 / 3; /* 右侧列 */
+    grid-row: 2 / 4;
+    background-color: #f9f9f9;
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 100%; /* 确保宽度为100% */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    display: flex;
+    flex-direction: column;
+    height: 620px; /* 固定高度 */
+}
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.temp2 {
+    grid-column: 2 / 3; /* 右三 */
+    grid-row: 4 / 5;
+    background-color: #f9f9f9;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
 }
 
 /* 檔次提示語樣式 */
 #copyMessage { 
-    font-size: 12px; 
+    font-size: 12px; /* 設置所有字體大小為12px */
     color: #ff0000; 
 }
 
@@ -56,33 +139,27 @@ th, td {
     cursor: not-allowed;
 }
 
-.responsive-iframe {
-    width: 200%;
-    height: 600px;
-    overflow: hidden; /* 完全禁用卷軸 */
-    border: none;
+.spacer {
+    height: 8px;
 }
 
 #content {
     display: none;
-    height: 100%;
-}
-
-td {
-    border: 1px solid transparent;
-    vertical-align: top;
-}
-
-/*調整td元素的寬度 */
-td.left {
-    width: 400px; /* 確保左邊列寬度為400px */
-}
-
-td.right {
-    width: auto; /* 右邊列寬度自動調整 */
+    width: 100%; /* 确保宽度为100% */
+    height: 100%; /* 确保高度为100% */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    flex-grow: 1; /* 确保其占据剩余空间 */
 }
 
 /* iframe样式 */
+.responsive-iframe {
+    width: 200%;
+    height: 100%;
+    overflow: hidden; /* 完全禁用卷軸 */
+    border: none;
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+}
+
 #usersearch {
     width: 100%;
     height: 400px;
@@ -95,67 +172,10 @@ td.right {
     border: none;
 }
 
-.roofbutton {
-    width: 400px;
-    height: auto; 
-    font-size: 14px;
-    color: #4d4d4d;
-    border: 1px solid #ccc; 
-    padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.potitlepanel {
-    width: 100%;
-    height: 100%; 
-    font-size: 14px;
-    color: #4d4d4d;
-    border: 1px solid #ccc; 
-    padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.spacer {
-    height: 8px;
-}
-
-.idsearchpanel {
-    width: 100%;
-    height: 100%; 
-    font-size: 14px;
-    color: #4d4d4d;
-    border: 1px solid #ccc; 
-    padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.ClassLogpanel {
-    width: 100%;
-    height: 100%; 
-    font-size: 14px;
-    color: #4d4d4d;
-    border: 1px solid #ccc; 
-    padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-}
-
-.RightPanel {
-    width: 100%;
-    height: 100%; 
-    padding: 0 10px 0 15px;
-}
-
 #optitleoutput {
-    height: 25px;
+    height: 28px;
     overflow: hidden;
+    font-size: 17px;
 }
 
 button {
@@ -168,6 +188,7 @@ button {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
     transition: background-color 0.1s ease;
+    font-size: 12px; /* 設置所有字體大小為12px */
 }
 
 /* 按鈕懸停時的效果 */
@@ -192,6 +213,7 @@ input[type=text], input[type=password] {
     box-sizing: border-box;
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
+    font-size: 12px; /* 設置所有字體大小為12px */
 }
 
 /* 聚焦時的效果 */
@@ -212,29 +234,7 @@ input[type=text]:focus, input[type=password]:focus {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
     transition: background-color 0.1s ease;
-}
-
-/* 滑鼠懸停時的效果 */
-.DienMing:hover {
-    background-color: #93d470; /* 懸停時的背景顏色 */
-}
-
-/* 按下時的效果 */
-.DienMing:active {
-    background-color: #9cba8c; /* 按下時的背景顏色 */
-}
-
-/* 解除點名鈕基本樣式 */
-.deactiveDienMing {
-    background-color: #ffe6d7;
-    color: #000000;
-    padding: 2px 6px;
-    border: 1px solid #bfbfbf;
-    border-radius: 4px;
-    cursor: pointer;
-    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-    transition: background-color 0.1s ease;
+    font-size: 12px; /* 設置所有字體大小為12px */
 }
 
 /* 滑鼠懸停時的效果 */
@@ -247,6 +247,53 @@ input[type=text]:focus, input[type=password]:focus {
     background-color: #c7a18b; /* 按下時的背景顏色 */
 }
 
+/* 點名鈕基本樣式 */
+        .DienMing {
+            background-color: #daf5cc;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .DienMing:hover {
+            background-color: #93d470; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .DienMing:active {
+            background-color: #9cba8c; /* 按下時的背景顏色 */
+        }
+
+/* 解除點名鈕基本樣式 */
+        .deactiveDienMing {
+            background-color: #ffe6d7;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .deactiveDienMing:hover {
+            background-color: #f2b794; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .deactiveDienMing:active {
+            background-color: #c7a18b; /* 按下時的背景顏色 */
+        }
+
+
 .fade-out {
     animation: fadeOut 4s forwards;
 }
@@ -258,16 +305,19 @@ input[type=text]:focus, input[type=password]:focus {
 
 .hidden {
     opacity: 0;
-}</style>
+}
+
+</style>
 </head>
 <body>
 <div class="update-header">※版本更新：2024/06/21</div>
+<div class="container">
 <div class="roofbutton">
-<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
-<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
-<button onclick="copyToClipboard('直播公開課_A')" style="font-size: 12px;">直播_A</button>
-<button onclick="copyToClipboard('電話進線_A')" style="font-size: 12px;">電話進線_A</button>
-<button onclick="copyToClipboard('2024年XX月_MGM名單_B')" style="font-size: 12px;">MGM_B</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
+<button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
+<button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
 <p>
 <button class="DienMing" onclick="copyToClipboard_F12script('\
 // 老師點名\n\
@@ -313,85 +363,58 @@ setTimeout(showAllRows, 1000);\n\
 <button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
 <button onclick="copyToClipboard_F12script('查看老師已進入教室了，再麻煩老師補足上課時數哦，謝謝老師！', '【補足時數】話術已複製')" >補足時數</button>
 </p>
-
-
-
 <div id="copyMessage"></div>
 </div>
 <div class="spacer"></div>
-    <table>
-        <tr>
-            <td class="left">
-                <div class="Leftpanel">
-                <div class="potitlepanel">
-<form id="consultantForm" style="margin: 0;">
-    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-        <b>OP標題生成</b>
-        <button type="button" onclick="clearFields()" style="font-size: 11px;">清空欄位</button>
-    </div>
-    <span>[顧問</span>
-    <label style="position: relative; display: inline-block; cursor: text;">
-        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
-        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
-    </label>
-<span>]</span>
-    <label style="position: relative; display: inline-block; cursor: text;">
-        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
-        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
-    </label>
-    <span>/</span>
-    <label style="position: relative; display: inline-block; cursor: text;">
-        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
-        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
-    </label>
-    <span>#</span>
-    <label style="position: relative; display: inline-block; cursor: text;">
-        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
-        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
-    </label>
-</form>
-
-                
+            <div class="optitlepanel">
+                <form id="consultantForm" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <b>OP標題生成</b>
+                        <button type="button" onclick="clearFields()" style="font-size: 12px;">清空欄位</button>
+                    </div>
+                    <span>[顧問</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
+                    </label>
+                    <span>]</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
+                    </label>
+                    <span>/</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
+                    </label>
+                    <span>#</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 80px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
+                    </label>
+                </form>
                 <div id="optitleoutput"></div>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
+            </div>
+            <div class="spacer"></div>
+            <div class="idsearchpanel">
+                <iframe id="usersearch" src="userlogframe_left.html"></iframe>
+            </div>
+            <div class="spacer"></div>
+            <div class="ClassLogpanel">
+                <iframe id="logsearch" src="userlogframe_right.html"></iframe>
+            </div>
+        <div class="spacer"></div>
+<div class="consultantlistgooglesheet">
+    <div class="toggle-container">
+        <input type="checkbox" id="toggleCheckbox">
+        <label for="toggleCheckbox">顧問組別清單</label>
+    </div>
+    <div id="content">
+        <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+    </div>
 </div>
-
-<!-- IP 地址、暫存隱藏
-<form id="ipForm" onsubmit="return lookupIP()">
-    <label for="ipAddress">IP-ISP查詢：</label>
-    <input type="text" id="ipAddress" name="ipAddress" required>
-    <button type="submit">查詢</button>
-</form>
-<div id="result"></div>
-<br>
-<textarea id="myTextArea" rows="4" cols="22" style="width: 380px; height: 88px;" onclick="clearWatermark()">在這裡輸入文字...</textarea>
-<br>
--->
-<div class="spacer"></div>
-<div class="idsearchpanel">
-<!--南一id查詢-->
-<iframe id="usersearch" src="userlogframe_left.html"></iframe>
-</div>
-<div class="spacer"></div>
-<div class="ClassLogpanel">
-<!--教室Log查詢-->
- <iframe id="logsearch" src="userlogframe_right.html"></iframe>
-</div>
-
-            </td>
-    <td style="width: 10px;"></td>
-
-            <td class="right">
-<div class="RightPanel">
-                <input type="checkbox" id="toggleCheckbox">
-                <label for="toggleCheckbox">顧問組別清單</label>
-                <div id="content">
-                    <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
-                </div>
-            </td>
-        </tr>
-    </table>
-
+      </div>
 
 <script>
 // 檔次複製成功的紅色提示
