@@ -36,17 +36,19 @@ body {
 
 .container {
     display: grid;
-    grid-template-columns: 430px auto; /* 左侧为430px，右侧为剩余空间 */
-    grid-template-rows: auto auto auto auto; /* 定义四行 */
-    gap: 10px; /* 定义列和行之间的间距 */
-    height: auto; /* 自动高度 */
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
+    grid-template-rows: auto auto auto auto; /* 定義四行 */
+    gap: 10px; /* 定義列和行之間的間距 */
+    height: auto; /* 自動高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: relative; /* 確保容器為相對定位 */
 }
 
 .roofbutton {
-    grid-column: 1 / 3; /* 跨越兩列 */
-    width: 80%;
-    height: auto; 
+    grid-column: 1 / 2; /* 只占据一列 */
+    grid-row: 1; /* 第1行 */
+    width: 430px;
+    height: 100px; 
     font-size: 12px;
     color: #4d4d4d;
     border: 1px solid #ccc; 
@@ -60,7 +62,7 @@ body {
 .optitlepanel {
     grid-column: 1 / 2; /* 左一 */
     grid-row: 2 / 3;
-    background-color: #f9f9f9;
+    background-color: white;
     padding: 8px;
     border: 1px solid #ccc;
     border-radius: 10px;
@@ -73,7 +75,7 @@ body {
 .idsearchpanel {
     grid-column: 1 / 2; /* 左二 */
     grid-row: 3 / 4;
-    background-color: #f9f9f9;
+    background-color: white;
     padding: 2px;
     border: 1px solid #ccc;
     border-radius: 10px;
@@ -86,7 +88,7 @@ body {
 .ClassLogpanel {
     grid-column: 1 / 2; /* 左三 */
     grid-row: 4 / 5;
-    background-color: #f9f9f9;
+    background-color: white;
     padding: 2px;
     border: 1px solid #ccc;
     border-radius: 10px;
@@ -95,20 +97,43 @@ body {
     box-sizing: border-box; /* 确保内边距不影响总宽度 */
 }
 
-.consultantlistgooglesheet {
-    grid-column: 2 / 3; /* 右侧列 */
-    grid-row: 2 / 4;
-    background-color: #f9f9f9;
-    padding: 5px;
+        .consultantlistgooglesheet {
+            background-color: white;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 620px; /* 固定高度 */
+            box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+            overflow: hidden; /* 禁用容器的滾動 */
+            z-index: 1000; /* 確保顯示在最上層 */
+            position: absolute; /* 固定位置 */
+            left: 440px; /* 根據需要調整 */
+            right: 20px; /* 緊貼右側 */
+        }
+
+        .small-size {
+            width: 120px;
+            height: 30px;
+            overflow: hidden; /* 確保內容不會超出範圍 */
+        }
+
+.linkout {
+    background-color: white;
+    padding: 5px; 
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    width: 100%; /* 确保宽度为100% */
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
-    display: flex;
-    flex-direction: column;
-    height: 620px; /* 固定高度 */
+    height: 60px; /* 固定高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    top: 40px;
+    left: 440px;
+
 }
+
 
 .toggle-container {
     display: flex;
@@ -116,14 +141,14 @@ body {
 }
 
 .temp2 {
-    grid-column: 2 / 3; /* 右三 */
-    grid-row: 4 / 5;
-    background-color: #f9f9f9;
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    background-color: white;
     padding: 20px;
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    box-sizing: border-box; 
 }
 
 /* 檔次提示語樣式 */
@@ -153,11 +178,12 @@ body {
 
 /* iframe样式 */
 .responsive-iframe {
-    width: 200%;
+    width: 100%;
     height: 100%;
     overflow: hidden; /* 完全禁用卷軸 */
     border: none;
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+transform: translateZ(0); /* 强制 GPU 渲染 */
+
 }
 
 #usersearch {
@@ -307,6 +333,27 @@ transition: background-color 0.1s ease;
     opacity: 0;
 }
 
+#shortUrlContainer {
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+    display: flex;
+    align-items: center;
+}
+#longUrl {
+    width: 290px; 
+}
+#shortUrloutput {
+    width: 290px;
+    margin-right: 5px; /* 右邊距設置為5px */
+background-color: #F5F5F5;
+}
+.input-container {
+    display: flex;
+    align-items: center;
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+}
+.input-container input {
+    margin-right: 5px; /* 右邊距設置為5px */
+}
 </style>
 </head>
 <body>
@@ -410,11 +457,23 @@ setTimeout(showAllRows, 1000);\n\
         <input type="checkbox" id="toggleCheckbox">
         <label for="toggleCheckbox">顧問組別清單</label>
     </div>
-    <div id="content">
-        <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+            <div id="content" style="display: none;">
+                <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+            </div>
+        </div>
+        <div class="linkout">
+                <div class="input-container">
+        <input type="text" id="longUrl" placeholder="輸入網址">
+        <button onclick="shortenUrlIsGd()">製作短網址</button>
     </div>
+    <div id="shortUrlContainer">
+    <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+    <button id="shortencpbt" onclick="copyToClipboard()">Copy</button>
 </div>
-      </div>
+        </div>
+    </div>
+
+
 
 <script>
 // 檔次複製成功的紅色提示
@@ -599,15 +658,65 @@ document.addEventListener("DOMContentLoaded", function() {
     copyMessage.textContent = '　';
 });
 
-//顧問名單googlesheet勾選腳本
+// 顧問名單googlesheet勾選腳本
 document.getElementById('toggleCheckbox').addEventListener('change', function() {
     const content = document.getElementById('content');
+    const container = document.querySelector('.consultantlistgooglesheet');
     if (this.checked) {
+        container.classList.remove('small-size');
         content.style.display = 'block';
     } else {
+        container.classList.add('small-size');
         content.style.display = 'none';
     }
 });
+
+// 頁面載入時初始化
+window.addEventListener('DOMContentLoaded', (event) => {
+    const container = document.querySelector('.consultantlistgooglesheet');
+    const content = document.getElementById('content');
+    const checkbox = document.getElementById('toggleCheckbox');
+
+    // 頁面載入時預設未勾選並顯示小尺寸
+    checkbox.checked = false;
+    container.classList.add('small-size');
+    content.style.display = 'none';
+});
+
+    async function shortenUrlIsGd() {
+        const longUrl = document.getElementById('longUrl').value;
+        const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+
+        try {
+            const response = await fetch(apiUrl);
+            const data = await response.json();
+            document.getElementById('shortUrlOutput').value = data.shorturl;
+        } catch (error) {
+            document.getElementById('shortUrlOutput').value = `Error: ${error.message}`;
+        }
+    }
+
+    async function copyToClipboard() {
+        const shortUrlOutput = document.getElementById('shortUrlOutput');
+        shortUrlOutput.select();
+        shortUrlOutput.setSelectionRange(0, 99999); // For mobile devices
+
+        try {
+            document.execCommand('copy');
+            showCopyMessage('Copied!');
+        } catch (err) {
+            showCopyMessage('Oops, unable to copy');
+        }
+    }
+
+    function showCopyMessage(message) {
+        const shortencpbt = document.getElementById('shortencpbt');
+        shortencpbt.textContent = message;
+        setTimeout(() => {
+            shortencpbt.textContent = 'Copy';
+        }, 2000); // Reset after 2 seconds
+    }
+
 </script>
 </body>
 </html>
