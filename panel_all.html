@@ -499,10 +499,17 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 	</div>
     <script>
-        document.getElementById('copyIcon').addEventListener('click', async function() {
+    document.addEventListener('DOMContentLoaded', (event) => {
+        document.querySelector('.appicon').addEventListener('click', function(e) {
+            if (e.target && e.target.tagName === 'IMG') {
+                copyImageToClipboard(e.target.id);
+            }
+        });
+
+        async function copyImageToClipboard(imageId) {
             try {
                 // 获取图片的URL
-                const imgURL = document.getElementById('copyIcon').src;
+                const imgURL = document.getElementById(imageId).src;
 
                 // 通过fetch获取图片的Blob
                 const response = await fetch(imgURL);
@@ -519,7 +526,7 @@ setTimeout(showAllRows, 1000);\n\
             } catch (error) {
                 console.error('复制图片到剪贴板时出错: ', error);
             }
-        });
+        }
 
         // 请求剪贴板写权限
         navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
@@ -531,6 +538,7 @@ setTimeout(showAllRows, 1000);\n\
                 console.log('没有获得剪贴板写权限');
             }
         });
+    });
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製【' + text + '】';
