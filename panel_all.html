@@ -685,19 +685,6 @@ window.addEventListener('DOMContentLoaded', (event) => {
 });
 
 
-async function shortenUrlIsGd() {
-    const longUrl = document.getElementById('longUrl').value;
-    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
-
-    try {
-        const response = await fetch(apiUrl);
-        const data = await response.json();
-        document.getElementById('shortUrlOutput').value = data.shorturl;
-    } catch (error) {
-        document.getElementById('shortUrlOutput').value = `Error: ${error.message}`;
-    }
-}
-
 async function copyShortUrlToClipboard() {
     const shortUrlOutput = document.getElementById('shortUrlOutput');
     shortUrlOutput.select();
@@ -705,13 +692,13 @@ async function copyShortUrlToClipboard() {
 
     try {
         document.execCommand('copy');
-        showCopyMessage('Copied!');
+        showCopyButtonMessage('Copied!');
     } catch (err) {
-        showCopyMessage('Oops, unable to copy');
+        showCopyButtonMessage('Oops, unable to copy');
     }
 }
 
-function showCopyMessage(message) {
+function showCopyButtonMessage(message) {
     const copyButton = document.getElementById('shortencpbt');
     copyButton.textContent = message;
 
