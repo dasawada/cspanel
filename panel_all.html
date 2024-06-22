@@ -341,6 +341,12 @@ transition: background-color 0.1s ease;
 #longUrl {
     width: 290px; 
 }
+#shortenButton {
+    width: 75px; /* 固定寬度，可以根據需要調整 */
+    white-space: nowrap; /* 防止文本換行 */
+    overflow: hidden; /* 隱藏溢出文本 */
+    text-overflow: ellipsis; /* 添加省略號 */
+}
 #shortUrloutput {
     width: 290px;
     margin-right: 5px; /* 右邊距設置為5px */
@@ -461,71 +467,66 @@ setTimeout(showAllRows, 1000);\n\
                 <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
             </div>
         </div>
-        <div class="linkout">
-                <div class="input-container">
+<div class="linkout">
+    <div class="input-container">
         <input type="text" id="longUrl" placeholder="輸入網址">
-        <button onclick="shortenUrlIsGd()">製作短網址</button>
+        <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
     </div>
     <div id="shortUrlContainer">
-    <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
-    <button id="shortencpbt" onclick="copyToClipboard()">Copy</button>
-</div>
-        </div>
+        <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+        <button id="shortencpbt" onclick="copyShortUrlToClipboard()">Copy</button>
     </div>
+</div>
+    </div>
+
 
 
 
 <script>
-// 檔次複製成功的紅色提示
 function copyToClipboard(text) {
-            var copyMessage = document.getElementById('copyMessage');
-            copyMessage.textContent = '檔次已複製【' + text + '】';
-            copyMessage.classList.remove('hidden'); // 顯示消息
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '檔次已複製【' + text + '】';
+    copyMessage.classList.remove('hidden'); // 顯示消息
+    copyMessage.classList.add('fade-out');
 
-            var textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
 
-            // 確保每次觸發動畫前，移除舊的動畫類
-            copyMessage.classList.remove('fade-out');
-            
-            // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
-            setTimeout(function() {
-                copyMessage.classList.add('fade-out');
-                setTimeout(function() {
-                    copyMessage.classList.add('hidden'); // 動畫結束後隱藏
-                }, 5000); // 與動畫持續時間匹配
-            }, 100); // 初始延遲，可根據需要調整
-        }
+    // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
+    setTimeout(function() {
+        copyMessage.classList.remove('fade-out');
+        setTimeout(function() {
+            copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+        }, 5000); // 與動畫持續時間匹配
+    }, 100); // 初始延遲，可根據需要調整
+}
 
-// 函數、話術複製成功的紅色提示
 function copyToClipboard_F12script(text, message) {
-            var copyMessage = document.getElementById('copyMessage');
-            copyMessage.textContent = message;
-            copyMessage.classList.remove('hidden'); // 顯示消息
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = message;
+    copyMessage.classList.remove('hidden'); // 顯示消息
+    copyMessage.classList.add('fade-out');
 
-            var textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
 
-            // 確保每次觸發動畫前，移除舊的動畫類
-            copyMessage.classList.remove('fade-out');
-            
-            // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
-            setTimeout(function() {
-                copyMessage.classList.add('fade-out');
-                setTimeout(function() {
-                    copyMessage.classList.add('hidden'); // 動畫結束後隱藏
-                    copyMessage.classList.remove('fade-out'); // 清除類，以便未來可重複使用動畫效果
-                }, 5000); // 與動畫持續時間匹配
-            }, 100); // 初始延遲，可根據需要調整
-        }
+    // 使用 setTimeout 來觸發重排，以確保動畫可以重新開始
+    setTimeout(function() {
+        copyMessage.classList.remove('fade-out');
+        setTimeout(function() {
+            copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+        }, 5000); // 與動畫持續時間匹配
+    }, 100); // 初始延遲，可根據需要調整
+}
+
 // 標題生成的浮水印
         document.querySelectorAll('.optitle-input').forEach(input => {
             const placeholder = input.nextElementSibling;
@@ -683,40 +684,41 @@ window.addEventListener('DOMContentLoaded', (event) => {
     content.style.display = 'none';
 });
 
-    async function shortenUrlIsGd() {
-        const longUrl = document.getElementById('longUrl').value;
-        const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 
-        try {
-            const response = await fetch(apiUrl);
-            const data = await response.json();
-            document.getElementById('shortUrlOutput').value = data.shorturl;
-        } catch (error) {
-            document.getElementById('shortUrlOutput').value = `Error: ${error.message}`;
-        }
+async function shortenUrlIsGd() {
+    const longUrl = document.getElementById('longUrl').value;
+    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+
+    try {
+        const response = await fetch(apiUrl);
+        const data = await response.json();
+        document.getElementById('shortUrlOutput').value = data.shorturl;
+    } catch (error) {
+        document.getElementById('shortUrlOutput').value = `Error: ${error.message}`;
     }
+}
 
-    async function copyToClipboard() {
-        const shortUrlOutput = document.getElementById('shortUrlOutput');
-        shortUrlOutput.select();
-        shortUrlOutput.setSelectionRange(0, 99999); // For mobile devices
+async function copyShortUrlToClipboard() {
+    const shortUrlOutput = document.getElementById('shortUrlOutput');
+    shortUrlOutput.select();
+    shortUrlOutput.setSelectionRange(0, 99999); // For mobile devices
 
-        try {
-            document.execCommand('copy');
-            showCopyMessage('Copied!');
-        } catch (err) {
-            showCopyMessage('Oops, unable to copy');
-        }
+    try {
+        document.execCommand('copy');
+        showCopyMessage('Copied!');
+    } catch (err) {
+        showCopyMessage('Oops, unable to copy');
     }
+}
 
-    function showCopyMessage(message) {
-        const shortencpbt = document.getElementById('shortencpbt');
-        shortencpbt.textContent = message;
-        setTimeout(() => {
-            shortencpbt.textContent = 'Copy';
-        }, 2000); // Reset after 2 seconds
-    }
+function showCopyMessage(message) {
+    const copyButton = document.getElementById('shortencpbt');
+    copyButton.textContent = message;
 
+    setTimeout(() => {
+        copyButton.textContent = 'Copy';
+    }, 2000); // 2秒後重置按鈕文本
+}
 </script>
 </body>
 </html>
