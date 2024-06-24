@@ -518,30 +518,45 @@ setTimeout(showAllRows, 1000);\n\
     document.addEventListener('DOMContentLoaded', (event) => {
             document.querySelector('.appicon').addEventListener('click', function(e) {
                 if (e.target && e.target.tagName === 'IMG') {
-                    copyImageToClipboard(e.target);
+                    copyImageToClipboard(e.target.id);
                 }
             });
 
-            function copyImageToClipboard(imgElement) {
-                const canvas = document.createElement('canvas');
-                canvas.width = imgElement.width;
-                canvas.height = imgElement.height;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(imgElement, 0, 0);
+            async function copyImageToClipboard(imageId) {
+                try {
+                    // 获取图片的URL
+                    const imgURL = document.getElementById(imageId).src;
 
-                canvas.toDataURL('image/png');
+                    // 通过fetch获取图片的Blob
+                    const response = await fetch(imgURL);
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    const blob = await response.blob();
 
-                canvas.toBlob((blob) => {
-                    const item = new ClipboardItem({ 'image/png': blob });
-                    navigator.clipboard.write([item]).then(() => {
-                        console.log('图片已复制到剪贴板');
-                    }).catch(err => {
-                        console.error('复制图片到剪贴板时出错: ', err);
-                    });
+                    // 创建ClipboardItem并写入剪贴板
+                    const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                    await navigator.clipboard.write([clipboardItem]);
+
+                    console.log('图片已复制到剪贴板');
+                } catch (error) {
+                    console.error('复制图片到剪贴板时出错: ', error);
+                }
+            }
+
+            // 请求剪贴板写权限
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
+                    if (result.state === 'granted') {
+                        console.log('剪贴板写权限已获得');
+                    } else if (result.state === 'prompt') {
+                        console.log('需要用户授予剪贴板写权限');
+                    } else {
+                        console.log('没有获得剪贴板写权限');
+                    }
                 });
             }
         });
-    
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製【' + text + '】';
