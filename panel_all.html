@@ -517,45 +517,47 @@ setTimeout(showAllRows, 1000);\n\
 	</div>
     <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-        document.querySelector('.appicon').addEventListener('click', function(e) {
-            if (e.target && e.target.tagName === 'IMG') {
-                copyImageToClipboard(e.target.id);
-            }
-        });
-
-        async function copyImageToClipboard(imageId) {
-            try {
-                // 获取图片的URL
-                const imgURL = document.getElementById(imageId).src;
-
-                // 通过fetch获取图片的Blob
-                const response = await fetch(imgURL);
-                if (!response.ok) {
-                    throw new Error('网络响应错误');
+            document.querySelector('.appicon').addEventListener('click', function(e) {
+                if (e.target && e.target.tagName === 'IMG') {
+                    copyImageToClipboard(e.target.id);
                 }
-                const blob = await response.blob();
+            });
 
-                // 创建ClipboardItem并写入剪贴板
-                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([clipboardItem]);
+            async function copyImageToClipboard(imageId) {
+                try {
+                    // 获取图片的URL
+                    const imgURL = document.getElementById(imageId).src;
 
-                console.log('图片已复制到剪贴板');
-            } catch (error) {
-                console.error('复制图片到剪贴板时出错: ', error);
+                    // 通过fetch获取图片的Blob
+                    const response = await fetch(imgURL);
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    const blob = await response.blob();
+
+                    // 创建ClipboardItem并写入剪贴板
+                    const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                    await navigator.clipboard.write([clipboardItem]);
+
+                    console.log('图片已复制到剪贴板');
+                } catch (error) {
+                    console.error('复制图片到剪贴板时出错: ', error);
+                }
             }
-        }
 
-        // 请求剪贴板写权限
-        navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
-            if (result.state === 'granted') {
-                console.log('剪贴板写权限已获得');
-            } else if (result.state === 'prompt') {
-                console.log('需要用户授予剪贴板写权限');
-            } else {
-                console.log('没有获得剪贴板写权限');
+            // 请求剪贴板写权限
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
+                    if (result.state === 'granted') {
+                        console.log('剪贴板写权限已获得');
+                    } else if (result.state === 'prompt') {
+                        console.log('需要用户授予剪贴板写权限');
+                    } else {
+                        console.log('没有获得剪贴板写权限');
+                    }
+                });
             }
         });
-    });
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製【' + text + '】';
