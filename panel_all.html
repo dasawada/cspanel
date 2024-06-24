@@ -1,6 +1,5 @@
 <html lang="zh-Hant">
 <head>
-    <!-- 版更記錄：https://dasawada.github.io/cspanel/updatenote.txt -->
     <!-- Google tag (gtag.js) -->
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1638R1H1FB"></script>
 <script>
@@ -141,7 +140,7 @@ body {
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: 120px; /* 固定高度 */
+    height: auto; /* 固定高度 */
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     top: 110px;
@@ -375,10 +374,14 @@ background-color: #F5F5F5;
 .input-container input {
     margin-right: 5px; /* 右邊距設置為5px */
 }
+        .appicon img {
+            cursor: pointer;
+            margin: 5px;
+        }
 </style>
 </head>
 <body>
-<div class="update-header">※版本更新：2024/06/22</div>
+<div class="update-header">※版本更新：2024/06/21</div>
 <div class="container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -494,10 +497,22 @@ setTimeout(showAllRows, 1000);\n\
     </div>
 </div>
 <div class="appicon">
-點擊圖片自動複製，可直接貼至BX<br>
-<img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60" style="cursor: pointer;">
-<img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60" style="cursor: pointer;">
-</div>
+        點擊圖片自動複製，可直接貼至BX<br>
+        <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="chrome_refresh_Icon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+        <br>
+        功能禁用圖庫
+        <br>
+        <img id="cam_disable_icon" src="cam_disable.png" alt="Copy Icon" width="60">
+        <img id="mic_disable_icon" src="mic_disable.png" alt="Copy Icon" width="60">
+        <img id="sp_disable_icon" src="sp_disable.png" alt="Copy Icon" width="60">
+        <br>
+        macbook快速鍵
+        <br>
+        <img id="mac_mic_Icon" src="mac_mic.png" alt="Copy Icon" width="60">
+        <img id="mac_speacker_Icon" src="mac_speacker.png" alt="Copy Icon" width="180">
+    </div>
 	</div>
     <script>
     document.addEventListener('DOMContentLoaded', (event) => {
