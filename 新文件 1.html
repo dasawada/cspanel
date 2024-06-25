@@ -1,46 +1,770 @@
-<!DOCTYPE html>
-<html lang="zh">
+
+<html lang="zh-Hant">
 <head>
+    <!-- Google tag (gtag.js) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-1638R1H1FB"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+
+  gtag('config', 'G-1638R1H1FB');
+</script>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图片复制示例</title>
+    <title>★客服小工具ALL★</title>
+<style>
+
+body {
+    overflow-x: hidden;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    position: relative; /* 確保 body 的內容在 header 之上 */
+    z-index: 1; /* 確保 body 的內容在 header 之上 */
+    font-size: 12px; /* 設置所有字體大小為12px */
+}
+
+.update-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    font-size: 12px; /* 設置所有字體大小為12px */
+    color: #888888;
+    z-index: -1; /* 確保在最底層 */
+    pointer-events: none; /* 禁止鼠標事件 */
+    background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
+    padding: 5px; /* 可選，增加內邊距 */
+}
+
+.container {
+    display: grid;
+    grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
+    grid-template-rows: auto auto auto auto; /* 定義四行 */
+    gap: 10px; /* 定義列和行之間的間距 */
+    height: auto; /* 自動高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: relative; /* 確保容器為相對定位 */
+}
+
+.roofbutton {
+    grid-column: 1 / 2; /* 只占据一列 */
+    grid-row: 1; /* 第1行 */
+    width: 430px;
+    height: 100px; 
+    font-size: 12px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+}
+
+.optitlepanel {
+    grid-column: 1 / 2; /* 左一 */
+    grid-row: 2 / 3;
+    background-color: white;
+    padding: 8px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    height: 120px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+.idsearchpanel {
+    grid-column: 1 / 2; /* 左二 */
+    grid-row: 3 / 4;
+    background-color: white;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    height: 490px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+.ClassLogpanel {
+    grid-column: 1 / 2; /* 左三 */
+    grid-row: 4 / 5;
+    background-color: white;
+    padding: 2px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 430px;
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+}
+
+        .consultantlistgooglesheet {
+            background-color: white;
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+            display: flex;
+            flex-direction: column;
+            height: 620px; /* 固定高度 */
+            box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+            overflow: hidden; /* 禁用容器的滾動 */
+            z-index: 1000; /* 確保顯示在最上層 */
+            position: absolute; /* 固定位置 */
+            left: 440px; /* 根據需要調整 */
+            right: 20px; /* 緊貼右側 */
+        }
+
+        .small-size {
+            width: 120px;
+            height: 30px;
+            overflow: hidden; /* 確保內容不會超出範圍 */
+        }
+
+.linkout {
+    background-color: white;
+    padding: 5px; 
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    height: 60px; /* 固定高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    top: 40px;
+    left: 440px;
+
+}
+
+.appicon {
+    background-color: white;
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    height: auto; /* 固定高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    top: 110px;
+    left: 440px;
+
+}
+
+
+.toggle-container {
+    display: flex;
+    align-items: center;
+}
+
+.temp2 {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; 
+}
+
+/* 檔次提示語樣式 */
+#copyMessage { 
+    font-size: 12px; /* 設置所有字體大小為12px */
+    color: #ff0000; 
+}
+
+/* OP標題複製、不可選取的按鈕樣式 */
+.unclickable {
+    pointer-events: none;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.spacer {
+    height: 8px;
+}
+
+#content {
+    display: none;
+    width: 100%; /* 确保宽度为100% */
+    height: 100%; /* 确保高度为100% */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    flex-grow: 1; /* 确保其占据剩余空间 */
+}
+
+/* iframe样式 */
+.responsive-iframe {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 完全禁用卷軸 */
+    border: none;
+transform: translateZ(0); /* 强制 GPU 渲染 */
+
+}
+
+#usersearch {
+    width: 100%;
+    height: 400px;
+    border: none;
+}
+
+#logsearch {
+    width: 100%;
+    height: 600px;
+    border: none;
+}
+
+#optitleoutput {
+    height: 28px;
+    overflow: hidden;
+    font-size: 17px;
+}
+
+button {
+    background-color: #f0f0f0;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
+    transition: background-color 0.1s ease;
+    font-size: 12px; /* 設置所有字體大小為12px */
+}
+
+/* 按鈕懸停時的效果 */
+button:hover {
+    background-color: #dbdbdb;
+}
+
+/* 按鈕點擊時的效果 */
+button:active {
+    background-color: #949494; 
+}
+
+/* 輸入框樣式 */
+input[type=text], input[type=password] {
+    color: #8f8f8f;
+    width: 100%;
+    padding: 2px 4px;
+    margin: 0;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
+    font-size: 12px; /* 設置所有字體大小為12px */
+}
+
+/* 聚焦時的效果 */
+input[type=text]:focus, input[type=password]:focus {
+    border: 1px solid #949494 !important;
+    color: #292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* 點名鈕基本樣式 */
+.DienMing {
+    background-color: #daf5cc;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+    transition: background-color 0.1s ease;
+    font-size: 12px; /* 設置所有字體大小為12px */
+}
+
+/* 滑鼠懸停時的效果 */
+.deactiveDienMing:hover {
+    background-color: #f2b794; /* 懸停時的背景顏色 */
+}
+
+/* 按下時的效果 */
+.deactiveDienMing:active {
+    background-color: #c7a18b; /* 按下時的背景顏色 */
+}
+
+/* 點名鈕基本樣式 */
+        .DienMing {
+            background-color: #daf5cc;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .DienMing:hover {
+            background-color: #93d470; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .DienMing:active {
+            background-color: #9cba8c; /* 按下時的背景顏色 */
+        }
+
+/* 解除點名鈕基本樣式 */
+        .deactiveDienMing {
+            background-color: #ffe6d7;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .deactiveDienMing:hover {
+            background-color: #f2b794; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .deactiveDienMing:active {
+            background-color: #c7a18b; /* 按下時的背景顏色 */
+        }
+
+
+        .fade-out {
+            animation: fadeOut 3s forwards;
+        }
+
+        @keyframes fadeOut {
+            0% { opacity: 1; }
+            100% { opacity: 0; }
+        }
+
+        .hidden {
+            opacity: 0;
+        }
+
+#shortUrlContainer {
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+    display: flex;
+    align-items: center;
+}
+#longUrl {
+    width: 290px; 
+}
+#shortenButton {
+    width: 75px; /* 固定寬度，可以根據需要調整 */
+    white-space: nowrap; /* 防止文本換行 */
+    overflow: hidden; /* 隱藏溢出文本 */
+    text-overflow: ellipsis; /* 添加省略號 */
+}
+#shortUrloutput {
+    width: 290px;
+    margin-right: 5px; /* 右邊距設置為5px */
+background-color: #F5F5F5;
+}
+.input-container {
+    display: flex;
+    align-items: center;
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+}
+.input-container input {
+    margin-right: 5px; /* 右邊距設置為5px */
+}
+        .appicon img {
+            cursor: pointer;
+            margin: 5px;
+        }
+</style>
 </head>
 <body>
-    <img id="copyIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60" style="cursor: pointer;">
+<div class="update-header">※版本更新：2024/06/21</div>
+<div class="container">
+<div class="roofbutton">
+<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
+<button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
+<button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
+<p>
+<button class="DienMing" onclick="copyToClipboard_F12script('\
+// 老師點名\n\
+function showRows() {\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 遍歷每個行元素\n\
+    rows.forEach(function(row) {\n\
+        var cells = row.querySelectorAll(\'.MuiTableCell-root\');\n\
+        var shouldShowRow = false;\n\
+        // 檢查每個單元格中的內容\n\
+        cells.forEach(function(cell) {\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
+            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
+            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
+            // 如果找到了符合條件的子元素，且第二個子元素沒有其他子元素\n\
+            if (box1 && box2 && !box2.querySelector(\'.MuiBox-root\')) {\n\
+                shouldShowRow = true;\n\
+            }\n\
+        });\n\
+        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
+        row.style.display = shouldShowRow ? \'table-row\' : \'none\';\n\
+    });\n\
+}\n\
+// 在延遲1秒後執行顯示/隱藏行的函數\n\
+setTimeout(showRows, 1000);\n\
+', '【點名】函數已複製')">點名</button>
+
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
+// 解除點名\n\
+function showAllRows() {\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 將所有行顯示\n\
+    rows.forEach(function(row) {\n\
+        row.style.display = \'\'; // 設置為空字符串，以使用默認的顯示方式\n\
+    });\n\
+}\n\
+// 在延遲1秒後執行完全顯示所有行的函數\n\
+setTimeout(showAllRows, 1000);\n\
+', '【解除點名】函數已複製')">解除點名</button>
+<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
+<button onclick="copyToClipboard_F12script('查看老師已進入教室了，再麻煩老師補足上課時數哦，謝謝老師！', '【補足時數】話術已複製')" >補足時數</button>
+</p>
+<div id="copyMessage"></div>
+</div>
+<div class="spacer"></div>
+            <div class="optitlepanel">
+                <form id="consultantForm" style="margin: 0;">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+                        <b>OP標題生成</b>
+                        <button type="button" onclick="clearFields()" style="font-size: 12px;">清空欄位</button>
+                    </div>
+                    <span>[顧問</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
+                    </label>
+                    <span>]</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
+                    </label>
+                    <span>/</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 90px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
+                    </label>
+                    <span>#</span>
+                    <label style="position: relative; display: inline-block; cursor: text;">
+                        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 80px;">
+                        <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
+                    </label>
+                </form>
+                <div id="optitleoutput"></div>
+                <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
+            </div>
+            <div class="spacer"></div>
+            <div class="idsearchpanel">
+                <iframe id="usersearch" src="userlogframe_left.html"></iframe>
+            </div>
+            <div class="spacer"></div>
+            <div class="ClassLogpanel">
+                <iframe id="logsearch" src="userlogframe_right.html"></iframe>
+            </div>
+        <div class="spacer"></div>
+<div class="consultantlistgooglesheet">
+    <div class="toggle-container">
+        <input type="checkbox" id="toggleCheckbox">
+        <label for="toggleCheckbox">顧問組別清單</label>
+    </div>
+            <div id="content" style="display: none;">
+                <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+            </div>
+        </div>
+<div class="linkout">
+
+    <div class="input-container">
+        <input type="text" id="longUrl" placeholder="輸入網址">
+        <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
+    </div>
+    <div id="shortUrlContainer">
+        <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+        <button id="shortencpbt" onclick="copyShortUrlToClipboard()">Copy</button>
+    </div>
+</div>
+    <div class="appicon">
+        點擊圖片自動複製，可直接貼至BX<br>
+        <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeRefreshIcon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+        <br>
+        功能禁用圖庫
+        <br>
+        <img id="camDisableIcon" src="cam_disable.png" alt="Copy Icon" width="60">
+        <img id="micDisableIcon" src="mic_disable.png" alt="Copy Icon" width="60">
+        <img id="spDisableIcon" src="sp_disable.png" alt="Copy Icon" width="60">
+        <br>
+        macbook快速鍵
+        <br>
+        <img id="macMicIcon" src="mac_mic.png" alt="Copy Icon" width="60">
+        <img id="macSpeakerIcon" src="mac_speaker.png" alt="Copy Icon" width="180">
+    </div>
 
     <script>
-        document.getElementById('copyIcon').addEventListener('click', async function() {
-            try {
-                // 获取图片的URL
-                const imgURL = document.getElementById('copyIcon').src;
-
-                // 通过fetch获取图片的Blob
-                const response = await fetch(imgURL);
-                if (!response.ok) {
-                    throw new Error('网络响应错误');
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelector('.appicon').addEventListener('click', function(e) {
+                if (e.target && e.target.tagName === 'IMG') {
+                    copyImageToClipboard(e.target);
                 }
-                const blob = await response.blob();
+            });
 
-                // 创建ClipboardItem并写入剪贴板
-                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([clipboardItem]);
+            function copyImageToClipboard(imgElement) {
+                const canvas = document.createElement('canvas');
+                canvas.width = imgElement.width;
+                canvas.height = imgElement.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(imgElement, 0, 0);
 
-                console.log('图片已复制到剪贴板');
-            } catch (error) {
-                console.error('复制图片到剪贴板时出错: ', error);
+                canvas.toDataURL('image/png');
+
+                canvas.toBlob((blob) => {
+                    const item = new ClipboardItem({ 'image/png': blob });
+                    navigator.clipboard.write([item]).then(() => {
+                        console.log('图片已复制到剪贴板');
+                    }).catch(err => {
+                        console.error('复制图片到剪贴板时出错: ', err);
+                    });
+                });
             }
         });
+function copyToClipboard(text) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '檔次已複製【' + text + '】';
+    copyMessage.classList.remove('hidden'); // 顯示消息
 
-        // 请求剪贴板写权限
-        navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
-            if (result.state === 'granted') {
-                console.log('剪贴板写权限已获得');
-            } else if (result.state === 'prompt') {
-                console.log('需要用户授予剪贴板写权限');
-            } else {
-                console.log('没有获得剪贴板写权限');
+    // 移除並重新添加 fade-out 類以重置動畫
+    copyMessage.classList.remove('fade-out');
+    void copyMessage.offsetWidth; // 觸發重排
+    copyMessage.classList.add('fade-out');
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+    }, 4000); // 與動畫持續時間匹配
+}
+
+function copyToClipboard_F12script(text, message) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = message;
+    copyMessage.classList.remove('hidden'); // 顯示消息
+
+    // 移除並重新添加 fade-out 類以重置動畫
+    copyMessage.classList.remove('fade-out');
+    void copyMessage.offsetWidth; // 觸發重排
+    copyMessage.classList.add('fade-out');
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.classList.add('hidden'); // 動畫結束後隱藏
+    }, 4000); // 與動畫持續時間匹配
+}
+
+// 標題生成的浮水印
+        document.querySelectorAll('.optitle-input').forEach(input => {
+            const placeholder = input.nextElementSibling;
+            if (input.value) {
+                placeholder.style.visibility = 'hidden';
             }
+            input.addEventListener('focus', () => {
+                placeholder.style.visibility = 'hidden';
+            });
+            input.addEventListener('blur', () => {
+                if (!input.value) {
+                    placeholder.style.visibility = 'visible';
+                }
+            });
+            input.addEventListener('input', () => {
+                if (input.value) {
+                    placeholder.style.visibility = 'hidden';
+                } else {
+                    placeholder.style.visibility = 'visible';
+                }
+            });
         });
-    </script>
+
+// 標題生成，輸入框有值生成文本，空時清除輸出
+function checkInputs() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    
+    if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
+        generateText();
+    } else {
+        clearOutput(); // 當所有輸入框都為空時清除輸出內容
+    }
+}
+// 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
+function generateText() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    
+    var outputText = "[顧問 " + consultantName + "] " + studentName;
+
+    // 確保學生+家長皆有出現才加斜線
+    if (studentName !== '' && parentName !== '') {
+        outputText += " / " + parentName;
+    } else {
+        outputText += parentName;
+    }
+// 有單號才顯示井號
+    if (invoiceNumber !== '') {
+        outputText += " #" + invoiceNumber;
+    }
+// 獲取並顯示標題
+    document.getElementById("optitleoutput").innerText = outputText;
+}
+// input無值時清除標題
+function clearOutput() {
+    document.getElementById("optitleoutput").innerText = "";
+}
+
+// 清除指定的輸入欄位
+function clearFields() {
+    document.getElementById("consultantName").value = "";
+    document.getElementById("studentName").value = "";
+    document.getElementById("parentName").value = "";
+    document.getElementById("invoiceNumber").value = "";
+    clearOutput(); // 清除輸出內容
+}
+
+
+
+// 複製生成好的標題 按鈕樣式
+function copyText() {
+    var textToCopy = document.getElementById("optitleoutput").innerText;
+    var tempInput = document.createElement("input");
+    tempInput.value = textToCopy;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+
+    // 將按鈕文字設置為已複製
+    var copyButton = document.getElementById("copyButton");
+    copyButton.innerText = "已複製";
+    copyButton.classList.add("unclickable"); // 添加不可選取的樣式
+
+    // 三秒後恢復按鈕為可選取
+    setTimeout(function() {
+        copyButton.innerText = "複製標題";
+        copyButton.classList.remove("unclickable"); // 移除不可選取的樣式
+    }, 3000);
+}
+
+// 查找IP服務商函數
+function lookupIP() {
+    var ipAddress = document.getElementById('ipAddress').value;
+    var url = 'https://api.ipgeolocation.io/ipgeo?apiKey=204b59bb7d49446b849d25499a5f6aee&ip=' + ipAddress;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h3>查詢結果：</h3>' +
+                                  'IP 地址：' + data.ip + '<br>' +
+                                  '國家：' + data.country_name + '<br>' +
+                                  '城市：' + data.city + '<br>' +
+                                  'ISP：' + data.isp + '<br>';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>查詢失敗。請檢查輸入的 IP 地址並重試。</p>';
+        });
+
+    return false; // 防止表單提交
+}
+//自由輸入欄的函數
+function clearWatermark() {
+    var textarea = document.getElementById("myTextArea");
+    if (textarea.value === "在這裡輸入文字...") {
+        textarea.value = "";
+    }
+}
+// 清空檔次提示語函數
+document.addEventListener("DOMContentLoaded", function() {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '　';
+});
+
+// 顧問名單googlesheet勾選腳本
+document.getElementById('toggleCheckbox').addEventListener('change', function() {
+    const content = document.getElementById('content');
+    const container = document.querySelector('.consultantlistgooglesheet');
+    if (this.checked) {
+        container.classList.remove('small-size');
+        content.style.display = 'block';
+    } else {
+        container.classList.add('small-size');
+        content.style.display = 'none';
+    }
+});
+
+// 頁面載入時初始化
+window.addEventListener('DOMContentLoaded', (event) => {
+    const container = document.querySelector('.consultantlistgooglesheet');
+    const content = document.getElementById('content');
+    const checkbox = document.getElementById('toggleCheckbox');
+
+    // 頁面載入時預設未勾選並顯示小尺寸
+    checkbox.checked = false;
+    container.classList.add('small-size');
+    content.style.display = 'none';
+});
+
+
+async function copyShortUrlToClipboard() {
+    const shortUrlOutput = document.getElementById('shortUrlOutput');
+    shortUrlOutput.select();
+    shortUrlOutput.setSelectionRange(0, 99999); // For mobile devices
+
+    try {
+        document.execCommand('copy');
+        showCopyButtonMessage('Copied!');
+    } catch (err) {
+        showCopyButtonMessage('Oops, unable to copy');
+    }
+}
+
+function showCopyButtonMessage(message) {
+    const copyButton = document.getElementById('shortencpbt');
+    copyButton.textContent = message;
+
+    setTimeout(() => {
+        copyButton.textContent = 'Copy';
+    }, 2000); // 2秒後重置按鈕文本
+}
+</script>
 </body>
 </html>
