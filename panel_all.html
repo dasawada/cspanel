@@ -29,8 +29,8 @@ body {
     right: 0;
     font-size: 12px; /* 設置所有字體大小為12px */
     color: #888888;
-    z-index: -1; /* 確保在最底層 */
-    pointer-events: none; /* 禁止鼠標事件 */
+    z-index: 2; /* 確保在最底層 */
+    /*pointer-events: none; 禁止鼠標事件 */
     background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
     padding: 5px; /* 可選，增加內邊距 */
 }
@@ -70,6 +70,7 @@ body {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 430px;
     height: 120px;
+    font-size: 13px
     box-sizing: border-box; /* 确保内边距不影响总宽度 */
 }
 
@@ -216,7 +217,7 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
 #optitleoutput {
     height: 28px;
     overflow: hidden;
-    font-size: 17px;
+    font-size: 15px;
 }
 
 button {
@@ -382,7 +383,8 @@ background-color: #F5F5F5;
 </style>
 </head>
 <body>
-<div class="update-header">※版本更新：2024/06/21</div>
+<div class="update-header">※版本更新：
+<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/06/25</a></div>
 <div class="container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -497,66 +499,68 @@ setTimeout(showAllRows, 1000);\n\
         <button id="shortencpbt" onclick="copyShortUrlToClipboard()">Copy</button>
     </div>
 </div>
-<div class="appicon">
+    <div class="appicon">
         點擊圖片自動複製，可直接貼至BX<br>
         <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
         <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
-        <img id="chrome_refresh_Icon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
-		<img id="chrome_access_Icon" src="chrome_access.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeRefreshIcon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeaAccessIcon" src="chrome_access.png" alt="Copy Icon" width="60" height="60">
         <br>
         功能禁用圖庫
         <br>
-        <img id="cam_disable_icon" src="cam_disable.png" alt="Copy Icon" width="60">
-        <img id="mic_disable_icon" src="mic_disable.png" alt="Copy Icon" width="60">
-        <img id="sp_disable_icon" src="sp_disable.png" alt="Copy Icon" width="60">
+        <img id="camDisableIcon" src="cam_disable.png" alt="Copy Icon" width="60">
+        <img id="micDisableIcon" src="mic_disable.png" alt="Copy Icon" width="60">
+        <img id="spDisableIcon" src="sp_disable.png" alt="Copy Icon" width="60">
         <br>
         macbook快速鍵
         <br>
-        <img id="mac_mic_Icon" src="mac_mic.png" alt="Copy Icon" width="60">
-        <img id="mac_speaker_Icon" src="mac_speaker.png" alt="Copy Icon" width="180">
+        <img id="macMicIcon" src="mac_mic.png" alt="Copy Icon" width="60">
+        <img id="macSpeakerIcon" src="mac_speaker.png" alt="Copy Icon" width="180">
     </div>
-	</div>
+
     <script>
-    document.addEventListener('DOMContentLoaded', (event) => {
-        document.querySelector('.appicon').addEventListener('click', function(e) {
-            if (e.target && e.target.tagName === 'IMG') {
-                copyImageToClipboard(e.target.id);
-            }
-        });
-
-        async function copyImageToClipboard(imageId) {
-            try {
-                // 获取图片的URL
-                const imgURL = document.getElementById(imageId).src;
-
-                // 通过fetch获取图片的Blob
-                const response = await fetch(imgURL);
-                if (!response.ok) {
-                    throw new Error('网络响应错误');
+        document.addEventListener('DOMContentLoaded', (event) => {
+            document.querySelector('.appicon').addEventListener('click', function(e) {
+                if (e.target && e.target.tagName === 'IMG') {
+                    copyImageToClipboard(e.target.id);
                 }
-                const blob = await response.blob();
+            });
 
-                // 创建ClipboardItem并写入剪贴板
-                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                await navigator.clipboard.write([clipboardItem]);
+            async function copyImageToClipboard(imageId) {
+                try {
+                    // 获取图片的URL
+                    const imgURL = document.getElementById(imageId).src;
 
-                console.log('图片已复制到剪贴板');
-            } catch (error) {
-                console.error('复制图片到剪贴板时出错: ', error);
+                    // 通过fetch获取图片的Blob
+                    const response = await fetch(imgURL);
+                    if (!response.ok) {
+                        throw new Error('网络响应错误');
+                    }
+                    const blob = await response.blob();
+
+                    // 创建ClipboardItem并写入剪贴板
+                    const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                    await navigator.clipboard.write([clipboardItem]);
+
+                    console.log('图片已复制到剪贴板');
+                } catch (error) {
+                    console.error('复制图片到剪贴板时出错: ', error);
+                }
             }
-        }
 
-        // 请求剪贴板写权限
-        navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
-            if (result.state === 'granted') {
-                console.log('剪贴板写权限已获得');
-            } else if (result.state === 'prompt') {
-                console.log('需要用户授予剪贴板写权限');
-            } else {
-                console.log('没有获得剪贴板写权限');
+            // 请求剪贴板写权限
+            if (navigator.permissions) {
+                navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
+                    if (result.state === 'granted') {
+                        console.log('剪贴板写权限已获得');
+                    } else if (result.state === 'prompt') {
+                        console.log('需要用户授予剪贴板写权限');
+                    } else {
+                        console.log('没有获得剪贴板写权限');
+                    }
+                });
             }
         });
-    });
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製【' + text + '】';
