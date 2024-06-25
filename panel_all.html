@@ -1,3 +1,4 @@
+
 <html lang="zh-Hant">
 <head>
     <!-- Google tag (gtag.js) -->
@@ -381,7 +382,7 @@ background-color: #F5F5F5;
 </style>
 </head>
 <body>
-<div class="update-header">※版本更新：2024/06/24</div>
+<div class="update-header">※版本更新：2024/06/21</div>
 <div class="container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -500,63 +501,62 @@ setTimeout(showAllRows, 1000);\n\
         點擊圖片自動複製，可直接貼至BX<br>
         <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
         <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
-        <img id="chromeRefreshIcon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+        <img id="chrome_refresh_Icon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+		<img id="chrome_access_Icon" src="chrome_access.png" alt="Copy Icon" width="60" height="60">
         <br>
         功能禁用圖庫
         <br>
-        <img id="camDisableIcon" src="cam_disable.png" alt="Copy Icon" width="60">
-        <img id="micDisableIcon" src="mic_disable.png" alt="Copy Icon" width="60">
-        <img id="spDisableIcon" src="sp_disable.png" alt="Copy Icon" width="60">
+        <img id="cam_disable_icon" src="cam_disable.png" alt="Copy Icon" width="60">
+        <img id="mic_disable_icon" src="mic_disable.png" alt="Copy Icon" width="60">
+        <img id="sp_disable_icon" src="sp_disable.png" alt="Copy Icon" width="60">
         <br>
         macbook快速鍵
         <br>
-        <img id="macMicIcon" src="mac_mic.png" alt="Copy Icon" width="60">
-        <img id="macSpeakerIcon" src="mac_speaker.png" alt="Copy Icon" width="180">
+        <img id="mac_mic_Icon" src="mac_mic.png" alt="Copy Icon" width="60">
+        <img id="mac_speacker_Icon" src="mac_speacker.png" alt="Copy Icon" width="180">
     </div>
 	</div>
     <script>
     document.addEventListener('DOMContentLoaded', (event) => {
-            document.querySelector('.appicon').addEventListener('click', function(e) {
-                if (e.target && e.target.tagName === 'IMG') {
-                    copyImageToClipboard(e.target.id);
-                }
-            });
-
-            async function copyImageToClipboard(imageId) {
-                try {
-                    // 获取图片的URL
-                    const imgURL = document.getElementById(imageId).src;
-
-                    // 通过fetch获取图片的Blob
-                    const response = await fetch(imgURL);
-                    if (!response.ok) {
-                        throw new Error('网络响应错误');
-                    }
-                    const blob = await response.blob();
-
-                    // 创建ClipboardItem并写入剪贴板
-                    const clipboardItem = new ClipboardItem({ [blob.type]: blob });
-                    await navigator.clipboard.write([clipboardItem]);
-
-                    console.log('图片已复制到剪贴板');
-                } catch (error) {
-                    console.error('复制图片到剪贴板时出错: ', error);
-                }
-            }
-
-            // 请求剪贴板写权限
-            if (navigator.permissions) {
-                navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
-                    if (result.state === 'granted') {
-                        console.log('剪贴板写权限已获得');
-                    } else if (result.state === 'prompt') {
-                        console.log('需要用户授予剪贴板写权限');
-                    } else {
-                        console.log('没有获得剪贴板写权限');
-                    }
-                });
+        document.querySelector('.appicon').addEventListener('click', function(e) {
+            if (e.target && e.target.tagName === 'IMG') {
+                copyImageToClipboard(e.target.id);
             }
         });
+
+        async function copyImageToClipboard(imageId) {
+            try {
+                // 获取图片的URL
+                const imgURL = document.getElementById(imageId).src;
+
+                // 通过fetch获取图片的Blob
+                const response = await fetch(imgURL);
+                if (!response.ok) {
+                    throw new Error('网络响应错误');
+                }
+                const blob = await response.blob();
+
+                // 创建ClipboardItem并写入剪贴板
+                const clipboardItem = new ClipboardItem({ [blob.type]: blob });
+                await navigator.clipboard.write([clipboardItem]);
+
+                console.log('图片已复制到剪贴板');
+            } catch (error) {
+                console.error('复制图片到剪贴板时出错: ', error);
+            }
+        }
+
+        // 请求剪贴板写权限
+        navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
+            if (result.state === 'granted') {
+                console.log('剪贴板写权限已获得');
+            } else if (result.state === 'prompt') {
+                console.log('需要用户授予剪贴板写权限');
+            } else {
+                console.log('没有获得剪贴板写权限');
+            }
+        });
+    });
 function copyToClipboard(text) {
     var copyMessage = document.getElementById('copyMessage');
     copyMessage.textContent = '檔次已複製【' + text + '】';
