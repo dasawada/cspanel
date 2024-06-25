@@ -3,3 +3,4 @@
 --------
 2024/06/22　新增【Chrome/Safari icon】點圖複製功能
 2024/06/24　點圖複製功能，新增【mic、webcam、speacker、蘋果電腦鍵盤】常用圖
+2024/06/25　字體優化(MacOS font)、調整op生成板塊(span&input對齊方式、行高)、調整button高度為一致
