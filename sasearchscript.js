@@ -40,23 +40,23 @@ function searchGoogleSheet() {
         key: 'AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU'
     }).then(function(response) {
         console.log("Data retrieved from Google Sheets: ", response);
-        const range = response.result;
+        const data = response.result.values;
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = ''; // Clear previous results
 
-        if (range.values && range.values.length > 0) {
+        if (data && data.length > 0) {
             let results = [];
             // Loop through each column
-            for (let col = 0; col < range.values[0].length; col++) {
-                let columnValues = range.values.map(row => row[col]);
+            for (let col = 0; col < data[0].length; col++) {
                 // Check each row in the column for the search term
-                for (let row = 0; row < columnValues.length; row++) {
-                    if (columnValues[row] && columnValues[row].toLowerCase().includes(searchTerm)) {
+                for (let row = 0; row < data.length; row++) {
+                    if (data[row][col] && data[row][col].toLowerCase().includes(searchTerm)) {
+                        let referenceValue = data[3][col]; // Value in the 4th row
                         results.push({
                             columnIndex: col + 1,
                             rowIndex: row + 1,
-                            cellValue: columnValues[row],
-                            referenceValue: columnValues[3] // Value in the 4th row
+                            cellValue: data[row][col],
+                            referenceValue: referenceValue
                         });
                     }
                 }
