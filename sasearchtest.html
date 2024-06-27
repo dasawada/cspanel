@@ -11,7 +11,7 @@
 <h1>查找組長</h1>
 
 <input type="text" id="searchInput" placeholder="輸入搜尋值">
-<button onclick="search()">搜索</button>
+<button onclick="search()">搜索?</button>
 
 <div id="searchResults"></div>
 
@@ -22,34 +22,17 @@ const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 // 搜索功能函数
-function search() {
-    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
-    const columnIdentifier = searchString.charAt(0); // 获取搜索值的列标识符（例如 'g'）
-    const columnIndex = columnIdentifier.charCodeAt(0) - 'a'.charCodeAt(0); // 计算列索引（'g' 对应到索引 6）
-    const rowIndex = parseInt(searchString.substring(1)) - 1; // 计算行索引（'13' 对应到索引 12）
+function searchValue(searchString) {
+    const columnIdentifier = searchString.charAt(0); // 获取搜索值的列标识符（例如 'z'）
+    const columnIndex = columnIdentifier.charCodeAt(0) - 'a'.charCodeAt(0); // 计算列索引（'z' 对应索引 25）
+    const rowIndex = parseInt(searchString.substring(1)) - 1; // 计算行索引（'45' 对应索引 44）
 
     if (columnIndex >= 0 && columnIndex < 26 && rowIndex >= 0 && rowIndex < 100) { // 确保列索引和行索引在有效范围内
-        // 使用 jQuery 发送 GET 请求来获取数据
-        $.get(endpoint, function(response) {
-            console.log(response);
+        // 假设 sheetData 是保存数据的多维数组或对象
+        const resultValue = sheetData[3][columnIndex]; // 从第四行（索引为 3）获取指定列的值
 
-            // 假设 response 是从 Google Sheets API 返回的数据对象
-            const values = response.values;
-
-            // 获取第四行的值作为组长信息
-            const teamLeader = values[3][columnIndex]; // 从第四行（索引为 3）获取指定列的值
-
-            if (teamLeader) {
-                // 输出结果
-                const searchResultsDiv = document.getElementById('searchResults');
-                searchResultsDiv.innerHTML = '';
-                const p = document.createElement('p');
-                p.textContent = `对于 ${searchString}，从 ${columnIdentifier.toUpperCase()}4 的组长是 ${teamLeader}`;
-                searchResultsDiv.appendChild(p);
-            } else {
-                console.log(`未找到 ${searchString} 的匹配值。`);
-            }
-        });
+        // 输出结果
+        console.log(`对于 ${searchString}，从 ${columnIdentifier.toUpperCase()}4 的结果是 ${resultValue}`);
     } else {
         console.log(`搜索字符串 ${searchString} 超出范围。`);
     }
