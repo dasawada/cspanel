@@ -10,7 +10,7 @@
 
 <h1>Google Sheets 搜尋功能</h1>
 
-<input type="text" id="searchInput" placeholder="輸入要搜尋的字符">
+<input type="text" id="searchInput" placeholder="輸入要搜尋的部門名稱">
 <button onclick="search()">搜尋</button>
 
 <div id="searchResults"></div>
@@ -22,44 +22,45 @@
     const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
     // 搜尋功能函數
-    function search() {
-        const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
+function search() {
+    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
-        // 使用 jQuery 發送 GET 請求來取得資料
-        $.get(endpoint, function(response) {
-            console.log(response);
+    // 使用 jQuery 發送 GET 請求來取得資料
+    $.get(endpoint, function(response) {
+        console.log(response);
 
-            // 獲取所有資料列
-            const rows = response.values;
+        // 獲取所有資料列
+        const rows = response.values;
 
-            // 清空之前的搜尋結果
-            const searchResultsDiv = document.getElementById('searchResults');
-            searchResultsDiv.innerHTML = '';
+        // 清空之前的搜尋結果
+        const searchResultsDiv = document.getElementById('searchResults');
+        searchResultsDiv.innerHTML = '';
 
-            // 尋找符合條件的資料
-            if (rows.length > 0) {
-                rows.forEach(row => {
-                    // 比較第四列的值是否包含搜索字符串
-                    if (row.length >= 4 && row[3].toLowerCase().includes(searchString)) {
-                        const rowData = row.join(' | '); // 將每列資料以管道符號分隔
-                        const p = document.createElement('p');
-                        p.textContent = rowData;
-                        searchResultsDiv.appendChild(p);
-                    }
-                });
-
-                if (searchResultsDiv.children.length === 0) {
-                    const noResults = document.createElement('p');
-                    noResults.textContent = '未找到符合條件的資料。';
-                    searchResultsDiv.appendChild(noResults);
+        // 尋找符合條件的資料
+        if (rows.length > 0) {
+            rows.forEach(row => {
+                // 比較第二列（部門名稱）是否包含搜索字符串
+                if (row.length >= 2 && row[1].toLowerCase().includes(searchString)) {
+                    const rowData = row.join(' | '); // 將每列資料以管道符號分隔
+                    const p = document.createElement('p');
+                    p.textContent = rowData;
+                    searchResultsDiv.appendChild(p);
                 }
-            } else {
-                const noData = document.createElement('p');
-                noData.textContent = '沒有資料可供搜索。';
-                searchResultsDiv.appendChild(noData);
+            });
+
+            if (searchResultsDiv.children.length === 0) {
+                const noResults = document.createElement('p');
+                noResults.textContent = '未找到符合條件的資料。';
+                searchResultsDiv.appendChild(noResults);
             }
-        });
-    }
+        } else {
+            const noData = document.createElement('p');
+            noData.textContent = '沒有資料可供搜索。';
+            searchResultsDiv.appendChild(noData);
+        }
+    });
+}
+
 
 </script>
 
