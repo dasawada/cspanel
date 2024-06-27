@@ -3,27 +3,25 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>查詢組長</title>
+    <title>查詢值及其組長</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
 
-<h1>查詢組長</h1>
+<h1>查詢值及其組長</h1>
 
-<input type="text" id="memberNameInput" placeholder="輸入組員姓名">
-<button onclick="findTeamLeader()">查找組長</button>
+<input type="text" id="searchInput" placeholder="輸入要搜索的值">
+<button onclick="search()">搜索~</button>
 
 <div id="searchResults"></div>
 
 <script>
-// Google Sheets API 相关信息
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// 搜尋功能函數
-function findTeamLeader() {
-    const memberName = document.getElementById('memberNameInput').value.trim().toLowerCase();
+function search() {
+    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
     // 使用 jQuery 發送 GET 請求來取得資料
     $.get(endpoint, function(response) {
@@ -33,30 +31,27 @@ function findTeamLeader() {
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = '';
 
-        // 遍歷第五行（成員行）查找匹配的成員名字
-        const headers = response.values[0]; // 第一行標題行，用於確定欄位索引
-        const memberRowIndex = 4; // 成員行索引為 4（0-indexed）
+        // 解析搜尋字串，假設格式為如 "D12"
+        const columnIdentifier = searchString.charAt(0).toUpperCase(); // 取得搜尋的欄位識別符
+        const columnIndex = columnIdentifier.charCodeAt(0) - 'A'.charCodeAt(0); // 計算欄位索引（A 為 0，B 為 1，以此類推）
+        const rowIndex = parseInt(searchString.substring(1)) - 1; // 計算行索引（1 對應到 0，2 對應到 1，以此類推）
 
-        let found = false;
-        for (let columnIndex = 0; columnIndex < headers.length; columnIndex++) {
-            const cellValue = response.values[memberRowIndex][columnIndex].trim().toLowerCase();
-            if (cellValue === memberName) {
-                // 找到匹配的成員名字後，確認組長
-                const teamLeader = response.values[3][columnIndex]; // 第四行為組長行索引為 3（0-indexed）
+        // 如果索引有效，則輸出對應格子的值及其組長的值
+        if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < 99 && columnIndex >= 0 && columnIndex < 26) {
+            const resultColumnIdentifier = columnIdentifier;
+            const teamLeaderRow = 3; // 第四行的索引（0-indexed）
 
-                // 顯示結果
-                const p = document.createElement('p');
-                p.textContent = `${memberName} 的組長是 ${teamLeader}`;
-                searchResultsDiv.appendChild(p);
+            const resultValue = response.values[rowIndex][columnIndex]; // 從表格中取得對應值
+            const teamLeaderValue = response.values[teamLeaderRow][columnIndex]; // 從表格中取得組長值
 
-                found = true;
-                break;
-            }
-        }
-
-        if (!found) {
+            // 顯示結果
             const p = document.createElement('p');
-            p.textContent = `未找到組員 ${memberName} 的信息。`;
+            p.textContent = `搜尋值 ${searchString} 對應的結果值是 ${resultColumnIdentifier}${rowIndex + 1}，組長是 ${teamLeaderValue}`;
+            searchResultsDiv.appendChild(p);
+        } else {
+            // 如果索引無效，顯示錯誤訊息
+            const p = document.createElement('p');
+            p.textContent = `搜尋值 ${searchString} 超出範圍。`;
             searchResultsDiv.appendChild(p);
         }
     });
