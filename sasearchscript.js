@@ -47,8 +47,8 @@ function searchGoogleSheet() {
             let results = [];
             // Loop through each column
             for (let col = 0; col < data[0].length; col++) {
-                // Check each row in the column for the search term
-                for (let row = 0; row < data.length; row++) {
+                // Check each row in the column for the search term, skip header row
+                for (let row = 1; row < data.length; row++) {
                     if (data[row] && data[row][col] && data[row][col].toLowerCase().includes(searchTerm)) {
                         let referenceValue = data[3] && data[3][col] ? data[3][col] : 'N/A'; // Value in the 4th row
                         console.log(`Found match at row ${row + 1}, col ${col + 1}: ${data[row][col]} with reference value ${referenceValue}`);
