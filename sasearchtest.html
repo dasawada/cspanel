@@ -11,7 +11,7 @@
 <h1>Google Sheets 搜尋功能</h1>
 
 <input type="text" id="searchInput" placeholder="輸入要搜索的值">
-<button onclick="search()">搜索</button>
+<button onclick="search()">搜索1</button>
 
 <div id="searchResults"></div>
 
@@ -19,13 +19,13 @@
 // Google Sheets API 相关信息
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/%E9%A1%A7%E5%95%8F%E7%B5%84%E5%88%A5%E6%B8%85%E5%96%AE?key=${apiKey}`;
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 // 搜索功能函数
 function search() {
     const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    // 使用 jQuery 发送 GET 请求获取数据
+    // 使用 jQuery 发送 GET 请求来获取数据
     $.get(endpoint, function(response) {
         console.log(response);
 
@@ -38,20 +38,24 @@ function search() {
 
         // 寻找匹配的列索引
         let columnIndex = -1;
-        const rowFour = values[3]; // 第四行数据，索引为 3
-        if (rowFour && rowFour.length > 0) {
-            columnIndex = rowFour.findIndex(cell => cell.trim().toLowerCase() === searchString);
-        }
+        let rowIndex = -1;
 
-        // 如果找到匹配的列索引
-        if (columnIndex !== -1) {
-            // 获取组别标识
+        // 在整个数据集中搜索匹配项
+        values.forEach((row, index) => {
+            const foundIndex = row.findIndex(cell => cell.trim().toLowerCase() === searchString);
+            if (foundIndex !== -1) {
+                columnIndex = foundIndex;
+                rowIndex = index;
+            }
+        });
+
+        // 如果找到匹配的列索引和行索引
+        if (columnIndex !== -1 && rowIndex !== -1) {
+            // 获取对应的组别标识和组长信息
             const teamIdentifier = values[1][columnIndex];
-
-            // 获取对应组别的组长
             const teamLeader = values[2][columnIndex];
 
-            // 输出结果到控制台
+            // 输出结果
             console.log(`For ${searchString}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`);
 
             // 在页面上显示结果
@@ -59,7 +63,7 @@ function search() {
             p.textContent = `For ${searchString}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`;
             searchResultsDiv.appendChild(p);
         } else {
-            // 如果未找到匹配的列索引
+            // 如果未找到匹配的结果
             console.log(`No match found for ${searchString}`);
 
             // 在页面上显示未找到结果
