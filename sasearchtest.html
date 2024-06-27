@@ -3,17 +3,65 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets Data Output</title>
-    <script src="https://apis.google.com/js/api.js"></script>
-    <script src="script.js"></script>
+    <title>Google Sheets 搜尋功能</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
-    <h1>Google Sheets Data Output</h1>
-    <button onclick="loadSheetData()">Load Data</button>
-    <div id="sheetData"></div>
-    <h2>Search</h2>
-    <input type="text" id="searchInput" placeholder="Enter search term">
-    <button onclick="searchData()">Search</button>
-    <div id="searchResults"></div>
+
+<h1>Google Sheets 搜尋功能</h1>
+
+<input type="text" id="searchInput" placeholder="輸入要搜尋的字符">
+<button onclick="search()">搜尋</button>
+
+<div id="searchResults"></div>
+
+<script>
+    // Google Sheets API 相關資訊
+    const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
+    const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
+    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
+
+    // 搜尋功能函數
+    function search() {
+        const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
+
+        // 使用 jQuery 發送 GET 請求來取得資料
+        $.get(endpoint, function(response) {
+            console.log(response);
+
+            // 獲取所有資料列
+            const rows = response.values;
+
+            // 清空之前的搜尋結果
+            const searchResultsDiv = document.getElementById('searchResults');
+            searchResultsDiv.innerHTML = '';
+
+            // 尋找符合條件的資料
+            if (rows.length > 0) {
+                rows.forEach(row => {
+                    // 比較第四列的值是否包含搜索字符串
+                    if (row.length >= 4 && row[3].toLowerCase().includes(searchString)) {
+                        const rowData = row.join(' | '); // 將每列資料以管道符號分隔
+                        const p = document.createElement('p');
+                        p.textContent = rowData;
+                        searchResultsDiv.appendChild(p);
+                    }
+                });
+
+                if (searchResultsDiv.children.length === 0) {
+                    const noResults = document.createElement('p');
+                    noResults.textContent = '未找到符合條件的資料。';
+                    searchResultsDiv.appendChild(noResults);
+                }
+            } else {
+                const noData = document.createElement('p');
+                noData.textContent = '沒有資料可供搜索。';
+                searchResultsDiv.appendChild(noData);
+            }
+        });
+    }
+
+</script>
+
 </body>
 </html>
