@@ -11,7 +11,7 @@
 <h1>查詢值及其組長</h1>
 
 <input type="text" id="searchInput" placeholder="輸入要搜索的值">
-<button onclick="search()">搜索~</button>
+<button onclick="search()">搜索</button>
 
 <div id="searchResults"></div>
 
@@ -21,7 +21,7 @@ const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 function search() {
-    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
+    const searchString = document.getElementById('searchInput').value.trim();
 
     // 使用 jQuery 發送 GET 請求來取得資料
     $.get(endpoint, function(response) {
@@ -31,27 +31,37 @@ function search() {
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = '';
 
-        // 解析搜尋字串，假設格式為如 "D12"
-        const columnIdentifier = searchString.charAt(0).toUpperCase(); // 取得搜尋的欄位識別符
-        const columnIndex = columnIdentifier.charCodeAt(0) - 'A'.charCodeAt(0); // 計算欄位索引（A 為 0，B 為 1，以此類推）
-        const rowIndex = parseInt(searchString.substring(1)) - 1; // 計算行索引（1 對應到 0，2 對應到 1，以此類推）
+        // 查找整個表格以找到包含搜尋值的位置
+        let found = false;
+        for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
+            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+                const cellValue = response.values[rowIndex][columnIndex].trim().toLowerCase();
+                if (cellValue === searchString.toLowerCase()) {
+                    // 找到匹配的值後，找到該列的第四行作為組長
+                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                    const teamLeaderRow = 3; // 第四行的索引（0-indexed）
 
-        // 如果索引有效，則輸出對應格子的值及其組長的值
-        if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < 99 && columnIndex >= 0 && columnIndex < 26) {
-            const resultColumnIdentifier = columnIdentifier;
-            const teamLeaderRow = 3; // 第四行的索引（0-indexed）
+                    const resultValue = response.values[rowIndex][columnIndex]; // 搜尋值的實際內容
+                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex]; // 組長的值
 
-            const resultValue = response.values[rowIndex][columnIndex]; // 從表格中取得對應值
-            const teamLeaderValue = response.values[teamLeaderRow][columnIndex]; // 從表格中取得組長值
+                    // 顯示結果
+                    const p = document.createElement('p');
+                    p.textContent = `搜尋值 ${searchString} 在 ${resultColumnIdentifier}${rowIndex + 1}，組長是 ${teamLeaderValue}`;
+                    searchResultsDiv.appendChild(p);
 
-            // 顯示結果
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                break;
+            }
+        }
+
+        if (!found) {
+            // 如果未找到搜尋值，顯示錯誤訊息
             const p = document.createElement('p');
-            p.textContent = `搜尋值 ${searchString} 對應的結果值是 ${resultColumnIdentifier}${rowIndex + 1}，組長是 ${teamLeaderValue}`;
-            searchResultsDiv.appendChild(p);
-        } else {
-            // 如果索引無效，顯示錯誤訊息
-            const p = document.createElement('p');
-            p.textContent = `搜尋值 ${searchString} 超出範圍。`;
+            p.textContent = `未找到搜尋值 ${searchString}。`;
             searchResultsDiv.appendChild(p);
         }
     });
