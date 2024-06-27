@@ -11,7 +11,7 @@
 <h1>Google Sheets 搜尋功能</h1>
 
 <input type="text" id="searchInput" placeholder="輸入要搜索的值">
-<button onclick="search()">搜索1</button>
+<button onclick="search()">搜索</button>
 
 <div id="searchResults"></div>
 
@@ -39,19 +39,22 @@ function search() {
         // 寻找匹配的列索引和相应的组别标识
         let columnIndex = -1;
         let teamIdentifier = '';
-        for (let i = 0; i < values[0].length; i++) {
-            if (values[0][i].trim().toLowerCase() === searchString) {
-                columnIndex = i;
-                teamIdentifier = values[1][i];
+        let teamLeader = '';
+        
+        // 遍历整个数据集查找匹配的值
+        for (let i = 0; i < values.length; i++) {
+            const row = values[i];
+            const index = row.findIndex(cell => cell.trim().toLowerCase() === searchString);
+            if (index !== -1) {
+                columnIndex = index;
+                teamIdentifier = values[1][columnIndex]; // 假设组别标识在第二行
+                teamLeader = values[3][columnIndex]; // 假设组长在第四行
                 break;
             }
         }
 
         // 如果找到匹配的列索引
         if (columnIndex !== -1) {
-            // 获取对应组别的组长（假设第四行为组长信息）
-            const teamLeader = values[3][columnIndex]; // 获取第四行对应列的值
-
             // 输出结果
             console.log(`For ${searchString}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`);
 
