@@ -51,6 +51,9 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
 }
+.roofbutton:hover {
+    background-color: #f7f7f7;
+}
 
 .optitlepanel {
     grid-column: 1 / 2; /* 左一 */
@@ -63,7 +66,10 @@
     width: 430px;
     height: 120px;
     font-size: 13px;
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    box-sizing: border-box;
+}
+.optitlepanel:hover {
+    background-color: #f7f7f7;
 }
 
 .idsearchpanel {
@@ -76,7 +82,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 430px;
     height: 490px;
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    box-sizing: border-box;
 }
 
 .ClassLogpanel {
@@ -88,31 +94,35 @@
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 430px;
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    box-sizing: border-box;
 }
 
-        .consultantlistgooglesheet {
-            background-color: white;
-            padding: 5px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-            display: flex;
-            flex-direction: column;
-            height: 620px; /* 固定高度 */
-            box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-            overflow: hidden; /* 禁用容器的滾動 */
-            z-index: 1000; /* 確保顯示在最上層 */
-            position: absolute; /* 固定位置 */
-            left: 440px; /* 根據需要調整 */
-            right: 20px; /* 緊貼右側 */
-        }
+.consultantlistgooglesheet {
+	background-color: white;
+	padding: 5px;
+	border: 1px solid #ccc;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+	display: flex;
+	flex-direction: column;
+	height: 620px; /* 固定高度 */
+	box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+	overflow: hidden; /* 禁用容器的滾動 */
+	z-index: 1000; /* 確保顯示在最上層 */
+	position: absolute; /* 固定位置 */
+	left: 440px; /* 根據需要調整 */
+	right: 20px; /* 緊貼右側 */
+	}
+	
+.consultantlistgooglesheet:hover {
+    background-color: #f7f7f7;
+}
 
-        .small-size {
-            width: 120px;
-            height: 30px;
-            overflow: hidden; /* 確保內容不會超出範圍 */
-        }
+.small-size {
+	width: 120px;
+	height: 30px;
+	overflow: hidden; /* 確保內容不會超出範圍 */
+	}
 
 .linkout {
     background-color: white;
@@ -125,7 +135,9 @@
     position: absolute; /* 固定位置 */
     top: 35px;
     left: 440px;
-
+}
+.linkout:hover {
+    background-color: #f7f7f7;
 }
 
 .appicon {
@@ -139,7 +151,9 @@
     position: absolute; /* 固定位置 */
     top: 110px;
     left: 440px;
-
+}
+.appicon:hover {
+    background-color: #f7f7f7;
 }
 
 
@@ -379,7 +393,7 @@ background-color: #F5F5F5;
 </head>
 <body>
 <div class="update-header">※版本更新：
-<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/06/25</a></div>
+<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/06/27</a></div>
 <div class="container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -495,7 +509,7 @@ setTimeout(showAllRows, 1000);\n\
     </div>
 </div>
     <div class="appicon">
-        點擊圖片自動複製，可直接貼至BX (Safari目前無法使用此功能，抓漏中QQ)<br>
+        點擊圖片自動複製，可直接貼至BX<br>
         <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
         <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
         <img id="chromeRefreshIcon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
