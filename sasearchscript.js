@@ -74,9 +74,9 @@ function searchGoogleSheet() {
         } else {
             searchResultsDiv.innerHTML = 'No data found.';
         }
-    }, function(response) {
-        console.error("Error retrieving data from Google Sheets: ", response);
-        document.getElementById('searchResults').innerHTML = 'Error: ' + response.result.error.message;
+    }).catch(function(error) {
+        console.error("Error retrieving data from Google Sheets: ", error);
+        document.getElementById('searchResults').innerHTML = 'Error: ' + error.message;
     });
 }
 
