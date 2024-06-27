@@ -10,22 +10,22 @@
 
 <h1>Google Sheets 搜尋功能</h1>
 
-    <input type="text" id="searchInput" placeholder="輸入要搜索的值">
-    <button onclick="search()">搜索</button>
+<input type="text" id="searchInput" placeholder="輸入要搜索的值">
+<button onclick="search()">搜索</button>
 
-    <div id="searchResults"></div>
+<div id="searchResults"></div>
 
 <script>
 // Google Sheets API 相关信息
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/%E9%A1%A7%E5%95%8F%E7%B5%84%E5%88%A5%E6%B8%85%E5%96%AE?key=${apiKey}`;
 
 // 搜索功能函数
 function search() {
     const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    // 使用 jQuery 发送 GET 请求来获取数据
+    // 使用 jQuery 发送 GET 请求获取数据
     $.get(endpoint, function(response) {
         console.log(response);
 
@@ -34,34 +34,41 @@ function search() {
         searchResultsDiv.innerHTML = '';
 
         // 假设 response 是从 Google Sheets API 返回的数据对象
-        const values = response.values; // 假设这是您的数据数组
+        const values = response.values;
 
-        // 寻找第四列中匹配的值
+        // 寻找匹配的列索引
         let columnIndex = -1;
-        const rowFour = values[3]; // 第四列在索引为 3
+        const rowFour = values[3]; // 第四行数据，索引为 3
         if (rowFour && rowFour.length > 0) {
             columnIndex = rowFour.findIndex(cell => cell.trim().toLowerCase() === searchString);
         }
 
         // 如果找到匹配的列索引
         if (columnIndex !== -1) {
-            // 获取第四列和第五列的值
-            const valueA4 = values[3][columnIndex]; // 第四列的值
-            const valueA5 = values[4][columnIndex]; // 第五列的值
+            // 获取组别标识
+            const teamIdentifier = values[1][columnIndex];
 
-            // 显示结果
+            // 获取对应组别的组长
+            const teamLeader = values[2][columnIndex];
+
+            // 输出结果到控制台
+            console.log(`For ${searchString}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`);
+
+            // 在页面上显示结果
             const p = document.createElement('p');
-            p.textContent = `${searchString} 的结果为：A4=${valueA4}，A5=${valueA5}`;
+            p.textContent = `For ${searchString}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`;
             searchResultsDiv.appendChild(p);
         } else {
             // 如果未找到匹配的列索引
-            const noResults = document.createElement('p');
-            noResults.textContent = `未找到符合条件的数据。`;
-            searchResultsDiv.appendChild(noResults);
+            console.log(`No match found for ${searchString}`);
+
+            // 在页面上显示未找到结果
+            const p = document.createElement('p');
+            p.textContent = `No match found for ${searchString}`;
+            searchResultsDiv.appendChild(p);
         }
     });
 }
-
 </script>
 
 </body>
