@@ -1,48 +1,52 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Google Sheets 搜尋功能</title>
+    <title>查詢格子位置</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
 
-<h1>Google Sheets 搜尋功能</h1>
+<h1>查詢格子位置</h1>
 
 <input type="text" id="searchInput" placeholder="輸入要搜索的值">
-<button onclick="search()">搜索</button>
+<button onclick="search()">搜索?</button>
 
 <div id="searchResults"></div>
 
 <script>
-// Google Sheets API 相关信息
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// 定义搜索函数
 function search() {
     const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    // 使用 jQuery 发送 GET 请求获取数据
     $.get(endpoint, function(response) {
         console.log(response);
 
-        // 清空之前的搜索结果
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = '';
 
-        // 假设 searchString 是待搜索的名称，response 是从 Google Sheets API 返回的数据
-        const values = response.values;
+        const columnIdentifier = searchString.charAt(0).toUpperCase();
+        const columnIndex = columnIdentifier.charCodeAt(0) - 'A'.charCodeAt(0);
+        const rowIndex = parseInt(searchString.substring(1)) - 1;
 
-        // 在这里编写处理搜索结果的逻辑
-        // 例如，根据搜索结果展示数据或其他操作
+        if (!isNaN(rowIndex) && rowIndex >= 0 && rowIndex < 99 && columnIndex >= 0 && columnIndex < 26) {
+            const resultColumnIdentifier = columnIdentifier;
+            const resultRowIndex = 3;
 
-        // 以下是一个示例
-        const p = document.createElement('p');
-        p.textContent = `搜索结果为：${searchString}`;
-        searchResultsDiv.appendChild(p);
+            const resultValue = response.values[resultRowIndex][columnIndex];
+
+            const p = document.createElement('p');
+            p.textContent = `搜尋值 ${searchString} 對應的結果值是 ${resultColumnIdentifier}${resultRowIndex + 1} 的值為 ${resultValue}`;
+            searchResultsDiv.appendChild(p);
+        } else {
+            const p = document.createElement('p');
+            p.textContent = `搜尋值 ${searchString} 超出範圍。`;
+            searchResultsDiv.appendChild(p);
+        }
     });
 }
 </script>
