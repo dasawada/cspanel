@@ -27,7 +27,7 @@ function searchGoogleSheet() {
     console.log("Searching Google Sheet...");
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const sheetId = '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ';
-    const range = '顧問組別清單!A1:O30'; // Updated range to search up to 30 rows and columns A to O
+    const range = '顧問組別清單!A1:O30'; // Update the range to search up to 30 rows and columns A to O
 
     if (!gapi.client.sheets) {
         console.error("Google Sheets API client is not loaded.");
@@ -55,7 +55,8 @@ function searchGoogleSheet() {
                         results.push({
                             columnIndex: col + 1,
                             rowIndex: row + 1,
-                            cellValue: columnValues[row]
+                            cellValue: columnValues[row],
+                            referenceValue: columnValues[3] // Value in the 4th row
                         });
                     }
                 }
@@ -64,7 +65,7 @@ function searchGoogleSheet() {
             if (results.length > 0) {
                 let html = '<h2>Search Results</h2><ul>';
                 results.forEach(result => {
-                    html += `<li>Column ${result.columnIndex}, Row ${result.rowIndex}: ${result.cellValue}</li>`;
+                    html += `<li>Search term found in Column ${result.columnIndex}, Row ${result.rowIndex}: ${result.cellValue}<br>Corresponding value in Row 4: ${result.referenceValue}</li>`;
                 });
                 html += '</ul>';
                 searchResultsDiv.innerHTML = html;
