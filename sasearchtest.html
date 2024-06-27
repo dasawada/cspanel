@@ -22,54 +22,47 @@ const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 // 搜索功能函数
-function search() {
-    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
+function findTeamMembersOfLeader(leaderName) {
+    const leader = leaderName.toLowerCase();
 
     // 使用 jQuery 发送 GET 请求获取数据
     $.get(endpoint, function(response) {
         console.log(response);
 
-        // 清空之前的搜索结果
-        const searchResultsDiv = document.getElementById('searchResults');
-        searchResultsDiv.innerHTML = '';
-
         // 假设 response 是从 Google Sheets API 返回的数据对象
         const values = response.values;
 
-        // 寻找匹配的列索引
+        // 寻找匹配的组长索引
         let columnIndex = -1;
-        let teamLeader = '';
-
-        // 查找与搜索字符串匹配的组员，并确定其所在的组别和组长
-        for (let col = 0; col < values[0].length; col++) {
-            const memberName = values[4][col].trim().toLowerCase(); // 第五行是组员姓名
-            if (memberName === searchString) {
-                teamLeader = values[3][col]; // 第四行是组长姓名
-                break;
-            }
+        const leaderRow = values[3]; // 第四行数据，组长信息
+        if (leaderRow) {
+            columnIndex = leaderRow.findIndex(cell => cell.trim().toLowerCase() === leader);
         }
 
-        // 如果找到匹配的组员姓名
-        if (teamLeader !== '') {
-            // 输出结果
-            console.log(`For ${searchString}, team leader is ${teamLeader}`);
+        // 如果找到匹配的组长
+        if (columnIndex !== -1) {
+            // 遍历所有行，收集该组长的组员
+            let teamMembers = [];
+            for (let row = 4; row < values.length; row++) {
+                if (values[row][columnIndex]) {
+                    teamMembers.push(values[row][columnIndex]);
+                }
+            }
 
-            // 在页面上显示结果
-            const p = document.createElement('p');
-            p.textContent = `For ${searchString}, team leader is ${teamLeader}`;
-            searchResultsDiv.appendChild(p);
+            // 输出结果
+            console.log(`Team members of ${leaderName}: ${teamMembers.join(', ')}`);
+            alert(`Team members of ${leaderName}: ${teamMembers.join(', ')}`);
         } else {
-            // 如果未找到匹配的组员姓名
-            console.log(`No match found for ${searchString}`);
-            
-            // 在页面上显示未找到结果
-            const p = document.createElement('p');
-            p.textContent = `No match found for ${searchString}`;
-            searchResultsDiv.appendChild(p);
+            console.log(`No team leader found for ${leaderName}`);
+            alert(`No team leader found for ${leaderName}`);
         }
     });
 }
+
+// 调用函数查找
+findTeamMembersOfLeader('林晉雍');
 </script>
+
 
 </body>
 </html>
