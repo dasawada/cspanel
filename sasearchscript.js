@@ -27,7 +27,7 @@ function searchGoogleSheet() {
     console.log("Searching Google Sheet...");
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const sheetId = '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ';
-    const range = 'Sheet1!A1:Z1000'; // Adjust the range as needed
+    const range = '顧問組別清單!A1:Z1000'; // Update to match your sheet name and range
 
     if (!gapi.client.sheets) {
         console.error("Google Sheets API client is not loaded.");
