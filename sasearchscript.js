@@ -27,7 +27,7 @@ function searchGoogleSheet() {
     console.log("Searching Google Sheet...");
     const searchTerm = document.getElementById('searchInput').value.toLowerCase();
     const sheetId = '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ';
-    const range = '顧問組別清單!A1:Z1000'; // Update to match your sheet name and range
+    const range = '顧問組別清單!A1:O30'; // Updated range to search up to 30 rows and columns A to O
 
     if (!gapi.client.sheets) {
         console.error("Google Sheets API client is not loaded.");
@@ -44,24 +44,27 @@ function searchGoogleSheet() {
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = ''; // Clear previous results
 
-        if (range.values.length > 0) {
+        if (range.values && range.values.length > 0) {
             let results = [];
             // Loop through each column
             for (let col = 0; col < range.values[0].length; col++) {
                 let columnValues = range.values.map(row => row[col]);
-                // Check if the 4th row value matches the search term
-                if (columnValues[3] && columnValues[3].toLowerCase().includes(searchTerm)) {
-                    results.push({
-                        columnIndex: col + 1,
-                        rowValue: columnValues[3]
-                    });
+                // Check each row in the column for the search term
+                for (let row = 0; row < columnValues.length; row++) {
+                    if (columnValues[row] && columnValues[row].toLowerCase().includes(searchTerm)) {
+                        results.push({
+                            columnIndex: col + 1,
+                            rowIndex: row + 1,
+                            cellValue: columnValues[row]
+                        });
+                    }
                 }
             }
 
             if (results.length > 0) {
                 let html = '<h2>Search Results</h2><ul>';
                 results.forEach(result => {
-                    html += `<li>Column ${result.columnIndex}: ${result.rowValue}</li>`;
+                    html += `<li>Column ${result.columnIndex}, Row ${result.rowIndex}: ${result.cellValue}</li>`;
                 });
                 html += '</ul>';
                 searchResultsDiv.innerHTML = html;
