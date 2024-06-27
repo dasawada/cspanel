@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>查找組長</title>
+    <title>Google Sheets 搜尋功能</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
 
-<h1>查找組長</h1>
+<h1>Google Sheets 搜尋功能</h1>
 
-<input type="text" id="searchInput" placeholder="輸入搜尋值">
-<button onclick="search()">搜索?</button>
+<input type="text" id="searchInput" placeholder="輸入要搜索的值">
+<button onclick="search()">搜索</button>
 
 <div id="searchResults"></div>
 
@@ -21,23 +21,30 @@ const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// 搜索功能函数
-function searchValue(searchString) {
-    const columnIdentifier = searchString.charAt(0); // 获取搜索值的列标识符（例如 'z'）
-    const columnIndex = columnIdentifier.charCodeAt(0) - 'a'.charCodeAt(0); // 计算列索引（'z' 对应索引 25）
-    const rowIndex = parseInt(searchString.substring(1)) - 1; // 计算行索引（'45' 对应索引 44）
+// 定义搜索函数
+function search() {
+    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
-    if (columnIndex >= 0 && columnIndex < 26 && rowIndex >= 0 && rowIndex < 100) { // 确保列索引和行索引在有效范围内
-        // 假设 sheetData 是保存数据的多维数组或对象
-        const resultValue = sheetData[3][columnIndex]; // 从第四行（索引为 3）获取指定列的值
+    // 使用 jQuery 发送 GET 请求获取数据
+    $.get(endpoint, function(response) {
+        console.log(response);
 
-        // 输出结果
-        console.log(`对于 ${searchString}，从 ${columnIdentifier.toUpperCase()}4 的结果是 ${resultValue}`);
-    } else {
-        console.log(`搜索字符串 ${searchString} 超出范围。`);
-    }
+        // 清空之前的搜索结果
+        const searchResultsDiv = document.getElementById('searchResults');
+        searchResultsDiv.innerHTML = '';
+
+        // 假设 searchString 是待搜索的名称，response 是从 Google Sheets API 返回的数据
+        const values = response.values;
+
+        // 在这里编写处理搜索结果的逻辑
+        // 例如，根据搜索结果展示数据或其他操作
+
+        // 以下是一个示例
+        const p = document.createElement('p');
+        p.textContent = `搜索结果为：${searchString}`;
+        searchResultsDiv.appendChild(p);
+    });
 }
-
 </script>
 
 </body>
