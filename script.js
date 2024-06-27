@@ -1,3 +1,5 @@
+let sheetData = [];
+
 // Load the API client and auth2 library
 function handleClientLoad() {
     console.log("Loading API client...");
@@ -27,7 +29,8 @@ function loadSheetData() {
         range: range
     }).then(function(response) {
         console.log("Data retrieved from Google Sheets: ", response);
-        displaySheetData(response.result.values);
+        sheetData = response.result.values;
+        displaySheetData(sheetData);
     }).catch(function(error) {
         console.error("Error retrieving data from Google Sheets: ", error);
         document.getElementById('sheetData').innerHTML = 'Error: ' + error.message;
@@ -52,6 +55,35 @@ function displaySheetData(data) {
         sheetDataDiv.innerHTML = html;
     } else {
         sheetDataDiv.innerHTML = 'No data found.';
+    }
+}
+
+// Search data based on user input
+function searchData() {
+    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+    const searchResultsDiv = document.getElementById('searchResults');
+    searchResultsDiv.innerHTML = ''; // Clear previous results
+
+    if (sheetData && sheetData.length > 0) {
+        let found = false;
+        for (let row = 0; row < sheetData.length; row++) {
+            for (let col = 0; col < sheetData[row].length; col++) {
+                if (sheetData[row][col] && sheetData[row][col].toLowerCase() === searchTerm) {
+                    let referenceValue = sheetData[3] && sheetData[3][col] ? sheetData[3][col] : 'N/A'; // Value in the 4th row
+                    console.log(`Found match at row ${row + 1}, col ${col + 1}: ${sheetData[row][col]} with reference value ${referenceValue}`);
+                    searchResultsDiv.innerHTML = `Search term found in Column ${col + 1}, Row ${row + 1}: ${sheetData[row][col]}<br>Corresponding value in Row 4: ${referenceValue}`;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) break;
+        }
+
+        if (!found) {
+            searchResultsDiv.innerHTML = 'No matches found.';
+        }
+    } else {
+        searchResultsDiv.innerHTML = 'No data loaded.';
     }
 }
 
