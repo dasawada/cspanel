@@ -12,7 +12,6 @@ function initClient() {
         discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
     }).then(function () {
         console.log("API client initialized successfully.");
-        // The client is ready to use the API
     }, function(error) {
         console.error("Error initializing API client: ", error);
     });
@@ -51,6 +50,7 @@ function searchGoogleSheet() {
                 for (let row = 0; row < data.length; row++) {
                     if (data[row][col] && data[row][col].toLowerCase().includes(searchTerm)) {
                         let referenceValue = data[3][col]; // Value in the 4th row
+                        console.log(`Found match at row ${row + 1}, col ${col + 1}: ${data[row][col]} with reference value ${referenceValue}`);
                         results.push({
                             columnIndex: col + 1,
                             rowIndex: row + 1,
