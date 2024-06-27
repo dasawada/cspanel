@@ -10,10 +10,10 @@
 
 <h1>Google Sheets 搜尋功能</h1>
 
-<input type="text" id="searchInput" placeholder="輸入要搜尋的部門名稱">
-<button onclick="search()">搜尋</button>
+    <input type="text" id="searchInput" placeholder="輸入要搜索的值">
+    <button onclick="search()">搜索</button>
 
-<div id="searchResults"></div>
+    <div id="searchResults"></div>
 
 <script>
     // Google Sheets API 相關資訊
@@ -29,35 +29,35 @@ function search() {
     $.get(endpoint, function(response) {
         console.log(response);
 
-        // 獲取第四列的資料（A4~P4）
-        const leadersRow = response.values[3]; // 第四列在索引為 3
-
         // 清空之前的搜尋結果
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = '';
 
-        // 尋找符合條件的資料
-        let found = false;
-        if (leadersRow && leadersRow.length > 0) {
-            // 查找組長欄位（A4~P4）
-            const leaderIndex = leadersRow.findIndex(cell => cell.toLowerCase() === searchString);
-            if (leaderIndex !== -1) {
-                // 如果找到，顯示對應的組長名稱
-                const leaderName = leadersRow[leaderIndex];
-                const p = document.createElement('p');
-                p.textContent = `${searchString} 的組長是：${leaderName}`;
-                searchResultsDiv.appendChild(p);
-                found = true;
-            }
+        // 尋找第四列中匹配的欄位
+        let columnIndex = -1;
+        const rowFour = response.values[3]; // 第四列在索引為 3
+        if (rowFour && rowFour.length > 0) {
+            columnIndex = rowFour.findIndex(cell => cell.trim().toLowerCase() === searchString);
         }
 
-        if (!found) {
+        // 如果找到對應的欄位索引
+        if (columnIndex !== -1) {
+            // 獲取對應的值（第五列的值）
+            const value = response.values[4][columnIndex]; // 第五列在索引為 4
+
+            // 顯示結果
+            const p = document.createElement('p');
+            p.textContent = `${searchString} 的結果為：${value}`;
+            searchResultsDiv.appendChild(p);
+        } else {
+            // 如果未找到匹配的欄位
             const noResults = document.createElement('p');
-            noResults.textContent = `未找到 ${searchString} 相關的資料。`;
+            noResults.textContent = `未找到符合條件的資料。`;
             searchResultsDiv.appendChild(noResults);
         }
     });
 }
+
 </script>
 
 </body>
