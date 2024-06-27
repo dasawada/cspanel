@@ -16,61 +16,62 @@
 <div id="searchResults"></div>
 
 <script>
-// 示例：搜索特定成员的组长信息
-function searchForMember(memberName) {
-    const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
-    const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
+// Google Sheets API 相关信息
+const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
+const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-    // 使用 jQuery 发送 GET 请求获取数据
+// 搜尋功能函數
+function searchForMember(memberName) {
+    // 使用 jQuery 發送 GET 請求來取得資料
     $.get(endpoint, function(response) {
         console.log(response);
+
+        // 清空之前的搜尋結果
+        const searchResultsDiv = document.getElementById('searchResults');
+        searchResultsDiv.innerHTML = '';
 
         // 假设 response 是从 Google Sheets API 返回的数据对象
         const values = response.values;
 
-        // 寻找成员的位置，假设成员名称在 B4 到 B99 之间
-        let columnIndex = -1;
-        for (let i = 3; i < 100; i++) { // 假设 B4 到 B99 的列范围
-            const cellValue = values[i][1].trim().toLowerCase(); // 假设成员姓名在第二列（索引为 1）
-            if (cellValue === memberName.toLowerCase()) {
-                columnIndex = i - 3; // 转换为从 0 开始的列索引
-                break;
+        // 遍历每个组别，查找成员名字是否存在
+        for (let columnIndex = 0; columnIndex < values[0].length; columnIndex++) {
+            // 获取组别标识，例如 A, B, C, ...
+            const columnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+
+            // 获取第四行的值，即每个组别的组长名字
+            const teamLeader = values[3][columnIndex]; // 第四行数据，索引为 3
+
+            // 遍历该组别的成员行，从第五行开始，即 A4, A5, A6, ... 直到 A99
+            for (let rowIndex = 4; rowIndex < values.length; rowIndex++) {
+                // 获取当前单元格的值，成员名字
+                const cellValue = values[rowIndex][columnIndex].trim().toLowerCase();
+
+                // 如果找到对应的成员名字
+                if (cellValue === memberName.trim().toLowerCase()) {
+                    // 输出结果
+                    console.log(`For ${memberName}, team identifier is ${columnIdentifier} and team leader is ${teamLeader}`);
+
+                    // 在页面上显示结果
+                    const p = document.createElement('p');
+                    p.textContent = `For ${memberName}, team identifier is ${columnIdentifier} and team leader is ${teamLeader}`;
+                    searchResultsDiv.appendChild(p);
+
+                    // 结束循环，因为找到了结果
+                    return;
+                }
             }
         }
 
-        // 如果找到成员的位置
-        if (columnIndex !== -1) {
-            // 获取对应组长的信息，假设组长信息在第四行（索引为 3）
-            const teamLeader = values[3][columnIndex];
+        // 如果未找到匹配的成员名字
+        console.log(`No match found for ${memberName}`);
 
-            // 输出结果
-            console.log(`${memberName} 的组长是 ${teamLeader}`);
-
-            // 在页面上显示结果
-            const searchResultsDiv = document.getElementById('searchResults');
-            searchResultsDiv.innerHTML = '';
-
-            const p = document.createElement('p');
-            p.textContent = `${memberName} 的组长是 ${teamLeader}`;
-            searchResultsDiv.appendChild(p);
-        } else {
-            // 如果未找到成员
-            console.log(`未找到成员 ${memberName}`);
-
-            // 在页面上显示未找到结果
-            const searchResultsDiv = document.getElementById('searchResults');
-            searchResultsDiv.innerHTML = '';
-
-            const p = document.createElement('p');
-            p.textContent = `未找到成员 ${memberName}`;
-            searchResultsDiv.appendChild(p);
-        }
+        // 在页面上显示未找到结果
+        const p = document.createElement('p');
+        p.textContent = `No match found for ${memberName}`;
+        searchResultsDiv.appendChild(p);
     });
 }
-
-// 示例：搜索成员名字为 "洪智崑" 的组长信息
-searchForMember("洪智崑");
 
 </script>
 
