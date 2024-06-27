@@ -3,15 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>查找組長的組員</title>
+    <title>查找組長</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 </head>
 <body>
 
-<h1>查找組長的組員</h1>
+<h1>查找組長</h1>
 
-<input type="text" id="leaderInput" placeholder="輸入要查找的組長姓名">
-<button onclick="findTeamMembers()">查找組員</button>
+<input type="text" id="memberInput" placeholder="輸入要查找的組員姓名">
+<button onclick="findTeamLeader()">查找組長</button>
 
 <div id="searchResults"></div>
 
@@ -22,8 +22,8 @@ const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 // 查找功能函数
-function findTeamMembers() {
-    const leaderName = document.getElementById('leaderInput').value.trim().toLowerCase();
+function findTeamLeader() {
+    const memberName = document.getElementById('memberInput').value.trim().toLowerCase();
 
     // 使用 jQuery 发送 GET 请求获取数据
     $.get(endpoint, function(response) {
@@ -32,45 +32,42 @@ function findTeamMembers() {
         // 假设 response 是从 Google Sheets API 返回的数据对象
         const values = response.values;
 
-        // 寻找匹配的组长索引
-        let columnIndex = -1;
-        const leaderRow = values[3]; // 第四行数据，组长信息
-        if (leaderRow) {
-            columnIndex = leaderRow.findIndex(cell => cell.trim().toLowerCase() === leaderName);
-        }
-
-        // 如果找到匹配的组长
-        if (columnIndex !== -1) {
-            // 遍历所有行，收集该组长的组员
-            let teamMembers = [];
-            for (let row = 4; row < values.length; row++) {
-                if (values[row][columnIndex]) {
-                    teamMembers.push(values[row][columnIndex]);
+        // 查找匹配的组员所在列索引
+        let rowIndex = -1;
+        for (let row = 4; row < values.length; row++) {
+            const memberRow = values[row]; // 每一行的数据，从第五行开始，索引从 4 开始
+            if (memberRow) {
+                const columnIndex = memberRow.findIndex(cell => cell.trim().toLowerCase() === memberName);
+                if (columnIndex !== -1) {
+                    rowIndex = row;
+                    break;
                 }
             }
+        }
+
+        // 如果找到匹配的组员所在列索引
+        if (rowIndex !== -1) {
+            // 获取对应列的组长
+            const teamLeader = values[3][rowIndex]; // 第四行数据，索引为 3
 
             // 输出结果到页面
             const searchResultsDiv = document.getElementById('searchResults');
             searchResultsDiv.innerHTML = '';
 
             const resultHeading = document.createElement('h2');
-            resultHeading.textContent = `組長 ${leaderName} 的組員有：`;
+            resultHeading.textContent = `${memberName} 的組長是：`;
             searchResultsDiv.appendChild(resultHeading);
 
-            const resultList = document.createElement('ul');
-            teamMembers.forEach(member => {
-                const listItem = document.createElement('li');
-                listItem.textContent = member;
-                resultList.appendChild(listItem);
-            });
-            searchResultsDiv.appendChild(resultList);
+            const leaderInfo = document.createElement('p');
+            leaderInfo.textContent = teamLeader;
+            searchResultsDiv.appendChild(leaderInfo);
         } else {
-            // 如果未找到匹配的组长
+            // 如果未找到匹配的组员
             const searchResultsDiv = document.getElementById('searchResults');
             searchResultsDiv.innerHTML = '';
 
             const noResults = document.createElement('p');
-            noResults.textContent = `未找到組長 ${leaderName} 的組員。`;
+            noResults.textContent = `未找到組員 ${memberName}。`;
             searchResultsDiv.appendChild(noResults);
         }
     });
