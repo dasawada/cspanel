@@ -36,8 +36,7 @@ function searchGoogleSheet() {
 
     gapi.client.sheets.spreadsheets.values.get({
         spreadsheetId: sheetId,
-        range: range,
-        key: 'AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU'
+        range: range
     }).then(function(response) {
         console.log("Data retrieved from Google Sheets: ", response);
         const data = response.result.values;
