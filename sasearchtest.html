@@ -33,17 +33,24 @@ function search() {
         const searchResultsDiv = document.getElementById('searchResults');
         searchResultsDiv.innerHTML = '';
 
-        // 尋找第四列中匹配的欄位
-        let columnIndex = -1;
-        const rowFour = response.values[3]; // 第四列在索引為 3
-        if (rowFour && rowFour.length > 0) {
-            columnIndex = rowFour.findIndex(cell => cell.trim().toLowerCase() === searchString);
-        }
+        // 假設 searchString 是待搜尋的名稱，response 是從 Google Sheets API 返回的數據
 
-        // 如果找到對應的欄位索引
-        if (columnIndex !== -1) {
-            // 獲取對應的值（第五列的值）
-            const value = response.values[4][columnIndex]; // 第五列在索引為 4
+// 尋找第四列中匹配的欄位
+let columnIndex = -1;
+const values = response.values;
+if (values && values.length >= 4) { // 確保至少有四行資料
+    const rowFour = values[3]; // 第四列在索引為 3
+    if (rowFour && rowFour.length > 0) {
+        columnIndex = rowFour.findIndex(cell => cell.trim().toLowerCase() === searchString);
+    }
+}
+
+// 如果找到對應的欄位索引
+if (columnIndex !== -1) {
+    // 獲取對應的值（第五列的值）
+    const rowFiveValue = values[4][columnIndex]; // 第五列在索引為 4
+    console.log(`${String.fromCharCode(65 + columnIndex)}${4 + 1}=${String.fromCharCode(65 + columnIndex)}${5 + 1}=${rowFiveValue}`);
+}
 
             // 顯示結果
             const p = document.createElement('p');
