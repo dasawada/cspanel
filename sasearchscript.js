@@ -43,6 +43,7 @@ function searchGoogleSheet() {
         searchResultsDiv.innerHTML = ''; // Clear previous results
 
         if (data && data.length > 0) {
+            console.log(data); // Print the entire data for debugging
             let results = [];
             // Loop through each column
             for (let col = 0; col < data[0].length; col++) {
