@@ -10,8 +10,8 @@
 
 <h1>查找組長</h1>
 
-<input type="text" id="memberNameInput" placeholder="輸入組員姓名">
-<button onclick="findTeamLeader()">查找組長</button>
+<input type="text" id="searchInput" placeholder="輸入搜尋值">
+<button onclick="search()">搜索</button>
 
 <div id="searchResults"></div>
 
@@ -21,54 +21,40 @@ const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// 定義查找組長的函數
-function findTeamLeader() {
-    const memberName = document.getElementById('memberNameInput').value.trim().toLowerCase();
+// 搜索功能函数
+function search() {
+    const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
+    const columnIdentifier = searchString.charAt(0); // 获取搜索值的列标识符（例如 'g'）
+    const columnIndex = columnIdentifier.charCodeAt(0) - 'a'.charCodeAt(0); // 计算列索引（'g' 对应到索引 6）
+    const rowIndex = parseInt(searchString.substring(1)) - 1; // 计算行索引（'13' 对应到索引 12）
 
-    // 使用 jQuery 發送 GET 請求來取得數據
-    $.get(endpoint, function(response) {
-        console.log(response);
+    if (columnIndex >= 0 && columnIndex < 26 && rowIndex >= 0 && rowIndex < 100) { // 确保列索引和行索引在有效范围内
+        // 使用 jQuery 发送 GET 请求来获取数据
+        $.get(endpoint, function(response) {
+            console.log(response);
 
-        // 假設 response 是從 Google Sheets API 返回的數據
-        const values = response.values;
+            // 假设 response 是从 Google Sheets API 返回的数据对象
+            const values = response.values;
 
-        // 寻找匹配的列索引
-        let columnIndex = -1;
-        const memberRow = values[4]; // 假设第五行是成员行，索引为 4
-        if (memberRow && memberRow.length > 0) {
-            columnIndex = memberRow.findIndex(cell => cell.trim().toLowerCase() === memberName);
-        }
+            // 获取第四行的值作为组长信息
+            const teamLeader = values[3][columnIndex]; // 从第四行（索引为 3）获取指定列的值
 
-        // 如果找到匹配的列索引
-        if (columnIndex !== -1) {
-            // 获取组别标识和对应的组长
-            const teamIdentifier = values[1][columnIndex];
-            const teamLeader = values[3][columnIndex]; // 假设第四行是组长行，索引为 3
-
-            // 输出结果
-            console.log(`For ${memberName}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`);
-
-            // 在页面上显示结果
-            const searchResultsDiv = document.getElementById('searchResults');
-            searchResultsDiv.innerHTML = '';
-
-            const p = document.createElement('p');
-            p.textContent = `For ${memberName}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`;
-            searchResultsDiv.appendChild(p);
-        } else {
-            // 如果未找到匹配的列索引
-            console.log(`No match found for ${memberName}`);
-
-            // 在页面上显示未找到结果
-            const searchResultsDiv = document.getElementById('searchResults');
-            searchResultsDiv.innerHTML = '';
-
-            const p = document.createElement('p');
-            p.textContent = `No match found for ${memberName}`;
-            searchResultsDiv.appendChild(p);
-        }
-    });
+            if (teamLeader) {
+                // 输出结果
+                const searchResultsDiv = document.getElementById('searchResults');
+                searchResultsDiv.innerHTML = '';
+                const p = document.createElement('p');
+                p.textContent = `对于 ${searchString}，从 ${columnIdentifier.toUpperCase()}4 的组长是 ${teamLeader}`;
+                searchResultsDiv.appendChild(p);
+            } else {
+                console.log(`未找到 ${searchString} 的匹配值。`);
+            }
+        });
+    } else {
+        console.log(`搜索字符串 ${searchString} 超出范围。`);
+    }
 }
+
 </script>
 
 </body>
