@@ -21,7 +21,7 @@
     const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
     const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-    // 搜尋功能函數
+// 搜尋功能函數
 function search() {
     const searchString = document.getElementById('searchInput').value.trim().toLowerCase();
 
@@ -37,20 +37,26 @@ function search() {
         searchResultsDiv.innerHTML = '';
 
         // 尋找符合條件的資料
+        let found = false;
         if (rows.length > 0) {
             rows.forEach(row => {
-                // 比較第二列（部門名稱）是否包含搜索字符串
-                if (row.length >= 2 && row[1].toLowerCase().includes(searchString)) {
-                    const rowData = row.join(' | '); // 將每列資料以管道符號分隔
-                    const p = document.createElement('p');
-                    p.textContent = rowData;
-                    searchResultsDiv.appendChild(p);
+                // 找到部門名稱在第二列的位置
+                const departmentIndex = row.findIndex(cell => cell.toLowerCase() === searchString);
+                if (departmentIndex !== -1) {
+                    // 如果找到部門名稱，則顯示對應的組長（第四列）
+                    if (row.length > departmentIndex + 2) { // 確保索引有效
+                        const leader = row[departmentIndex + 2];
+                        const p = document.createElement('p');
+                        p.textContent = `${searchString} 的組長是：${leader}`;
+                        searchResultsDiv.appendChild(p);
+                        found = true;
+                    }
                 }
             });
 
-            if (searchResultsDiv.children.length === 0) {
+            if (!found) {
                 const noResults = document.createElement('p');
-                noResults.textContent = '未找到符合條件的資料。';
+                noResults.textContent = `未找到 ${searchString} 相關的資料。`;
                 searchResultsDiv.appendChild(noResults);
             }
         } else {
@@ -60,6 +66,7 @@ function search() {
         }
     });
 }
+
 
 
 </script>
