@@ -29,8 +29,8 @@ function search() {
     $.get(endpoint, function(response) {
         console.log(response);
 
-        // 獲取所有資料列
-        const rows = response.values;
+        // 獲取第四列的資料（A4~P4）
+        const leadersRow = response.values[3]; // 第四列在索引為 3
 
         // 清空之前的搜尋結果
         const searchResultsDiv = document.getElementById('searchResults');
@@ -38,37 +38,26 @@ function search() {
 
         // 尋找符合條件的資料
         let found = false;
-        if (rows.length > 0) {
-            rows.forEach(row => {
-                // 找到部門名稱在第二列的位置
-                const departmentIndex = row.findIndex(cell => cell.toLowerCase() === searchString);
-                if (departmentIndex !== -1) {
-                    // 如果找到部門名稱，則顯示對應的組長（第四列）
-                    if (row.length > departmentIndex + 2) { // 確保索引有效
-                        const leader = row[departmentIndex + 2];
-                        const p = document.createElement('p');
-                        p.textContent = `${searchString} 的組長是：${leader}`;
-                        searchResultsDiv.appendChild(p);
-                        found = true;
-                    }
-                }
-            });
-
-            if (!found) {
-                const noResults = document.createElement('p');
-                noResults.textContent = `未找到 ${searchString} 相關的資料。`;
-                searchResultsDiv.appendChild(noResults);
+        if (leadersRow && leadersRow.length > 0) {
+            // 查找組長欄位（A4~P4）
+            const leaderIndex = leadersRow.findIndex(cell => cell.toLowerCase() === searchString);
+            if (leaderIndex !== -1) {
+                // 如果找到，顯示對應的組長名稱
+                const leaderName = leadersRow[leaderIndex];
+                const p = document.createElement('p');
+                p.textContent = `${searchString} 的組長是：${leaderName}`;
+                searchResultsDiv.appendChild(p);
+                found = true;
             }
-        } else {
-            const noData = document.createElement('p');
-            noData.textContent = '沒有資料可供搜索。';
-            searchResultsDiv.appendChild(noData);
+        }
+
+        if (!found) {
+            const noResults = document.createElement('p');
+            noResults.textContent = `未找到 ${searchString} 相關的資料。`;
+            searchResultsDiv.appendChild(noResults);
         }
     });
 }
-
-
-
 </script>
 
 </body>
