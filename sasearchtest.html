@@ -11,7 +11,7 @@
 <h1>查找組長</h1>
 
 <input type="text" id="memberNameInput" placeholder="輸入組員姓名">
-<button onclick="findTeamLeader()">查找組長1</button>
+<button onclick="findTeamLeader()">查找組長</button>
 
 <div id="searchResults"></div>
 
@@ -21,58 +21,54 @@ const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// 搜尋功能函數
-function searchForMember(memberName) {
-    // 使用 jQuery 發送 GET 請求來取得資料
+// 定義查找組長的函數
+function findTeamLeader() {
+    const memberName = document.getElementById('memberNameInput').value.trim().toLowerCase();
+
+    // 使用 jQuery 發送 GET 請求來取得數據
     $.get(endpoint, function(response) {
         console.log(response);
 
-        // 清空之前的搜尋結果
-        const searchResultsDiv = document.getElementById('searchResults');
-        searchResultsDiv.innerHTML = '';
-
-        // 假设 response 是从 Google Sheets API 返回的数据对象
+        // 假設 response 是從 Google Sheets API 返回的數據
         const values = response.values;
 
-        // 遍历每个组别，查找成员名字是否存在
-        for (let columnIndex = 0; columnIndex < values[0].length; columnIndex++) {
-            // 获取组别标识，例如 A, B, C, ...
-            const columnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-
-            // 获取第四行的值，即每个组别的组长名字
-            const teamLeader = values[3][columnIndex]; // 第四行数据，索引为 3
-
-            // 遍历该组别的成员行，从第五行开始，即 A4, A5, A6, ... 直到 A99
-            for (let rowIndex = 4; rowIndex < values.length; rowIndex++) {
-                // 获取当前单元格的值，成员名字
-                const cellValue = values[rowIndex][columnIndex].trim().toLowerCase();
-
-                // 如果找到对应的成员名字
-                if (cellValue === memberName.trim().toLowerCase()) {
-                    // 输出结果
-                    console.log(`For ${memberName}, team identifier is ${columnIdentifier} and team leader is ${teamLeader}`);
-
-                    // 在页面上显示结果
-                    const p = document.createElement('p');
-                    p.textContent = `For ${memberName}, team identifier is ${columnIdentifier} and team leader is ${teamLeader}`;
-                    searchResultsDiv.appendChild(p);
-
-                    // 结束循环，因为找到了结果
-                    return;
-                }
-            }
+        // 寻找匹配的列索引
+        let columnIndex = -1;
+        const memberRow = values[4]; // 假设第五行是成员行，索引为 4
+        if (memberRow && memberRow.length > 0) {
+            columnIndex = memberRow.findIndex(cell => cell.trim().toLowerCase() === memberName);
         }
 
-        // 如果未找到匹配的成员名字
-        console.log(`No match found for ${memberName}`);
+        // 如果找到匹配的列索引
+        if (columnIndex !== -1) {
+            // 获取组别标识和对应的组长
+            const teamIdentifier = values[1][columnIndex];
+            const teamLeader = values[3][columnIndex]; // 假设第四行是组长行，索引为 3
 
-        // 在页面上显示未找到结果
-        const p = document.createElement('p');
-        p.textContent = `No match found for ${memberName}`;
-        searchResultsDiv.appendChild(p);
+            // 输出结果
+            console.log(`For ${memberName}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`);
+
+            // 在页面上显示结果
+            const searchResultsDiv = document.getElementById('searchResults');
+            searchResultsDiv.innerHTML = '';
+
+            const p = document.createElement('p');
+            p.textContent = `For ${memberName}, team identifier is ${teamIdentifier} and team leader is ${teamLeader}`;
+            searchResultsDiv.appendChild(p);
+        } else {
+            // 如果未找到匹配的列索引
+            console.log(`No match found for ${memberName}`);
+
+            // 在页面上显示未找到结果
+            const searchResultsDiv = document.getElementById('searchResults');
+            searchResultsDiv.innerHTML = '';
+
+            const p = document.createElement('p');
+            p.textContent = `No match found for ${memberName}`;
+            searchResultsDiv.appendChild(p);
+        }
     });
 }
-
 </script>
 
 </body>
