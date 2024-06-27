@@ -10,7 +10,7 @@
 
 <h1>查找組長</h1>
 
-<input type="text" id="memberInput" placeholder="輸入要查找的組員姓名">
+<input type="text" id="memberNameInput" placeholder="輸入組員姓名">
 <button onclick="findTeamLeader()">查找組長</button>
 
 <div id="searchResults"></div>
@@ -23,7 +23,7 @@ const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/value
 
 // 查找功能函数
 function findTeamLeader() {
-    const memberName = document.getElementById('memberInput').value.trim().toLowerCase();
+    const memberName = document.getElementById('memberNameInput').value.trim(); // 获取输入的组员姓名
 
     // 使用 jQuery 发送 GET 请求获取数据
     $.get(endpoint, function(response) {
@@ -37,7 +37,7 @@ function findTeamLeader() {
         for (let row = 4; row < values.length; row++) {
             const memberRow = values[row]; // 每一行的数据，从第五行开始，索引从 4 开始
             if (memberRow) {
-                const columnIndex = memberRow.findIndex(cell => cell.trim().toLowerCase() === memberName);
+                const columnIndex = memberRow.findIndex(cell => cell.trim().toLowerCase() === memberName.toLowerCase());
                 if (columnIndex !== -1) {
                     rowIndex = row;
                     break;
