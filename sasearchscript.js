@@ -8,11 +8,11 @@ function handleClientLoad() {
 function initClient() {
     console.log("Initializing API client...");
     gapi.client.init({
-        apiKey: 'ea2e832bf4fb24ce8a88e21a13ff775f4279011c',
+        apiKey: 'AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU',
         discoveryDocs: ["https://sheets.googleapis.com/$discovery/rest?version=v4"],
     }).then(function () {
         console.log("API client initialized successfully.");
-        // Now you can use the API
+        // The client is ready to use the API
     }, function(error) {
         console.error("Error initializing API client: ", error);
     });
