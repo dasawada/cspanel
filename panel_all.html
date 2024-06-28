@@ -229,6 +229,7 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     height: 28px;
     overflow: hidden;
     font-size: 15px;
+    color: #525252;
 }
 
 button {
@@ -721,7 +722,7 @@ function search() {
                     const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
 
                     const p = document.createElement('p');
-                    p.textContent = `${teamLeaderValue}`;
+                    p.textContent = `組長：${teamLeaderValue}`;
 
                     search_SAWHO_ResultsSpan.appendChild(p);
 
