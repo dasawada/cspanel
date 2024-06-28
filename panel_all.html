@@ -231,6 +231,9 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     font-size: 15px;
     color: #525252;
 }
+#op-title-output-div {
+        height: 28px;
+}
 
 button {
     background-color: #f0f0f0;
@@ -457,6 +460,7 @@ setTimeout(showAllRows, 1000);\n\
                         <b>OP標題生成</b>
                         <button type="button" onclick="clearFields()" style="font-size: 12px;">清空欄位</button>
                     </div>
+		<div class="op-title-output-div">
                     <span class="optitle-text-form">[顧問</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
                         <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="search()" style="width: 70px;">
@@ -480,6 +484,7 @@ setTimeout(showAllRows, 1000);\n\
                 </form>
                 <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
+		    </div>
 		<br>
 		<span id="search_SAWHO_ResultsSpan"></span>
 		<div id="search_SAWHO_ResultsDiv"></div>
