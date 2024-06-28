@@ -652,7 +652,7 @@ function checkInputs() {
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
     var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
     var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
-    
+
     if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
         generateText();
     } else {
@@ -674,14 +674,14 @@ function generateText() {
     } else {
         outputText += parentName;
     }
-// 有單號才顯示井號
+    // 有單號才顯示井號
     if (invoiceNumber !== '') {
         outputText += " #" + invoiceNumber;
     }
-// 獲取並顯示標題
+    // 獲取並顯示標題
     document.getElementById("optitleoutput").innerText = outputText;
 }
-// input無值時清除標題
+// input 無值時清除標題
 function clearOutput() {
     document.getElementById("optitleoutput").innerText = "";
 }
@@ -693,14 +693,32 @@ function clearFields() {
     document.getElementById("parentName").value = "";
     document.getElementById("invoiceNumber").value = "";
     clearOutput(); // 清除輸出內容
+    search();
 }
+
+// 檢查輸入框值，並生成或清除輸出
+function checkInputs() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+
+    if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
+        generateText();
+    } else {
+        clearOutput(); // 當所有輸入框都為空時清除輸出內容
+    }
+}
+
 
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
+// search 函數只處理 consultantName
 function search() {
-    const searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
+    var searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
+
     if (searchString === '') {
         const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
         const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
@@ -710,8 +728,13 @@ function search() {
         if (searchResultsSpan) {
             searchResultsSpan.innerHTML = '';
         }
+        clearOutput(); // 清除輸出內容
         return;
     }
+
+    // 始终生成文本
+    generateText();
+	
     $.get(endpoint, function(response) {
         console.log(response);
 
@@ -723,55 +746,55 @@ function search() {
 
         let found = false;
         for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
-        for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
-            const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
-            if (cellValue === searchString.toLowerCase()) {
-                const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-                const teamLeaderRow = 3;
-				const teamRow = teamLeaderRow - 1;
+            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+                const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
+                if (cellValue === searchString.toLowerCase()) {
+                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                    const teamLeaderRow = 3;
+                    const teamRow = teamLeaderRow - 1;
 
-                const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-				const teamValue = response.values[teamRow][columnIndex];
+                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+                    const teamValue = response.values[teamRow][columnIndex];
 
-                const p = document.createElement('p');
-                p.textContent = `組長：${teamLeaderValue}（${teamValue}）`;
-				
-				const span = document.createElement('span');
-                span.textContent = `組長：${teamLeaderValue}`;
-                span.style.cursor = 'pointer';
-                span.title = '點我一下複製名字';
+                    const p = document.createElement('p');
+                    p.textContent = `組長：${teamLeaderValue}（${teamValue}）`;
+                    
+                    const span = document.createElement('span');
+                    span.textContent = `組長：${teamLeaderValue}`;
+                    span.style.cursor = 'pointer';
+                    span.title = '點我一下複製名字';
 
-                span.addEventListener('click', function() {
-                const tempInput = document.createElement('input');
-                tempInput.value = teamLeaderValue;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                alert('已複製到剪貼簿');
-                });
+                    span.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = teamLeaderValue;
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        span.title = '已複製！';
+                    });
 
-                p.textContent = ''; // 清空p元素内容
-                p.appendChild(span);
-                p.appendChild(document.createTextNode(`（team：${teamValue}）`)); // 加入team訊息
+                    p.textContent = ''; // 清空p元素内容
+                    p.appendChild(span);
+                    p.appendChild(document.createTextNode(`（team：${teamValue}）`)); // 加入team訊息
 
-                search_SAWHO_ResultsSpan.appendChild(p);
+                    search_SAWHO_ResultsSpan.appendChild(p);
 
-                found = true;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
                 break;
             }
         }
-        if (found) {
-            break;
-        }
-    }
 
-    if (!found) {
-        const p = document.createElement('p');
-        p.textContent = `【${searchString}】這個顧問找不到組長唷ఠ_ఠ`;
-        search_SAWHO_ResultsDiv.appendChild(p);
-    }
-});
+        if (!found) {
+            const p = document.createElement('p');
+            p.textContent = `【${searchString}】這個顧問找不到組長唷ఠ_ఠ`;
+            search_SAWHO_ResultsDiv.appendChild(p);
+        }
+    });
 }
 	    
 // 複製生成好的標題 按鈕樣式
