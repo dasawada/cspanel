@@ -15,385 +15,9 @@
 <title>★客服小工具ALL★</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <link rel="stylesheet" href="font.css">
-<style>
-.update-header {
-    position: fixed;
-    top: 0;
-    right: 0;
-    font-size: 12px; /* 設置所有字體大小為12px */
-    color: #888888;
-    z-index: 2; /* 確保在最底層 */
-    /*pointer-events: none; 禁止鼠標事件 */
-    background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
-    padding: 5px; /* 可選，增加內邊距 */
-}
-
-.container {
-    display: grid;
-    grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
-    grid-template-rows: auto auto auto auto; /* 定義四行 */
-    gap: 10px; /* 定義列和行之間的間距 */
-    height: auto; /* 自動高度 */
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: relative; /* 確保容器為相對定位 */
-}
-
-.roofbutton {
-    grid-column: 1 / 2; /* 只占据一列 */
-    grid-row: 1; /* 第1行 */
-    width: 430px;
-    height: 100px; 
-    font-size: 12px;
-    color: #4d4d4d;
-    border: 1px solid #ccc; 
-    padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-}
-.roofbutton:hover {
-    background-color: #f7f7f7;
-}
-
-.optitlepanel {
-    grid-column: 1 / 2; /* 左一 */
-    grid-row: 2 / 3;
-    background-color: white;
-    padding: 8px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    width: 430px;
-    height: 120px;
-    font-size: 13px;
-    box-sizing: border-box;
-}
-.optitlepanel:hover {
-    background-color: #f7f7f7;
-}
-
-.idsearchpanel {
-    grid-column: 1 / 2; /* 左二 */
-    grid-row: 3 / 4;
-    background-color: white;
-    padding: 2px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    width: 430px;
-    height: 490px;
-    box-sizing: border-box;
-}
-
-.ClassLogpanel {
-    grid-column: 1 / 2; /* 左三 */
-    grid-row: 4 / 5;
-    background-color: white;
-    padding: 2px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    width: 430px;
-    box-sizing: border-box;
-}
-
-.consultantlistgooglesheet {
-	background-color: white;
-	padding: 5px;
-	border: 1px solid #ccc;
-	border-radius: 10px;
-	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-	display: flex;
-	flex-direction: column;
-	height: 620px; /* 固定高度 */
-	box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-	overflow: hidden; /* 禁用容器的滾動 */
-	z-index: 1000; /* 確保顯示在最上層 */
-	position: absolute; /* 固定位置 */
-	left: 440px; /* 根據需要調整 */
-	right: 20px; /* 緊貼右側 */
-	}
-	
-.consultantlistgooglesheet:hover {
-    background-color: #f7f7f7;
-}
-
-.small-size {
-	width: 120px;
-	height: 30px;
-	overflow: hidden; /* 確保內容不會超出範圍 */
-	}
-
-.linkout {
-    background-color: white;
-    padding: 5px; 
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: 65px; /* 固定高度 */
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 固定位置 */
-    top: 35px;
-    left: 440px;
-}
-.linkout:hover {
-    background-color: #f7f7f7;
-}
-
-.appicon {
-    background-color: white;
-    padding: 10px; 
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: auto; /* 固定高度 */
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 固定位置 */
-    top: 110px;
-    left: 440px;
-}
-.appicon:hover {
-    background-color: #f7f7f7;
-}
-
-
-.toggle-container {
-    display: flex;
-    align-items: center;
-}
-
-.temp2 {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    background-color: white;
-    padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    box-sizing: border-box; 
-}
-
-/* 檔次提示語樣式 */
-#copyMessage { 
-    font-size: 12px; /* 設置所有字體大小為12px */
-    color: #ff0000; 
-}
-.optitle-text-form {
-    font-size: 12pt;
-	line-height: 1.5; /* 統一行高 */
-	vertical-align: middle; /* 垂直對齊方式 */
-	}
-/* OP標題複製、不可選取的按鈕樣式 */
-.unclickable {
-    pointer-events: none;
-    opacity: 0.6;
-    cursor: not-allowed;
-}
-
-.spacer {
-    height: 8px;
-}
-
-#content {
-    display: none;
-    width: 100%; /* 确保宽度为100% */
-    height: 100%; /* 确保高度为100% */
-    box-sizing: border-box; /* 确保内边距不影响总宽度 */
-    flex-grow: 1; /* 确保其占据剩余空间 */
-}
-
-/* iframe样式 */
-.responsive-iframe {
-    width: 100%;
-    height: 100%;
-    overflow: hidden; /* 完全禁用卷軸 */
-    border: none;
-transform: translateZ(0); /* 强制 GPU 渲染 */
-
-}
-
-#usersearch {
-    width: 100%;
-    height: 400px;
-    border: none;
-}
-
-#logsearch {
-    width: 100%;
-    height: 600px;
-    border: none;
-}
-
-#optitleoutput {
-    overflow: hidden;
-    font-size: 15px;
-    color: #969696;
-}
-#op-title-output-div {
-        height: 18px;
-}
-
-button {
-    background-color: #f0f0f0;
-    color: #000000;
-    padding: 2px 6px;
-    border: 1px solid #bfbfbf;
-    border-radius: 4px;
-    cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
-    transition: background-color 0.1s ease;
-    font-size: 12px; /* 設置所有字體大小為12px */
-	line-height: 1.2; /* 統一行高 */
-}
-
-/* 按鈕懸停時的效果 */
-button:hover {
-    background-color: #dbdbdb;
-}
-
-/* 按鈕點擊時的效果 */
-button:active {
-    background-color: #949494; 
-}
-
-/* 輸入框樣式 */
-input[type=text], input[type=password] {
-    color: #8f8f8f;
-    width: 100%;
-    padding: 2px 4px;
-    margin: 0;
-    display: inline-block;
-    border: 1px solid #e6e6e6;
-    border-radius: 4px;
-    box-sizing: border-box;
-    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
-    font-size: 12px; /* 設置所有字體大小為12px */
-	line-height: 1.5; /* 統一行高 */
-	
-
-}
-
-/* 聚焦時的效果 */
-input[type=text]:focus, input[type=password]:focus {
-    border: 1px solid #949494 !important;
-    color: #292828;
-    outline: none; /* 移除默認的 outline */
-}
-
-/* 點名鈕基本樣式 */
-.DienMing {
-    background-color: #daf5cc;
-    color: #000000;
-    padding: 2px 6px;
-    border: 1px solid #bfbfbf;
-    border-radius: 4px;
-    cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-    transition: background-color 0.1s ease;
-    font-size: 12px; /* 設置所有字體大小為12px */
-}
-
-/* 滑鼠懸停時的效果 */
-.deactiveDienMing:hover {
-    background-color: #f2b794; /* 懸停時的背景顏色 */
-}
-
-/* 按下時的效果 */
-.deactiveDienMing:active {
-    background-color: #c7a18b; /* 按下時的背景顏色 */
-}
-
-/* 點名鈕基本樣式 */
-        .DienMing {
-            background-color: #daf5cc;
-            color: #000000;
-            padding: 2px 6px;
-            border: 1px solid #bfbfbf;
-            border-radius: 4px;
-             cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-transition: background-color 0.1s ease;
-        }
-
-        /* 滑鼠懸停時的效果 */
-        .DienMing:hover {
-            background-color: #93d470; /* 懸停時的背景顏色 */
-        }
-
-        /* 按下時的效果 */
-        .DienMing:active {
-            background-color: #9cba8c; /* 按下時的背景顏色 */
-        }
-
-/* 解除點名鈕基本樣式 */
-        .deactiveDienMing {
-            background-color: #ffe6d7;
-            color: #000000;
-            padding: 2px 6px;
-            border: 1px solid #bfbfbf;
-            border-radius: 4px;
-             cursor: pointer;
-    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
-transition: background-color 0.1s ease;
-        }
-
-        /* 滑鼠懸停時的效果 */
-        .deactiveDienMing:hover {
-            background-color: #f2b794; /* 懸停時的背景顏色 */
-        }
-
-        /* 按下時的效果 */
-        .deactiveDienMing:active {
-            background-color: #c7a18b; /* 按下時的背景顏色 */
-        }
-
-
-        .fade-out {
-            animation: fadeOut 3s forwards;
-        }
-
-        @keyframes fadeOut {
-            0% { opacity: 1; }
-            100% { opacity: 0; }
-        }
-
-        .hidden {
-            opacity: 0;
-        }
-
-#shortUrlContainer {
-    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
-    display: flex;
-    align-items: center;
-}
-#longUrl {
-    width: 290px; 
-}
-#shortenButton {
-    width: 75px; /* 固定寬度，可以根據需要調整 */
-    white-space: nowrap; /* 防止文本換行 */
-    overflow: hidden; /* 隱藏溢出文本 */
-    text-overflow: ellipsis; /* 添加省略號 */
-}
-#shortUrloutput {
-    width: 290px;
-    margin-right: 5px; /* 右邊距設置為5px */
-background-color: #F5F5F5;
-}
-.input-container {
-    display: flex;
-    align-items: center;
-    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
-}
-.input-container input {
-    margin-right: 5px; /* 右邊距設置為5px */
-}
-        .appicon img {
-            cursor: pointer;
-            margin: 5px;
-        }
-</style>
+<link rel="stylesheet" href="font.css">
+<link rel="stylesheet" href="body.css">
+<link rel="stylesheet" href="button.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -481,6 +105,7 @@ setTimeout(showAllRows, 1000);\n\
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
                     </label>
                 </form>
+				<div class="spacer"></div>
                 <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
 		    </div>
@@ -546,35 +171,35 @@ setTimeout(showAllRows, 1000);\n\
 
             async function copyImageToClipboard(imageId) {
                 try {
-                    // 获取图片的URL
+                    // 獲取img URL
                     const imgURL = document.getElementById(imageId).src;
 
-                    // 通过fetch获取图片的Blob
+                    // fetch拿圖片Blob
                     const response = await fetch(imgURL);
                     if (!response.ok) {
-                        throw new Error('网络响应错误');
+                        throw new Error('無回應');
                     }
                     const blob = await response.blob();
 
-                    // 创建ClipboardItem并写入剪贴板
+                    // 建立ClipboardItem並貼到剪貼簿
                     const clipboardItem = new ClipboardItem({ [blob.type]: blob });
                     await navigator.clipboard.write([clipboardItem]);
 
-                    console.log('图片已复制到剪贴板');
+                    console.log('圖片已複製');
                 } catch (error) {
-                    console.error('复制图片到剪贴板时出错: ', error);
+                    console.error('複製圖片時剪貼簿出錯: ', error);
                 }
             }
 
-            // 请求剪贴板写权限
+            // 請剪貼簿權限
             if (navigator.permissions) {
                 navigator.permissions.query({ name: 'clipboard-write' }).then(result => {
                     if (result.state === 'granted') {
-                        console.log('剪贴板写权限已获得');
+                        console.log('剪貼簿寫入權限GET');
                     } else if (result.state === 'prompt') {
-                        console.log('需要用户授予剪贴板写权限');
+                        console.log('剪貼簿寫入權限 待接受');
                     } else {
-                        console.log('没有获得剪贴板写权限');
+                        console.log('無剪貼簿使用權');
                     }
                 });
             }
