@@ -479,7 +479,8 @@ setTimeout(showAllRows, 1000);\n\
                 </form>
                 <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
-		<br><span=search_SAWHO_Results></span>
+		<br>
+		<span id="search_SAWHO_ResultsSpan"></span>
 		<div id="search_SAWHO_ResultsDiv"></div>
 
             </div>
@@ -694,17 +695,19 @@ const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
-// googlesheet api撈取業務即時人員名單並搜尋指定組長
 function search() {
     const searchString = document.getElementById('consultantName').value.trim();
 
+    if (searchString === '') {
+        return;
+    }
     $.get(endpoint, function(response) {
         console.log(response);
 
         const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
-        search_SAWHO_ResultsSpan.innerHTML = '';
-
         const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
+
+        search_SAWHO_ResultsSpan.innerHTML = '';
         search_SAWHO_ResultsDiv.innerHTML = '';
 
         let found = false;
@@ -738,7 +741,6 @@ function search() {
         }
     });
 }
-
 // 複製生成好的標題 按鈕樣式
 function copyText() {
     var textToCopy = document.getElementById("optitleoutput").innerText;
