@@ -688,10 +688,6 @@ function clearFields() {
 }
 
 // googlesheet api撈取業務即時人員名單並搜尋指定組長
-const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
-const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
-
 function search() {
     const searchString = document.getElementById('consultantName').value.trim();
 
@@ -700,8 +696,8 @@ function search() {
         console.log(response);
 
         // 清空之前的搜尋結果
-        const searchResultsDiv = document.getElementById('searchResults');
-        searchResultsDiv.innerHTML = '';
+        const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_Results');
+        search_SAWHO_ResultsDiv.innerHTML = '';
 
         // 查找整個表格以找到包含搜尋值的位置
         let found = false;
@@ -719,7 +715,7 @@ function search() {
                     // 顯示結果
                     const p = document.createElement('p');
                     p.textContent = `${teamLeaderValue}`;
-                    searchResultsDiv.appendChild(p);
+                    search_SAWHO_ResultsDiv.appendChild(p);
 
                     found = true;
                     break;
@@ -734,11 +730,10 @@ function search() {
             // 如果未找到搜尋值，顯示錯誤訊息
             const p = document.createElement('p');
             p.textContent = `未找到搜尋值 ${searchString}。`;
-            searchResultsDiv.appendChild(p);
+            search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
 }
-
 // 複製生成好的標題 按鈕樣式
 function copyText() {
     var textToCopy = document.getElementById("optitleoutput").innerText;
