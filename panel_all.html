@@ -700,7 +700,7 @@ const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
 const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 function search() {
-    const searchString = document.getElementById('consultantName').value.trim();
+    const searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
     if (searchString === '') {
         const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
         const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
@@ -723,37 +723,60 @@ function search() {
 
         let found = false;
         for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
-            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
-                const cellValue = response.values[rowIndex][columnIndex].trim().toLowerCase();
-                if (cellValue === searchString.toLowerCase()) {
-                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-                    const teamLeaderRow = 3;
+        for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+            const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
+            if (cellValue === searchString.toLowerCase()) {
+                const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                const teamLeaderRow = 3;
+				const teamRow = teamLeaderRow - 1;
 
-                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+                const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+				const teamValue = response.values[teamRow][columnIndex];
 
-                    const p = document.createElement('p');
-                    p.textContent = `組長：${teamLeaderValue}`;
+                const p = document.createElement('p');
+                p.textContent = `組長：${teamLeaderValue}（${teamValue}）`;
+				
+				const span = document.createElement('span');
+                span.textContent = `組長：${teamLeaderValue}`;
+                span.style.cursor = 'pointer';
+                span.title = '點我一下複製名字';
 
-                    search_SAWHO_ResultsSpan.appendChild(p);
+                span.addEventListener('click', function() {
+                const tempInput = document.createElement('input');
+                tempInput.value = teamLeaderValue;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('已複製到剪貼簿');
+                });
 
-                    found = true;
-                    break;
-                }
-            }
-            if (found) {
+                p.textContent = ''; // 清空p元素内容
+                p.appendChild(span);
+                p.appendChild(document.createTextNode(`（team：${teamValue}）`)); // 加入team訊息
+
+                search_SAWHO_ResultsSpan.appendChild(p);
+
+                found = true;
                 break;
             }
         }
-
-        if (!found) {
-            const p = document.createElement('p');
-            p.textContent = `【${searchString}】這個顧問找不到組長唷ఠ_ఠ`;
-            search_SAWHO_ResultsDiv.appendChild(p);
+        if (found) {
+            break;
         }
-    });
+    }
+
+    if (!found) {
+        const p = document.createElement('p');
+        p.textContent = `【${searchString}】這個顧問找不到組長唷ఠ_ఠ`;
+        search_SAWHO_ResultsDiv.appendChild(p);
+    }
+});
 }
+	    
 // 複製生成好的標題 按鈕樣式
 function copyText() {
+    event.preventDefault();
     var textToCopy = document.getElementById("optitleoutput").innerText;
     var tempInput = document.createElement("input");
     tempInput.value = textToCopy;
@@ -765,12 +788,12 @@ function copyText() {
     // 將按鈕文字設置為已複製
     var copyButton = document.getElementById("copyButton");
     copyButton.innerText = "已複製";
-    copyButton.classList.add("unclickable"); // 添加不可選取的樣式
+    copyButton.classList.add("unclickable"); // 按鈕不可選取
 
     // 三秒後恢復按鈕為可選取
     setTimeout(function() {
         copyButton.innerText = "複製標題";
-        copyButton.classList.remove("unclickable"); // 移除不可選取的樣式
+        copyButton.classList.remove("unclickable"); // 取消按鈕不可選取
     }, 3000);
 }
 
