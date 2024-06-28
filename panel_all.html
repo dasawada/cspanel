@@ -458,7 +458,7 @@ setTimeout(showAllRows, 1000);\n\
                     </div>
                     <span class="optitle-text-form">[顧問</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
-                        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
+                        <input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="search()" style="width: 70px;">
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
                     </label>
                     <span class="optitle-text-form">]</span>
@@ -477,8 +477,11 @@ setTimeout(showAllRows, 1000);\n\
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
                     </label>
                 </form>
-                <div id="optitleoutput"></div>
+                <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
                 <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
+		<br><span=search_SAWHO_Results></span>
+		<div id="search_SAWHO_ResultsDiv"></div>
+
             </div>
             <div class="spacer"></div>
             <div class="idsearchpanel">
@@ -689,6 +692,7 @@ function clearFields() {
 
 // googlesheet api撈取業務即時人員名單並搜尋指定組長
 function search() {
+    checkInputs();
     const searchString = document.getElementById('consultantName').value.trim();
 
     // 使用 jQuery 發送 GET 請求來取得資料
@@ -696,8 +700,8 @@ function search() {
         console.log(response);
 
         // 清空之前的搜尋結果
-        const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_Results');
-        search_SAWHO_ResultsDiv.innerHTML = '';
+        const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
+        search_SAWHO_ResultsSpan.innerHTML = '';
 
         // 查找整個表格以找到包含搜尋值的位置
         let found = false;
@@ -715,7 +719,7 @@ function search() {
                     // 顯示結果
                     const p = document.createElement('p');
                     p.textContent = `${teamLeaderValue}`;
-                    search_SAWHO_ResultsDiv.appendChild(p);
+                    search_SAWHO_ResultsSpan.appendChild(p);
 
                     found = true;
                     break;
@@ -728,12 +732,14 @@ function search() {
 
         if (!found) {
             // 如果未找到搜尋值，顯示錯誤訊息
+            const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
             const p = document.createElement('p');
             p.textContent = `未找到搜尋值 ${searchString}。`;
             search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
 }
+
 // 複製生成好的標題 按鈕樣式
 function copyText() {
     var textToCopy = document.getElementById("optitleoutput").innerText;
