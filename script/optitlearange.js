@@ -217,7 +217,7 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
 
         if (!found) {
             const p = document.createElement('p');
-            p.textContent = `【${searchString}】→這個顧問找不到組長唷 ఠ_ఠ`;
+            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
             search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
