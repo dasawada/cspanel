@@ -14,10 +14,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★客服小工具ALL★</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
-<link rel="stylesheet" href="font.css">
-<link rel="stylesheet" href="font.css">
-<link rel="stylesheet" href="body.css">
-<link rel="stylesheet" href="button.css">
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -115,30 +115,40 @@ setTimeout(showAllRows, 1000);\n\
             </div>
             <div class="spacer"></div>
 <!-- NaniClub帳號搜尋 -->
-<div class="idsearchpanel">
+<div class="idsearchpanel small-size">
     <div class="toggle-container">
         <input type="checkbox" id="NaniClub_toggleCheckbox">
-        <label for="NaniClub_toggleCheckbox">NaniClub帳號搜尋</label>
+        <label for="NaniClub_toggleCheckbox">帳號搜尋</label>
     </div>
-    <div id="usersearch" style="display: none;">
+    <div id="content" style="display: none;">
         <iframe class="responsive-iframe" src="userlogframe_left.html"></iframe>
     </div>
 </div>
 <div class="spacer"></div>
-<div class="ClassLogpanel">
-	<iframe id="logsearch" src="userlogframe_right.html"></iframe>
+
+<!-- 教室log確認 -->
+<div class="ClassLogpanel small-size">
+    <div class="toggle-container">
+        <input type="checkbox" id="logToggleCheckbox">
+        <label for="logToggleCheckbox">教室LOG確認</label>
+    </div>
+    <div id="content" style="display: none;">
+        <iframe class="responsive-iframe" src="userlogframe_right.html"></iframe>
+    </div>
 </div>
 <div class="spacer"></div>
+
 <!-- 顧問名單googlesheet -->
-<div class="consultantlistgooglesheet">
+<div class="consultantlistgooglesheet small-size">
     <div class="toggle-container">
         <input type="checkbox" id="toggleCheckbox">
         <label for="toggleCheckbox">顧問組別清單</label>
     </div>
-            <div id="content" style="display: none;">
-                <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
-            </div>
-        </div>
+    <div id="content" style="display: none;">
+        <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
+    </div>
+</div>
+
 <div class="linkout">
 <div class="input-container">
         <input type="text" id="longUrl" placeholder="輸入網址">
@@ -152,28 +162,28 @@ setTimeout(showAllRows, 1000);\n\
 
     <div class="appicon">
         點擊圖片自動複製，可直接貼至BX<br>
-        <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
-        <img id="safariIcon" src="safari_icon.png" alt="Copy Icon" width="60" height="60">
-        <img id="chromeRefreshIcon" src="chrome_refresh.png" alt="Copy Icon" width="60" height="60">
-        <img id="chromeaAccessIcon" src="chrome_access.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeIcon" src="img/chrome_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="safariIcon" src="img/safari_icon.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeRefreshIcon" src="img/chrome_refresh.png" alt="Copy Icon" width="60" height="60">
+        <img id="chromeaAccessIcon" src="img/chrome_access.png" alt="Copy Icon" width="60" height="60">
         <br>
         功能禁用圖庫
         <br>
-        <img id="camDisableIcon" src="cam_disable.png" alt="Copy Icon" width="60">
-        <img id="micDisableIcon" src="mic_disable.png" alt="Copy Icon" width="60">
-        <img id="spDisableIcon" src="sp_disable.png" alt="Copy Icon" width="60">
+        <img id="camDisableIcon" src="img/cam_disable.png" alt="Copy Icon" width="60">
+        <img id="micDisableIcon" src="img/mic_disable.png" alt="Copy Icon" width="60">
+        <img id="spDisableIcon" src="img/sp_disable.png" alt="Copy Icon" width="60">
         <br>
         macbook快速鍵
         <br>
-        <img id="macMicIcon" src="mac_mic.png" alt="Copy Icon" width="60">
-        <img id="macSpeakerIcon" src="mac_speaker.png" alt="Copy Icon" width="180">
+        <img id="macMicIcon" src="img/mac_mic.png" alt="Copy Icon" width="60">
+        <img id="macSpeakerIcon" src="img/mac_speaker.png" alt="Copy Icon" width="180">
     </div>
-<script src="imgcp2bx.js"></script>
-<script src="cpcast.js"></script>
-<script src="optitlearange.js"></script>
-<script src="GGapi.js"></script>
-<script src="togglelayer.js"></script>
-<script src="shrturl.js"></script>
+<script src="script/imgcp2bx.js"></script>
+<script src="script/cpcast.js"></script>
+<script src="script/optitlearange.js"></script>
+<script src="script/GGapi.js"></script>
+<script src="script/togglelayer.js"></script>
+<script src="script/shrturl.js"></script>
 <script>
 // 查找IP服務商函數
 function lookupIP() {
