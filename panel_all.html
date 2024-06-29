@@ -114,14 +114,22 @@ setTimeout(showAllRows, 1000);\n\
 
             </div>
             <div class="spacer"></div>
-            <div class="idsearchpanel">
-                <iframe id="usersearch" src="userlogframe_left.html"></iframe>
-            </div>
-            <div class="spacer"></div>
-            <div class="ClassLogpanel">
-                <iframe id="logsearch" src="userlogframe_right.html"></iframe>
-            </div>
-        <div class="spacer"></div>
+<!-- NaniClub帳號搜尋 -->
+<div class="idsearchpanel">
+    <div class="toggle-container">
+        <input type="checkbox" id="NaniClub_toggleCheckbox">
+        <label for="NaniClub_toggleCheckbox">NaniClub帳號搜尋</label>
+    </div>
+    <div id="usersearch" style="display: none;">
+        <iframe class="responsive-iframe" src="userlogframe_left.html"></iframe>
+    </div>
+</div>
+<div class="spacer"></div>
+<div class="ClassLogpanel">
+	<iframe id="logsearch" src="userlogframe_right.html"></iframe>
+</div>
+<div class="spacer"></div>
+<!-- 顧問名單googlesheet -->
 <div class="consultantlistgooglesheet">
     <div class="toggle-container">
         <input type="checkbox" id="toggleCheckbox">
@@ -132,15 +140,16 @@ setTimeout(showAllRows, 1000);\n\
             </div>
         </div>
 <div class="linkout">
-    <div class="input-container">
+<div class="input-container">
         <input type="text" id="longUrl" placeholder="輸入網址">
         <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
     </div>
-    <div id="shortUrlContainer">
+<div id="shortUrlContainer">
         <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
         <button id="shortencpbt" onclick="copyShortUrlToClipboard()">Copy</button>
     </div>
 </div>
+
     <div class="appicon">
         點擊圖片自動複製，可直接貼至BX<br>
         <img id="chromeIcon" src="chrome_icon.png" alt="Copy Icon" width="60" height="60">
@@ -165,5 +174,43 @@ setTimeout(showAllRows, 1000);\n\
 <script src="GGapi.js"></script>
 <script src="togglelayer.js"></script>
 <script src="shrturl.js"></script>
+<script>
+// 查找IP服務商函數
+function lookupIP() {
+    var ipAddress = document.getElementById('ipAddress').value;
+    var url = 'https://api.ipgeolocation.io/ipgeo?apiKey=204b59bb7d49446b849d25499a5f6aee&ip=' + ipAddress;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(data => {
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<h3>查詢結果：</h3>' +
+                                  'IP 地址：' + data.ip + '<br>' +
+                                  '國家：' + data.country_name + '<br>' +
+                                  '城市：' + data.city + '<br>' +
+                                  'ISP：' + data.isp + '<br>';
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            var resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>查詢失敗。請檢查輸入的 IP 地址並重試。</p>';
+        });
+
+    return false; // 防止表單提交
+}
+//自由輸入欄的函數
+function clearWatermark() {
+    var textarea = document.getElementById("myTextArea");
+    if (textarea.value === "在這裡輸入文字...") {
+        textarea.value = "";
+    }
+}
+
+
+
+
+
+
+</script>
 </body>
 </html>
