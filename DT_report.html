@@ -7,54 +7,66 @@
 <link rel="stylesheet" href="style/font.css">
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
-    <style>
-		.device-group {
-			margin-bottom: 10px;
-		}
-        .form-container {
-            width: 500px;
-            margin: 0 auto;
+<style>
+        .container {
+            display: flex;
+            flex-direction: row; /* 確保元素水平排列 */
+            height: 98vh; /* 98% 視窗高度 */
+            overflow: hidden;
         }
-
+        .DTV_iframe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: calc(100% - 500px); /* 除去右側固定寬度 */
+            height: 100%;
+            overflow: hidden; /* 隱藏溢出部分 */
+			z-index: 1000; /* 確保在最上層 */
+        }
+        .form_container {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 500px; /* 固定寬度 */
+            height: 100%;
+            overflow-y: auto; /* 垂直卷軸 */
+            padding: 0 15px 0 0;
+            box-sizing: border-box;
+        }
         .form-group {
             margin-bottom: 10px;
             display: flex;
             flex-direction: column;
         }
-
         .row {
             display: flex;
             justify-content: space-between;
             align-items: center;
         }
-
         .row div {
             flex: 1;
             text-align: center;
-			padding: 3px;
+            padding: 3px;
         }
-
         .row div label {
             display: block;
         }
-
         .row div select,
         .row div input {
             width: 100%;
             box-sizing: border-box;
         }
-
         .error {
             color: red;
             display: none;
         }
-
         .output {
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
         }
-
         .copy-feedback {
             display: none;
             position: absolute;
@@ -63,7 +75,6 @@
             padding: 5px;
             border-radius: 5px;
         }
-
         /* 自訂樣式 */
         .DT_SON_BORDER {
             border: 1px solid #ccc;
@@ -72,13 +83,11 @@
             padding: 10px;
             margin-bottom: 10px;
         }
-
         /* 調整 #DT_devices 中 input 元素的寬度 */
         #DT_devices select,
         #DT_devices input[type="text"] {
             width: 100%; /* 讓寬度響應父元素 */
         }
-
         /* 田字型佈局 */
         .DTDV_grid-container {
             display: grid;
@@ -86,37 +95,35 @@
             grid-gap: 10px;
             align-items: start;
         }
-
         .DTDV_grid-item {
             text-align: left;
         }
-		
-/* DTYN 樣式 */
-.DTYN {
-    display: flex;
-    flex-direction: row; /* 將內部元素由左至右排列 */
-    align-items: center; /* 垂直置中 */
-    text-align: left; /* 左對齊 */
-    white-space: nowrap; /* 禁止換行 */
-}
-
-.DTYN label {
-    margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
-}
-
-.DTYN input[type=radio] {
-    margin: 0 4px 0 4px; /* 調整間距 */
-}
-
-.DTYN .error {
-    margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
-    color: red; /* 設置錯誤消息顏色 */
-}
-</style>
+        /* DTYN 樣式 */
+        .DTYN {
+            display: flex;
+            flex-direction: row; /* 將內部元素由左至右排列 */
+            align-items: center; /* 垂直置中 */
+            text-align: left; /* 左對齊 */
+            white-space: nowrap; /* 禁止換行 */
+        }
+        .DTYN label {
+            margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
+        }
+        .DTYN input[type=radio] {
+            margin: 0 4px 0 4px; /* 調整間距 */
+        }
+        .DTYN .error {
+            margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
+            color: red; /* 設置錯誤消息顏色 */
+        }
+    </style>
 </head>
 <body>
-
-<div class="form-container">
+<div class="DTV_iframe">
+    <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1v4ca32PaXniLRzdbORtlWtbH35uNm6OTg6_xlWjlhj0/edit?gid=1843767276#gid=1843767276"></iframe>
+</div>
+<div class="container">
+<div class="form_container">
     <form id="DT_form">
         <div class="form-group">
             <label for="DT_datetime">日期時間：</label>
@@ -251,6 +258,11 @@
             <textarea id="DT_process" name="process" required></textarea>
             <span class="error" id="error_process">請填寫處理過程</span>
         </div>
+		<div class="form-group">
+            <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
+            <textarea id="DT_process" name="process" required></textarea>
+            <span class="error" id="error_process">請填寫（必填）</span>
+        </div>
         <button type="submit">提交</button>
     </form>
     <div class="output" id="DT_output">
@@ -258,7 +270,7 @@
         <div class="copy-feedback" id="copy_feedback">已複製!</div>
     </div>
 </div>
-
+</div>
 <script>
 document.getElementById('DT_form').addEventListener('submit', function (e) {
     e.preventDefault();
@@ -331,6 +343,10 @@ document.getElementById('DT_form').addEventListener('submit', function (e) {
         document.getElementById('error_process').style.display = 'block';
         errors = true;
     }
+    if (!document.getElementById('DT_boldbrief').value) {
+        document.getElementById('error_boldbrief').style.display = 'block';
+        errors = true;
+    }
 
     if (!errors) {
         generateOutput();
@@ -384,6 +400,7 @@ function generateOutput() {
     const suitable = document.querySelector('input[name="suitable"]:checked').value;
     const issues = document.getElementById('DT_issues').value;
     const process = document.getElementById('DT_process').value;
+    const boldbrief = document.getElementById('DT_boldbrief').value;
 
     let outputContent = `
         日期時間：【${datetime}】
@@ -398,6 +415,8 @@ function generateOutput() {
 
         處理過程：
         ${process}
+
+        **${boldbrief}**
     `;
 
     document.getElementById('output_content').innerText = outputContent.trim();
