@@ -279,268 +279,144 @@
 </div>
 </div>
 <script>
-document.getElementById('DT_form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    let errors = false;
+    function formatDateTime(datetime) {
+        if (!datetime) {
+            return '';
+        }
+        const date = new Date(datetime);
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        const hours = String(date.getHours()).padStart(2, '0');
+        const minutes = String(date.getMinutes()).padStart(2, '0');
 
-    // 清除舊的錯誤訊息
-    document.querySelectorAll('.error').forEach(function (el) {
-        el.style.display = 'none';
+        return `${year}/${month}/${day} ${hours}:${minutes}`;
+    }
+
+    document.getElementById('DT_form').addEventListener('submit', function (e) {
+        e.preventDefault();
+        let errors = false;
+
+        // 清除舊的錯誤訊息
+        document.querySelectorAll('.error').forEach(function (el) {
+            el.style.display = 'none';
+        });
+
+        // 簡單驗證邏輯
+        const datetime = document.getElementById('DT_datetime').value;
+        if (!datetime) {
+            document.getElementById('error_datetime').style.display = 'block';
+            errors = true;
+        }
+        if (!document.getElementById('DT_name').value || !document.getElementById('DT_phone').value) {
+            document.getElementById('error_name_phone').style.display = 'block';
+            errors = true;
+        }
+        if (!document.getElementById('DT_project').value) {
+            document.getElementById('error_project').style.display = 'block';
+            errors = true;
+        }
+
+        // 檢查所有設備組的設備和作業系統信息
+        document.querySelectorAll('.device-group').forEach(function (el, index) {
+            const deviceIndex = index + 1;
+            const osVersionId = `DT_os_version_${deviceIndex}`;
+            const deviceId = `DT_device_${deviceIndex}`;
+
+            if (!document.getElementById(osVersionId).value || document.getElementById(deviceId).value === '-') {
+                document.getElementById(`error_device_os_${deviceIndex}`).style.display = 'block';
+                errors = true;
+            }
+        });
+
+        // 檢查所有連接組的信息
+        document.querySelectorAll('.connection-group').forEach(function (el, index) {
+            const connectionIndex = index + 1;
+            const providerId = `DT_provider_${connectionIndex}`;
+            const connectionId = `DT_connection_${connectionIndex}`;
+
+            if (!document.getElementById(providerId).value || document.getElementById(connectionId).value === '-') {
+                document.getElementById(`error_connection_${connectionIndex}`).style.display = 'block';
+                errors = true;
+            }
+        });
+
+        if (!errors) {
+            generateOutput();
+        }
     });
 
-    // 簡單驗證邏輯
-    if (!document.getElementById('DT_datetime').value) {
-        document.getElementById('error_datetime').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_name').value || !document.getElementById('DT_phone').value) {
-        document.getElementById('error_name_phone').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_project').value) {
-        document.getElementById('error_project').style.display = 'block';
-        errors = true;
-    }
+    function generateOutput() {
+        const datetime = document.getElementById('DT_datetime').value;
+        const formattedDatetime = formatDateTime(datetime);
 
-    document.querySelectorAll('.device-group').forEach(function (el, index) {
-        const deviceIndex = index + 1;
-        const osId = `DT_os_${deviceIndex}`;
-        const osVersionId = `DT_os_version_${deviceIndex}`;
-        const videoSpecName = `video_spec_${deviceIndex}`;
-        const videoQualityName = `video_quality_${deviceIndex}`;
-        const audioSpecName = `audio_spec_${deviceIndex}`;
-        const audioQualityName = `audio_quality_${deviceIndex}`;
-
-        if (!document.getElementById(osVersionId).value || document.getElementById(`DT_device_${deviceIndex}`).value === '-') {
-            document.getElementById(`error_device_os_${deviceIndex}`).style.display = 'block';
-            errors = true;
+        if (formattedDatetime) {
+            console.log('Formatted DateTime:', formattedDatetime);
+            // 這裡可以將格式化後的日期時間輸出到您需要的位置
+        } else {
+            console.log('Please select a date and time.');
         }
 
-        if (!document.querySelector(`input[name="${videoSpecName}"]:checked`) || !document.querySelector(`input[name="${videoQualityName}"]:checked`)) {
-            document.getElementById(`error_video_${deviceIndex}`).style.display = 'block';
-            errors = true;
-        }
+        // 獲取其他表單字段值並進行輸出或其他處理
+        const name = document.getElementById('DT_name').value;
+        const phone = document.getElementById('DT_phone').value;
+        const project = document.getElementById('DT_project').value;
 
-        if (!document.querySelector(`input[name="${audioSpecName}"]:checked`) || !document.querySelector(`input[name="${audioQualityName}"]:checked`)) {
-            document.getElementById(`error_audio_${deviceIndex}`).style.display = 'block';
-            errors = true;
-        }
-    });
+        let deviceOutput = '';
+        document.querySelectorAll('.device-group').forEach(function (el, index) {
+            const deviceIndex = index + 1;
+            const device = document.getElementById(`DT_device_${deviceIndex}`).value;
+            const brand = document.getElementById(`DT_brand_${deviceIndex}`).value;
+            const os = document.getElementById(`DT_os_${deviceIndex}`).value;
+            const osVersion = document.getElementById(`DT_os_version_${deviceIndex}`).value;
+            const browser = document.getElementById(`DT_browser_${deviceIndex}`).value;
 
-    document.querySelectorAll('.connection-group').forEach(function (el, index) {
-        const connectionIndex = index + 1;
-        const providerId = `DT_provider_${connectionIndex}`;
-        const connectionId = `DT_connection_${connectionIndex}`;
+            deviceOutput += `
+            使用設備（${deviceIndex}）：<br>
+                設備機型：【${device}】<br>
+                作業系統：【${os}】 版本：【${osVersion}】 補充資訊：<br>
+                瀏覽器：【${browser}】<br>
+            `;
+        });
 
-        if (!document.getElementById(providerId).value || document.getElementById(connectionId).value === '-') {
-            document.getElementById(`error_connection_${connectionIndex}`).style.display = 'block';
-            errors = true;
-        }
-    });
+        let connectionOutput = '';
+        document.querySelectorAll('.connection-group').forEach(function (el, index) {
+            const connectionIndex = index + 1;
+            const provider = document.getElementById(`DT_provider_${connectionIndex}`).value;
+            const connection = document.getElementById(`DT_connection_${connectionIndex}`).value;
+            const speed = document.getElementById(`DT_speed_${connectionIndex}`).value;
 
-    if (!document.querySelector('input[name="suitable"]:checked')) {
-        document.getElementById('error_suitable').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_issues').value) {
-        document.getElementById('error_issues').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_process').value) {
-        document.getElementById('error_process').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_boldbrief').value) {
-        document.getElementById('error_boldbrief').style.display = 'block';
-        errors = true;
-    }
+            connectionOutput += `
+            網路連線（${connectionIndex}）：<br>
+                電信業者：【${provider}】 連線方式：【${connection}】<br>
+                當前網速：<br>
+                ${speed}<br>
+            `;
+        });
 
-    if (!errors) {
-        generateOutput();
-    }
-});
+        const suitable = document.querySelector('input[name="suitable"]:checked').value;
+        const issues = document.getElementById('DT_issues').value;
+        const process = document.getElementById('DT_process').value;
+        const boldbrief = document.getElementById('DT_boldbrief').value;
 
-function generateOutput() {
-    const datetime = document.getElementById('DT_datetime').value;
-    const name = document.getElementById('DT_name').value;
-    const phone = document.getElementById('DT_phone').value;
-    const project = document.getElementById('DT_project').value;
-
-    let deviceOutput = '';
-    document.querySelectorAll('.device-group').forEach(function (el, index) {
-        const deviceIndex = index + 1;
-        const device = document.getElementById(`DT_device_${deviceIndex}`).value;
-        const brand = document.getElementById(`DT_brand_${deviceIndex}`).value;
-        const os = document.getElementById(`DT_os_${deviceIndex}`).value;
-        const osVersion = document.getElementById(`DT_os_version_${deviceIndex}`).value;
-        const browser = document.getElementById(`DT_browser_${deviceIndex}`).value;
-        const videoSpec = document.querySelector(`input[name="video_spec_${deviceIndex}"]:checked`).value;
-        const videoQuality = document.querySelector(`input[name="video_quality_${deviceIndex}"]:checked`).value;
-        const audioSpec = document.querySelector(`input[name="audio_spec_${deviceIndex}"]:checked`).value;
-        const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`).value;
-
-        deviceOutput += `
-        使用設備（${deviceIndex}）：<br>
-            設備機型：【${device}】<br>
-            作業系統：【${os}】 版本：【${osVersion}】 補充資訊：<br>
-            瀏覽器：【${browser}】<br>
-            視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
-            耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】<br>
+        let outputContent = `
+            日期時間：【${formattedDatetime}】<br>
+            學生姓名：【${name}】 連絡電話：【${phone}】<br>
+            測試工程師：【${project}】<br><br>
+            ${deviceOutput}<br>
+            ${connectionOutput}<br>
+            是否適合上課：【${suitable}】<br>
+            測試問題：<br>
+            ${issues}<br>
+            處理過程：<br>
+            ${process}<br>
+            <b>${boldbrief}</b>
         `;
-    });
 
-    let connectionOutput = '';
-    document.querySelectorAll('.connection-group').forEach(function (el, index) {
-        const connectionIndex = index + 1;
-        const provider = document.getElementById(`DT_provider_${connectionIndex}`).value;
-        const connection = document.getElementById(`DT_connection_${connectionIndex}`).value;
-        const speed = document.getElementById(`DT_speed_${connectionIndex}`).value;
-
-        connectionOutput += `
-        網路連線（${connectionIndex}）：<br>
-            電信業者：【${provider}】 連線方式：【${connection}】<br>
-            當前網速：<br>
-            ${speed}<br>
-        `;
-    });
-
-    const suitable = document.querySelector('input[name="suitable"]:checked').value;
-    const issues = document.getElementById('DT_issues').value;
-    const process = document.getElementById('DT_process').value;
-    const boldbrief = document.getElementById('DT_boldbrief').value;
-
-    let outputContent = `
-        日期時間：【${datetime}】<br>
-        學生姓名：【${name}】 連絡電話：【${phone}】<br>
-        測試工程師：【${project}】<br><br>
-        ${deviceOutput}<br>
-        ${connectionOutput}<br>
-        是否適合上課：【${suitable}】<br>
-<br>
-        測試問題：<br>
-        ${issues}<br>
-<br>
-        處理過程：<br>
-        ${process}<br>
-<br>
-        <b>${boldbrief}</b>
-    `;
-
-    document.getElementById('output_content').innerHTML = outputContent.trim();
-
-    const copyFeedback = document.getElementById('copy_feedback');
-    copyFeedback.style.display = 'block';
-    setTimeout(() => {
-        copyFeedback.style.display = 'none';
-    }, 2000);
-}
-
-let deviceCount = 1;
-let connectionCount = 1;
-
-function addDevice() {
-    deviceCount++;
-    const deviceContainer = document.getElementById('DT_devices');
-    const newDevice = document.createElement('div');
-    newDevice.className = 'device-group';
-    newDevice.innerHTML = `
-    <hr>
-        <div class="row">
-            <div><label for="DT_device_${deviceCount}">設備</label></div>
-            <div><label for="DT_brand_${deviceCount}">品牌</label></div>
-            <div><label for="DT_os_${deviceCount}">作業系統</label></div>
-            <div><label for="DT_os_version_${deviceCount}">版本</label></div>
-            <div><label for="DT_browser_${deviceCount}">瀏覽器</label></div>
-        </div>
-        <div class="row">
-            <div>
-                <select id="DT_device_${deviceCount}" name="device_${deviceCount}" required>
-                    <option value="-">-</option>
-                    <option value="筆電">筆電</option>
-                    <option value="桌上型電腦">桌上型電腦</option>
-                    <option value="平板">平板</option>
-                    <option value="其他">其他</option>
-                </select>
-            </div>
-            <div>
-                <input type="text" id="DT_brand_${deviceCount}" name="brand_${deviceCount}">
-            </div>
-            <div>
-                <select id="DT_os_${deviceCount}" name="os_${deviceCount}" required>
-                    <option value="-">-</option>
-                    <option value="Windows">Windows</option>
-                    <option value="MacOS">MacOS</option>
-                    <option value="iOS">iOS</option>
-                    <option value="Android">Android</option>
-                    <option value="其他">其他</option>
-                </select>
-            </div>
-            <div>
-                <input type="text" id="DT_os_version_${deviceCount}" name="os_version_${deviceCount}" required>
-            </div>
-            <div>
-                <input type="text" id="DT_browser_${deviceCount}" name="browser_${deviceCount}" required>
-            </div>
-        </div>
-        <div class="DTDV_grid-container">
-            <div class="DTDV_grid-item">
-                <label>視訊規格：</label>
-                <input type="radio" id="DT_video_spec_internal_${deviceCount}" name="video_spec_${deviceCount}" value="內建" required>內建
-                <input type="radio" id="DT_video_spec_external_${deviceCount}" name="video_spec_${deviceCount}" value="外接" required>外接
-            </div>
-            <div class="DTDV_grid-item">
-                <label>視訊品質：</label>
-                <input type="radio" id="DT_video_quality_clear_${deviceCount}" name="video_quality_${deviceCount}" value="清晰" required>清晰
-                <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳" required>不佳
-                <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試" required>未測試
-            </div>
-            <div class="DTDV_grid-item">
-                <label>耳麥規格：</label>
-                <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建" required>內建
-                <input type="radio" id="DT_audio_spec_external_${deviceCount}" name="audio_spec_${deviceCount}" value="外接" required>外接
-            </div>
-            <div class="DTDV_grid-item">
-                <label>聲音品質：</label>
-                <input type="radio" id="DT_audio_quality_clear_${deviceCount}" name="audio_quality_${deviceCount}" value="清晰" required>清晰
-                <input type="radio" id="DT_audio_quality_poor_${deviceCount}" name="audio_quality_${deviceCount}" value="不佳" required>不佳
-                <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" required>未測試
-            </div>
-        </div>
-        <span class="error" id="error_device_os_${deviceCount}">請填寫設備和作業系統信息</span>
-        <span class="error" id="error_video_${deviceCount}">請選擇視訊規格和品質</span>
-        <span class="error" id="error_audio_${deviceCount}">請選擇耳麥規格和品質</span>
-    `;
-    deviceContainer.appendChild(newDevice);
-}
-
-function addConnection() {
-    connectionCount++;
-    const connectionContainer = document.getElementById('DT_connections');
-    const newConnection = document.createElement('div');
-    newConnection.className = 'connection-group';
-    newConnection.innerHTML = `
-    <hr>    
-        <div class="form-group">
-            <label for="DT_provider_${connectionCount}">電信業者：</label>
-            <input type="text" id="DT_provider_${connectionCount}" name="provider_${connectionCount}" required>
-            <label for="DT_connection_${connectionCount}">連線方式：</label>
-            <select id="DT_connection_${connectionCount}" name="connection_${connectionCount}" required>
-                <option value="-">-</option>
-                <option value="Wi-Fi">Wi-Fi</option>
-                <option value="有線網路">有線網路</option>
-                <option value="Wi-Fi+有線網路">Wi-Fi+有線網路</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="DT_speed_${connectionCount}">當前網速：</label>
-            <textarea id="DT_speed_${connectionCount}" name="speed_${connectionCount}" required></textarea>
-        </div>
-        <span class="error" id="error_connection_${connectionCount}">請填寫電信業者和連線方式信息</span>
-    `;
-    connectionContainer.appendChild(newConnection);
-}
-
+        document.getElementById('output_content').innerHTML = outputContent.trim();
+    }
 </script>
+
 
 </body>
 </html>
