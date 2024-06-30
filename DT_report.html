@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>測試報告表單</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .container {
+            width: 500px;
+            margin: auto;
+        }
+        .form-group {
+            margin-bottom: 10px;
+        }
+        .form-group label {
+            display: inline-block;
+            width: 150px;
+        }
+        .form-group input,
+        .form-group select {
+            width: calc(100% - 160px);
+        }
+        .form-group .error {
+            color: red;
+            display: none;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        .output div {
+            margin-bottom: 10px;
+        }
+        .output div:hover {
+            cursor: pointer;
+            background-color: #f0f0f0;
+        }
+        .tooltip {
+            display: none;
+            position: absolute;
+            background-color: #000;
+            color: #fff;
+            padding: 5px;
+            border-radius: 5px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <form id="DT_form">
+            <div class="form-group">
+                <label for="DT_date">日期時間：</label>
+                <select id="DT_year" required>
+                    <option value="">年</option>
+                    <!-- Year options here -->
+                </select>
+                <select id="DT_month" required>
+                    <option value="">月</option>
+                    <!-- Month options here -->
+                </select>
+                <select id="DT_day" required>
+                    <option value="">日</option>
+                    <!-- Day options here -->
+                </select>
+                <input type="time" id="DT_time" required>
+                <div class="error" id="DT_date_error">請選擇正確的日期和時間。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_student_name">學生姓名：</label>
+                <input type="text" id="DT_student_name" required>
+                <div class="error" id="DT_student_name_error">請輸入學生姓名。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_test_engineer">測試工程：</label>
+                <input type="text" id="DT_test_engineer" required>
+                <div class="error" id="DT_test_engineer_error">請輸入測試工程。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_device">設備：</label>
+                <select id="DT_device" required>
+                    <option value="-">-</option>
+                    <option value="筆電">筆電</option>
+                    <option value="桌上型電腦">桌上型電腦</option>
+                    <option value="平板">平板</option>
+                    <option value="其他">其他</option>
+                </select>
+                <input type="text" id="DT_device_brand">
+                <div class="error" id="DT_device_error">請選擇設備並輸入品牌。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_os">作業系統：</label>
+                <select id="DT_os" required>
+                    <option value="-">-</option>
+                    <option value="Windows">Windows</option>
+                    <option value="MacOS">MacOS</option>
+                    <option value="iOS">iOS</option>
+                    <option value="Android">Android</option>
+                    <option value="其他">其他</option>
+                </select>
+                <input type="text" id="DT_os_version" required>
+                <input type="text" id="DT_os_additional">
+                <div class="error" id="DT_os_error">請選擇作業系統並輸入版本。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_browser">瀏覽器：</label>
+                <select id="DT_browser" required>
+                    <option value="-">-</option>
+                    <option value="Chrome">Chrome</option>
+                    <option value="Edge">Edge</option>
+                    <option value="Safari">Safari</option>
+                    <option value="其他">其他</option>
+                </select>
+                <div class="error" id="DT_browser_error">請選擇瀏覽器。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_telecom">電信業者：</label>
+                <input type="text" id="DT_telecom" required>
+                <div class="error" id="DT_telecom_error">請輸入電信業者。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_network_speed">當前網速：</label>
+                <textarea id="DT_network_speed" required></textarea>
+                <div class="error" id="DT_network_speed_error">請輸入當前網速。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_connection">連線方式：</label>
+                <input type="radio" name="DT_connection" value="Wi-Fi" required> Wi-Fi
+                <input type="radio" name="DT_connection" value="有線網路" required> 有線網路
+                <div class="error" id="DT_connection_error">請選擇連線方式。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_video">視訊規格：</label>
+                <input type="radio" name="DT_video" value="內建" required> 內建
+                <input type="radio" name="DT_video" value="外接" required> 外接
+                <div class="error" id="DT_video_error">請選擇視訊規格。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_microphone">耳麥規格：</label>
+                <input type="radio" name="DT_microphone" value="內建" required> 內建
+                <input type="radio" name="DT_microphone" value="外接" required> 外接
+                <div class="error" id="DT_microphone_error">請選擇耳麥規格。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_video_quality">視訊品質：</label>
+                <input type="radio" name="DT_video_quality" value="清晰" required> 清晰
+                <input type="radio" name="DT_video_quality" value="不佳" required> 不佳
+                <input type="radio" name="DT_video_quality" value="未測試" required> 未測試
+                <div class="error" id="DT_video_quality_error">請選擇視訊品質。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_audio_quality">聲音品質：</label>
+                <input type="radio" name="DT_audio_quality" value="清晰" required> 清晰
+                <input type="radio" name="DT_audio_quality" value="不佳" required> 不佳
+                <input type="radio" name="DT_audio_quality" value="未測試" required> 未測試
+                <div class="error" id="DT_audio_quality_error">請選擇聲音品質。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_suitable">是否適合上課：</label>
+                <input type="radio" name="DT_suitable" value="適合" required> 適合
+                <input type="radio" name="DT_suitable" value="不適合" required> 不適合
+                <div class="error" id="DT_suitable_error">請選擇是否適合上課。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_issues">測試問題：</label>
+                <textarea id="DT_issues" required></textarea>
+                <div class="error" id="DT_issues_error">請輸入測試問題。</div>
+            </div>
+            <div class="form-group">
+                <label for="DT_process">處理過程：</label>
+                <textarea id="DT_process" required></textarea>
+                <div class="error" id="DT_process_error">請輸入處理過程。</div>
+            </div>
+            <button type="submit">提交</button>
+        </form>
+        <div class="output" id="DT_output"></div>
+        <div class="tooltip" id="DT_tooltip">點擊以複製</div>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const currentYear = new Date().getFullYear();
+            const currentMonth = new Date().getMonth() + 1;
+            const currentDay = new Date().getDate();
+            const currentTime = new Date().toTimeString().slice(0, 5);
+
+            // Initialize date and time fields
+            document.getElementById('DT_year').innerHTML += `<option value="${currentYear}" selected>${currentYear}</option>`;
+            for (let i = 1; i <= 12; i++) {
+                document.getElementById('DT_month').innerHTML += `<option value="${i}" ${i === currentMonth ? 'selected' : ''}>${i}</option>`;
+            }
+            for (let i = 1; i <= 31; i++) {
+                document.getElementById('DT_day').innerHTML += `<option value="${i}" ${i === currentDay ? 'selected' : ''}>${i}</option>`;
+            }
+            document.getElementById('DT_time').value = currentTime;
+
+            // Form submission handler
+            document.getElementById('DT_form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                let isValid = true;
+                document.querySelectorAll('.error').forEach(error => error.style.display = 'none');
+
+                const formData = {
+                    date: `${document.getElementById('DT_year').value}/${document.getElementById('DT_month').value}/${document.getElementById('DT_day').value} ${document.getElementById('DT_time').value}`,
+                    studentName: document.getElementById('DT_student_name').value,
+                    testEngineer: document.getElementById('DT_test_engineer').value,
+                    device: document.getElementById('DT_device').value,
+                    deviceBrand: document.getElementById('DT_device_brand').value,
+                    os: document.getElementById('DT_os').value,
+                    osVersion: document.getElementById('DT_os_version').value,
+                    osAdditional: document.getElementById('DT_os_additional').value,
+                    browser: document.getElementById('DT_browser').value,
+                    telecom: document.getElementById('DT_telecom').value,
+                    networkSpeed: document.getElementById('DT_network_speed').value,
+                    connection: document.querySelector('input[name="DT_connection"]:checked')?.value,
+                    video: document.querySelector('input[name="DT_video"]:checked')?.value,
+                    microphone: document.querySelector('input[name="DT_microphone"]:checked')?.value,
+                    videoQuality: document.querySelector('input[name="DT_video_quality"]:checked')?.value,
+                    audioQuality: document.querySelector('input[name="DT_audio_quality"]:checked')?.value,
+                    suitable: document.querySelector('input[name="DT_suitable"]:checked')?.value,
+                    issues: document.getElementById('DT_issues').value,
+                    process: document.getElementById('DT_process').value,
+                };
+
+                // Validate required fields
+                if (!formData.date.includes('undefined')) {
+                    document.getElementById('DT_date_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.studentName) {
+                    document.getElementById('DT_student_name_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.testEngineer) {
+                    document.getElementById('DT_test_engineer_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (formData.device === '-' || !formData.deviceBrand) {
+                    document.getElementById('DT_device_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (formData.os === '-' || !formData.osVersion) {
+                    document.getElementById('DT_os_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (formData.browser === '-') {
+                    document.getElementById('DT_browser_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.telecom) {
+                    document.getElementById('DT_telecom_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.networkSpeed) {
+                    document.getElementById('DT_network_speed_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.connection) {
+                    document.getElementById('DT_connection_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.video) {
+                    document.getElementById('DT_video_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.microphone) {
+                    document.getElementById('DT_microphone_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.videoQuality) {
+                    document.getElementById('DT_video_quality_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.audioQuality) {
+                    document.getElementById('DT_audio_quality_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.suitable) {
+                    document.getElementById('DT_suitable_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.issues) {
+                    document.getElementById('DT_issues_error').style.display = 'block';
+                    isValid = false;
+                }
+                if (!formData.process) {
+                    document.getElementById('DT_process_error').style.display = 'block';
+                    isValid = false;
+                }
+
+                if (isValid) {
+                    // Display the output
+                    const outputElement = document.getElementById('DT_output');
+                    outputElement.innerHTML = `
+                        <div id="DT_output_date">日期時間：【${formData.date}】</div>
+                        <div id="DT_output_student_name">學生姓名：【${formData.studentName}】</div>
+                        <div id="DT_output_test_engineer">測試工程：【${formData.testEngineer}】</div>
+                        <div id="DT_output_device">設備：【${formData.device}】品牌：【${formData.deviceBrand}】</div>
+                        <div id="DT_output_os">作業系統：【${formData.os}】版本：【${formData.osVersion}】補充資訊：【${formData.osAdditional}】</div>
+                        <div id="DT_output_browser">瀏覽器：【${formData.browser}】</div>
+                        <div id="DT_output_telecom">電信業者：【${formData.telecom}】</div>
+                        <div id="DT_output_network_speed">當前網速：<br>${formData.networkSpeed}</div>
+                        <div id="DT_output_connection">連線方式：【${formData.connection}】</div>
+                        <div id="DT_output_video">視訊規格：【${formData.video}】</div>
+                        <div id="DT_output_microphone">耳麥規格：【${formData.microphone}】</div>
+                        <div id="DT_output_video_quality">視訊品質：【${formData.videoQuality}】</div>
+                        <div id="DT_output_audio_quality">聲音品質：【${formData.audioQuality}】</div>
+                        <div id="DT_output_suitable">是否適合上課：【${formData.suitable}】</div>
+                        <div id="DT_output_issues">測試問題：<br>${formData.issues}</div>
+                        <div id="DT_output_process">處理過程：<br>${formData.process}</div>
+                    `;
+                    attachCopyEvents();
+                }
+            });
+
+            // Attach copy event listeners to output fields
+            function attachCopyEvents() {
+                const outputDivs = document.querySelectorAll('.output div');
+                const tooltip = document.getElementById('DT_tooltip');
+
+                outputDivs.forEach(div => {
+                    div.addEventListener('mouseenter', (e) => {
+                        tooltip.style.display = 'block';
+                        tooltip.style.left = `${e.pageX + 5}px`;
+                        tooltip.style.top = `${e.pageY + 5}px`;
+                    });
+
+                    div.addEventListener('mouseleave', () => {
+                        tooltip.style.display = 'none';
+                    });
+
+                    div.addEventListener('click', (e) => {
+                        const text = e.target.textContent.replace('【', '').replace('】', '').trim();
+                        navigator.clipboard.writeText(text).then(() => {
+                            tooltip.textContent = '複製成功';
+                            setTimeout(() => {
+                                tooltip.textContent = '點擊以複製';
+                            }, 2000);
+                        });
+                    });
+                });
+            }
+        });
+    </script>
+</body>
+</html>
