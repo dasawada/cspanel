@@ -66,6 +66,7 @@
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
+	word-break: break-word;
         }
         .copy-feedback {
             display: none;
@@ -403,9 +404,10 @@
             const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`).value;
 
             deviceOutput += `
-            使用設備（${deviceIndex}）：<br>
+            --------<br>
+	    使用設備（${deviceIndex}）：<br>
                 設備機型：【${device}】<br>
-                作業系統：【${os}】 版本：【${osVersion}】 補充資訊：<br>
+                作業系統：【${os}】 版本/硬體條件：【${osVersion}】<br>
                 瀏覽器：【${browser}】<br>
                 視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
                 耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】<br>
@@ -420,6 +422,7 @@
             const speed = document.getElementById(`DT_speed_${connectionIndex}`).value;
 
             connectionOutput += `
+	    --------<br>
             網路連線（${connectionIndex}）：<br>
                 電信業者：【${provider}】 連線方式：【${connection}】<br>
                 當前網速：<br>
@@ -439,11 +442,13 @@
             ${deviceOutput}<br>
             ${connectionOutput}<br>
             是否適合上課：【${suitable}】<br>
+	    --------<br>
             測試問題：<br>
             ${issues}<br>
             處理過程：<br>
             ${process}<br>
-            <b>${boldbrief}</b>
+	    <br>
+            <b>**${boldbrief}**</b>
         `;
 
         document.getElementById('output_content').innerHTML = outputContent.trim();
@@ -463,7 +468,7 @@
                 <div><label for="DT_device_${deviceCount}">設備</label></div>
                 <div><label for="DT_brand_${deviceCount}">品牌</label></div>
                 <div><label for="DT_os_${deviceCount}">作業系統</label></div>
-                <div><label for="DT_os_version_${deviceCount}">版本</label></div>
+                <div><label for="DT_os_version_${deviceCount}">版本/硬體條件</label></div>
                 <div><label for="DT_browser_${deviceCount}">瀏覽器</label></div>
             </div>
             <div class="row">
