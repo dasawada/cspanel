@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>輸入表單</title>
+    <title>💡軟硬體測試💡</title>
 <link rel="stylesheet" href="style/font.css">
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
@@ -129,7 +129,7 @@
 <div class="form_container">
     <form id="DT_form">
         <div class="form-group">
-            <label for="DT_datetime">日期時間：123</label>
+            <label for="DT_datetime">日期時間：</label>
             <input type="datetime-local" id="DT_datetime" name="datetime" required>
             <span class="error" id="error_datetime">請填寫有效的日期時間</span>
         </div>
@@ -216,7 +216,7 @@
                     <span class="error" id="error_audio">請選擇耳麥規格和品質</span>
                 </div>
             </div>
-            <button type="button" onclick="addDevice()">新增設備</button>
+            <button type="button" onclick="addDevice()">新增設備（刪除功能開發中）</button>
         </div>
         <div class="DT_SON_BORDER">
             <!-- 網路連線部分 -->
@@ -224,7 +224,7 @@
                 <h3>網路連線</h3>
                 <div class="connection-group">
                     <div class="form-group">
-                        <label for="DT_provider_1">電信業者：</label>
+                        <label for="DT_provider_1" placeholder="必填">電信業者：</label>
                         <input type="text" id="DT_provider_1" name="provider" required>
                         <label for="DT_connection_1">連線方式：</label>
                         <select id="DT_connection_1" name="connection" required>
@@ -241,7 +241,7 @@
                     </div>
                 </div>
             </div>
-            <button type="button" onclick="addConnection()">新增網路連線</button>
+            <button type="button" onclick="addConnection()">新增網路連線（刪除功能開發中）</button>
         </div>
         <!-- 檢測結果部分 -->
         <div class="form-group">
