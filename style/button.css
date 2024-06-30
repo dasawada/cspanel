@@ -119,19 +119,22 @@ input[type=text]:focus, input[type=password]:focus {
 }
 /* 長網址input */
 #longUrl {
-	margin-right: 3px; /* 右邊距設置為5px */
     width: 290px; 
 }
 /* '製作短網址'按鈕寬度 */
-#shortenButton {
-    width: 80px; /* 固定寬度，可以根據需要調整 */
-    white-space: nowrap; /* 防止文本換行 */
-    overflow: hidden; /* 隱藏溢出文本 */
-    text-overflow: ellipsis; /* 添加省略號 */
-}
+    #shortenButton {
+		margin-right: 0px;
+        width: 80px; /* 固定寬度，可以根據需要調整 */
+        white-space: nowrap; /* 防止文本換行 */
+        overflow: hidden; /* 隱藏溢出文本 */
+        text-overflow: ellipsis; /* 添加省略號 */
+    }
+    #ShrtURL_copyButton {
+        display: none;
+    }
 /* 短網址輸出欄 */
 #shortUrloutput {
     width: 290px;
-    margin-right: 3px; /* 右邊距設置為5px */
-background-color: #F5F5F5;
+    margin-right: 3px;
+	background-color: #F5F5F5;
 }
