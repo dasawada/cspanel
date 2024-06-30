@@ -14,18 +14,24 @@
         }
         .form-group {
             margin-bottom: 10px;
+            display: flex;
+            align-items: center;
         }
         .form-group label {
-            display: inline-block;
             width: 150px;
+            flex-shrink: 0;
         }
         .form-group input,
-        .form-group select {
-            width: calc(100% - 160px);
+        .form-group select,
+        .form-group textarea {
+            flex-grow: 1;
         }
         .form-group .error {
             color: red;
             display: none;
+        }
+        .form-group.radio-group {
+            justify-content: space-between;
         }
         .output {
             margin-top: 20px;
