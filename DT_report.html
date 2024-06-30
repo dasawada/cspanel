@@ -126,7 +126,7 @@
 <div class="form_container">
     <form id="DT_form">
         <div class="form-group">
-            <label for="DT_datetime">日期時間：</label>
+            <label for="DT_datetime">日期時間：123</label>
             <input type="datetime-local" id="DT_datetime" name="datetime" required>
             <span class="error" id="error_datetime">請填寫有效的日期時間</span>
         </div>
@@ -240,14 +240,13 @@
             </div>
             <button type="button" onclick="addConnection()">新增網路連線</button>
         </div>
-		
         <!-- 檢測結果部分 -->
-        <div class="form-group DTYN">
-			<label for="DT_suitable">是否適合上課：</label>
-			<input type="radio" id="DT_suitable_yes" name="suitable" value="適合" required>適合
-			<input type="radio" id="DT_suitable_no" name="suitable" value="不適合" required>不適合
-			<span class="error" id="error_suitable">請選擇是否適合上課</span>
-		</div>
+        <div class="form-group">
+            <label for="DT_suitable">是否適合上課：</label>
+            <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" required>適合
+            <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" required>不適合
+            <span class="error" id="error_suitable">請選擇是否適合上課</span>
+        </div>
         <div class="form-group">
             <label for="DT_issues">測試問題：</label>
             <textarea id="DT_issues" name="issues" required></textarea>
@@ -258,10 +257,10 @@
             <textarea id="DT_process" name="process" required></textarea>
             <span class="error" id="error_process">請填寫處理過程</span>
         </div>
-		<div class="form-group">
+        <div class="form-group">
             <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
-            <textarea id="DT_process" name="process" required></textarea>
-            <span class="error" id="error_process">請填寫（必填）</span>
+            <textarea id="DT_boldbrief" name="boldbrief" required></textarea>
+            <span class="error" id="error_boldbrief">請填寫</span>
         </div>
         <button type="submit">提交</button>
     </form>
@@ -310,12 +309,12 @@ document.getElementById('DT_form').addEventListener('submit', function (e) {
         }
 
         if (!document.querySelector(`input[name="${videoSpecName}"]:checked`) || !document.querySelector(`input[name="${videoQualityName}"]:checked`)) {
-            document.getElementById('error_video').style.display = 'block';
+            document.getElementById(`error_video_${deviceIndex}`).style.display = 'block';
             errors = true;
         }
 
         if (!document.querySelector(`input[name="${audioSpecName}"]:checked`) || !document.querySelector(`input[name="${audioQualityName}"]:checked`)) {
-            document.getElementById('error_audio').style.display = 'block';
+            document.getElementById(`error_audio_${deviceIndex}`).style.display = 'block';
             errors = true;
         }
     });
@@ -437,7 +436,7 @@ function addDevice() {
     const newDevice = document.createElement('div');
     newDevice.className = 'device-group';
     newDevice.innerHTML = `
-	<hr>
+    <hr>
         <div class="row">
             <div><label for="DT_device_${deviceCount}">設備</label></div>
             <div><label for="DT_brand_${deviceCount}">品牌</label></div>
@@ -513,7 +512,7 @@ function addConnection() {
     newConnection.className = 'connection-group';
     newConnection.innerHTML = `
     <hr>    
-		<div class="form-group">
+        <div class="form-group">
             <label for="DT_provider_${connectionCount}">電信業者：</label>
             <input type="text" id="DT_provider_${connectionCount}" name="provider_${connectionCount}" required>
             <label for="DT_connection_${connectionCount}">連線方式：</label>
@@ -532,6 +531,7 @@ function addConnection() {
     `;
     connectionContainer.appendChild(newConnection);
 }
+
 </script>
 
 </body>
