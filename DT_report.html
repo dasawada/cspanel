@@ -30,8 +30,17 @@
             color: red;
             display: none;
         }
-        .form-group.radio-group {
-            justify-content: space-between;
+        .radio-group {
+            display: flex;
+            align-items: center;
+        }
+        .radio-group label {
+            width: auto;
+            flex-shrink: 0;
+            margin-right: 10px;
+        }
+        input {
+            width: 130px;
         }
         .output {
             margin-top: 20px;
