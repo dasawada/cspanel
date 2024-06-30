@@ -4,34 +4,57 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>輸入表單</title>
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
     <style>
-        body {
-            font-family: Arial, sans-serif;
-        }
+		.device-group {
+			margin-bottom: 10px;
+		}
         .form-container {
             width: 500px;
             margin: 0 auto;
         }
+
         .form-group {
-            display: flex;
-            align-items: center;
             margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
         }
-        .form-group label {
-            margin-right: 10px;
+
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
         }
-        .form-group input, .form-group select {
+
+        .row div {
             flex: 1;
+            text-align: center;
+			padding: 3px;
         }
+
+        .row div label {
+            display: block;
+        }
+
+        .row div select,
+        .row div input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+
         .error {
             color: red;
             display: none;
         }
+
         .output {
             margin-top: 20px;
             padding: 10px;
             border: 1px solid #ccc;
         }
+
         .copy-feedback {
             display: none;
             position: absolute;
@@ -40,7 +63,56 @@
             padding: 5px;
             border-radius: 5px;
         }
-    </style>
+
+        /* 自訂樣式 */
+        .DT_SON_BORDER {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        /* 調整 #DT_devices 中 input 元素的寬度 */
+        #DT_devices select,
+        #DT_devices input[type="text"] {
+            width: 100%; /* 讓寬度響應父元素 */
+        }
+
+        /* 田字型佈局 */
+        .DTDV_grid-container {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            grid-gap: 10px;
+            align-items: start;
+        }
+
+        .DTDV_grid-item {
+            text-align: left;
+        }
+		
+/* DTYN 樣式 */
+.DTYN {
+    display: flex;
+    flex-direction: row; /* 將內部元素由左至右排列 */
+    align-items: center; /* 垂直置中 */
+    text-align: left; /* 左對齊 */
+    white-space: nowrap; /* 禁止換行 */
+}
+
+.DTYN label {
+    margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
+}
+
+.DTYN input[type=radio] {
+    margin: 0 4px 0 4px; /* 調整間距 */
+}
+
+.DTYN .error {
+    margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
+    color: red; /* 設置錯誤消息顏色 */
+}
+</style>
 </head>
 <body>
 
@@ -63,95 +135,112 @@
             <input type="text" id="DT_project" name="project" required>
             <span class="error" id="error_project">請填寫測試工程</span>
         </div>
-<!-- 使用設備部分 -->
-<div id="DT_devices">
-    <h3>使用設備</h3>
-    <div class="device-group">
-        <div class="form-group">
-            <label for="DT_device_1">設備：</label>
-            <select id="DT_device_1" name="device" required>
-                <option value="-">-</option>
-                <option value="筆電">筆電</option>
-                <option value="桌上型電腦">桌上型電腦</option>
-                <option value="平板">平板</option>
-                <option value="其他">其他</option>
-            </select>
-            <label for="DT_brand_1">品牌：</label>
-            <input type="text" id="DT_brand_1" name="brand">
+        <!-- 使用設備部分 -->
+        <div class="DT_SON_BORDER">
+            <div id="DT_devices">
+                <h3>使用設備</h3>
+                <div class="device-group">
+                    <div class="row">
+                        <div><label for="DT_device_1">設備</label></div>
+                        <div><label for="DT_brand_1">品牌</label></div>
+                        <div><label for="DT_os_1">作業系統</label></div>
+                        <div><label for="DT_os_version_1">版本</label></div>
+                        <div><label for="DT_browser_1">瀏覽器</label></div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <select id="DT_device_1" name="device" required>
+                                <option value="-">-</option>
+                                <option value="筆電">筆電</option>
+                                <option value="桌上型電腦">桌上型電腦</option>
+                                <option value="平板">平板</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_brand_1" name="brand">
+                        </div>
+                        <div>
+                            <select id="DT_os_1" name="os" required>
+                                <option value="-">-</option>
+                                <option value="Windows">Windows</option>
+                                <option value="MacOS">MacOS</option>
+                                <option value="iOS">iOS</option>
+                                <option value="Android">Android</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_os_version_1" name="os_version" required>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_browser_1" name="browser" required>
+                        </div>
+                    </div>
+                    <span class="error" id="error_device_os">請填寫設備和作業系統信息</span>
+                    <div class="DTDV_grid-container">
+                        <div class="DTDV_grid-item">
+                            <label>視訊規格：</label>
+                            <input type="radio" id="DT_video_spec_internal_1" name="video_spec_1" value="內建" required>內建
+                            <input type="radio" id="DT_video_spec_external_1" name="video_spec_1" value="外接" required>外接
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>視訊品質：</label>
+                            <input type="radio" id="DT_video_quality_clear_1" name="video_quality_1" value="清晰" required>清晰
+                            <input type="radio" id="DT_video_quality_poor_1" name="video_quality_1" value="不佳" required>不佳
+                            <input type="radio" id="DT_video_quality_untested_1" name="video_quality_1" value="未測試" required>未測試
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>耳麥規格：</label>
+                            <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建" required>內建
+                            <input type="radio" id="DT_audio_spec_external_1" name="audio_spec_1" value="外接" required>外接
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>聲音品質：</label>
+                            <input type="radio" id="DT_audio_quality_clear_1" name="audio_quality_1" value="清晰" required>清晰
+                            <input type="radio" id="DT_audio_quality_poor_1" name="audio_quality_1" value="不佳" required>不佳
+                            <input type="radio" id="DT_audio_quality_untested_1" name="audio_quality_1" value="未測試" required>未測試
+                        </div>
+                    </div>
+                    <span class="error" id="error_video">請選擇視訊規格和品質</span>
+                    <span class="error" id="error_audio">請選擇耳麥規格和品質</span>
+                </div>
+            </div>
+            <button type="button" onclick="addDevice()">新增設備</button>
         </div>
-        <div class="form-group">
-            <label for="DT_os_1">作業系統：</label>
-            <select id="DT_os_1" name="os" required>
-                <option value="-">-</option>
-                <option value="Windows">Windows</option>
-                <option value="MacOS">MacOS</option>
-                <option value="iOS">iOS</option>
-                <option value="Android">Android</option>
-                <option value="其他">其他</option>
-            </select>
-            <label for="DT_os_version_1">版本：</label>
-            <input type="text" id="DT_os_version_1" name="os_version" required>
-            <span class="error" id="error_device_os">請填寫設備和作業系統信息</span>
+        <div class="DT_SON_BORDER">
+            <!-- 網路連線部分 -->
+            <div id="DT_connections">
+                <h3>網路連線</h3>
+                <div class="connection-group">
+                    <div class="form-group">
+                        <label for="DT_provider_1">電信業者：</label>
+                        <input type="text" id="DT_provider_1" name="provider" required>
+                        <label for="DT_connection_1">連線方式：</label>
+                        <select id="DT_connection_1" name="connection" required>
+                            <option value="-">-</option>
+                            <option value="Wi-Fi">Wi-Fi</option>
+                            <option value="有線網路">有線網路</option>
+                            <option value="Wi-Fi+有線網路">Wi-Fi+有線網路</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="DT_speed_1">當前網速：</label>
+                        <textarea id="DT_speed_1" name="speed" required></textarea>
+                        <span class="error" id="error_connection">請填寫電信業者和連線方式信息</span>
+                    </div>
+                </div>
+            </div>
+            <button type="button" onclick="addConnection()">新增網路連線</button>
         </div>
-        <div class="form-group">
-            <label for="DT_browser_1">瀏覽器：</label>
-            <input type="text" id="DT_browser_1" name="browser" required>
-        </div>
-        <div class="form-group">
-            <label>視訊規格：</label>
-            <input type="radio" id="DT_video_spec_internal_1" name="video_spec_1" value="內建" required>內建
-            <input type="radio" id="DT_video_spec_external_1" name="video_spec_1" value="外接" required>外接
-            <label>視訊品質：</label>
-            <input type="radio" id="DT_video_quality_clear_1" name="video_quality_1" value="清晰" required>清晰
-            <input type="radio" id="DT_video_quality_poor_1" name="video_quality_1" value="不佳" required>不佳
-            <input type="radio" id="DT_video_quality_untested_1" name="video_quality_1" value="未測試" required>未測試
-            <span class="error" id="error_video">請選擇視訊規格和品質</span>
-        </div>
-        <div class="form-group">
-            <label>耳麥規格：</label>
-            <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建" required>內建
-            <input type="radio" id="DT_audio_spec_external_1" name="audio_spec_1" value="外接" required>外接
-            <label>聲音品質：</label>
-            <input type="radio" id="DT_audio_quality_clear_1" name="audio_quality_1" value="清晰" required>清晰
-            <input type="radio" id="DT_audio_quality_poor_1" name="audio_quality_1" value="不佳" required>不佳
-            <input type="radio" id="DT_audio_quality_untested_1" name="audio_quality_1" value="未測試" required>未測試
-            <span class="error" id="error_audio">請選擇耳麥規格和品質</span>
-        </div>
-    </div>
-</div>
-<button type="button" onclick="addDevice()">新增設備</button>
-
-<!-- 網路連線部分 -->
-<div id="DT_connections">
-    <h3>網路連線</h3>
-    <div class="connection-group">
-        <div class="form-group">
-            <label for="DT_provider_1">電信業者：</label>
-            <input type="text" id="DT_provider_1" name="provider" required>
-            <label for="DT_connection_1">連線方式：</label>
-            <select id="DT_connection_1" name="connection" required>
-                <option value="-">-</option>
-                <option value="Wi-Fi">Wi-Fi</option>
-                <option value="有線網路">有線網路</option>
-                <option value="Wi-Fi+有線網路">Wi-Fi+有線網路</option>
-            </select>
-        </div>
-        <div class="form-group">
-            <label for="DT_speed_1">當前網速：</label>
-            <textarea id="DT_speed_1" name="speed" required></textarea>
-            <span class="error" id="error_connection">請填寫電信業者和連線方式信息</span>
-        </div>
-    </div>
-</div>
-<button type="button" onclick="addConnection()">新增網路連線</button>
-
+		
         <!-- 檢測結果部分 -->
-        <div class="form-group">
-            <label for="DT_suitable">是否適合上課：</label>
-            <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" required>適合
-            <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" required>不適合
-            <span class="error" id="error_suitable">請選擇是否適合上課</span>
-        </div>
+        <div class="form-group DTYN">
+			<label for="DT_suitable">是否適合上課：</label>
+			<input type="radio" id="DT_suitable_yes" name="suitable" value="適合" required>適合
+			<input type="radio" id="DT_suitable_no" name="suitable" value="不適合" required>不適合
+			<span class="error" id="error_suitable">請選擇是否適合上課</span>
+		</div>
         <div class="form-group">
             <label for="DT_issues">測試問題：</label>
             <textarea id="DT_issues" name="issues" required></textarea>
@@ -193,35 +282,43 @@ document.getElementById('DT_form').addEventListener('submit', function (e) {
         document.getElementById('error_project').style.display = 'block';
         errors = true;
     }
-    document.querySelectorAll('[id^="DT_device_"]').forEach(function (el, index) {
-        const osId = `DT_os_${index + 1}`;
-        const osVersionId = `DT_os_version_${index + 1}`;
-        if (el.value === '-' || !document.getElementById(osVersionId).value) {
-            document.getElementById(`error_device_os_${index + 1}`).style.display = 'block';
+
+    document.querySelectorAll('.device-group').forEach(function (el, index) {
+        const deviceIndex = index + 1;
+        const osId = `DT_os_${deviceIndex}`;
+        const osVersionId = `DT_os_version_${deviceIndex}`;
+        const videoSpecName = `video_spec_${deviceIndex}`;
+        const videoQualityName = `video_quality_${deviceIndex}`;
+        const audioSpecName = `audio_spec_${deviceIndex}`;
+        const audioQualityName = `audio_quality_${deviceIndex}`;
+
+        if (!document.getElementById(osVersionId).value || document.getElementById(`DT_device_${deviceIndex}`).value === '-') {
+            document.getElementById(`error_device_os_${deviceIndex}`).style.display = 'block';
             errors = true;
         }
-    });
-    document.querySelectorAll('[name^="video_spec_"]').forEach(function (el, index) {
-        const videoQualityName = `video_quality_${index + 1}`;
-        if (!document.querySelector(`input[name="${el.name}"]:checked`) || !document.querySelector(`input[name="${videoQualityName}"]:checked`)) {
+
+        if (!document.querySelector(`input[name="${videoSpecName}"]:checked`) || !document.querySelector(`input[name="${videoQualityName}"]:checked`)) {
             document.getElementById('error_video').style.display = 'block';
             errors = true;
         }
-    });
-    document.querySelectorAll('[name^="audio_spec_"]').forEach(function (el, index) {
-        const audioQualityName = `audio_quality_${index + 1}`;
-        if (!document.querySelector(`input[name="${el.name}"]:checked`) || !document.querySelector(`input[name="${audioQualityName}"]:checked`)) {
+
+        if (!document.querySelector(`input[name="${audioSpecName}"]:checked`) || !document.querySelector(`input[name="${audioQualityName}"]:checked`)) {
             document.getElementById('error_audio').style.display = 'block';
             errors = true;
         }
     });
-    document.querySelectorAll('[id^="DT_provider_"]').forEach(function (el, index) {
-        const connectionId = `DT_connection_${index + 1}`;
-        if (!el.value || document.getElementById(connectionId).value === '-') {
-            document.getElementById(`error_connection_${index + 1}`).style.display = 'block';
+
+    document.querySelectorAll('.connection-group').forEach(function (el, index) {
+        const connectionIndex = index + 1;
+        const providerId = `DT_provider_${connectionIndex}`;
+        const connectionId = `DT_connection_${connectionIndex}`;
+
+        if (!document.getElementById(providerId).value || document.getElementById(connectionId).value === '-') {
+            document.getElementById(`error_connection_${connectionIndex}`).style.display = 'block';
             errors = true;
         }
     });
+
     if (!document.querySelector('input[name="suitable"]:checked')) {
         document.getElementById('error_suitable').style.display = 'block';
         errors = true;
@@ -248,37 +345,39 @@ function generateOutput() {
 
     let deviceOutput = '';
     document.querySelectorAll('.device-group').forEach(function (el, index) {
-        const device = document.getElementById(`DT_device_${index + 1}`).value;
-        const brand = document.getElementById(`DT_brand_${index + 1}`).value;
-        const os = document.getElementById(`DT_os_${index + 1}`).value;
-        const osVersion = document.getElementById(`DT_os_version_${index + 1}`).value;
-        const browser = document.getElementById(`DT_browser_${index + 1}`).value;
-        const videoSpec = document.querySelector(`input[name="video_spec_${index + 1}"]:checked`).value;
-        const videoQuality = document.querySelector(`input[name="video_quality_${index + 1}"]:checked`).value;
-        const audioSpec = document.querySelector(`input[name="audio_spec_${index + 1}"]:checked`).value;
-        const audioQuality = document.querySelector(`input[name="audio_quality_${index + 1}"]:checked`).value;
+        const deviceIndex = index + 1;
+        const device = document.getElementById(`DT_device_${deviceIndex}`).value;
+        const brand = document.getElementById(`DT_brand_${deviceIndex}`).value;
+        const os = document.getElementById(`DT_os_${deviceIndex}`).value;
+        const osVersion = document.getElementById(`DT_os_version_${deviceIndex}`).value;
+        const browser = document.getElementById(`DT_browser_${deviceIndex}`).value;
+        const videoSpec = document.querySelector(`input[name="video_spec_${deviceIndex}"]:checked`).value;
+        const videoQuality = document.querySelector(`input[name="video_quality_${deviceIndex}"]:checked`).value;
+        const audioSpec = document.querySelector(`input[name="audio_spec_${deviceIndex}"]:checked`).value;
+        const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`).value;
 
         deviceOutput += `
-        使用設備（${index + 1}）：
-            設備機型：【${device} ${brand}】
+        使用設備（${deviceIndex}）：
+            設備機型：【${device}】
             作業系統：【${os}】 版本：【${osVersion}】 補充資訊：
             瀏覽器：【${browser}】
             視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】
-            耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】\n
+            耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】
         `;
     });
 
     let connectionOutput = '';
     document.querySelectorAll('.connection-group').forEach(function (el, index) {
-        const provider = document.getElementById(`DT_provider_${index + 1}`).value;
-        const connection = document.getElementById(`DT_connection_${index + 1}`).value;
-        const speed = document.getElementById(`DT_speed_${index + 1}`).value;
+        const connectionIndex = index + 1;
+        const provider = document.getElementById(`DT_provider_${connectionIndex}`).value;
+        const connection = document.getElementById(`DT_connection_${connectionIndex}`).value;
+        const speed = document.getElementById(`DT_speed_${connectionIndex}`).value;
 
         connectionOutput += `
-        網路連線（${index + 1}）：
+        網路連線（${connectionIndex}）：
             電信業者：【${provider}】 連線方式：【${connection}】
             當前網速：
-            ${speed}\n
+            ${speed}
         `;
     });
 
@@ -290,11 +389,8 @@ function generateOutput() {
         日期時間：【${datetime}】
         學生姓名：【${name}】 連絡電話：【${phone}】
         測試工程：【${project}】
-
         ${deviceOutput}
-
         ${connectionOutput}
-
         是否適合上課：【${suitable}】
 
         測試問題：
@@ -322,53 +418,71 @@ function addDevice() {
     const newDevice = document.createElement('div');
     newDevice.className = 'device-group';
     newDevice.innerHTML = `
-        <div class="form-group">
-            <label for="DT_device_${deviceCount}">設備：</label>
-            <select id="DT_device_${deviceCount}" name="device_${deviceCount}" required>
-                <option value="-">-</option>
-                <option value="筆電">筆電</option>
-                <option value="桌上型電腦">桌上型電腦</option>
-                <option value="平板">平板</option>
-                <option value="其他">其他</option>
-            </select>
-            <label for="DT_brand_${deviceCount}">品牌：</label>
-            <input type="text" id="DT_brand_${deviceCount}" name="brand_${deviceCount}">
+	<hr>
+        <div class="row">
+            <div><label for="DT_device_${deviceCount}">設備</label></div>
+            <div><label for="DT_brand_${deviceCount}">品牌</label></div>
+            <div><label for="DT_os_${deviceCount}">作業系統</label></div>
+            <div><label for="DT_os_version_${deviceCount}">版本</label></div>
+            <div><label for="DT_browser_${deviceCount}">瀏覽器</label></div>
         </div>
-        <div class="form-group">
-            <label for="DT_os_${deviceCount}">作業系統：</label>
-            <select id="DT_os_${deviceCount}" name="os_${deviceCount}" required>
-                <option value="-">-</option>
-                <option value="Windows">Windows</option>
-                <option value="MacOS">MacOS</option>
-                <option value="iOS">iOS</option>
-                <option value="Android">Android</option>
-                <option value="其他">其他</option>
-            </select>
-            <label for="DT_os_version_${deviceCount}">版本：</label>
-            <input type="text" id="DT_os_version_${deviceCount}" name="os_version_${deviceCount}" required>
+        <div class="row">
+            <div>
+                <select id="DT_device_${deviceCount}" name="device_${deviceCount}" required>
+                    <option value="-">-</option>
+                    <option value="筆電">筆電</option>
+                    <option value="桌上型電腦">桌上型電腦</option>
+                    <option value="平板">平板</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div>
+                <input type="text" id="DT_brand_${deviceCount}" name="brand_${deviceCount}">
+            </div>
+            <div>
+                <select id="DT_os_${deviceCount}" name="os_${deviceCount}" required>
+                    <option value="-">-</option>
+                    <option value="Windows">Windows</option>
+                    <option value="MacOS">MacOS</option>
+                    <option value="iOS">iOS</option>
+                    <option value="Android">Android</option>
+                    <option value="其他">其他</option>
+                </select>
+            </div>
+            <div>
+                <input type="text" id="DT_os_version_${deviceCount}" name="os_version_${deviceCount}" required>
+            </div>
+            <div>
+                <input type="text" id="DT_browser_${deviceCount}" name="browser_${deviceCount}" required>
+            </div>
         </div>
-        <div class="form-group">
-            <label for="DT_browser_${deviceCount}">瀏覽器：</label>
-            <input type="text" id="DT_browser_${deviceCount}" name="browser_${deviceCount}" required>
+        <div class="DTDV_grid-container">
+            <div class="DTDV_grid-item">
+                <label>視訊規格：</label>
+                <input type="radio" id="DT_video_spec_internal_${deviceCount}" name="video_spec_${deviceCount}" value="內建" required>內建
+                <input type="radio" id="DT_video_spec_external_${deviceCount}" name="video_spec_${deviceCount}" value="外接" required>外接
+            </div>
+            <div class="DTDV_grid-item">
+                <label>視訊品質：</label>
+                <input type="radio" id="DT_video_quality_clear_${deviceCount}" name="video_quality_${deviceCount}" value="清晰" required>清晰
+                <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳" required>不佳
+                <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試" required>未測試
+            </div>
+            <div class="DTDV_grid-item">
+                <label>耳麥規格：</label>
+                <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建" required>內建
+                <input type="radio" id="DT_audio_spec_external_${deviceCount}" name="audio_spec_${deviceCount}" value="外接" required>外接
+            </div>
+            <div class="DTDV_grid-item">
+                <label>聲音品質：</label>
+                <input type="radio" id="DT_audio_quality_clear_${deviceCount}" name="audio_quality_${deviceCount}" value="清晰" required>清晰
+                <input type="radio" id="DT_audio_quality_poor_${deviceCount}" name="audio_quality_${deviceCount}" value="不佳" required>不佳
+                <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" required>未測試
+            </div>
         </div>
-        <div class="form-group">
-            <label>視訊規格：</label>
-            <input type="radio" id="DT_video_spec_internal_${deviceCount}" name="video_spec_${deviceCount}" value="內建" required>內建
-            <input type="radio" id="DT_video_spec_external_${deviceCount}" name="video_spec_${deviceCount}" value="外接" required>外接
-            <label>視訊品質：</label>
-            <input type="radio" id="DT_video_quality_clear_${deviceCount}" name="video_quality_${deviceCount}" value="清晰" required>清晰
-            <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳" required>不佳
-            <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試" required>未測試
-        </div>
-        <div class="form-group">
-            <label>耳麥規格：</label>
-            <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建" required>內建
-            <input type="radio" id="DT_audio_spec_external_${deviceCount}" name="audio_spec_${deviceCount}" value="外接" required>外接
-            <label>聲音品質：</label>
-            <input type="radio" id="DT_audio_quality_clear_${deviceCount}" name="audio_quality_${deviceCount}" value="清晰" required>清晰
-            <input type="radio" id="DT_audio_quality_poor_${deviceCount}" name="audio_quality_${deviceCount}" value="不佳" required>不佳
-            <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" required>未測試
-        </div>
+        <span class="error" id="error_device_os_${deviceCount}">請填寫設備和作業系統信息</span>
+        <span class="error" id="error_video_${deviceCount}">請選擇視訊規格和品質</span>
+        <span class="error" id="error_audio_${deviceCount}">請選擇耳麥規格和品質</span>
     `;
     deviceContainer.appendChild(newDevice);
 }
@@ -379,7 +493,8 @@ function addConnection() {
     const newConnection = document.createElement('div');
     newConnection.className = 'connection-group';
     newConnection.innerHTML = `
-        <div class="form-group">
+    <hr>    
+		<div class="form-group">
             <label for="DT_provider_${connectionCount}">電信業者：</label>
             <input type="text" id="DT_provider_${connectionCount}" name="provider_${connectionCount}" required>
             <label for="DT_connection_${connectionCount}">連線方式：</label>
@@ -394,10 +509,10 @@ function addConnection() {
             <label for="DT_speed_${connectionCount}">當前網速：</label>
             <textarea id="DT_speed_${connectionCount}" name="speed_${connectionCount}" required></textarea>
         </div>
+        <span class="error" id="error_connection_${connectionCount}">請填寫電信業者和連線方式信息</span>
     `;
     connectionContainer.appendChild(newConnection);
 }
-
 </script>
 
 </body>
