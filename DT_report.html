@@ -96,7 +96,7 @@
             align-items: start;
         }
         .DTDV_grid-item {
-            text-align: left;
+            text-align: left; /* 保持單選按鈕跟文字同一行 */
         }
         /* DTYN 樣式 */
         .DTYN {
@@ -116,6 +116,9 @@
             margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
             color: red; /* 設置錯誤消息顏色 */
         }
+		.DV_sutable {
+		   text-align: left; /* 保持單選按鈕跟文字同一行 */
+		}
     </style>
 </head>
 <body>
@@ -242,10 +245,12 @@
         </div>
         <!-- 檢測結果部分 -->
         <div class="form-group">
+		<div class="DV_sutable">
             <label for="DT_suitable">是否適合上課：</label>
             <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" required>適合
             <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" required>不適合
             <span class="error" id="error_suitable">請選擇是否適合上課</span>
+			</div>
         </div>
         <div class="form-group">
             <label for="DT_issues">測試問題：</label>
