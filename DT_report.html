@@ -138,7 +138,7 @@
             <span class="error" id="error_name_phone">請填寫姓名和電話</span>
         </div>
         <div class="form-group">
-            <label for="DT_project">測試工程：</label>
+            <label for="DT_project">測試工程師：</label>
             <input type="text" id="DT_project" name="project" required>
             <span class="error" id="error_project">請填寫測試工程</span>
         </div>
@@ -372,12 +372,12 @@ function generateOutput() {
         const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`).value;
 
         deviceOutput += `
-        使用設備（${deviceIndex}）：
-            設備機型：【${device}】
-            作業系統：【${os}】 版本：【${osVersion}】 補充資訊：
-            瀏覽器：【${browser}】
-            視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】
-            耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】
+        使用設備（${deviceIndex}）：<br>
+            設備機型：【${device}】<br>
+            作業系統：【${os}】 版本：【${osVersion}】 補充資訊：<br>
+            瀏覽器：【${browser}】<br>
+            視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
+            耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】<br>
         `;
     });
 
@@ -389,10 +389,10 @@ function generateOutput() {
         const speed = document.getElementById(`DT_speed_${connectionIndex}`).value;
 
         connectionOutput += `
-        網路連線（${connectionIndex}）：
-            電信業者：【${provider}】 連線方式：【${connection}】
-            當前網速：
-            ${speed}
+        網路連線（${connectionIndex}）：<br>
+            電信業者：【${provider}】 連線方式：【${connection}】<br>
+            當前網速：<br>
+            ${speed}<br>
         `;
     });
 
@@ -402,23 +402,23 @@ function generateOutput() {
     const boldbrief = document.getElementById('DT_boldbrief').value;
 
     let outputContent = `
-        日期時間：【${datetime}】
-        學生姓名：【${name}】 連絡電話：【${phone}】
-        測試工程：【${project}】
-        ${deviceOutput}
-        ${connectionOutput}
-        是否適合上課：【${suitable}】
-
-        測試問題：
-        ${issues}
-
-        處理過程：
-        ${process}
-
-        **${boldbrief}**
+        日期時間：【${datetime}】<br>
+        學生姓名：【${name}】 連絡電話：【${phone}】<br>
+        測試工程師：【${project}】<br><br>
+        ${deviceOutput}<br>
+        ${connectionOutput}<br>
+        是否適合上課：【${suitable}】<br>
+<br>
+        測試問題：<br>
+        ${issues}<br>
+<br>
+        處理過程：<br>
+        ${process}<br>
+<br>
+        <b>${boldbrief}</b>
     `;
 
-    document.getElementById('output_content').innerText = outputContent.trim();
+    document.getElementById('output_content').innerHTML = outputContent.trim();
 
     const copyFeedback = document.getElementById('copy_feedback');
     copyFeedback.style.display = 'block';
