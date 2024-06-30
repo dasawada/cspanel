@@ -277,3 +277,10 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     cursor: pointer;
 }
 
+/* 移除 h3 元素的上下 padding */
+h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+	text-align: center;
+}
+
