@@ -11,7 +11,7 @@
         .container {
             display: flex;
             flex-direction: row; /* 確保元素水平排列 */
-            height: 98vh; /* 98% 視窗高度 */
+            height: 98vh; /* 98% 視窗高度，保持整個畫面盡量不產生捲軸 */
             overflow: hidden;
         }
         .DTV_iframe {
@@ -22,7 +22,7 @@
             width: calc(100% - 500px); /* 除去右側固定寬度 */
             height: 100%;
             overflow: hidden; /* 隱藏溢出部分 */
-			z-index: 1000; /* 確保在最上層 */
+            z-index: 1000; /* 確保在最上層，避免元素遮擋無法點擊 */
         }
         .form_container {
             position: absolute;
@@ -32,7 +32,7 @@
             width: 500px; /* 固定寬度 */
             height: 100%;
             overflow-y: auto; /* 垂直卷軸 */
-            padding: 0 15px 0 0;
+            padding: 0 10px 0 10px;
             box-sizing: border-box;
         }
         .form-group {
@@ -273,7 +273,8 @@
             <textarea id="DT_boldbrief" name="boldbrief" required></textarea>
             <span class="error" id="error_boldbrief">請填寫</span>
         </div>
-        <button type="submit">提交</button>
+        <button type="submit">生成</button>
+	<button type="button" id="copyReportButton">複製報告</button>
     </form>
     <div class="output" id="DT_output">
         <div id="output_content">填寫表單後顯示此處A_A</div>
@@ -296,7 +297,7 @@ function formatDateTime(datetime) {
     return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
-// 斷行判斷
+// 多行內容斷行判斷
 function escapeHtml(text) {
     return text
         .replace(/&/g, "&amp;")
@@ -315,7 +316,7 @@ document.getElementById('DT_form').addEventListener('submit', function (e) {
         el.style.display = 'none';
     });
 
-    // 簡單驗證邏輯
+    // 簡單驗證時間有效性
     if (!document.getElementById('DT_datetime').value) {
         document.getElementById('error_datetime').style.display = 'block';
         errors = true;
@@ -390,12 +391,12 @@ document.getElementById('DT_form').addEventListener('submit', function (e) {
 function generateOutput() {
     const datetime = document.getElementById('DT_datetime').value;
     const formattedDatetime = formatDateTime(datetime);
-    const issues = escapeHtml(document.getElementById('DT_issues').value); // 新增处理 DT_issues
-    const process = escapeHtml(document.getElementById('DT_process').value); // 新增处理 DT_process
+    const issues = escapeHtml(document.getElementById('DT_issues').value); // 處理 DT_issues
+    const process = escapeHtml(document.getElementById('DT_process').value); // 處理 DT_process
 
     if (formattedDatetime) {
         console.log('Formatted DateTime:', formattedDatetime);
-        // 您可以將輸出的值放在其他需要的位置，例如表單提交或顯示在網頁上
+        // 將時間輸出為yyyymmdd hhmm
     } else {
         console.log('Please select a date and time.');
     }
@@ -456,9 +457,9 @@ function generateOutput() {
         是否適合上課：【${suitable}】<br>
         --------<br>
         測試問題：<br>
-        <pre style="white-space: pre-wrap;">${issues}</pre><br> <!-- 修改处 -->
+        <pre style="white-space: pre-wrap;">${issues}</pre><br>
         處理過程：<br>
-        <pre style="white-space: pre-wrap;">${process}</pre><br> <!-- 修改处 -->
+        <pre style="white-space: pre-wrap;">${process}</pre><br>
 	<br>
         <b>**${boldbrief}**</b>
     `;
@@ -543,7 +544,7 @@ function addDevice() {
     `;
     deviceContainer.appendChild(newDevice);
 }
-
+	
 function addConnection() {
     connectionCount++;
     const connectionContainer = document.getElementById('DT_connections');
@@ -570,7 +571,33 @@ function addConnection() {
     `;
     connectionContainer.appendChild(newConnection);
 }
+// 複製報告函數
+document.getElementById('copyReportButton').addEventListener('click', function() {
+    const outputContent = document.getElementById('output_content').innerHTML;
+    copyToClipboard(outputContent);
+});
 
+function copyToClipboard(html) {
+    const tempElement = document.createElement('textarea');
+    tempElement.value = html;
+    document.body.appendChild(tempElement);
+    tempElement.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempElement);
+    
+    // “已複製！”
+    const copyButton = document.getElementById('copyReportButton');
+    copyButton.textContent = '已複製！';
+    copyButton.style.backgroundColor = 'green';
+    copyButton.style.color = 'white';
+
+    // 按鈕恢復
+    setTimeout(() => {
+        copyButton.textContent = '複製報告';
+        copyButton.style.backgroundColor = '';
+        copyButton.style.color = '';
+    }, 2000);
+}
 </script>
 </body>
 </html>
