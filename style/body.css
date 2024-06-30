@@ -113,11 +113,12 @@ body {
 
 .linkout {
     background-color: white;
-    padding: 5px; 
+    padding: 7px; 
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     height: 65px; /* 固定高度 */
+	width: 395px;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     top: 35px;
@@ -217,12 +218,12 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     display: flex;
     align-items: center;
 }
-.input-container {
+.ShrtURL_input_container {
     display: flex;
     align-items: center;
     margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
 }
-.input-container input {
+.ShrtURL_input_container input {
     margin-right: 5px; /* 右邊距設置為5px */
 }
 .appicon img {

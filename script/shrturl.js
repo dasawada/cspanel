@@ -1,63 +1,85 @@
-// 短網址生成
-        function shortenUrlIsGd() {
-            const longUrl = document.getElementById('longUrl').value;
-            if (!longUrl) {
-                alert("請輸入網址");
-                return;
-            }
 
-            const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+    // 短網址生成
+    function shortenUrlIsGd() {
+        const longUrl = document.getElementById('longUrl').value;
+        const shortenButton = document.getElementById('shortenButton');
 
-            fetch(apiUrl)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.shorturl) {
-                        document.getElementById('shortUrlOutput').value = data.shorturl;
-                        checkInputValue();
-                    } else {
-                        alert("生成短網址失敗");
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("生成短網址失敗");
-                });
+        if (!longUrl) {
+            alert("請輸入網址");
+            return;
         }
 
-        // 檢查輸入框值並設置按鈕狀態
-        function checkInputValue() {
-            const shortUrlOutput = document.getElementById('shortUrlOutput');
-            const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
+        const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 
-            // 如果輸入框有值，顯示按鈕，否則隱藏按鈕
-            if (shortUrlOutput.value.trim() === '') {
-                ShrtURL_copyButton.style.display = 'none';
-            } else {
-                ShrtURL_copyButton.style.display = 'inline-block';
-            }
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                if (data.shorturl) {
+                    document.getElementById('shortUrlOutput').value = data.shorturl;
+                    checkInputValue();
+                    showShortenButtonMessage('生成成功');
+                } else {
+                    showShortenButtonMessage('生成失敗');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                showShortenButtonMessage('生成失敗');
+            });
+    }
+
+    // 檢查輸入框值並設置按鈕狀態
+    function checkInputValue() {
+        const longUrl = document.getElementById('longUrl').value.trim();
+        const shortUrlOutput = document.getElementById('shortUrlOutput').value.trim();
+        const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
+        const shortenButton = document.getElementById('shortenButton');
+
+        // 如果長網址輸入框無值，禁用生成按鈕和复制按钮
+        if (longUrl === '') {
+            ShrtURL_copyButton.style.display = 'none';
+            shortenButton.disabled = true;
+        } else {
+            shortenButton.disabled = false;
         }
 
-        // 複製短網址到剪貼板
-        function copyShortUrlToClipboard() {
-            const shortUrlOutput = document.getElementById('shortUrlOutput');
-
-            shortUrlOutput.select();
-            document.execCommand('copy');
-            showCopyButtonMessage('已複製(ﾉ∀`*)');
+        // 如果短網址輸出框無值，禁用复制按钮
+        if (shortUrlOutput === '') {
+            ShrtURL_copyButton.style.display = 'none';
+        } else {
+            ShrtURL_copyButton.style.display = 'inline-block';
         }
+    }
 
-        // 顯示複製按鈕消息
-        function showCopyButtonMessage(message) {
-            const copyButtonMessage = document.getElementById('copyButtonMessage');
-            copyButtonMessage.textContent = message;
+    // 複製短網址到剪貼板
+    function copyShortUrlToClipboard() {
+        const shortUrlOutput = document.getElementById('shortUrlOutput');
+        const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
 
-            setTimeout(() => {
-                copyButtonMessage.textContent = '';
-            }, 2000); // 2秒後清除消息
-        }
+        shortUrlOutput.select();
+        document.execCommand('copy');
+        showShrtURL_copyButtonMessage('已複製(ﾉ∀`*)');
+    }
 
-        // 監聽輸入框的輸入事件
-        document.getElementById('shortUrlOutput').addEventListener('input', checkInputValue);
+    // 顯示复制按鈕消息
+    function showShrtURL_copyButtonMessage(message) {
+        const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
+        ShrtURL_copyButton.textContent = message;
 
-        // 初始化檢查按鈕狀態
-        checkInputValue();
+        setTimeout(() => {
+            ShrtURL_copyButton.textContent = 'Copy';
+        }, 2000); // 2秒後重置按鈕文本
+    }
+
+    // 顯示生成按鈕消息
+    function showShortenButtonMessage(message) {
+        const shortenButton = document.getElementById('shortenButton');
+        shortenButton.textContent = message;
+
+        setTimeout(() => {
+            shortenButton.textContent = '製作短網址';
+        }, 2000); // 2秒後重置按鈕文本
+    }
+
+    // 初始化檢查按鈕狀態
+    document.addEventListener('DOMContentLoaded', checkInputValue);

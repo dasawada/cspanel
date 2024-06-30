@@ -150,14 +150,14 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 
 <div class="linkout">
-<div class="input-container">
-    <input type="text" id="longUrl" placeholder="輸入網址">
-    <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
-</div>
-<div id="shortUrlContainer">
-    <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
-    <button id="ShrtURL_copyButton" onclick="copyShortUrlToClipboard()">Copy</button>
-</div>
+    <div class="input-container">
+        <input type="text" id="longUrl" placeholder="輸入網址" oninput="checkInputValue()">
+        <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
+    </div>
+    <div id="shortUrlContainer">
+        <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+        <button id="ShrtURL_copyButton" onclick="copyShortUrlToClipboard()">Copy</button>
+    </div>
 </div>
 
     <div class="appicon">
