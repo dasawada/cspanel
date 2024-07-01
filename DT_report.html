@@ -581,6 +581,11 @@ document.getElementById('copyReportButton').addEventListener('click', function()
     copyToClipboard(outputContent);
 });
 
+document.getElementById('copyReportButton').addEventListener('click', function() {
+    const outputContent = document.getElementById('output_content');
+    copyToClipboard(outputContent);
+});
+
 function copyToClipboard(element) {
     const range = document.createRange();
     range.selectNodeContents(element);
@@ -588,13 +593,12 @@ function copyToClipboard(element) {
     selection.removeAllRanges();
     selection.addRange(range);
 
-    // 創建一個臨時的textarea元素來複製HTML內容
-    const tempElement = document.createElement('textarea');
-    tempElement.value = element.innerHTML;
-    document.body.appendChild(tempElement);
-    tempElement.select();
-    document.execCommand('copy');
-    document.body.removeChild(tempElement);
+    try {
+        document.execCommand('copy');
+        const copyButton = document.getElementById('copyReportButton');
+        copyButton.textContent = '已複製！';
+        copyButton.style.backgroundColor = 'green';
+        copyButton.style.color = 'white';
 
     // “已複製！”提示
     const copyButton = document.getElementById('copyReportButton');
