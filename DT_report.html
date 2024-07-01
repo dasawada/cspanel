@@ -576,6 +576,11 @@ document.getElementById('copyReportButton').addEventListener('click', function()
     copyToClipboard(outputContent);
 });
 
+document.getElementById('copyReportButton').addEventListener('click', function() {
+    const outputContent = document.getElementById('output_content');
+    copyToClipboard(outputContent);
+});
+
 function copyToClipboard(element) {
     const range = document.createRange();
     range.selectNodeContents(element);
@@ -607,7 +612,6 @@ function copyToClipboard(element) {
     // 移除範圍選擇
     selection.removeAllRanges();
 }
-
 </script>
 </body>
 </html>
