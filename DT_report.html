@@ -571,33 +571,43 @@ function addConnection() {
     `;
     connectionContainer.appendChild(newConnection);
 }
-// 複製報告函數
 document.getElementById('copyReportButton').addEventListener('click', function() {
-    const outputContent = document.getElementById('output_content').innerHTML;
-    copyToClipboard(output_content);
+    const outputContent = document.getElementById('output_content');
+    copyToClipboard(outputContent);
 });
 
-function copyToClipboard(html) {
+function copyToClipboard(element) {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const selection = window.getSelection();
+    selection.removeAllRanges();
+    selection.addRange(range);
+
+    // 創建一個臨時的textarea元素來複製HTML內容
     const tempElement = document.createElement('textarea');
-    tempElement.value = html;
+    tempElement.value = element.innerHTML;
     document.body.appendChild(tempElement);
     tempElement.select();
     document.execCommand('copy');
     document.body.removeChild(tempElement);
-    
-    // “已複製！”
+
+    // “已複製！”提示
     const copyButton = document.getElementById('copyReportButton');
     copyButton.textContent = '已複製！';
     copyButton.style.backgroundColor = 'green';
     copyButton.style.color = 'white';
 
-    // 按鈕恢復
+    // 恢復按鈕原狀
     setTimeout(() => {
         copyButton.textContent = '複製報告';
         copyButton.style.backgroundColor = '';
         copyButton.style.color = '';
     }, 2000);
+
+    // 移除範圍選擇
+    selection.removeAllRanges();
 }
+
 </script>
 </body>
 </html>
