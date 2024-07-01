@@ -573,8 +573,8 @@ function addConnection() {
 }
 // 複製報告函數
 document.getElementById('copyReportButton').addEventListener('click', function() {
-    const outputContent = document.getElementById('DT_output').innerHTML;
-    copyToClipboard(DT_output);
+    const outputContent = document.getElementById('output_content').innerHTML;
+    copyToClipboard(output_content);
 });
 
 function copyToClipboard(html) {
