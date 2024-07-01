@@ -586,6 +586,11 @@ document.getElementById('copyReportButton').addEventListener('click', function()
     copyToClipboard(outputContent);
 });
 
+document.getElementById('copyReportButton').addEventListener('click', function() {
+    const outputContent = document.getElementById('output_content');
+    copyToClipboard(outputContent);
+});
+
 function copyToClipboard(element) {
     const range = document.createRange();
     range.selectNodeContents(element);
@@ -600,20 +605,15 @@ function copyToClipboard(element) {
         copyButton.style.backgroundColor = 'green';
         copyButton.style.color = 'white';
 
-    // “已複製！”提示
-    const copyButton = document.getElementById('copyReportButton');
-    copyButton.textContent = '已複製！';
-    copyButton.style.backgroundColor = 'green';
-    copyButton.style.color = 'white';
+        setTimeout(() => {
+            copyButton.textContent = '複製報告';
+            copyButton.style.backgroundColor = '';
+            copyButton.style.color = '';
+        }, 2000);
+    } catch (err) {
+        console.error('複製失敗', err);
+    }
 
-    // 恢復按鈕原狀
-    setTimeout(() => {
-        copyButton.textContent = '複製報告';
-        copyButton.style.backgroundColor = '';
-        copyButton.style.color = '';
-    }, 2000);
-
-    // 移除範圍選擇
     selection.removeAllRanges();
 }
 </script>
