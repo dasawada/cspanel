@@ -57,7 +57,7 @@
 
             let outputContent = `
                 日期時間：【${formattedDatetime}】<br>
-                學生姓名：【${name}】 ${phone}<br>
+                學生姓名：【${name}】<br>${phone}<br>
                 測試工程師：【${project}】
                 ${deviceOutput}<br>
                 ${connectionOutput}<br>
