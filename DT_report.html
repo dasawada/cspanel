@@ -5,6 +5,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>💡軟硬體測試💡</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <link rel="stylesheet" href="style/font.css">
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
@@ -23,7 +24,7 @@
             width: calc(100% - 500px); /* 除去右側固定寬度 */
             height: 100%;
             overflow: hidden; /* 隱藏溢出部分 */
-            z-index: 1000; /* 確保在最上層，避免元素遮擋無法點擊 */
+            z-index: 900; /* 確保在最上層，避免元素遮擋無法點擊 */
         }
         .form_container {
             position: absolute;
@@ -130,7 +131,18 @@
 
 
 </div>
+<!-- 教室log確認 -->
+<div class="ClassLogpanel small-size" style="right: 20px; top: 10px; position: absolute;">
+        <div class="toggle-container" style="text-align: right;justify-content: center;padding-right:15px;">
+        <input type="checkbox" id="logToggleCheckbox">
+        <label for="logToggleCheckbox">教室LOG確認</label>
+    </div>
+    <div id="content" style="display: none;">
+        <iframe class="responsive-iframe" src="userlogframe_right.html"></iframe>
+    </div>
+</div>
 <div class="container">
+
 <div class="DTV_iframe">
     <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1v4ca32PaXniLRzdbORtlWtbH35uNm6OTg6_xlWjlhj0/edit?gid=1843767276#gid=1843767276"></iframe>
 </div>
@@ -274,12 +286,12 @@
         </div>
         <div class="form-group">
             <label for="DT_issues">測試問題：<span class="red-asterisk">*</span></label>
-            <textarea id="DT_issues" name="issues" ></textarea>
+            <textarea id="DT_issues" name="issues"></textarea>
             <span class="error" id="error_issues">請填寫測試問題</span>
         </div>
         <div class="form-group">
             <label for="DT_process">處理過程：<span class="red-asterisk">*</span></label>
-            <textarea id="DT_process" name="process" ></textarea>
+            <textarea id="DT_process" name="process" style="height:100px"></textarea>
             <span class="error" id="error_process">請填寫處理過程</span>
         </div>
         <div class="form-group">
@@ -299,6 +311,12 @@
 <script src="script/DT_test_copybutton_script.js"></script>
 <script src="script/addforms.js"></script>
 <script src="script/DT_form_output.js"></script>
+<script src="script/imgcp2bx.js"></script>
+<script src="script/cpcast.js"></script>
+<script src="script/optitlearange.js"></script>
+<script src="script/GGapi.js"></script>
+<script src="script/togglelayer.js"></script>
+<script src="script/shrturl.js"></script>
 <script>
 function formatDateTime(datetime) {
     if (!datetime) {
@@ -409,6 +427,41 @@ function escapeHtml(text) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
+document.addEventListener('DOMContentLoaded', (event) => {
+    function setupToggle(containerClass, checkboxId) {
+        const container = document.querySelector(containerClass);
+        const checkbox = document.getElementById(checkboxId);
+
+        if (container && checkbox) {
+            const content = container.querySelector('#content');
+            checkbox.checked = false;
+            container.classList.add('small-size');
+            if (content) {
+                content.style.display = 'none';
+            }
+
+            checkbox.addEventListener('change', function() {
+                if (this.checked) {
+                    container.classList.remove('small-size');
+                    if (content) {
+                        content.style.display = 'block';
+                    }
+                } else {
+                    container.classList.add('small-size');
+                    if (content) {
+                        content.style.display = 'none';
+                    }
+                }
+            });
+        }
+    }
+
+    setupToggle('.consultantlistgooglesheet', 'toggleCheckbox');
+    setupToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
+    setupToggle('.ClassLogpanel', 'logToggleCheckbox');
+});
+
 
 </script>
 </body>
