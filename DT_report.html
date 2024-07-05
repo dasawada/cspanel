@@ -10,6 +10,35 @@
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
 <style>
+.device-group, .connection-group {
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 2px;
+    right: 0px;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    color: #aaa;
+    text-shadow: 0 1px 0 #fff;
+    opacity: .2;
+    border: none;
+    background: none;
+	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-button:hover {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: .5;
+}
         .container {
             display: flex;
             flex-direction: row; /* 確保元素水平排列 */
@@ -215,7 +244,7 @@
                             <input type="text" id="DT_browser_1" name="browser">
                         </div>
                     </div>
-                    <span class="error" id="error_device_os">請填寫設備和作業系統信息</span>
+                    <span class="error" id="error_device_os_1">請填寫設備和作業系統</span>
                     <div class="DTDV_grid-container">
                         <div class="DTDV_grid-item">
                             <label>視訊規格：<span class="red-asterisk">*</span></label>
@@ -229,7 +258,7 @@
                             <input type="radio" id="DT_video_quality_untested_1" name="video_quality_1" value="未測試"><label for="DT_video_quality_untested_1">未測試</label>
 							
                         </div>
-						<span class="error" id="error_video">請選擇視訊規格和品質</span>
+						
                         <div class="DTDV_grid-item">
                             <label>耳麥規格：<span class="red-asterisk">*</span></label>
                             <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建"><label for="DT_audio_spec_internal_1">內建</label>
@@ -242,12 +271,14 @@
                             <input type="radio" id="DT_audio_quality_untested_1" name="audio_quality_1" value="未測試" ><label for="DT_audio_quality_untested_1">未測試</label>
 							
                         </div>
-						<span class="error" id="error_audio">請選擇耳麥規格和品質</span>
+						
                     </div>
+					<span class="error" id="error_video_1">請選擇視訊規格和品質</span>
+						<span class="error" id="error_audio_1">請選擇耳麥規格和品質</span>
                 </div>
             </div>
 	<div class="spacer"></div>
-            <button type="button" onclick="addDevice()">新增設備（刪除功能開發中）</button>
+            <button type="button" onclick="addDevice()">新增設備</button>
         </div>
         <div class="DT_SON_BORDER">
             <!-- 網路連線部分 -->
@@ -268,12 +299,12 @@
                     <div class="form-group">
                         <label for="DT_speed_1">當前網速：<span class="red-asterisk">*</span></label>
                         <textarea id="DT_speed_1" name="speed" ></textarea>
-                        <span class="error" id="error_connection">請填寫電信業者和連線方式信息</span>
+                        <span class="error" id="error_connection_1">請填寫電信業者和連線方式</span>
                     </div>
                 </div>
             </div>
 	<div class="spacer"></div>
-            <button type="button" onclick="addConnection()">新增網路連線（刪除功能開發中）</button>
+            <button type="button" onclick="addConnection()">新增網路連線</button>
         </div>
         <!-- 檢測結果部分 -->
         <div class="form-group">
@@ -295,9 +326,9 @@
             <span class="error" id="error_process">請填寫處理過程</span>
         </div>
         <div class="form-group">
-            <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：<span class="red-asterisk">*</span></label>
+            <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
             <textarea id="DT_boldbrief" name="boldbrief" ></textarea>
-            <span class="error" id="error_boldbrief">請填寫</span>
+            
         </div>
         <button type="submit">生成</button>
 	<button type="button" id="copyReportButton">複製報告</button>
@@ -340,25 +371,6 @@ function formatDateTime(datetime) {
     document.querySelectorAll('.error').forEach(function (el) {
         el.style.display = 'none';
     });
-
-// 簡單驗證
-if (!document.getElementById('DT_datetime').value || 
-    !document.getElementById('DT_name').value || 
-    !document.getElementById('DT_phone').value || 
-    !document.getElementById('DT_project').value) {
-    
-    if (!document.getElementById('DT_datetime').value) {
-        document.getElementById('error_datetime').style.display = 'block';
-    }
-    if (!document.getElementById('DT_name').value || !document.getElementById('DT_phone').value) {
-        document.getElementById('error_name_phone').style.display = 'block';
-    }
-    if (!document.getElementById('DT_project').value) {
-        document.getElementById('error_project').style.display = 'block';
-    }
-    errors = true;
-}
-	
 
     document.querySelectorAll('.device-group').forEach(function (el, index) {
         const deviceIndex = index + 1;
@@ -460,6 +472,120 @@ document.addEventListener('DOMContentLoaded', (event) => {
     setupToggle('.consultantlistgooglesheet', 'toggleCheckbox');
     setupToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
     setupToggle('.ClassLogpanel', 'logToggleCheckbox');
+});
+
+//error alart
+function validateForm() {
+    let errors = false;
+
+    // 檢查日期時間、姓名、電話和測試工程師字段
+    if (!document.getElementById('DT_datetime').value || 
+        !document.getElementById('DT_name').value || 
+        !document.getElementById('DT_phone').value || 
+        !document.getElementById('DT_project').value) {
+        
+        if (!document.getElementById('DT_datetime').value) {
+            document.getElementById('error_datetime').style.display = 'block';
+        }
+        if (!document.getElementById('DT_name').value || !document.getElementById('DT_phone').value) {
+            document.getElementById('error_name_phone').style.display = 'block';
+        }
+        if (!document.getElementById('DT_project').value) {
+            document.getElementById('error_project').style.display = 'block';
+        }
+        errors = true;
+    }
+
+    // 檢查每個設備組
+    document.querySelectorAll('.device-group').forEach(function (el, index) {
+        const deviceIndex = index + 1;
+        const device = document.getElementById(`DT_device_${deviceIndex}`).value;
+        const os = document.getElementById(`DT_os_${deviceIndex}`).value;
+        const errorElement = document.getElementById(`error_device_os_${deviceIndex}`);
+
+        if (!device || device === "-" || !os || os === "-") {
+            errorElement.style.display = 'block';
+            errors = true;
+        } else {
+            errorElement.style.display = 'none';
+        }
+
+        const videoSpec = document.querySelector(`input[name="video_spec_${deviceIndex}"]:checked`);
+        const videoQuality = document.querySelector(`input[name="video_quality_${deviceIndex}"]:checked`);
+        const videoErrorElement = document.getElementById(`error_video_${deviceIndex}`);
+
+        if (!videoSpec || !videoQuality) {
+            videoErrorElement.style.display = 'block';
+            errors = true;
+        } else {
+            videoErrorElement.style.display = 'none';
+        }
+
+        const audioSpec = document.querySelector(`input[name="audio_spec_${deviceIndex}"]:checked`);
+        const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`);
+        const audioErrorElement = document.getElementById(`error_audio_${deviceIndex}`);
+
+        if (!audioSpec || !audioQuality) {
+            audioErrorElement.style.display = 'block';
+            errors = true;
+        } else {
+            audioErrorElement.style.display = 'none';
+        }
+    });
+
+    // 檢查每個連線組
+    document.querySelectorAll('.connection-group').forEach(function (el, index) {
+        const connectionIndex = index + 1;
+        const provider = document.getElementById(`DT_provider_${connectionIndex}`).value;
+        const connection = document.getElementById(`DT_connection_${connectionIndex}`).value;
+        const errorElement = document.getElementById(`error_connection_${connectionIndex}`);
+
+        if (!provider || provider.trim() === "" || !connection || connection === "-") {
+            errorElement.style.display = 'block';
+            errors = true;
+        } else {
+            errorElement.style.display = 'none';
+        }
+    });
+
+    // 檢查適合上課的選擇
+    const suitable = document.querySelector('input[name="suitable"]:checked');
+    if (!suitable) {
+        document.getElementById('error_suitable').style.display = 'block';
+        errors = true;
+    } else {
+        document.getElementById('error_suitable').style.display = 'none';
+    }
+
+    // 檢查測試問題和處理過程字段
+    if (!document.getElementById('DT_issues').value) {
+        document.getElementById('error_issues').style.display = 'block';
+        errors = true;
+    } else {
+        document.getElementById('error_issues').style.display = 'none';
+    }
+    if (!document.getElementById('DT_process').value) {
+        document.getElementById('error_process').style.display = 'block';
+        errors = true;
+    } else {
+        document.getElementById('error_process').style.display = 'none';
+    }
+
+    if (!document.getElementById('DT_boldbrief').value) {
+        document.getElementById('error_boldbrief').style.display = 'block';
+        errors = true;
+    } else {
+        document.getElementById('error_boldbrief').style.display = 'none';
+    }
+
+    return !errors;
+}
+
+document.getElementById('DT_form').addEventListener('submit', function (e) {
+    e.preventDefault();
+    if (validateForm()) {
+        generateOutput();
+    }
 });
 
 

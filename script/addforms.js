@@ -9,6 +9,9 @@ function addDevice() {
     newDevice.className = 'device-group';
     newDevice.innerHTML = `
     <hr>
+        <div class="form-group">
+            <button type="button" class="close-button" onclick="removeDevice(this)">×</button>
+        </div>
         <div class="row">
             <div><label for="DT_device_${deviceCount}">設備<span class="red-asterisk">*</span></label></div>
             <div><label for="DT_brand_${deviceCount}">品牌<span class="red-asterisk">*</span></label></div>
@@ -59,7 +62,7 @@ function addDevice() {
                 <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳" ><label for="DT_video_quality_poor_${deviceCount}">不佳</label>
                 <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試" ><label for="DT_video_quality_untested_${deviceCount}">未測試</label>
             </div>
-			<span class="error" id="error_video_${deviceCount}">請選擇視訊規格和品質</span>
+			
             <div class="DTDV_grid-item">
                 <label>耳麥規格：<span class="red-asterisk">*</span></label>
                 <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建" ><label for="DT_audio_spec_internal_${deviceCount}">內建</label>
@@ -72,10 +75,15 @@ function addDevice() {
                 <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" ><label for="DT_audio_quality_untested_${deviceCount}">未測試</label>
             </div>
         </div>
-
+<span class="error" id="error_video_${deviceCount}">請選擇視訊規格和品質</span>
         <span class="error" id="error_audio_${deviceCount}">請選擇耳麥規格和品質</span>
     `;
     deviceContainer.appendChild(newDevice);
+}
+
+function removeDevice(button) {
+    const deviceGroup = button.closest('.device-group');
+    deviceGroup.remove();
 }
 	
 function addConnection() {
@@ -86,6 +94,7 @@ function addConnection() {
     newConnection.innerHTML = `
     <hr>    
         <div class="form-group">
+            <button type="button" class="close-button" onclick="removeConnection(this)">×</button>
             <label for="DT_provider_${connectionCount}">電信業者：<span class="red-asterisk">*</span></label>
             <input type="text" id="DT_provider_${connectionCount}" name="provider_${connectionCount}" >
             <label for="DT_connection_${connectionCount}">連線方式：<span class="red-asterisk">*</span></label>
@@ -103,4 +112,9 @@ function addConnection() {
         <span class="error" id="error_connection_${connectionCount}">請填寫電信業者和連線方式信息</span>
     `;
     connectionContainer.appendChild(newConnection);
+}
+
+function removeConnection(button) {
+    const connectionGroup = button.closest('.connection-group');
+    connectionGroup.remove();
 }
