@@ -219,3 +219,31 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
     filter: invert(0.5); /* 更改選擇器的顏色，適合於某些瀏覽器 */
 }
 
+.OPtitle_unclickable {
+    pointer-events: none;
+}
+
+.OPtitle_unclickable img {
+    opacity: 0.5;
+    transition: opacity 0.3s ease;
+}
+
+#OPtitle_copyButton img {
+    transition: all 0.3s ease;
+}
+
+#OPtitle_copyButton.OPtitle_copied img::after {
+    content: "已複製!";
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.7);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+}
+
