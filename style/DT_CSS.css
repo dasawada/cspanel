@@ -15,7 +15,7 @@
             z-index: 900; /* 確保在最上層，避免元素遮擋無法點擊 */
         }
         .form_container {
-            width: 500px; /* 固定寬度 */
+            width: 490px; /* 固定寬度 */
             height: 100%;
             overflow-y: auto; /* 垂直卷軸 */
             padding: 0 10px 0 10px;
