@@ -49,7 +49,7 @@ function addDevice() {
                 <input type="text" id="DT_browser_${deviceCount}" name="browser_${deviceCount}" >
             </div>
         </div>
-		<span class="error" id="error_device_os_${deviceCount}">請填寫設備和作業系統信息</span>
+		<span class="error" id="error_device_os_${deviceCount}">請填寫電信業者和連線方式</span>
         <div class="DTDV_grid-container">
             <div class="DTDV_grid-item">
                 <label>視訊規格：<span class="red-asterisk">*</span></label>

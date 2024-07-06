@@ -98,12 +98,16 @@ function OPtitle_copyText() {
     // 將按鈕設置為已複製狀態
     var copyButton = document.getElementById("OPtitle_copyButton");
     copyButton.classList.add("OPtitle_copied", "OPtitle_unclickable");
-    copyButton.title = "已複製!";
+	
+	
+    // 重新觸發 title 屬性更新
+    var tempTitle = copyButton.title;
+    copyButton.title = "";
+    copyButton.title = tempTitle;
 
     // 三秒後恢復按鈕為可選擇狀態
     setTimeout(function() {
         copyButton.classList.remove("OPtitle_copied", "OPtitle_unclickable");
-        copyButton.title = "複製標題";
     }, 3000);
 }
 

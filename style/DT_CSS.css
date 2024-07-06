@@ -121,9 +121,9 @@
     font-size: 24px;
     font-weight: bold;
     line-height: 1;
-    color: #aaa;
+    color: #000;
     text-shadow: 0 1px 0 #fff;
-    opacity: .2;
+    opacity: .5;
     border: none;
     background: none;
 	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
@@ -134,8 +134,8 @@
 }
 
 .close-button:hover {
-    color: #000;
+    color: #aaa;
     text-decoration: none;
     cursor: pointer;
-    opacity: .5;
+    opacity: .7;
 }
