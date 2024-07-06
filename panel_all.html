@@ -1,4 +1,5 @@
 
+
 <html lang="zh-Hant">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -17,11 +18,13 @@
 <link rel="stylesheet" href="style/font.css">
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
+<link rel="stylesheet" href="style/DT_CSS.css">
+
 </head>
 <body>
 <div class="update-header">※版本更新：
 <a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/06/29</a></div>
-<div class="container">
+<div class="roof_container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
@@ -106,7 +109,9 @@ setTimeout(showAllRows, 1000);\n\
                 </form>
 				<div class="spacer"></div>
                 <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
-                <button id="copyButton" onclick="copyText()" style="font-size: 12px;">複製標題</button>
+                <button id="OPtitle_copyButton" onclick="OPtitle_copyText()" style="border: none; background: none;">
+    <img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">
+</button>
 		    </div>
 		<span id="search_SAWHO_ResultsSpan"></span>
 		<div id="search_SAWHO_ResultsDiv"></div>
@@ -137,8 +142,182 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 <div class="spacer"></div>
 
+<!-- 測試模板 -->
+<div class="DT_panel small-size">
+    <div class="toggle-container">
+        <input type="checkbox" id="DT_toggleCheckbox">
+        <label for="DT_toggleCheckbox">測試模板</label>
+    </div>
+<div id="content" style="display: none;">
+<div class="form_container">
+<div class="DT_top_panel">
+<div class="Mxmind">
+    <a href="https://www.maxmind.com/en/geoip-demo" target="_blank">
+        <img src="img/maxmind.png" alt="MAXMIND" />
+    </a>
+</div>
+    <form id="DT_form">
+        <div class="form-group">
+            <label for="DT_datetime">日期時間：<span class="red-asterisk">*</span></label>
+            <input type="datetime-local" id="DT_datetime" name="datetime">
+            <span class="error" id="error_datetime">請填寫有效的日期時間</span>
+        </div>
+        <div class="form-group">
+            <label for="DT_name">學生姓名：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_name" name="name">
+            <label for="DT_phone">連絡電話：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_phone" name="phone">
+            <span class="error" id="error_name_phone">請填寫姓名和電話</span>
+        </div>
+        <div class="form-group">
+            <label for="DT_project">測試工程師：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_project" name="project">
+            <span class="error" id="error_project">請填寫測試工程</span>
+        </div>
+        <!-- 使用設備部分 -->
+        <div class="DT_SON_BORDER">
+            <div id="DT_devices">
+                <h3>使用設備</h3>
+                <div class="device-group">
+                    <div class="row">
+                        <div><label for="DT_device_1">設備<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_brand_1">品牌<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_os_1">作業系統<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_os_version_1">版本/硬體條件<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_browser_1">瀏覽器<span class="red-asterisk">*</span></label></div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <select id="DT_device_1" name="device" >
+                                <option value="-">-</option>
+                                <option value="筆電">筆電</option>
+                                <option value="桌上型電腦">桌上型電腦</option>
+                                <option value="平板">平板</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_brand_1" name="brand">
+                        </div>
+                        <div>
+                            <select id="DT_os_1" name="os">
+                                <option value="-">-</option>
+                                <option value="Windows">Windows</option>
+                                <option value="MacOS">MacOS</option>
+                                <option value="iOS">iOS</option>
+                                <option value="Android">Android</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_os_version_1" name="os_version">
+                        </div>
+                        <div>
+                            <input type="text" id="DT_browser_1" name="browser">
+                        </div>
+                    </div>
+                    <span class="error" id="error_device_os_1">請填寫設備和作業系統</span>
+                    <div class="DTDV_grid-container">
+                        <div class="DTDV_grid-item">
+                            <label>視訊規格：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_video_spec_internal_1" name="video_spec_1" value="內建"><label for="DT_video_spec_internal_1">內建</label>
+                            <input type="radio" id="DT_video_spec_external_1" name="video_spec_1" value="外接"><label for="DT_video_spec_external_1">外接</label>
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>視訊品質：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_video_quality_clear_1" name="video_quality_1" value="清晰"><label for="DT_video_quality_clear_1">清晰</label>
+                            <input type="radio" id="DT_video_quality_poor_1" name="video_quality_1" value="不佳"><label for="DT_video_quality_poor_1">不佳</label>
+                            <input type="radio" id="DT_video_quality_untested_1" name="video_quality_1" value="未測試"><label for="DT_video_quality_untested_1">未測試</label>
+							
+                        </div>
+						
+                        <div class="DTDV_grid-item">
+                            <label>耳麥規格：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建"><label for="DT_audio_spec_internal_1">內建</label>
+                            <input type="radio" id="DT_audio_spec_external_1" name="audio_spec_1" value="外接"><label for="DT_audio_spec_external_1">外接</label>
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>聲音品質：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_audio_quality_clear_1" name="audio_quality_1" value="清晰" ><label for="DT_audio_quality_clear_1">清晰</label>
+                            <input type="radio" id="DT_audio_quality_poor_1" name="audio_quality_1" value="不佳" ><label for="DT_audio_quality_poor_1">不佳</label>
+                            <input type="radio" id="DT_audio_quality_untested_1" name="audio_quality_1" value="未測試" ><label for="DT_audio_quality_untested_1">未測試</label>
+							
+                        </div>
+						
+                    </div>
+					<span class="error" id="error_video_1">請選擇視訊規格和品質</span>
+						<span class="error" id="error_audio_1">請選擇耳麥規格和品質</span>
+                </div>
+            </div>
+	<div class="spacer"></div>
+            <button type="button" onclick="addDevice()">新增設備</button>
+        </div>
+        <div class="DT_SON_BORDER">
+            <!-- 網路連線部分 -->
+            <div id="DT_connections">
+                <h3>網路連線</h3>
+                <div class="connection-group">
+                    <div class="form-group">
+                        <label for="DT_provider_1">電信業者：<span class="red-asterisk">*</span></label>
+                        <input type="text" id="DT_provider_1" name="provider" >
+                        <label for="DT_connection_1">連線方式：<span class="red-asterisk">*</span></label>
+                        <select id="DT_connection_1" name="connection" >
+                            <option value="-">-</option>
+                            <option value="Wi-Fi">Wi-Fi</option>
+                            <option value="有線網路">有線網路</option>
+                            <option value="Wi-Fi+有線網路">Wi-Fi+有線網路</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="DT_speed_1">當前網速：<span class="red-asterisk">*</span></label>
+                        <textarea id="DT_speed_1" name="speed" ></textarea>
+                        <span class="error" id="error_connection_1">請填寫電信業者和連線方式</span>
+                    </div>
+                </div>
+            </div>
+	<div class="spacer"></div>
+            <button type="button" onclick="addConnection()">新增網路連線</button>
+        </div>
+        <!-- 檢測結果部分 -->
+        <div class="form-group">
+		<div class="DV_sutable">
+            <label for="DT_suitable">是否適合上課：<span class="red-asterisk">*</span></label>
+            <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" >適合
+            <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" >不適合
+            <span class="error" id="error_suitable">請選擇是否適合上課</span>
+			</div>
+        </div>
+        <div class="form-group">
+            <label for="DT_issues">測試問題：<span class="red-asterisk">*</span></label>
+            <textarea id="DT_issues" name="issues"></textarea>
+            <span class="error" id="error_issues">請填寫測試問題</span>
+        </div>
+        <div class="form-group">
+            <label for="DT_process">處理過程：<span class="red-asterisk">*</span></label>
+            <textarea id="DT_process" name="process" style="height:100px"></textarea>
+            <span class="error" id="error_process">請填寫處理過程</span>
+        </div>
+        <div class="form-group">
+            <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
+            <textarea id="DT_boldbrief" name="boldbrief" ></textarea>
+            
+        </div>
+        <button type="submit">生成</button>
+	<button type="button" id="copyReportButton">複製報告</button>
+    </form>
+    <div class="output" id="DT_output">
+        <div id="output_content">填寫表單後顯示此處A_A<br></div>
+        <div class="copy-feedback" id="copy_feedback">已複製!</div>
+    </div>
+</div>
+</div>
+</div>
+</div>
+
+
+
 <!-- 顧問名單googlesheet -->
-<div class="consultantlistgooglesheet small-size">
+<div class="consultantlistgooglesheet small-size" style="left: 440px;right: 20px;top:0px">
     <div class="toggle-container">
         <input type="checkbox" id="toggleCheckbox">
         <label for="toggleCheckbox">顧問組別清單</label>
@@ -183,6 +362,10 @@ setTimeout(showAllRows, 1000);\n\
 <script src="script/GGapi.js"></script>
 <script src="script/togglelayer.js"></script>
 <script src="script/shrturl.js"></script>
+<script src="script/addforms.js"></script>
+<script src="script/DT_form_output.js"></script>
+<script src="script/DT_test_copybutton_script.js"></script>
+<script src="script/DT_fuction_confirm.js"></script>
 <script>
 // 查找IP服務商函數
 function lookupIP() {

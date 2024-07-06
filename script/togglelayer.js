@@ -34,25 +34,30 @@ document.getElementById('logToggleCheckbox').addEventListener('change', function
     }
 });
 
+document.getElementById('DT_toggleCheckbox').addEventListener('change', function() {
+    const content = document.querySelector('.DT_panel #content');
+    const container = document.querySelector('.DT_panel');
+    if (this.checked) {
+        container.classList.remove('small-size');
+        content.style.display = 'block';
+    } else {
+        container.classList.add('small-size');
+        content.style.display = 'none';
+    }
+});
+
 window.addEventListener('DOMContentLoaded', (event) => {
-    const consultantContainer = document.querySelector('.consultantlistgooglesheet');
-    const consultantContent = consultantContainer.querySelector('#content');
-    const consultantCheckbox = document.getElementById('toggleCheckbox');
-    consultantCheckbox.checked = false;
-    consultantContainer.classList.add('small-size');
-    consultantContent.style.display = 'none';
+    const initToggle = (containerSelector, checkboxId) => {
+        const container = document.querySelector(containerSelector);
+        const content = container.querySelector('#content');
+        const checkbox = document.getElementById(checkboxId);
+        checkbox.checked = false;
+        container.classList.add('small-size');
+        content.style.display = 'none';
+    };
 
-    const idsearchContainer = document.querySelector('.idsearchpanel');
-    const idsearchContent = idsearchContainer.querySelector('#content');
-    const idsearchCheckbox = document.getElementById('NaniClub_toggleCheckbox');
-    idsearchCheckbox.checked = false;
-    idsearchContainer.classList.add('small-size');
-    idsearchContent.style.display = 'none';
-
-    const classLogContainer = document.querySelector('.ClassLogpanel');
-    const classLogContent = classLogContainer.querySelector('#content');
-    const classLogCheckbox = document.getElementById('logToggleCheckbox');
-    classLogCheckbox.checked = false;
-    classLogContainer.classList.add('small-size');
-    classLogContent.style.display = 'none';
+    initToggle('.consultantlistgooglesheet', 'toggleCheckbox');
+    initToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
+    initToggle('.ClassLogpanel', 'logToggleCheckbox');
+    initToggle('.DT_panel', 'DT_toggleCheckbox');
 });

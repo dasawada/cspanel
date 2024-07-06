@@ -17,7 +17,7 @@ body {
     background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
     padding: 5px; /* 可選，增加內邊距 */
 }
-.container {
+.roof_container {
     display: grid;
     grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
     grid-template-rows: auto auto auto auto; /* 定義四行 */
@@ -60,7 +60,7 @@ body {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel {
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel {
     background-color: white;
     padding: 3px;
     border: 1px solid #ccc;
@@ -78,11 +78,11 @@ body {
     cursor: pointer;
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover {
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size {
+.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size  {
 	width: 120px;
 	height: 30px;
 	overflow: hidden; /* 確保內容不會超出範圍 */
@@ -107,7 +107,14 @@ body {
 	height: 700px;
 	z-index: 998;
 }
-
+.DT_panel {
+position: absolute; 
+left: 130px; 
+top: 250px;
+z-index: 998;
+width:500px;
+height:800px;
+}
 
 .linkout {
     background-color: white;

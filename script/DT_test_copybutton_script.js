@@ -1,9 +1,9 @@
 document.getElementById('copyReportButton').addEventListener('click', function() {
     const outputContent = document.getElementById('output_content');
-    copyToClipboard(outputContent);
+    DT_copyToClipboard(outputContent);
 });
 
-function copyToClipboard(element) {
+function DT_copyToClipboard(element) {
     const range = document.createRange();
     range.selectNodeContents(element);
     const selection = window.getSelection();
