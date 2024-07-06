@@ -84,9 +84,8 @@ function checkInputs() {
         clearOutput(); // 當所有輸入框都為空時清除輸出內容
     }
 }
-
-// 複製生成好的標題 按鈕樣式
-function copyText() {
+//Copyicon
+function OPtitle_copyText() {
     event.preventDefault();
     var textToCopy = document.getElementById("optitleoutput").innerText;
     var tempInput = document.createElement("input");
@@ -96,17 +95,18 @@ function copyText() {
     document.execCommand("copy");
     document.body.removeChild(tempInput);
 
-    // 將按鈕文字設置為已複製
-    var copyButton = document.getElementById("copyButton");
-    copyButton.innerText = "已複製";
-    copyButton.classList.add("unclickable"); // 按鈕不可選取
+    // 將按鈕設置為已複製狀態
+    var copyButton = document.getElementById("OPtitle_copyButton");
+    copyButton.classList.add("OPtitle_copied", "OPtitle_unclickable");
+    copyButton.title = "已複製!";
 
-    // 三秒後恢復按鈕為可選取
+    // 三秒後恢復按鈕為可選擇狀態
     setTimeout(function() {
-        copyButton.innerText = "複製標題";
-        copyButton.classList.remove("unclickable"); // 取消按鈕不可選取
+        copyButton.classList.remove("OPtitle_copied", "OPtitle_unclickable");
+        copyButton.title = "複製標題";
     }, 3000);
 }
+
 
 // search 函數只處理 consultantName
 function search() {
