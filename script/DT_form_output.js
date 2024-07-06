@@ -1,7 +1,7 @@
-document.getElementById('DT_form').addEventListener('submit', function (e) {
-    e.preventDefault(); // 阻止表單的默認提交行為
-    generateOutput(); // 直接生成輸出
-});
+        document.getElementById('DT_form').addEventListener('submit', function (e) {
+            e.preventDefault(); // 阻止表单的默认提交行为
+            generateOutput(); // 直接生成输出
+        });
 
 function generateOutput() {
     const datetime = document.getElementById('DT_datetime').value;
@@ -37,34 +37,28 @@ function generateOutput() {
     });
 
     let connectionOutput = '';
-    document.querySelectorAll('.connection-group').forEach(function (el) {
-        const connectionIndex = el.getAttribute('data-index');
-        const providerElement = document.getElementById(`DT_provider_${connectionIndex}`);
-        const connectionElement = document.getElementById(`DT_connection_${connectionIndex}`);
-        const speedElement = document.getElementById(`DT_speed_${connectionIndex}`);
+    document.querySelectorAll('.connection-group').forEach(function (el, index) {
+        const connectionIndex = index + 1;
+        const provider = document.getElementById(`DT_provider_${connectionIndex}`).value || '';
+        const connection = document.getElementById(`DT_connection_${connectionIndex}`).value || '';
+        const speed = document.getElementById(`DT_speed_${connectionIndex}`).value || '';
 
-        if (providerElement && connectionElement && speedElement) {
-            const provider = providerElement.value || '';
-            const connection = connectionElement.value || '';
-            const speed = speedElement.value || '';
-
-            connectionOutput += `
-            <br>--------<br>
-            網路連線（${connectionIndex}）：<br>
-            　電信業者：【${provider}】 連線方式：【${connection}】<br>
-            　當前網速：<br>
-            　${speed}
-            `;
-        }
+        connectionOutput += `
+        --------<br>
+        網路連線（${connectionIndex}）：<br>
+        　電信業者：【${provider}】 連線方式：【${connection}】<br>
+        　當前網速：<br>
+            ${speed}
+        `;
     });
 
     const suitable = document.querySelector('input[name="suitable"]:checked')?.value || '';
-    const boldbrief = document.getElementById('DT_boldbrief')?.value || '';
+    const boldbrief = document.getElementById('DT_boldbrief').value || '';
 
     let outputContent = `
         日期時間：【${formattedDatetime}】<br>
         學生姓名：【${name}】<br>${phone}<br>
-        測試工程師：【${project}】<br>
+        測試工程師：【${project}】
         ${deviceOutput}<br>
         ${connectionOutput}<br>
         是否適合上課：【${suitable}】<br>
@@ -77,7 +71,4 @@ function generateOutput() {
     `;
 
     document.getElementById('output_content').innerHTML = outputContent.trim();
-    
-    // 提交後顯示輸出容器
-    document.getElementById('output_container').style.display = 'block';
 }
