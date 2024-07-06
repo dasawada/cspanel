@@ -1,10 +1,6 @@
 document.getElementById('copyReportButton').addEventListener('click', function() {
     const outputContent = document.getElementById('output_content');
-    if (outputContent.textContent.trim() === "") {
-        showCopyError();
-    } else {
-        DT_copyToClipboard(outputContent);
-    }
+    DT_copyToClipboard(outputContent);
 });
 
 function DT_copyToClipboard(element) {
