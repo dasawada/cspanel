@@ -110,79 +110,32 @@
             color: red;
         }
 		
-		
-		
-		
-.tab-list {
-    display: flex;
-    list-style: none;
-    padding: 0;
-    margin: 0 0 10px 0;
-    border-bottom: 2px solid #ccc;
-}
-
-.tab-list li {
-    margin-right: 0px;
-    padding: 3px 5px;
-    cursor: pointer;
-    border: 1px solid #ccc;
-    border-bottom: none;
-    background-color: #f9f9f9;
-}
-
-.tab-list li.active {
-    background-color: #fff;
-    border-top: 2px solid #007bff;
-    border-bottom: 2px solid #fff;
-}
-
-.tab-content {
-    display: none;
-    border: 1px solid #ccc;
-    padding: 20px;
-    background-color: #fff;
-}
-
-.tab-content.active {
-    display: block;
-}
-
-.connection-group {
-    margin-bottom: 20px;
-}
-
-/* 基本按鈕樣式 */
-.close-tab {
+		.device-group, .connection-group {
     position: relative;
-    width: 10px; /* 設置按鈕寬度 */
-    height: 10px; /* 設置按鈕高度 */
-    background-color: transparent; /* 背景透明 */
-    border: none; /* 去掉邊框 */
-    cursor: pointer; /* 鼠標懸停時顯示為手型 */
-	padding: 2px 2px;
-
 }
 
-/* 創建X的部分 */
-.close-tab::before,
-.close-tab::after {
-    content: '';
+.close-button {
     position: absolute;
-    width: 2px; /* 設置線條寬度 */
-    height: 100%; /* 設置線條高度 */
-    background-color: black; /* 設置線條顏色 */
-    top: 0;
-    left: 50%;
-    transform: rotate(45deg); /* 旋轉45度 */
-    transform-origin: center;
+    top: 2px;
+    right: 0px;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    color: #aaa;
+    text-shadow: 0 1px 0 #fff;
+    opacity: .2;
+    border: none;
+    background: none;
+	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
-.close-tab::after {
-    transform: rotate(-45deg); /* 另一條線旋轉-45度 */
-}
-
-/* 懸停效果 */
-.close-tab:hover::before,
-.close-tab:hover::after {
-    background-color: red; /* 懸停時改變顏色 */
+.close-button:hover {
+    color: #000;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: .5;
 }
