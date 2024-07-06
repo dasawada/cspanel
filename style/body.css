@@ -109,8 +109,8 @@ body {
 }
 .DT_panel {
 position: absolute; 
-left: 130px; 
-top: 250px;
+left: 570px; 
+top: 0px;
 z-index: 998;
 width:500px;
 height:800px;
