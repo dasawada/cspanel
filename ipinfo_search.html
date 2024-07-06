@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IP Info Lookup</title>
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
+    <style>
+        #ip_search_resultContainer {
+            display: none;
+        }
+        #ip_search_ipForm {
+            display: flex;
+            align-items: center;
+        }
+        #ip_search_lookupButton, #ip_search_clearButton {
+            margin-left: 10px;
+        }
+    </style>
+</head>
+<body>
+<div class="idsearchpanel small-size">
+    <div class="toggle-container">
+        <input type="checkbox" id="NaniClub_toggleCheckbox">
+        <label for="NaniClub_toggleCheckbox">帳號搜尋</label>
+    </div>
+    <div id="content" style="display: none;">
+    <form id="ip_search_ipForm">
+        <label for="ip_search_ip">IP 查詢:</label>
+        <input type="text" id="ip_search_ip" name="ip_search_ip" required>
+        <button type="submit" id="ip_search_lookupButton">Lookup</button>
+        <button type="button" id="ip_search_clearButton">Clear</button>
+    </form>
+    <div id="ip_search_resultContainer">
+        <h2>Result:</h2>
+        <p><strong>IP:</strong> <span id="ip_search_ipResult"></span></p>
+        <p><strong>Country:</strong> <span id="ip_search_country"></span></p>
+        <p><strong>Location:</strong> <span id="ip_search_loc"></span></p>
+        <p><strong>Organization:</strong> <span id="ip_search_org"></span></p>
+    </div>
+	</div>
+	    </div>
+</div>
+</div>
+<script src="script/togglelayer.js"></script>
+    <script>
+        document.getElementById('ip_search_ipForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const ip = document.getElementById('ip_search_ip').value;
+            const token = '5da0a6c614f15b';
+            const url = `https://ipinfo.io/${ip}?token=${token}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(data => {
+                    document.getElementById('ip_search_ipResult').textContent = data.ip || 'N/A';
+                    document.getElementById('ip_search_country').textContent = data.country || 'N/A';
+                    document.getElementById('ip_search_loc').textContent = data.loc || 'N/A';
+                    document.getElementById('ip_search_org').textContent = data.org || 'N/A';
+                    document.getElementById('ip_search_resultContainer').style.display = 'block';
+                })
+                .catch(error => {
+                    document.getElementById('ip_search_resultContainer').textContent = `Error: ${error}`;
+                    document.getElementById('ip_search_resultContainer').style.display = 'block';
+                });
+        });
+
+        document.getElementById('ip_search_clearButton').addEventListener('click', function() {
+            document.getElementById('ip_search_ipResult').textContent = '';
+            document.getElementById('ip_search_country').textContent = '';
+            document.getElementById('ip_search_loc').textContent = '';
+            document.getElementById('ip_search_org').textContent = '';
+            document.getElementById('ip_search_resultContainer').style.display = 'none';
+        });
+		
+		    setupToggle('.consultantlistgooglesheet', 'toggleCheckbox');
+    setupToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
+    setupToggle('.ClassLogpanel', 'logToggleCheckbox');
+});
+    </script>
+</body>
+</html>
