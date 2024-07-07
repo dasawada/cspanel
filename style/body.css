@@ -214,8 +214,8 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
 #optitleoutput {
     overflow: hidden;
     font-size: 15px;
-    color: #969696;
-    transition: transform 0.1s ease, 0.1s ease;
+    color: #737373;
+    transition: transform 0.1s ease, opacity 0.1s ease;
 }
 
 #op-title-output-div {
