@@ -53,7 +53,7 @@ function generateText() {
         outputText += " #" + invoiceNumber;
     }
 
-    var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none;" title="複製到剪貼簿">' +
+    var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none; margin-left: 6px;" title="複製到剪貼簿">' +
                          '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
                          '</button>';
     const optitleOutput = document.getElementById("optitleoutput");
@@ -71,7 +71,7 @@ function generateText() {
 function clearOutput() {
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
-    optitleOutput.style.opacity = "0.2";
+    optitleOutput.style.opacity = "0.5";
     
     setTimeout(() => {
         optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
