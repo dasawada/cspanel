@@ -49,7 +49,6 @@ function addDevice() {
                 <input type="text" id="DT_browser_${deviceCount}" name="browser_${deviceCount}" >
             </div>
         </div>
-		<span class="error" id="error_device_os_${deviceCount}">請填寫電信業者和連線方式</span>
         <div class="DTDV_grid-container">
             <div class="DTDV_grid-item">
                 <label>視訊規格：<span class="red-asterisk">*</span></label>
@@ -75,8 +74,6 @@ function addDevice() {
                 <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" ><label for="DT_audio_quality_untested_${deviceCount}">未測試</label>
             </div>
         </div>
-<span class="error" id="error_video_${deviceCount}">請選擇視訊規格和品質</span>
-        <span class="error" id="error_audio_${deviceCount}">請選擇耳麥規格和品質</span>
     `;
     deviceContainer.appendChild(newDevice);
 }
@@ -109,7 +106,6 @@ function addConnection() {
             <label for="DT_speed_${connectionCount}">當前網速：<span class="red-asterisk">*</span></label>
             <textarea id="DT_speed_${connectionCount}" name="speed_${connectionCount}" ></textarea>
         </div>
-        <span class="error" id="error_connection_${connectionCount}">請填寫電信業者和連線方式信息</span>
     `;
     connectionContainer.appendChild(newConnection);
 }
