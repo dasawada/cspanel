@@ -18,7 +18,7 @@
             width: 490px; /* 固定寬度 */
             height: 100%;
             overflow-y: auto; /* 垂直卷軸 */
-            padding: 0 10px 0 10px;
+            padding: 10px 10px 10px 10px;
             box-sizing: border-box;
         }
         .form-group {
