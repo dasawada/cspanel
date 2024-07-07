@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
 <link rel="stylesheet" href="style/DT_CSS.css">
-
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -83,7 +83,6 @@ setTimeout(showAllRows, 1000);\n\
                 <form id="consultantForm" style="margin: 0;">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
                         <b>OP標題生成</b>
-                        <button type="button" onclick="clearFields()" style="font-size: 12px;">清空欄位</button>
                     </div>
 		<div class="op-title-output-div">
                     <span class="optitle-text-form">[顧問</span>
@@ -108,14 +107,13 @@ setTimeout(showAllRows, 1000);\n\
                     </label>
                 </form>
 				<div class="spacer"></div>
-                <span id="optitleoutput">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
-                <button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none; background: none;" title="複製到剪貼簿">
-    <img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">
-</button>
+                <span id="optitleoutput" onclick="OPtitle_copyText()" title="複製到剪貼簿">生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶</span>
 		    </div>
 		<span id="search_SAWHO_ResultsSpan"></span>
 		<div id="search_SAWHO_ResultsDiv"></div>
-
+					<div id="clearButton" class="clearIcon" onclick="clearFields()" title="清除標題">
+					<i class="fas fa-trash"></i>
+					</div>
             </div>
             <div class="spacer"></div>
 <!-- NaniClub帳號搜尋 -->
@@ -175,7 +173,7 @@ setTimeout(showAllRows, 1000);\n\
             <span class="error" id="error_project">請填寫測試工程</span>
         </div>
         <!-- 使用設備部分 -->
-        <div class="DT_SON_BORDER">
+        <div class="DT_SON_BORDER" style="background: white;">
             <div id="DT_devices">
                 <h3>使用設備</h3>
                 <div class="device-group">
@@ -252,7 +250,7 @@ setTimeout(showAllRows, 1000);\n\
 	<div class="spacer"></div>
             <button type="button" onclick="addDevice()">新增設備</button>
         </div>
-        <div class="DT_SON_BORDER">
+        <div class="DT_SON_BORDER" style="background: white;">
             <!-- 網路連線部分 -->
             <div id="DT_connections">
                 <h3>網路連線</h3>

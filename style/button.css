@@ -227,3 +227,34 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
     transition: all 0.3s ease;
 }
 
+/* 丟垃圾按鈕效果 */
+        .clearIcon {
+            width: 15px;
+            height: 15px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.8;
+            position: absolute;
+            bottom: 8px; /* 確保距離父元素底部一定距離 */
+            right: 8px; /* 確保距離父元素右側一定距離 */
+        }
+	.clearIcon:hover {
+		opacity: 0.4;
+	}
+        .clearIcon i {
+            font-size: 15px;
+        }
+
+@keyframes trashAnimation {
+    0% { transform: translateY(0); opacity: 0; }
+    50% { transform: translateY(-50px); opacity: 0.2; }
+    100% { transform: translateY(30px); opacity: 0; }
+}
+
+.trash-animated {
+    animation: trashAnimation 1s forwards;
+}

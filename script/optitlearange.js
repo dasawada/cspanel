@@ -35,27 +35,33 @@ function checkInputs() {
     }
 }
 // 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
-function generateText() {
-    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
-    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
-    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
-    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
-    
-    var outputText = "[顧問 " + consultantName + "] " + studentName;
+        function generateText() {
+            var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+            var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+            var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+            var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
 
-    // 確保學生+家長皆有出現才加斜線
-    if (studentName !== '' && parentName !== '') {
-        outputText += " / " + parentName;
-    } else {
-        outputText += parentName;
-    }
-    // 有單號才顯示井號
-    if (invoiceNumber !== '') {
-        outputText += " #" + invoiceNumber;
-    }
-    // 獲取並顯示標題
-    document.getElementById("optitleoutput").innerText = outputText;
-}
+            var outputText = "[顧問 " + consultantName + "] " + studentName;
+            
+            if (studentName !== '' && parentName !== '') {
+                outputText += " / " + parentName;
+            } else {
+                outputText += parentName;
+            }
+
+            if (invoiceNumber !== '') {
+                outputText += " #" + invoiceNumber;
+            }
+
+            var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none;" title="複製到剪貼簿">' +
+                                 '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
+                                 '</button>';
+            document.getElementById("optitleoutput").innerHTML = outputText + copyButtonHTML;
+        }
+
+        function clearOutput() {
+            document.getElementById("optitleoutput").innerText = "";
+        }
 // input 無值時清除標題
 function clearOutput() {
     document.getElementById("optitleoutput").innerText = "";
@@ -63,12 +69,25 @@ function clearOutput() {
 
 // 清除指定的輸入欄位
 function clearFields() {
+    // 清空欄位的邏輯
     document.getElementById("consultantName").value = "";
     document.getElementById("studentName").value = "";
     document.getElementById("parentName").value = "";
     document.getElementById("invoiceNumber").value = "";
     clearOutput(); // 清除輸出內容
     search();
+	
+    // 獲取按鈕元素
+    const button = document.getElementById('clearButton');
+    // 獲取圖標元素
+    const icon = button.querySelector('i');
+    // 添加動畫效果
+    icon.classList.add('trash-animated');
+    
+    // 等待動畫結束後移除動畫類
+    setTimeout(() => {
+        icon.classList.remove('trash-animated');
+    }, 1000); // 動畫持續時間1秒
 }
 
 // 檢查輸入框值，並生成或清除輸出
