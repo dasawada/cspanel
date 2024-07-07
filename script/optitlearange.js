@@ -9,14 +9,14 @@ document.querySelectorAll('.optitle-input').forEach(input => {
     });
     input.addEventListener('blur', () => {
         if (!input.value) {
-            placeholder.style.visibility = 'visible';
+    placeholder.style.visibility = 'visible';
         }
     });
     input.addEventListener('input', () => {
         if (input.value) {
-            placeholder.style.visibility = 'hidden';
+    placeholder.style.visibility = 'hidden';
         } else {
-            placeholder.style.visibility = 'visible';
+    placeholder.style.visibility = 'visible';
         }
     });
 });
@@ -35,36 +35,49 @@ function checkInputs() {
     }
 }
 // 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
-        function generateText() {
-            var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
-            var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
-            var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
-            var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+function generateText() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
 
-            var outputText = "[顧問 " + consultantName + "] " + studentName;
-            
-            if (studentName !== '' && parentName !== '') {
-                outputText += " / " + parentName;
-            } else {
-                outputText += parentName;
-            }
+    var outputText = "[顧問 " + consultantName + "] " + studentName;
+    
+    if (studentName !== '' && parentName !== '') {
+        outputText += " / " + parentName;
+    } else {
+        outputText += parentName;
+    }
 
-            if (invoiceNumber !== '') {
-                outputText += " #" + invoiceNumber;
-            }
+    if (invoiceNumber !== '') {
+        outputText += " #" + invoiceNumber;
+    }
 
-            var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none;" title="複製到剪貼簿">' +
-                                 '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
-                                 '</button>';
-            document.getElementById("optitleoutput").innerHTML = outputText + copyButtonHTML;
-        }
+    var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none;" title="複製到剪貼簿">' +
+                         '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
+                         '</button>';
+    const optitleOutput = document.getElementById("optitleoutput");
+    optitleOutput.style.transform = "scale(1.1)";
+    optitleOutput.style.opacity = "0.5";
+    
+    setTimeout(() => {
+        optitleOutput.innerHTML = outputText + copyButtonHTML;
+        optitleOutput.style.transform = "scale(1)";
+        optitleOutput.style.opacity = "1";
+    }, 300);
+}
 
-        function clearOutput() {
-            document.getElementById("optitleoutput").innerText = "";
-        }
 // input 無值時清除標題
 function clearOutput() {
-    document.getElementById("optitleoutput").innerText = "";
+    const optitleOutput = document.getElementById("optitleoutput");
+    optitleOutput.style.transform = "scale(1.1)";
+    optitleOutput.style.opacity = "0.2";
+    
+    setTimeout(() => {
+        optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
+        optitleOutput.style.transform = "scale(1)";
+        optitleOutput.style.opacity = "1";
+    }, 300);
 }
 
 // 清除指定的輸入欄位
@@ -77,7 +90,7 @@ function clearFields() {
     clearOutput(); // 清除輸出內容
     search();
 	
-    // 獲取按鈕元素
+    // 獲取垃圾桶按鈕元素
     const button = document.getElementById('clearButton');
     // 獲取圖標元素
     const icon = button.querySelector('i');
@@ -103,6 +116,7 @@ function checkInputs() {
         clearOutput(); // 當所有輸入框都為空時清除輸出內容
     }
 }
+
 //Copyicon
 function OPtitle_copyText() {
     event.preventDefault();
@@ -139,10 +153,10 @@ function search() {
         const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
         const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
         if (searchResultsDiv) {
-            searchResultsDiv.innerHTML = '';
+    searchResultsDiv.innerHTML = '';
         }
         if (searchResultsSpan) {
-            searchResultsSpan.innerHTML = '';
+    searchResultsSpan.innerHTML = '';
         }
         clearOutput(); // 清除輸出內容
         return;
@@ -165,31 +179,31 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
     for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
         const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
         if (cellValue === searchString.toLowerCase()) {
-            const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-            const teamLeaderRow = 3;
-            const teamRow = teamLeaderRow - 1;
+    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+    const teamLeaderRow = 3;
+    const teamRow = teamLeaderRow - 1;
 
-            const consultantName = response.values[rowIndex][columnIndex];
-            const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-            const teamValue = response.values[teamRow][columnIndex];
+    const consultantName = response.values[rowIndex][columnIndex];
+    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+    const teamValue = response.values[teamRow][columnIndex];
 
-            const p = document.createElement('p');
+    const p = document.createElement('p');
 
-            // 顧問名稱部分
-            const consultantSpan = document.createElement('span');
-            consultantSpan.textContent = consultantName;
-            consultantSpan.className = 'green-gradient-text copyable-text';
-            consultantSpan.style.cursor = 'pointer';
-            consultantSpan.title = '點我一下複製名字';
+    // 顧問名稱部分
+    const consultantSpan = document.createElement('span');
+    consultantSpan.textContent = consultantName;
+    consultantSpan.className = 'green-gradient-text copyable-text';
+    consultantSpan.style.cursor = 'pointer';
+    consultantSpan.title = '點我一下複製名字';
 
-            consultantSpan.addEventListener('click', function() {
-                const tempInput = document.createElement('input');
-                tempInput.value = consultantName.substring(1); // 複製第二個字起的顧問名
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                consultantSpan.title = '已複製！';
+    consultantSpan.addEventListener('click', function() {
+        const tempInput = document.createElement('input');
+        tempInput.value = consultantName.substring(1); // 複製第二個字起的顧問名
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        consultantSpan.title = '已複製！';
 				
 				// 一秒後復原 title
 				setTimeout(function() {
@@ -220,17 +234,17 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
 			});
 
 
-            // 構建完整的文本
-            p.appendChild(document.createTextNode('顧問'));
-            p.appendChild(consultantSpan);
-            p.appendChild(document.createTextNode('的組長是：'));
-            p.appendChild(leaderSpan);
-            p.appendChild(document.createTextNode(`（team：${teamValue}）`));
+    // 構建完整的文本
+    p.appendChild(document.createTextNode('顧問'));
+    p.appendChild(consultantSpan);
+    p.appendChild(document.createTextNode('的組長是：'));
+    p.appendChild(leaderSpan);
+    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
 
-            document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
+    document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
 
-            found = true;
-            break;
+    found = true;
+    break;
         }
     }
     if (found) {
@@ -239,9 +253,9 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
 }
 
         if (!found) {
-            const p = document.createElement('p');
-            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
-            search_SAWHO_ResultsDiv.appendChild(p);
+    const p = document.createElement('p');
+    p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
+    search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
 }
