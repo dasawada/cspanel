@@ -43,20 +43,20 @@ body {
 .roofbutton:hover {
     background-color: #f7f7f7;
 }
-        .optitlepanel {
-            grid-column: 1 / 2; /* 左一 */
-            grid-row: 2 / 3;
-            background-color: white;
-            padding: 8px;
-            border: 1px solid #ccc;
-            border-radius: 10px;
-            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-            width: 430px;
-            height: 130px;
-            font-size: 13px;
-            box-sizing: border-box;
-            position: relative; /* 為了讓子元素絕對定位生效 */
-        }
+	.optitlepanel {
+	grid-column: 1 / 2; /* 左一 */
+	grid-row: 2 / 3;
+	background-color: white;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+	width: 430px;
+	height: 130px;
+	font-size: 13px;
+	box-sizing: border-box;
+	position: relative; /* 為了讓子元素絕對定位生效 */
+}
 .optitlepanel:hover {
     background-color: #f7f7f7;
 }
@@ -215,7 +215,9 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     overflow: hidden;
     font-size: 15px;
     color: #969696;
+    transition: transform 0.1s ease, 0.1s ease;
 }
+
 #op-title-output-div {
         height: 18px;
 }
