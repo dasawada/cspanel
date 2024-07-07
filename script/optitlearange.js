@@ -87,6 +87,13 @@ function clearFields() {
     document.getElementById("studentName").value = "";
     document.getElementById("parentName").value = "";
     document.getElementById("invoiceNumber").value = "";
+    
+    // 手動觸發 blur 事件
+    document.getElementById("consultantName").dispatchEvent(new Event('blur'));
+    document.getElementById("studentName").dispatchEvent(new Event('blur'));
+    document.getElementById("parentName").dispatchEvent(new Event('blur'));
+    document.getElementById("invoiceNumber").dispatchEvent(new Event('blur'));
+
     clearOutput(); // 清除輸出內容
     search();
 	

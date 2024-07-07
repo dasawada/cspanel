@@ -243,15 +243,15 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             right: 10px; /* 確保距離父元素右側一定距離 */
         }
 	.clearIcon:hover {
-		opacity: 0.8;
+		opacity: 0.6;
 	}
         .clearIcon i {
             font-size: 15px;
         }
 
 @keyframes trashAnimation {
-    0% { transform: translateY(0); opacity: 0; }
-    50% { transform: translateY(-20px); opacity: 0.6; }
+    0% { transform: translateY(0); opacity: 0.9; }
+    50% { transform: translateY(-20px); opacity: 0.5; }
     100% { transform: translateY(15px); opacity: 0; }
 }
 
