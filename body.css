@@ -1,0 +1,298 @@
+body {
+    font-family: 'PingFang', 'SanFrancisco', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+    position: relative; /* 確保 body 的內容在 header 之上 */
+    z-index: 1; /* 確保 body 的內容在 header 之上 */
+	font-size:13px;
+}
+
+.update-header {
+    position: fixed;
+    top: 0;
+    right: 0;
+    font-size: 12px; /* 設置所有字體大小為12px */
+    color: #888888;
+    z-index: 2; /* 確保在最底層 */
+    /*pointer-events: none; 禁止鼠標事件 */
+    background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
+    padding: 5px; /* 可選，增加內邊距 */
+}
+.roof_container {
+    display: grid;
+    grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
+    grid-template-rows: auto auto auto auto; /* 定義四行 */
+    gap: 10px; /* 定義列和行之間的間距 */
+    height: auto; /* 自動高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: relative; /* 確保容器為相對定位 */
+}
+.roofbutton {
+    grid-column: 1 / 2; /* 只占据一列 */
+    grid-row: 1; /* 第1行 */
+    width: 430px;
+    height: 100px; 
+    font-size: 12px;
+    color: #4d4d4d;
+    border: 1px solid #ccc; 
+    padding: 10px;
+    border-radius: 10px; /* 設定圓角半徑為 10px */
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+}
+.roofbutton:hover {
+    background-color: #f7f7f7;
+}
+	.optitlepanel {
+	grid-column: 1 / 2; /* 左一 */
+	grid-row: 2 / 3;
+	background-color: white;
+	padding: 8px;
+	border: 1px solid #ccc;
+	border-radius: 10px;
+	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+	width: 430px;
+	height: 130px;
+	font-size: 13px;
+	box-sizing: border-box;
+	position: relative; /* 為了讓子元素絕對定位生效 */
+}
+.optitlepanel:hover {
+    background-color: #f7f7f7;
+}
+
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL {
+    background-color: white;
+    padding: 3px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    transition: width 0.3s ease, height 0.3s ease; /* 增加width和height的過渡效果 */
+    box-sizing: border-box; /* 确保padding和border包含在width和height内 */
+	overflow: hidden; /* 禁用容器的滾動 */
+}
+
+.toggle-container label {
+    cursor: pointer;
+}
+
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover {
+    background-color: #f7f7f7;
+}
+
+.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size  {
+	width: 120px;
+	height: 30px;
+	overflow: hidden; /* 確保內容不會超出範圍 */
+}
+
+/* 針對每個元素的位置和層次進行獨立定義 */
+.consultantlistgooglesheet {
+	height: 700px;
+    z-index: 1000; /* 確保顯示在最上層 */
+    left: 440px; /* 根據需要調整 */
+    right: 20px; /* 緊貼右側 */
+}
+.idsearchpanel {
+	width: 560px;
+	height: 600px;
+    z-index: 999;
+    left: 0px;
+    top: 250px;
+}
+.ClassLogpanel {
+	width: 560px;
+	height: 700px;
+	z-index: 998;
+}
+.DT_panel {
+position: absolute; 
+left: 570px; 
+top: 0px;
+z-index: 998;
+width:500px;
+}
+.IPsearch_in_panelALL {
+  display: flex;            /* 使用 Flexbox */
+  flex-direction: column;   /* 垂直排列 */
+  justify-content: space-between; /* 子元素在垂直方向上均勻分布 */
+  align-items: flex-start;  /* 子元素靠左對齊 */
+  padding:6px 6px 3px 6px ; /* 內邊距 */
+}
+.linkout {
+    background-color: white;
+    padding: 7px; 
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    height: 65px; /* 固定高度 */
+	width: 395px;
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    top: 35px;
+    left: 440px;
+}
+.linkout:hover {
+    background-color: #f7f7f7;
+}
+.appicon {
+    background-color: white;
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    height: auto; /* 固定高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    top: 110px;
+    left: 440px;
+}
+.appicon:hover {
+    background-color: #f7f7f7;
+}
+.temp2 {
+    grid-column: 2 / 3;
+    grid-row: 1 / 2;
+    background-color: white;
+    padding: 20px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box; 
+}
+/* 檔次提示語樣式 */
+#copyMessage { 
+    font-size: 12px; /* 設置所有字體大小為12px */
+    color: #ff0000; 
+}
+/* 檔次提示語淡出秒數 */
+.fade-out {
+	animation: fadeOut 3s forwards;
+}
+/* 檔次提示語淡出透明度 */
+@keyframes fadeOut {
+0% { opacity: 1; }
+100% { opacity: 0; }
+}
+/* 檔次提示語不顯示 維持布局 */
+.hidden {
+	opacity: 0;
+}
+.optitle-text-form {
+    font-size: 12pt;
+	line-height: 1.5; /* 統一行高 */
+	vertical-align: middle; /* 垂直對齊方式 */
+	}
+.spacer {
+    height: 8px;
+}
+#content {
+    display: none;
+    width: 100%; /* 确保宽度为100% */
+    height: 100%; /* 确保高度为100% */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    flex-grow: 1; /* 确保其占据剩余空间 */
+}
+/* iframe样式 */
+.responsive-iframe {
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 完全禁用卷軸 */
+    border: none;
+transform: translateZ(0); /* 强制 GPU 渲染 */
+}
+#usersearch {
+    display: none;
+    width: 100%; /* 确保宽度为100% */
+    height: 100%; /* 确保高度为100% */
+    box-sizing: border-box; /* 确保内边距不影响总宽度 */
+    flex-grow: 1; /* 确保其占据剩余空间 */
+}
+#logsearch {
+    width: 100%;
+    height: 600px;
+    border: none;
+}
+#optitleoutput {
+    overflow: hidden;
+    font-size: 15px;
+    color: #737373;
+    transition: transform 0.1s ease, opacity 0.1s ease;
+}
+
+#op-title-output-div {
+        height: 18px;
+}
+#shortUrlContainer {
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+    display: flex;
+    align-items: center;
+}
+.ShrtURL_input_container {
+    display: flex;
+    align-items: center;
+    margin: 2px 0; /* 上下邊距設置為5px，左右為0 */
+}
+.ShrtURL_input_container input {
+    margin-right: 5px; /* 右邊距設置為5px */
+}
+.appicon img {
+	cursor: pointer;
+	margin: 5px;
+}
+
+/* 初始黃色漸層動畫 */
+.yellow-gradient-text {
+    background: linear-gradient(90deg, #FFEB3B, #FFC107, #FF9800, #FFEB3B);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 1s infinite;
+    transition: background 0.1s;
+}
+
+/* 初始綠色漸層動畫 */
+.green-gradient-text {
+    background: linear-gradient(90deg, #00FF00, #32CD32, #008000, #00FF00);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 1s infinite;
+    transition: background 0.1s;
+}
+
+/* HOVER 時的灰階動畫 */
+.gradient-text:hover {
+    background: linear-gradient(90deg, #d3d3d3, #a9a9a9, #808080, #d3d3d3);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gradient-animation 1s infinite;
+    transition: background 0.1s;
+}
+
+@keyframes gradient-animation {
+    0% {
+        background-position: 0% 50%;
+    }
+    50% {
+        background-position: 100% 50%;
+    }
+    100% {
+        background-position: 0% 50%;
+    }
+}
+
+.copyable-text {
+    cursor: pointer;
+}
+
+/* 移除 h3 元素的上下 padding */
+h3 {
+    margin-top: 0;
+    margin-bottom: 5px;
+	text-align: center;
+}
+
