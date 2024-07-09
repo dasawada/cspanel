@@ -347,17 +347,21 @@ setTimeout(showAllRows, 1000);\n\
     </div>
 
 <div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 230px">
-    <div style="height: 18px;">
-        <form id="ip_search_form" style="display: flex; align-items: center;">
-            <label for="ip_input">IP：</label>
-            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" placeholder="服務商名單於2024/07/07更新" />
+    <div id="ip_search_form_container">
+        <form id="ip_search_form">
+			<label for="ip_input">IP：</label>
+            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" placeholder="資料於2024/07/09更新" />
         </form>
     </div>
     <div id="ip_result_container">
         <p id="ip_country" style="margin: 0; padding: 0; line-height: 18px;"></p>
         <p id="ip_org" style="margin: 0; padding: 0; line-height: 18px;"></p>
     </div>
-
+	        <a href="https://rpki.tw/stats/valid.html" 
+           title="資料來源為「財團法人台灣網路資訊中心」" 
+           class="IP_info-button" 
+           target="_blank">?</a>
+</div>
 
 
 
