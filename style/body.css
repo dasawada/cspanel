@@ -60,7 +60,7 @@ body {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel {
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL {
     background-color: white;
     padding: 3px;
     border: 1px solid #ccc;
@@ -114,7 +114,11 @@ top: 0px;
 z-index: 998;
 width:500px;
 }
-
+.IPsearch_in_panelALL {
+  flex-direction: column; /* 垂直排列 */
+  justify-content: space-between; /* 均勻分布 */
+  padding: 6px 8px 2px 8px;
+}
 .linkout {
     background-color: white;
     padding: 7px; 

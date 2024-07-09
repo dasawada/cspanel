@@ -19,6 +19,7 @@
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
 <link rel="stylesheet" href="style/DT_CSS.css">
+<link rel="stylesheet" href="style/ipsearch_css.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -344,6 +345,22 @@ setTimeout(showAllRows, 1000);\n\
         <img id="macMicIcon" src="img/mac_mic.png" alt="Copy Icon" width="60">
         <img id="macSpeakerIcon" src="img/mac_speaker.png" alt="Copy Icon" width="180">
     </div>
+
+<div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 230px">
+    <div style="height: 18px;">
+        <form id="ip_search_form" style="display: flex; align-items: center;">
+            <label for="ip_input">IP：</label>
+            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" placeholder="服務商名單於2024/07/07更新" />
+        </form>
+    </div>
+    <div id="ip_result_container">
+        <p id="ip_country" style="margin: 0; padding: 0; line-height: 18px;"></p>
+        <p id="ip_org" style="margin: 0; padding: 0; line-height: 18px;"></p>
+    </div>
+
+
+
+
 <script src="script/imgcp2bx.js"></script>
 <script src="script/cpcast.js"></script>
 <script src="script/optitlearange.js"></script>
@@ -355,42 +372,60 @@ setTimeout(showAllRows, 1000);\n\
 <script src="script/DT_test_copybutton_script.js"></script>
 <script src="script/DT_fuction_confirm.js"></script>
 <script>
-// 查找IP服務商函數
-function lookupIP() {
-    var ipAddress = document.getElementById('ipAddress').value;
-    var url = 'https://api.ipgeolocation.io/ipgeo?apiKey=204b59bb7d49446b849d25499a5f6aee&ip=' + ipAddress;
+        // ip搜尋+isp比對
+        const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+        const ipinfoToken = '5da0a6c614f15b';
+        const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+        const range = 'list!C2:D';
 
-    fetch(url)
-        .then(response => response.json())
-        .then(data => {
-            var resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<h3>查詢結果：</h3>' +
-                                  'IP 地址：' + data.ip + '<br>' +
-                                  '國家：' + data.country_name + '<br>' +
-                                  '城市：' + data.city + '<br>' +
-                                  'ISP：' + data.isp + '<br>';
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            var resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = '<p>查詢失敗。請檢查輸入的 IP 地址並重試。</p>';
+        async function getASNData() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${googleApiKey}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            const asnData = {};
+            if (data.values) {
+                data.values.forEach(row => {
+                    const [name, asn] = row;
+                    if (asn && name) {
+                        asnData[asn.trim()] = name.trim();
+                    }
+                });
+            } else {
+                console.error("No data found in the specified range.");
+            }
+            return asnData;
+        }
+
+        const asnDataPromise = getASNData();
+
+        document.getElementById('ip_input').addEventListener('input', async function(event) {
+            const ip = event.target.value.trim();
+            if (ip === '') {
+                document.getElementById('ip_country').textContent = '';
+                document.getElementById('ip_org').textContent = '';
+                return;
+            }
+            const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
+
+            fetch(url)
+                .then(response => response.json())
+                .then(async data => {
+                    const country = data.country || 'N/A';
+                    const org = data.org || 'N/A';
+                    const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
+
+                    const asnData = await asnDataPromise;
+                    const orgName = asnData[asn] || '未知服務商';
+
+                    document.getElementById('ip_country').textContent = `國家：${country}`;
+                    document.getElementById('ip_org').textContent = `服務商：${orgName}`;
+                })
+                .catch(error => {
+                    console.error(error);
+                    document.getElementById('ip_country').textContent = `錯誤：`;
+                    document.getElementById('ip_org').textContent = `${error}`;
+                });
         });
-
-    return false; // 防止表單提交
-}
-//自由輸入欄的函數
-function clearWatermark() {
-    var textarea = document.getElementById("myTextArea");
-    if (textarea.value === "在這裡輸入文字...") {
-        textarea.value = "";
-    }
-}
-
-
-
-
-
-
 </script>
 </body>
 </html>
