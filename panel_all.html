@@ -376,6 +376,7 @@ setTimeout(showAllRows, 1000);\n\
 <script src="script/DT_test_copybutton_script.js"></script>
 <script src="script/DT_fuction_confirm.js"></script>
 <script>
+
 const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
 const ipinfoToken = '5da0a6c614f15b';
 const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
@@ -402,7 +403,7 @@ async function getASNData() {
     } else {
         console.error("No data found in the specified range.");
     }
-    console.log("ASN Data:", asnData); // 调试输出
+    console.log("ASN Data:", asnData); // 調試輸出
     return asnData;
 }
 
@@ -429,7 +430,7 @@ const asnDataPromise = getASNData();
 
 document.getElementById('ip_input').addEventListener('keydown', async function(event) {
     if (event.key === 'Enter') {
-        event.preventDefault(); // 阻止默认提交
+        event.preventDefault(); // 阻止默認提交
         const ip = event.target.value.trim();
         if (ip === '') {
             document.getElementById('ip_country').textContent = '';
@@ -443,11 +444,11 @@ document.getElementById('ip_input').addEventListener('keydown', async function(e
             .then(async data => {
                 const country = data.country || 'N/A';
                 const org = data.org || 'N/A';
-                const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 编号
+                const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
 
                 const asnData = await asnDataPromise;
                 let found = false;
-                let ispName = '未知服务商';
+                let ispName = '未知服務商';
                 if (asnData[asn]) {
                     for (const entry of asnData[asn]) {
                         if (isIpInCidr(ip, entry.cidrRange)) {
@@ -458,12 +459,12 @@ document.getElementById('ip_input').addEventListener('keydown', async function(e
                     }
                 }
 
-                document.getElementById('ip_country').textContent = `国家：${country}`;
-                document.getElementById('ip_org').textContent = `服务商：${ispName}`;
+                document.getElementById('ip_country').textContent = `國家：${country}`;
+                document.getElementById('ip_org').textContent = `服務商：${ispName}`;
             })
             .catch(error => {
                 console.error(error);
-                document.getElementById('ip_country').textContent = `错误：`;
+                document.getElementById('ip_country').textContent = `錯誤：`;
                 document.getElementById('ip_org').textContent = `${error}`;
             });
     }
@@ -483,11 +484,11 @@ document.getElementById('ip_input').addEventListener('input', async function(eve
         .then(async data => {
             const country = data.country || 'N/A';
             const org = data.org || 'N/A';
-            const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 编号
+            const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
 
             const asnData = await asnDataPromise;
             let found = false;
-            let ispName = '未知服务商';
+            let ispName = '未知服務商';
             if (asnData[asn]) {
                 for (const entry of asnData[asn]) {
                     if (isIpInCidr(ip, entry.cidrRange)) {
@@ -498,17 +499,15 @@ document.getElementById('ip_input').addEventListener('input', async function(eve
                 }
             }
 
-            document.getElementById('ip_country').textContent = `国家：${country}`;
-            document.getElementById('ip_org').textContent = `服务商：${ispName}`;
+            document.getElementById('ip_country').textContent = `國家：${country}`;
+            document.getElementById('ip_org').textContent = `服務商：${ispName}`;
         })
         .catch(error => {
             console.error(error);
-            document.getElementById('ip_country').textContent = `错误：`;
+            document.getElementById('ip_country').textContent = `錯誤：`;
             document.getElementById('ip_org').textContent = `${error}`;
         });
 });
-
-
 </script>
 </body>
 </html>
