@@ -346,7 +346,7 @@ setTimeout(showAllRows, 1000);\n\
         <img id="macSpeakerIcon" src="img/mac_speaker.png" alt="Copy Icon" width="180">
     </div>
 
-<div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 230px">
+<div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 300px">
     <div id="ip_search_form_container">
         <form id="ip_search_form">
 			<label for="ip_input">IP：</label>
@@ -376,60 +376,139 @@ setTimeout(showAllRows, 1000);\n\
 <script src="script/DT_test_copybutton_script.js"></script>
 <script src="script/DT_fuction_confirm.js"></script>
 <script>
-        // ip搜尋+isp比對
-        const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-        const ipinfoToken = '5da0a6c614f15b';
-        const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-        const range = 'list!C2:D';
+const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+const ipinfoToken = '5da0a6c614f15b';
+const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+const range = 'list!B2:D'; // 包含CIDR、ISP和ASN的範圍
 
-        async function getASNData() {
-            const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${googleApiKey}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            const asnData = {};
-            if (data.values) {
-                data.values.forEach(row => {
-                    const [name, asn] = row;
-                    if (asn && name) {
-                        asnData[asn.trim()] = name.trim();
-                    }
-                });
-            } else {
-                console.error("No data found in the specified range.");
+async function getASNData() {
+    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${googleApiKey}`;
+    const response = await fetch(url);
+    const data = await response.json();
+    const asnData = {};
+    if (data.values) {
+        data.values.forEach(row => {
+            const [cidrRange, ispName, asn] = row;
+            if (cidrRange && ispName && asn) {
+                const trimmedCidrRange = cidrRange.trim();
+                const trimmedIspName = ispName.trim();
+                const trimmedAsn = asn.trim();
+                if (!asnData[trimmedAsn]) {
+                    asnData[trimmedAsn] = [];
+                }
+                asnData[trimmedAsn].push({ cidrRange: trimmedCidrRange, ispName: trimmedIspName });
             }
-            return asnData;
-        }
-
-        const asnDataPromise = getASNData();
-
-        document.getElementById('ip_input').addEventListener('input', async function(event) {
-            const ip = event.target.value.trim();
-            if (ip === '') {
-                document.getElementById('ip_country').textContent = '';
-                document.getElementById('ip_org').textContent = '';
-                return;
-            }
-            const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
-
-            fetch(url)
-                .then(response => response.json())
-                .then(async data => {
-                    const country = data.country || 'N/A';
-                    const org = data.org || 'N/A';
-                    const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
-
-                    const asnData = await asnDataPromise;
-                    const orgName = asnData[asn] || '未知服務商';
-
-                    document.getElementById('ip_country').textContent = `國家：${country}`;
-                    document.getElementById('ip_org').textContent = `服務商：${orgName}`;
-                })
-                .catch(error => {
-                    console.error(error);
-                    document.getElementById('ip_country').textContent = `錯誤：`;
-                    document.getElementById('ip_org').textContent = `${error}`;
-                });
         });
+    } else {
+        console.error("No data found in the specified range.");
+    }
+    console.log("ASN Data:", asnData); // 调试输出
+    return asnData;
+}
+
+function isIpInCidr(ip, cidr) {
+    function ipToLong(ip) {
+        return ip.split('.').reduce((sum, x) => (sum << 8) + parseInt(x), 0) >>> 0;
+    }
+
+    function cidrToRange(cidr) {
+        const [base, bits] = cidr.split('/');
+        const ipBase = ipToLong(base);
+        const mask = ~(2 ** (32 - bits) - 1);
+        const ipLow = ipBase & mask;
+        const ipHigh = ipBase | ~mask;
+        return [ipLow, ipHigh];
+    }
+
+    const ipLong = ipToLong(ip);
+    const [low, high] = cidrToRange(cidr);
+    return ipLong >= low && ipLong <= high;
+}
+
+const asnDataPromise = getASNData();
+
+document.getElementById('ip_input').addEventListener('keydown', async function(event) {
+    if (event.key === 'Enter') {
+        event.preventDefault(); // 阻止默认提交
+        const ip = event.target.value.trim();
+        if (ip === '') {
+            document.getElementById('ip_country').textContent = '';
+            document.getElementById('ip_org').textContent = '';
+            return;
+        }
+        const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
+
+        fetch(url)
+            .then(response => response.json())
+            .then(async data => {
+                const country = data.country || 'N/A';
+                const org = data.org || 'N/A';
+                const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 编号
+
+                const asnData = await asnDataPromise;
+                let found = false;
+                let ispName = '未知服务商';
+                if (asnData[asn]) {
+                    for (const entry of asnData[asn]) {
+                        if (isIpInCidr(ip, entry.cidrRange)) {
+                            ispName = entry.ispName;
+                            found = true;
+                            break;
+                        }
+                    }
+                }
+
+                document.getElementById('ip_country').textContent = `国家：${country}`;
+                document.getElementById('ip_org').textContent = `服务商：${ispName}`;
+            })
+            .catch(error => {
+                console.error(error);
+                document.getElementById('ip_country').textContent = `错误：`;
+                document.getElementById('ip_org').textContent = `${error}`;
+            });
+    }
+});
+
+document.getElementById('ip_input').addEventListener('input', async function(event) {
+    const ip = event.target.value.trim();
+    if (ip === '') {
+        document.getElementById('ip_country').textContent = '';
+        document.getElementById('ip_org').textContent = '';
+        return;
+    }
+    const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
+
+    fetch(url)
+        .then(response => response.json())
+        .then(async data => {
+            const country = data.country || 'N/A';
+            const org = data.org || 'N/A';
+            const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 编号
+
+            const asnData = await asnDataPromise;
+            let found = false;
+            let ispName = '未知服务商';
+            if (asnData[asn]) {
+                for (const entry of asnData[asn]) {
+                    if (isIpInCidr(ip, entry.cidrRange)) {
+                        ispName = entry.ispName;
+                        found = true;
+                        break;
+                    }
+                }
+            }
+
+            document.getElementById('ip_country').textContent = `国家：${country}`;
+            document.getElementById('ip_org').textContent = `服务商：${ispName}`;
+        })
+        .catch(error => {
+            console.error(error);
+            document.getElementById('ip_country').textContent = `错误：`;
+            document.getElementById('ip_org').textContent = `${error}`;
+        });
+});
+
+
 </script>
 </body>
 </html>
