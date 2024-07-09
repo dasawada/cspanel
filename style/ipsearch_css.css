@@ -1,0 +1,26 @@
+#ip_search_form_container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    height: 25px;
+}
+
+#ip_search_form {
+    display: flex;
+    align-items: center;
+    height: 100%;
+
+	line-height: 25px;
+}
+
+#ip_search_form input {
+    height: 100%;
+}
+
+#ip_result_container {
+    display: block; /* 將 ip_result_container 設置為塊狀元素 */
+}
+
+#ip_result_container p {
+    line-height: 20px;
+}
