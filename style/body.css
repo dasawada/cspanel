@@ -2,7 +2,7 @@ body {
     font-family: 'PingFang', 'SanFrancisco', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
     position: relative; /* 確保 body 的內容在 header 之上 */
     z-index: 1; /* 確保 body 的內容在 header 之上 */
-	font-size:12px;
+	font-size:13px;
 }
 
 .update-header {
@@ -115,9 +115,11 @@ z-index: 998;
 width:500px;
 }
 .IPsearch_in_panelALL {
-  flex-direction: column; /* 垂直排列 */
-  justify-content: space-between; /* 均勻分布 */
-  padding: 6px 8px 2px 8px;
+  display: flex;            /* 使用 Flexbox */
+  flex-direction: column;   /* 垂直排列 */
+  justify-content: space-between; /* 子元素在垂直方向上均勻分布 */
+  align-items: flex-start;  /* 子元素靠左對齊 */
+  padding:6px 6px 3px 6px ; /* 內邊距 */
 }
 .linkout {
     background-color: white;
