@@ -61,6 +61,7 @@ function generateOutput() {
         測試工程師：【${project}】
         ${deviceOutput}<br>
         ${connectionOutput}<br>
+		--------<br>
         是否適合上課：【${suitable}】<br>
         --------<br>
         測試問題：<br>
