@@ -44,7 +44,7 @@ function generateOutput() {
         const speed = document.getElementById(`DT_speed_${connectionIndex}`).value || '';
 
         connectionOutput += `
-        --------<br>
+        <br>--------<br>
         網路連線（${connectionIndex}）：<br>
         　電信業者：【${provider}】 連線方式：【${connection}】<br>
         　當前網速：<br>
