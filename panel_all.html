@@ -499,6 +499,12 @@ document.getElementById('ip_input').addEventListener('input', async function(eve
                 }
             }
 
+
+                    if (!found) { // 如果未找到，顯示ipinfo的原始結果
+                        ispName = org;
+                    }
+					
+					
             document.getElementById('ip_country').textContent = `國家：${country}`;
             document.getElementById('ip_org').textContent = `服務商：${ispName}`;
         })
