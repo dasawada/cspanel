@@ -105,7 +105,7 @@ body {
 .ClassLogpanel {
 	width: 560px;
 	height: 700px;
-	z-index: 998;
+	z-index: 997;
 }
 .DT_panel {
 position: absolute; 
@@ -120,6 +120,7 @@ width:500px;
   justify-content: space-between; /* 子元素在垂直方向上均勻分布 */
   align-items: flex-start;  /* 子元素靠左對齊 */
   padding:6px 6px 3px 6px ; /* 內邊距 */
+  z-index: 998;
 }
 .linkout {
     background-color: white;

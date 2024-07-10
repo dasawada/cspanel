@@ -58,7 +58,7 @@
 
         shortUrlOutput.select();
         document.execCommand('copy');
-        showShrtURL_copyButtonMessage('已複製(ﾉ∀`*)');
+        showShrtURL_copyButtonMessage('已複製！');
     }
 
     // 顯示复制按鈕消息
