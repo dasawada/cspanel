@@ -80,7 +80,7 @@ body {
     cursor: pointer;
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover {
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover {
     background-color: #f7f7f7;
 }
 
