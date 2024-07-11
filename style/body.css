@@ -16,18 +16,17 @@ body {
     background: rgba(255, 255, 255, 0.5); /* 可選，添加背景以確保文本可讀性 */
     padding: 5px; /* 可選，增加內邊距 */
 }
-.roof_container {
-    display: grid;
-    grid-template-columns: 430px auto; /* 左側為430px，右側為剩餘空間 */
-    grid-template-rows: auto auto auto auto; /* 定義四行 */
+.panel_all_container {
     gap: 10px; /* 定義列和行之間的間距 */
     height: auto; /* 自動高度 */
+	width:100%;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: relative; /* 確保容器為相對定位 */
+    position: absolute; /* 確保容器為相對定位 */
+	left: 0px;
+    top:  0px;
+	
 }
 .roofbutton {
-    grid-column: 1 / 2; /* 只占据一列 */
-    grid-row: 1; /* 第1行 */
     width: 430px;
     height: 100px; 
     font-size: 12px;
@@ -38,13 +37,14 @@ body {
     background-color: white;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+	position: absolute; /* 確保容器為相對定位 */
+	left: 0px;
+    top:  0px;
 }
 .roofbutton:hover {
     background-color: #f7f7f7;
 }
 	.optitlepanel {
-	grid-column: 1 / 2; /* 左一 */
-	grid-row: 2 / 3;
 	background-color: white;
 	padding: 8px;
 	border: 1px solid #ccc;
@@ -54,7 +54,9 @@ body {
 	height: 130px;
 	font-size: 13px;
 	box-sizing: border-box;
-	position: relative; /* 為了讓子元素絕對定位生效 */
+    position: absolute; /* 確保容器為相對定位 */
+	left: 0px;
+    top:  110px;
 }
 .optitlepanel:hover {
     background-color: #f7f7f7;
@@ -92,6 +94,7 @@ body {
 .consultantlistgooglesheet {
 	height: 700px;
     z-index: 1000; /* 確保顯示在最上層 */
+	top: 0px;
     left: 440px; /* 根據需要調整 */
     right: 20px; /* 緊貼右側 */
 }
@@ -124,16 +127,26 @@ width:500px;
 }
 .linkout {
     background-color: white;
-    padding: 7px; 
+    padding: 5px; 
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     height: 65px; /* 固定高度 */
-	width: 395px;
+	width: 400px;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     top: 35px;
     left: 440px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+.input-container,
+#shortUrlContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 .linkout:hover {
     background-color: #f7f7f7;
@@ -149,6 +162,7 @@ width:500px;
     position: absolute; /* 固定位置 */
     top: 110px;
     left: 440px;
+	width: 400px;
 }
 .appicon:hover {
     background-color: #f7f7f7;
