@@ -352,7 +352,7 @@ setTimeout(showAllRows, 1000);\n\
     <div id="ip_search_form_container">
         <form id="ip_search_form">
 			<label for="ip_input">IP：</label>
-            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" placeholder="資料於2024/07/10更新" />
+            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" />
         </form>
     </div>
     <div id="ip_result_container">
@@ -366,7 +366,7 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 
 
-
+<script src="https://apis.google.com/js/api.js"></script>
 <script src="script/imgcp2bx.js"></script>
 <script src="script/cpcast.js"></script>
 <script src="script/optitlearange.js"></script>
@@ -516,6 +516,25 @@ document.getElementById('ip_input').addEventListener('input', async function(eve
             document.getElementById('ip_org').textContent = `${error}`;
         });
 });
+
+        function IP_plcholder_initClient() {
+            gapi.client.init({
+                'apiKey': AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw,
+                'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+            }).then(function () {
+                return gapi.client.sheets.spreadsheets.values.get({
+                    spreadsheetId: spreadsheetId,
+                    range: 'update!A1:A1',
+                });
+            }).then(function (response) {
+                var dateUpdated = response.result.values[0][0];
+                document.getElementById('ip_input').placeholder = '資料於' + dateUpdated + '更新';
+            }, function (response) {
+                console.log('Error: ' + response.result.error.message);
+            });
+        }
+
+        gapi.load('client', IP_plcholder_initClient);
 </script>
 </body>
 </html>
