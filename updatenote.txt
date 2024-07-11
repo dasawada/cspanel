@@ -46,3 +46,7 @@
 2024/07/09
 功能新增：
 - 【IP搜尋】：新增IP搜尋，資料來源為財團法人網路資訊中心（https://rpki.tw/stats/valid.html）
+
+2024/07/11
+修改：
+- 【IP搜尋】：placeholder的更新時間，改成撈取google表單資訊

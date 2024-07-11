@@ -11,6 +11,7 @@
 
   gtag('config', 'G-1638R1H1FB');
 </script>
+<script src="https://apis.google.com/js/api.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★客服小工具ALL★</title>
@@ -24,7 +25,7 @@
 </head>
 <body>
 <div class="update-header">※版本更新：
-<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/07/09</a></div>
+<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/07/11</a></div>
 <div class="roof_container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -348,193 +349,32 @@ setTimeout(showAllRows, 1000);\n\
         <img id="macSpeakerIcon" src="img/mac_speaker.png" alt="Copy Icon" width="180">
     </div>
 
-<div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 300px">
-    <div id="ip_search_form_container">
-        <form id="ip_search_form">
-			<label for="ip_input">IP：</label>
-            <input type="text" id="ip_input" name="ip_input" style="height: 20px;" />
-        </form>
-    </div>
-    <div id="ip_result_container">
-        <p id="ip_country" style="margin: 0; padding: 0; line-height: 18px;"></p>
-        <p id="ip_org" style="margin: 0; padding: 0; line-height: 18px;"></p>
-    </div>
-	        <a href="https://rpki.tw/stats/valid.html" 
+    <div class="IPsearch_in_panelALL" style="position: absolute; top: 250px; left: 130px; height: 70px; width: 300px">
+        <div id="ip_search_form_container">
+            <form id="ip_search_form">
+                <label for="ip_input">IP：</label>
+                <input type="text" id="ip_input" name="ip_input" style="height: 20px;" />
+            </form>
+        </div>
+        <div id="ip_result_container">
+            <p id="ip_country" style="margin: 0; padding: 0; line-height: 18px;"></p>
+            <p id="ip_org" style="margin: 0; padding: 0; line-height: 18px;"></p>
+        </div>
+        <a href="https://rpki.tw/stats/valid.html" 
            title="資料來源為「財團法人台灣網路資訊中心」" 
            class="IP_info-button" 
            target="_blank">?</a>
-</div>
-
-
-<script src="https://apis.google.com/js/api.js"></script>
-<script src="script/imgcp2bx.js"></script>
-<script src="script/cpcast.js"></script>
-<script src="script/optitlearange.js"></script>
-<script src="script/GGapi.js"></script>
-<script src="script/togglelayer.js"></script>
-<script src="script/shrturl.js"></script>
-<script src="script/addforms.js"></script>
-<script src="script/DT_form_output.js"></script>
-<script src="script/DT_test_copybutton_script.js"></script>
-<script src="script/DT_fuction_confirm.js"></script>
-<script>
-
-const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-const ipinfoToken = '5da0a6c614f15b';
-const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-const range = 'list!B2:D'; // 包含CIDR、ISP和ASN的範圍
-
-async function getASNData() {
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${googleApiKey}`;
-    const response = await fetch(url);
-    const data = await response.json();
-    const asnData = {};
-    if (data.values) {
-        data.values.forEach(row => {
-            const [cidrRange, ispName, asn] = row;
-            if (cidrRange && ispName && asn) {
-                const trimmedCidrRange = cidrRange.trim();
-                const trimmedIspName = ispName.trim();
-                const trimmedAsn = asn.trim();
-                if (!asnData[trimmedAsn]) {
-                    asnData[trimmedAsn] = [];
-                }
-                asnData[trimmedAsn].push({ cidrRange: trimmedCidrRange, ispName: trimmedIspName });
-            }
-        });
-    } else {
-        console.error("No data found in the specified range.");
-    }
-    console.log("ASN Data:", asnData); // 調試輸出
-    return asnData;
-}
-
-function isIpInCidr(ip, cidr) {
-    function ipToLong(ip) {
-        return ip.split('.').reduce((sum, x) => (sum << 8) + parseInt(x), 0) >>> 0;
-    }
-
-    function cidrToRange(cidr) {
-        const [base, bits] = cidr.split('/');
-        const ipBase = ipToLong(base);
-        const mask = ~(2 ** (32 - bits) - 1);
-        const ipLow = ipBase & mask;
-        const ipHigh = ipBase | ~mask;
-        return [ipLow, ipHigh];
-    }
-
-    const ipLong = ipToLong(ip);
-    const [low, high] = cidrToRange(cidr);
-    return ipLong >= low && ipLong <= high;
-}
-
-const asnDataPromise = getASNData();
-
-document.getElementById('ip_input').addEventListener('keydown', async function(event) {
-    if (event.key === 'Enter') {
-        event.preventDefault(); // 阻止默認提交
-        const ip = event.target.value.trim();
-        if (ip === '') {
-            document.getElementById('ip_country').textContent = '';
-            document.getElementById('ip_org').textContent = '';
-            return;
-        }
-        const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
-
-        fetch(url)
-            .then(response => response.json())
-            .then(async data => {
-                const country = data.country || 'N/A';
-                const org = data.org || 'N/A';
-                const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
-
-                const asnData = await asnDataPromise;
-                let found = false;
-                let ispName = '未知服務商';
-                if (asnData[asn]) {
-                    for (const entry of asnData[asn]) {
-                        if (isIpInCidr(ip, entry.cidrRange)) {
-                            ispName = entry.ispName;
-                            found = true;
-                            break;
-                        }
-                    }
-                }
-
-                document.getElementById('ip_country').textContent = `國家：${country}`;
-                document.getElementById('ip_org').textContent = `服務商：${ispName}`;
-            })
-            .catch(error => {
-                console.error(error);
-                document.getElementById('ip_country').textContent = `錯誤：`;
-                document.getElementById('ip_org').textContent = `${error}`;
-            });
-    }
-});
-
-document.getElementById('ip_input').addEventListener('input', async function(event) {
-    const ip = event.target.value.trim();
-    if (ip === '') {
-        document.getElementById('ip_country').textContent = '';
-        document.getElementById('ip_org').textContent = '';
-        return;
-    }
-    const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
-
-    fetch(url)
-        .then(response => response.json())
-        .then(async data => {
-            const country = data.country || 'N/A';
-            const org = data.org || 'N/A';
-            const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
-
-            const asnData = await asnDataPromise;
-            let found = false;
-            let ispName = '未知服務商';
-            if (asnData[asn]) {
-                for (const entry of asnData[asn]) {
-                    if (isIpInCidr(ip, entry.cidrRange)) {
-                        ispName = entry.ispName;
-                        found = true;
-                        break;
-                    }
-                }
-            }
-
-
-                    if (!found) { // 如果未找到，顯示ipinfo的原始結果
-                        ispName = org;
-                    }
-					
-					
-            document.getElementById('ip_country').textContent = `國家：${country}`;
-            document.getElementById('ip_org').textContent = `服務商：${ispName}`;
-        })
-        .catch(error => {
-            console.error(error);
-            document.getElementById('ip_country').textContent = `錯誤：`;
-            document.getElementById('ip_org').textContent = `${error}`;
-        });
-});
-
-        function IP_plcholder_initClient() {
-            gapi.client.init({
-                'apiKey': AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw,
-                'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-            }).then(function () {
-                return gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: spreadsheetId,
-                    range: 'update!A1:A1',
-                });
-            }).then(function (response) {
-                var dateUpdated = response.result.values[0][0];
-                document.getElementById('ip_input').placeholder = '資料於' + dateUpdated + '更新';
-            }, function (response) {
-                console.log('Error: ' + response.result.error.message);
-            });
-        }
-
-        gapi.load('client', IP_plcholder_initClient);
-</script>
+    </div>
+    <script src="script/imgcp2bx.js"></script>
+    <script src="script/cpcast.js"></script>
+    <script src="script/optitlearange.js"></script>
+    <script src="script/GGapi.js"></script>
+    <script src="script/togglelayer.js"></script>
+    <script src="script/shrturl.js"></script>
+    <script src="script/addforms.js"></script>
+    <script src="script/DT_form_output.js"></script>
+    <script src="script/DT_test_copybutton_script.js"></script>
+    <script src="script/DT_fuction_confirm.js"></script>
+    <script src="script/IP_search_asn.js"></script>
 </body>
 </html>
