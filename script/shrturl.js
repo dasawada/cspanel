@@ -28,28 +28,28 @@
             });
     }
 
-    // 檢查輸入框值並設置按鈕狀態
-    function checkInputValue() {
-        const longUrl = document.getElementById('longUrl').value.trim();
-        const shortUrlOutput = document.getElementById('shortUrlOutput').value.trim();
-        const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
-        const shortenButton = document.getElementById('shortenButton');
+// 檢查輸入框值並設置按鈕狀態
+function checkInputValue() {
+    const longUrl = document.getElementById('longUrl').value.trim();
+    const shortUrlOutput = document.getElementById('shortUrlOutput').value.trim();
+    const ShrtURL_copyButton = document.getElementById('ShrtURL_copyButton');
+    const shortenButton = document.getElementById('shortenButton');
 
-        // 如果長網址輸入框無值，禁用生成按鈕和复制按钮
-        if (longUrl === '') {
-            ShrtURL_copyButton.style.display = 'none';
-            shortenButton.disabled = true;
-        } else {
-            shortenButton.disabled = false;
-        }
-
-        // 如果短網址輸出框無值，禁用复制按钮
-        if (shortUrlOutput === '') {
-            ShrtURL_copyButton.style.display = 'none';
-        } else {
-            ShrtURL_copyButton.style.display = 'inline-block';
-        }
+    // 如果長網址輸入框無值，禁用生成按鈕和复制按钮
+    if (longUrl === '') {
+        ShrtURL_copyButton.style.visibility = 'hidden';
+        shortenButton.disabled = true;
+    } else {
+        shortenButton.disabled = false;
     }
+
+    // 如果短網址輸出框無值，禁用复制按钮
+    if (shortUrlOutput === '') {
+        ShrtURL_copyButton.style.visibility = 'hidden';
+    } else {
+        ShrtURL_copyButton.style.visibility = 'visible';
+    }
+}
 
     // 複製短網址到剪貼板
     function copyShortUrlToClipboard() {
