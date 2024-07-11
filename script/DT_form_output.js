@@ -28,7 +28,7 @@ function generateOutput() {
 
         deviceOutput += `
         
-        設備（${deviceIndex}）：<br>
+        　設備（${deviceIndex}）：<br>
         　機型：【${device}】 品牌：【${brand}】 作業系統：【${os}】<br>
         　版本/硬體條件：【${osVersion}】 瀏覽器：【${browser}】<br>
         　視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
@@ -45,7 +45,7 @@ function generateOutput() {
 
         connectionOutput += `
         
-        連線（${connectionIndex}）：<br>
+        　連線（${connectionIndex}）：<br>
         　電信業者：【${provider}】 連線方式：【${connection}】<br>
         　當前網速：【${speed}】<br>
         `;
