@@ -27,12 +27,12 @@ function generateOutput() {
         const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`)?.value || '';
 
         deviceOutput += `
-        <br>--------<br>
-        使用設備（${deviceIndex}）：<br>
+        
+        設備（${deviceIndex}）：<br>
         　機型：【${device}】 品牌：【${brand}】 作業系統：【${os}】<br>
         　版本/硬體條件：【${osVersion}】 瀏覽器：【${browser}】<br>
         　視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
-        　耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】
+        　耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】<br>
         `;
     });
 
@@ -44,11 +44,10 @@ function generateOutput() {
         const speed = document.getElementById(`DT_speed_${connectionIndex}`).value || '';
 
         connectionOutput += `
-        <br>--------<br>
-        網路連線（${connectionIndex}）：<br>
+        
+        連線（${connectionIndex}）：<br>
         　電信業者：【${provider}】 連線方式：【${connection}】<br>
-        　當前網速：<br>
-            ${speed}
+        　當前網速：【${speed}】<br>
         `;
     });
 
@@ -57,10 +56,14 @@ function generateOutput() {
 
     let outputContent = `
         日期時間：【${formattedDatetime}】<br>
-        學生姓名：【${name}】<br>${phone}<br>
-        測試工程師：【${project}】
-        ${deviceOutput}<br>
-        ${connectionOutput}<br>
+        學生姓名：【${name}】 ${phone}<br>
+        測試工程師：【${project}】<br>
+		--------<br>
+        🖥️使用設備：<br>
+		${deviceOutput}
+		--------<br>
+        🛜網路連線：<br>
+		${connectionOutput}
 		--------<br>
         是否適合上課：【${suitable}】<br>
         --------<br>
@@ -68,7 +71,7 @@ function generateOutput() {
         <pre style="white-space: pre-wrap;">${issues}</pre><br>
         處理過程：<br>
         <pre style="white-space: pre-wrap;">${process}</pre><br>
-        <b>**${boldbrief}**</b>
+        <b>${boldbrief}</b>
     `;
 
     document.getElementById('output_content').innerHTML = outputContent.trim();
