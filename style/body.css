@@ -24,7 +24,7 @@ body {
     position: absolute; /* 確保容器為相對定位 */
 	left: 0px;
     top:  0px;
-	
+	border: 10px;
 }
 .roofbutton {
     width: 430px;
@@ -124,7 +124,7 @@ width:500px;
 	top: 0px;
     left: 700px;
 	height:780px;
-	right: 20px;
+	width: 1080px;
 	vertical-align: middle; /* 垂直對齊方式 */
 }
 .IPsearch_in_panelALL {
