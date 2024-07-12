@@ -46,6 +46,18 @@ document.getElementById('DT_toggleCheckbox').addEventListener('change', function
     }
 });
 
+document.getElementById('assist_toggleCheckbox').addEventListener('change', function() {
+    const content = document.querySelector('.assist_googlesheet #content');
+    const container = document.querySelector('.assist_googlesheet');
+    if (this.checked) {
+        container.classList.remove('small-size');
+        content.style.display = 'block';
+    } else {
+        container.classList.add('small-size');
+        content.style.display = 'none';
+    }
+});
+
 window.addEventListener('DOMContentLoaded', (event) => {
     const initToggle = (containerSelector, checkboxId) => {
         const container = document.querySelector(containerSelector);
@@ -55,9 +67,11 @@ window.addEventListener('DOMContentLoaded', (event) => {
         container.classList.add('small-size');
         content.style.display = 'none';
     };
+	
 
     initToggle('.consultantlistgooglesheet', 'toggleCheckbox');
     initToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
     initToggle('.ClassLogpanel', 'logToggleCheckbox');
     initToggle('.DT_panel', 'DT_toggleCheckbox');
+    initToggle('.assist_googlesheet', 'assist_toggleCheckbox');
 });
