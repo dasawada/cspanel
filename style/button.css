@@ -228,8 +228,8 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
 
 /* 丟垃圾按鈕效果 */
         .clearIcon {
-            width: 15px;
-            height: 15px;
+            width: 20px;
+            height: 20px;
             border: none;
             background: none;
             cursor: pointer;
@@ -245,7 +245,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
 		opacity: 0.6;
 	}
         .clearIcon i {
-            font-size: 15px;
+            font-size: 20px;
         }
 
 @keyframes trashAnimation {
