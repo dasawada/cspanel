@@ -62,7 +62,7 @@ body {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL {
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet {
     background-color: white;
     padding: 3px;
     border: 1px solid #ccc;
@@ -80,11 +80,11 @@ body {
     cursor: pointer;
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover {
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover,.assist_googlesheet:hover {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size  {
+.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size,.assist_googlesheet.small-size  {
 	width: 120px;
 	height: 30px;
 	overflow: hidden; /* 確保內容不會超出範圍 */
@@ -114,8 +114,18 @@ body {
 position: absolute; 
 left: 570px; 
 top: 0px;
-z-index: 998;
+z-index: 996;
 width:500px;
+}
+
+.assist_googlesheet {
+	position: absolute; 
+	z-index: 995;
+	top: 0px;
+    left: 700px;
+	height:800px;
+	right:20px;
+	vertical-align: middle; /* 垂直對齊方式 */
 }
 .IPsearch_in_panelALL {
   display: flex;            /* 使用 Flexbox */
@@ -125,6 +135,7 @@ width:500px;
   padding:6px 6px 3px 6px ; /* 內邊距 */
   z-index: 998;
 }
+
 .linkout {
     background-color: white;
     padding: 5px; 
