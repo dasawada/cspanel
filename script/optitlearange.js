@@ -64,7 +64,7 @@ function generateText() {
         optitleOutput.innerHTML = outputText + copyButtonHTML;
         optitleOutput.style.transform = "scale(1)";
         optitleOutput.style.opacity = "1";
-    }, 300);
+    }, 50);
 }
 
 // input 無值時清除標題
@@ -77,7 +77,7 @@ function clearOutput() {
         optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
         optitleOutput.style.transform = "scale(1)";
         optitleOutput.style.opacity = "1";
-    }, 300);
+    }, 500);
 }
 
 // 清除指定的輸入欄位
