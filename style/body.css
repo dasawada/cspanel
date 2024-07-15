@@ -1,5 +1,5 @@
 body, button, textarea {
-    font-family: 'Microsoft JhengHei', 'PingFangHK', 'SanFrancisco', 'SF Pro TC', 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica', 'Arial', 'Microsoft JhengHei', 'Microsoft YaHei', 'sans-serif';
+    font-family: 'PingFangHK', 'SanFrancisco', 'SF Pro TC', 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica', 'Arial', 'Microsoft JhengHei', 'Microsoft YaHei', 'sans-serif';
     position: relative; /* 確保 body 的內容在 header 之上 */
     z-index: 1; /* 確保 body 的內容在 header 之上 */
 	font-size:13px;
