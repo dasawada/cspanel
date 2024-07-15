@@ -40,39 +40,40 @@
             font-weight: 100;
             font-style: normal;
         }
-/* San Francisco 字體 */
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Regular.otf') format('opentype');
-    font-weight: normal;
-}
 
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Bold.otf') format('opentype');
-    font-weight: bold;
-}
+        /* San Francisco 字體 */
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Regular.otf') format('opentype');
+            font-weight: normal;
+        }
 
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Light.otf') format('opentype');
-    font-weight: 300;
-}
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Bold.otf') format('opentype');
+            font-weight: bold;
+        }
 
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Medium.otf') format('opentype');
-    font-weight: 500;
-}
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Light.otf') format('opentype');
+            font-weight: 300;
+        }
 
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Heavy.otf') format('opentype');
-    font-weight: 900;
-}
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Medium.otf') format('opentype');
+            font-weight: 500;
+        }
 
-@font-face {
-    font-family: 'SanFrancisco';
-    src: url('fonts/SFNSDisplay-Semibold.otf') format('opentype');
-    font-weight: 600;
-}
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Heavy.otf') format('opentype');
+            font-weight: 900;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Semibold.otf') format('opentype');
+            font-weight: 600;
+        }

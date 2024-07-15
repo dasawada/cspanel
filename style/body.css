@@ -1,8 +1,8 @@
-body {
-     font-family: 'PingFangHK', 'SF Pro TC', 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+body, button, textarea {
+    font-family: 'PingFangHK', 'SanFrancisco', 'SF Pro TC', 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica', 'Arial', 'Microsoft JhengHei', 'Microsoft YaHei', 'sans-serif';
     position: relative; /* 確保 body 的內容在 header 之上 */
     z-index: 1; /* 確保 body 的內容在 header 之上 */
-	font-size:13px;
+	font-size:14px;
 }
 
 .update-header {
@@ -28,7 +28,7 @@ body {
 }
 .roofbutton {
     width: 430px;
-    height: 100px; 
+    height: 140px; 
     font-size: 12px;
     color: #4d4d4d;
     border: 1px solid #ccc; 
@@ -56,7 +56,7 @@ body {
 	box-sizing: border-box;
     position: absolute; /* 確保容器為相對定位 */
 	left: 0px;
-    top:  110px;
+    top:  150px;
 }
 .optitlepanel:hover {
     background-color: #f7f7f7;
@@ -85,7 +85,7 @@ body {
 }
 
 .idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size,.assist_googlesheet.small-size  {
-	width: 120px;
+	width: 130px;
 	height: 30px;
 	overflow: hidden; /* 確保內容不會超出範圍 */
 }
@@ -104,7 +104,7 @@ body {
 	height: 600px;
     z-index: 999;
     left: 0px;
-    top: 250px;
+    top: 290px;
 }
 .ClassLogpanel {
 	width: 560px;
@@ -113,7 +113,7 @@ body {
 }
 .DT_panel {
 position: absolute; 
-left: 570px; 
+left: 575px; 
 top: 0px;
 z-index: 996;
 width:500px;
@@ -123,7 +123,7 @@ width:500px;
 	position: absolute; 
 	z-index: 995;
 	top: 0px;
-    left: 700px;
+    left: 710px;
 	height:780px;
 	width: 1080px;
 	vertical-align: middle; /* 垂直對齊方式 */
