@@ -52,7 +52,7 @@ body, button, textarea {
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 	width: 430px;
 	height: 130px;
-	font-size: 13px;
+	font-size: 14px;
 	box-sizing: border-box;
     position: absolute; /* 確保容器為相對定位 */
 	left: 0px;
