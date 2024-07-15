@@ -59,10 +59,10 @@ function generateOutput() {
         學生姓名：【${name}】 ${phone}<br>
         測試工程師：【${project}】<br>
 		--------<br>
-        🖥️使用設備：<br>
+        使用設備：<br>
 		${deviceOutput}
 		--------<br>
-        🛜網路連線：<br>
+        網路連線：<br>
 		${connectionOutput}
 		--------<br>
         是否適合上課：【${suitable}】<br>
