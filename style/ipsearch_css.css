@@ -1,5 +1,6 @@
 #ip_search_form_container {
     line-height: 20px;
+	width:200px; /* 限制ip搜尋輸入欄的寬度 */
 }
 
 #ip_search_form {
@@ -17,6 +18,7 @@
 #ip_result_container {
     display: block; /* 將 ip_result_container 設置為塊狀元素 */
 	margin:0px;
+	width:100%;
 }
 
 #ip_result_container p {
