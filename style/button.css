@@ -32,7 +32,7 @@ input[type=text], input[type=password] {
     box-sizing: border-box;
     box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
 	line-height: 1.5; /* 統一行高 */
-	
+	font-family: 'PingFangHK', 'SanFrancisco', 'Microsoft JhengHei', 'Microsoft YaHei', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Helvetica', 'sans-serif';
 
 }
 
@@ -55,6 +55,7 @@ select {
     box-sizing: border-box;
     box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 內陰影 */
     line-height: 1.5; /* 統一行高 */
+	font-family: 'PingFangHK', 'SanFrancisco', 'Microsoft JhengHei', 'Microsoft YaHei', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Helvetica', 'sans-serif';
 }
 
 /* 聚焦時的效果 */
