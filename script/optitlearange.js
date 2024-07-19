@@ -205,7 +205,7 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
 
     consultantSpan.addEventListener('click', function() {
         const tempInput = document.createElement('input');
-        tempInput.value = consultantName.substring(1); // 複製第二個字起的顧問名
+        tempInput.value = consultantName.substring(-2); // 複製第二個字起的顧問名
         document.body.appendChild(tempInput);
         tempInput.select();
         document.execCommand('copy');
@@ -227,7 +227,7 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
 
 			leaderSpan.addEventListener('click', function() {
 				const tempInput = document.createElement('input');
-				tempInput.value = teamLeaderValue.substring(1); // 複製第二個字起的組長名
+				tempInput.value = teamLeaderValue.slice(-2); // 複製第二個字起的組長名
 				document.body.appendChild(tempInput);
 				tempInput.select();
 				document.execCommand('copy');
