@@ -142,7 +142,7 @@ width:550px;
   min-height: 36px;              /* 设置初始最小高度 */
   width: 290px;                  /* 固定宽度 */
   overflow: hidden;              /* 控制内容溢出 */
-  transition: height 0.5s ease;  /* 统一过渡时间 */
+  transition: height 0.1s ease;  /* 统一过渡时间 */
 }
 
 
