@@ -7,7 +7,7 @@
                 .replace(/'/g, "&#039;");
         }
 
-        function generateOutput() {
+function assistIssueGenerateOutput() {
             const classInfo = document.getElementById('assist-issue-classInfo').value;
             const issueDescription = document.getElementById('assist-issue-issueDescription').value;
             const outputContainer = document.getElementById('assist-issue-outputContainer');
@@ -27,10 +27,10 @@
                 return;
             }
             
-            const dateTime = escapeHtml(lines[0] + " " + lines[1]);
-            const studentName = escapeHtml(lines[3]);
-            const teacherName = escapeHtml(lines[5]);
-            const issueDescriptionEscaped = escapeHtml(issueDescription);
+            const dateTime = assistIssueEscapeHtml(lines[0] + " " + lines[1]);
+            const studentName = assistIssueEscapeHtml(lines[3]);
+            const teacherName = assistIssueEscapeHtml(lines[5]);
+            const issueDescriptionEscaped = assistIssueEscapeHtml(issueDescription);
             
             const outputItem = document.createElement('div');
             outputItem.className = 'assist-issue-output-item';
@@ -58,5 +58,21 @@
             outputContainer.appendChild(outputItem);
         }
 
-        document.getElementById('assist-issue-classInfo').addEventListener('input', generateOutput);
-        document.getElementById('assist-issue-issueDescription').addEventListener('input', generateOutput);
+        function assistIssueClearFields() {
+            document.getElementById('assist-issue-classInfo').value = '';
+            document.getElementById('assist-issue-issueDescription').value = '';
+            document.getElementById('assist-issue-outputContainer').innerHTML = '';
+        }
+
+        document.getElementById('assist-issue-classInfo').addEventListener('input', assistIssueGenerateOutput);
+        document.getElementById('assist-issue-issueDescription').addEventListener('input', assistIssueGenerateOutput);
+        document.getElementById('assist-issue-clearButton').addEventListener('click', assistIssueClearFields);
+
+        document.getElementById('assist-issue-toggleCheckbox').addEventListener('change', function() {
+            const content = document.getElementById('assist-issue-content');
+            if (this.checked) {
+                content.style.display = 'block';
+            } else {
+                content.style.display = 'none';
+            }
+        });
