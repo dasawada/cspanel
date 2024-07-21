@@ -324,7 +324,7 @@ setTimeout(showAllRows, 1000);\n\
         <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1qMoRfBo0xgr97ytuH6pzPHEqBCbocB9F8U-lGLM7NlM/edit?gid=0#gid=0"></iframe>
     </div>
 </div>
-
+<!--短網址-->
 <div class="linkout">
     <div class="input-container">
         <input type="text" id="longUrl" placeholder="輸入網址" oninput="checkInputValue()">
@@ -335,7 +335,7 @@ setTimeout(showAllRows, 1000);\n\
         <button id="ShrtURL_copyButton" onclick="copyShortUrlToClipboard()">Copy</button>
     </div>
 </div>
-
+<!--icon複製-->
     <div class="appicon">
         點擊圖片自動複製，可直接貼至BX<br>
         <img id="chromeIcon" src="img/chrome_icon.png" alt="Copy Icon" width="40" height="40">
@@ -354,7 +354,7 @@ setTimeout(showAllRows, 1000);\n\
         <img id="macMicIcon" src="img/mac_mic.png" alt="Copy Icon" width="60">
         <img id="macSpeakerIcon" src="img/mac_speaker.png" alt="Copy Icon" height="60">
     </div>
-
+<!--ip搜尋-->
     <div class="IPsearch_in_panelALL">
         <div id="ip_search_form_container">
             <form id="ip_search_form">
@@ -373,6 +373,25 @@ setTimeout(showAllRows, 1000);\n\
            class="IP_info-button" 
            target="_blank">?</a>
     </div>
+<!--輔導單生成-->
+<div class="assist-issue small-size">
+    <div class="toggle-container">
+        <input type="checkbox" id="assist-issue-toggleCheckbox">
+        <label for="assist-issue-toggleCheckbox">📝輔導單模板</label>
+    </div>
+    <div id="content" style="display: none;">
+    <div class="assist-issue-form-container">
+        <label for="assist-issue-classInfo">課程資訊：</label><br>
+        <textarea id="assist-issue-classInfo" placeholder="請貼上課程資訊" rows="3" cols="50"></textarea><br><br>
+        <label for="assist-issue-issueDescription">問題說明：</label><br>
+        <textarea id="assist-issue-issueDescription" placeholder="請輸入問題說明" rows="5" cols="50"></textarea>
+    </div>
+    
+    <div class="assist-issue-output" id="assist-issue-outputContainer">
+    </div>
+</div>
+</div>
+
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
     <script src="script/optitlearange.js"></script>
@@ -384,5 +403,6 @@ setTimeout(showAllRows, 1000);\n\
     <script src="script/DT_test_copybutton_script.js"></script>
     <script src="script/DT_fuction_confirm.js"></script>
     <script src="script/IP_search_asn.js"></script>
+	<script src="script/assist_issue.js"></script>
 </body>
 </html>

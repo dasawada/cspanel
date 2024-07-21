@@ -58,6 +58,18 @@ document.getElementById('assist_toggleCheckbox').addEventListener('change', func
     }
 });
 
+document.getElementById('assist-issue-toggleCheckbox').addEventListener('change', function() {
+    const content = document.querySelector('.assist-issue #content');
+    const container = document.querySelector('.assist-issue');
+    if (this.checked) {
+        container.classList.remove('small-size');
+        content.style.display = 'block';
+    } else {
+        container.classList.add('small-size');
+        content.style.display = 'none';
+    }
+});
+
 window.addEventListener('DOMContentLoaded', (event) => {
     const initToggle = (containerSelector, checkboxId) => {
         const container = document.querySelector(containerSelector);
@@ -74,4 +86,5 @@ window.addEventListener('DOMContentLoaded', (event) => {
     initToggle('.ClassLogpanel', 'logToggleCheckbox');
     initToggle('.DT_panel', 'DT_toggleCheckbox');
     initToggle('.assist_googlesheet', 'assist_toggleCheckbox');
+	initToggle('.assist-issue', 'assist-issue-toggleCheckbox');
 });
