@@ -21,6 +21,7 @@
 <link rel="stylesheet" href="style/button.css">
 <link rel="stylesheet" href="style/DT_CSS.css">
 <link rel="stylesheet" href="style/ipsearch_css.css">
+<link rel="stylesheet" href="style/as_num.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 </head>
 <body>
@@ -318,10 +319,18 @@ setTimeout(showAllRows, 1000);\n\
 <div class="assist_googlesheet small-size">
     <div class="toggle-container">
         <input type="checkbox" id="assist_toggleCheckbox">
-        <label for="assist_toggleCheckbox">☎️輔導通訊錄</label>
+        <label for="assist_toggleCheckbox">☎️輔導班表</label>
     </div>
     <div id="content" style="display: none;">
-        <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1qMoRfBo0xgr97ytuH6pzPHEqBCbocB9F8U-lGLM7NlM/edit?gid=0#gid=0"></iframe>
+	<div style="width:200px;height:18px;">
+<div class="assist_num_container">
+    <div class="assist_num_left">
+        <input type="text" id="assist_num_searchValue" placeholder="搜尋電話" style="width: 100%; height: 100%;">
+    </div>
+    <div class="assist_num_right" id="assist_num_result" onclick="assist_num_copyToClipboard(this)"></div>
+</div>
+</div>
+        <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1tVpP-oVdgKS_amnfzTKOF3cxetA4YcUtWbxZepzxi38/edit?gid=1476656289#gid=1476656289"></iframe>
     </div>
 </div>
 <!--短網址-->
@@ -407,5 +416,7 @@ setTimeout(showAllRows, 1000);\n\
     <script src="script/DT_fuction_confirm.js"></script>
     <script src="script/IP_search_asn.js"></script>
 	<script src="script/assist_issue.js"></script>
+	<script src="script/as_num.js"></script>
+
 </body>
 </html>

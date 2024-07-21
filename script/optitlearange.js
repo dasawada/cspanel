@@ -203,20 +203,25 @@ for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
     consultantSpan.style.cursor = 'pointer';
     consultantSpan.title = '點我一下複製名字';
 
-    consultantSpan.addEventListener('click', function() {
-        const tempInput = document.createElement('input');
-        tempInput.value = consultantName.slice(-2); // 複製第二個字起的顧問名
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        consultantSpan.title = '已複製！';
-				
-				// 一秒後復原 title
-				setTimeout(function() {
-					consultantSpan.title = '點我一下複製名字';
-				}, 1000); // 1000 毫秒 = 1 秒
-			});
+consultantSpan.addEventListener('click', function() {
+    const tempInput = document.createElement('input');
+    if (consultantName.length <= 2) {
+        tempInput.value = consultantName.slice(-1); // 若顧問名為兩個字符或更少，複製最後一個字符
+    } else {
+        tempInput.value = consultantName.slice(-2); // 複製最後兩個字符
+    }
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand('copy');
+    document.body.removeChild(tempInput);
+    consultantSpan.title = '已複製！';
+    
+    // 一秒後復原 title
+    setTimeout(function() {
+        consultantSpan.title = '點我一下複製名字';
+    }, 1000); // 1000 毫秒 = 1 秒
+});
+
 
 			// 組長部分
 			const leaderSpan = document.createElement('span');
