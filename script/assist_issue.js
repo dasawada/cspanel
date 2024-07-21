@@ -76,3 +76,34 @@
                 content.style.display = 'none';
             }
         });
+		
+function assistIssueCopyContent() {
+    const outputContainer = document.getElementById('assist-issue-outputContainer');
+    const copyButton = document.getElementById('assist-issue-copyButton');
+    const range = document.createRange();
+    range.selectNode(outputContainer);
+    window.getSelection().removeAllRanges(); // Clear any existing selections
+    window.getSelection().addRange(range);
+
+    try {
+        document.execCommand('copy');
+        copyButton.textContent = '已複製';
+        copyButton.classList.add('copied');
+        setTimeout(() => {
+            copyButton.textContent = '複製內容';
+            copyButton.classList.remove('copied');
+        }, 2000); // 2秒後恢復按鈕文字和樣式
+    } catch (err) {
+        copyButton.textContent = '複製失敗';
+        setTimeout(() => {
+            copyButton.textContent = '複製內容';
+        }, 2000); // 2秒後恢復按鈕文字
+    }
+
+    window.getSelection().removeAllRanges(); // Clear the selection
+}
+
+document.getElementById('assist-issue-copyButton').addEventListener('click', assistIssueCopyContent);
+
+
+
