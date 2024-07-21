@@ -278,3 +278,22 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
 .IP_info-button:hover {
     background-color: #5c5c5c;
 }
+
+.assist-issue-copy-button {
+    float: right;
+    margin-top: 10px;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background-color: #738394;
+    color: white;
+    cursor: pointer;
+}
+.assist-issue-copy-button:hover {
+    background-color: #215894; /* hover 時的背景顏色 */
+    color: white; /* hover 時的文字顏色 */
+}
+.assist-issue-copy-button.copied {
+    background-color: #28a745; /* 綠色背景表示已複製 */
+    color: white;
+}
