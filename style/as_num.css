@@ -1,0 +1,17 @@
+        body {
+            font-family: Arial, sans-serif;
+        }
+        .assist_num_container {
+            display: flex;
+            height: 18px;
+        }
+        .assist_num_left, .assist_num_right {
+            width: 50%;
+            box-sizing: border-box;
+        }
+        .assist_num_copied {
+            color: red;
+        }
+        .assist_num_uncopiable {
+            cursor: default;
+        }
