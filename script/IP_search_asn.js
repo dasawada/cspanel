@@ -54,23 +54,23 @@ document.getElementById('ip_input').addEventListener('keydown', async function(e
         event.preventDefault(); // 阻止默認提交
         const ip = event.target.value.trim();
         if (ip === '') {
-            clearOutput();
+            IP_clearOutput();
             return;
         }
-        await handleIpInput(ip);
+        await IP_handleIpInput(ip);
     }
 });
 
 document.getElementById('ip_input').addEventListener('input', async function(event) {
     const ip = event.target.value.trim();
     if (ip === '') {
-        clearOutput();
+        IP_clearOutput();
         return;
     }
-    await handleIpInput(ip);
+    await IP_handleIpInput(ip);
 });
 
-async function handleIpInput(ip) {
+async function IP_handleIpInput(ip) {
     const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
 
     try {
@@ -79,7 +79,7 @@ async function handleIpInput(ip) {
 
         const country = data.country || 'N/A';
         const org = data.org || 'N/A';
-        const hostname = data.hostname || ''; //提取主機名，如果無值則為空字符串
+        const hostname = data.hostname || ''; // 提取主機名，如果無值則為空字符串
         const asn = org.split(' ')[0].replace('AS', ''); // 提取 ASN 編號
 
         const asnData = await asnDataPromise;
@@ -109,13 +109,13 @@ async function handleIpInput(ip) {
         }
     } catch (error) {
         console.error(error);
-        clearOutput();
+        IP_clearOutput();
         document.getElementById('ip_country').textContent = `錯誤：`;
         document.getElementById('ip_org').textContent = `${error}`;
     }
 }
 
-function clearOutput() {
+function IP_clearOutput() {
     document.getElementById('ip_country').textContent = '';
     document.getElementById('ip_org').textContent = '';
     document.getElementById('ip_hostname').textContent = ''; // 清空主機名
@@ -126,7 +126,7 @@ const newGoogleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
 const newSpreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
 const newRange = 'update!A1:A1'; // 更新日期範圍
 
-async function fetchNewUpdateDate() {
+async function IP_fetchNewUpdateDate() {
     try {
         console.log("Fetching update date...");
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${newSpreadsheetId}/values/${newRange}?key=${newGoogleApiKey}`;
@@ -148,7 +148,7 @@ async function fetchNewUpdateDate() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', fetchNewUpdateDate);
+document.addEventListener('DOMContentLoaded', IP_fetchNewUpdateDate);
 
 // 展開收合的平滑動畫效果
 const container = document.querySelector('.IPsearch_in_panelALL');

@@ -58,18 +58,23 @@ function generateText() {
     var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none; margin-left: 6px;" title="複製到剪貼簿">' +
                          '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
                          '</button>';
+
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
     optitleOutput.style.opacity = "0.5";
-    
+
+    // 更新文本和按钮
+    optitleOutput.innerHTML = outputText + copyButtonHTML;
+
+    // 恢复样式
     setTimeout(() => {
-        optitleOutput.innerHTML = outputText + copyButtonHTML;
         optitleOutput.style.transform = "scale(1)";
         optitleOutput.style.opacity = "1";
-    }, 50);
+    }, 100);
 }
 
-// input 無值時清除標題
+
+// 清除文本
 function clearOutput() {
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
@@ -79,8 +84,37 @@ function clearOutput() {
         optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
         optitleOutput.style.transform = "scale(1)";
         optitleOutput.style.opacity = "1";
-    }, 500);
+    }, 1000);
 }
+
+document.getElementById('consultantName').addEventListener('input', function() {
+    if (!this.value.trim()) {
+        clearOutput();
+    } else {
+        generateText();
+    }
+});
+document.getElementById('studentName').addEventListener('input', function() {
+    if (!this.value.trim()) {
+        clearOutput();
+    } else {
+        generateText();
+    }
+});
+document.getElementById('parentName').addEventListener('input', function() {
+    if (!this.value.trim()) {
+        clearOutput();
+    } else {
+        generateText();
+    }
+});
+document.getElementById('invoiceNumber').addEventListener('input', function() {
+    if (!this.value.trim()) {
+        clearOutput();
+    } else {
+        generateText();
+    }
+});
 
 // 清除指定的輸入欄位
 function clearFields() {
@@ -261,3 +295,15 @@ function search() {
 document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('clearButton').addEventListener('click', clearFields);
 });
+let previousOptitleOutput = '';
+
+// 更新 optitleoutput 的内容
+function updateOptitleOutput(content) {
+    previousOptitleOutput = content;
+    document.getElementById('optitleoutput').innerHTML = content;
+}
+
+// 清空 optitleoutput 但保留先前的结果
+function clearOptitleOutput() {
+    document.getElementById('optitleoutput').innerHTML = previousOptitleOutput;
+}
