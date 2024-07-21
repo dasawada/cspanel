@@ -1,15 +1,45 @@
-
-        .assist_num_container {
+       .assist_num_container {
             display: flex;
-            height: 18px;
         }
-        .assist_num_left, .assist_num_right {
+
+        .assist_num_left,
+        .assist_num_right {
             width: 50%;
-            box-sizing: border-box;
+            height: 18px;
+            display: flex;
+            align-items: center;
         }
-        .assist_num_copied {
-            color: red;
+
+        .assist_num_right {
+            cursor: copy;
+            transition: background 0.1s;
         }
+
+        .assist_num_right:hover {
+            background: linear-gradient(90deg, #FF0000, #ff9380, #FF4500, #FF0000);
+            background-size: 200% 200%;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: gradient-animation 1s infinite;
+        }
+
+        @keyframes gradient-animation {
+            0% {
+                background-position: 0% 50%;
+            }
+            50% {
+                background-position: 100% 50%;
+            }
+            100% {
+                background-position: 0% 50%;
+            }
+        }
+
         .assist_num_uncopiable {
             cursor: default;
+            -webkit-text-fill-color: initial; /* Remove text fill color for uncopiable state */
+        }
+
+        .assist_num_copied {
+            color: red;
         }
