@@ -1,4 +1,4 @@
-        function escapeHtml(text) {
+        function assistIssueEscapeHtml(text) {
             return text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -7,7 +7,7 @@
                 .replace(/'/g, "&#039;");
         }
 
-function assistIssueGenerateOutput() {
+        function assistIssueGenerateOutput() {
             const classInfo = document.getElementById('assist-issue-classInfo').value;
             const issueDescription = document.getElementById('assist-issue-issueDescription').value;
             const outputContainer = document.getElementById('assist-issue-outputContainer');
