@@ -63,7 +63,7 @@ body, button, textarea {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet {
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet,.assist-issue {
     background-color: white;
     padding: 3px;
     border: 1px solid #ccc;
@@ -81,11 +81,11 @@ body, button, textarea {
     cursor: pointer;
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover,.assist_googlesheet:hover {
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover {
     background-color: #f7f7f7;
 }
 
-.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size,.assist_googlesheet.small-size  {
+.idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size,.assist_googlesheet.small-size,.assist-issue.small-size  {
 	width: 130px;
 	height: 30px;
 	overflow: hidden; /* 確保內容不會超出範圍 */
@@ -127,6 +127,15 @@ width:550px;
     left: 710px;
 	height:780px;
 	width: 1080px;
+	vertical-align: middle; /* 垂直對齊方式 */
+}
+.assist-issue {
+	position: absolute; 
+	z-index: 994;
+	top: 0px;
+    left: 850px;
+	height:400px;
+	width: 400px;
 	vertical-align: middle; /* 垂直對齊方式 */
 }
 

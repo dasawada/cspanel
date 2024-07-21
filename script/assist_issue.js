@@ -1,54 +1,3 @@
-<!DOCTYPE html>
-<html lang="zh-TW">
-<head>
-    <script src="script/imgcp2bx.js"></script>
-    <script src="script/cpcast.js"></script>
-    <script src="script/optitlearange.js"></script>
-    <script src="script/GGapi.js"></script>
-    <script src="script/togglelayer.js"></script>
-    <script src="script/shrturl.js"></script>
-    <script src="script/addforms.js"></script>
-    <script src="script/DT_form_output.js"></script>
-    <script src="script/DT_test_copybutton_script.js"></script>
-    <script src="script/DT_fuction_confirm.js"></script>
-    <script src="script/IP_search_asn.js"></script>
-    <meta charset="UTF-8">
-    <title>課程資訊輸出</title>
-	<link rel="stylesheet" href="style/font.css">
-<link rel="stylesheet" href="style/body.css">
-<link rel="stylesheet" href="style/button.css">
-    <style>
-        .assist-issue-form-container {
-            margin-bottom: 20px;
-        }
-        .assist-issue-output {
-            margin-top: 20px;
-        }
-        .assist-issue-output-item {
-            margin-bottom: 20px;
-        }
-    </style>
-</head>
-<body>
-<div class="idsearchpanel small-size">
-    <div class="toggle-container">
-        <input type="checkbox" id="NaniClub_toggleCheckbox">
-        <label for="NaniClub_toggleCheckbox">🗝️帳號搜尋</label>
-    </div>
-    <div id="content" style="display: none;">
-    <div class="assist-issue-form-container">
-        <label for="assist-issue-classInfo">課程資訊：</label><br>
-        <textarea id="assist-issue-classInfo" placeholder="請貼上課程資訊" rows="5" cols="50"></textarea><br><br>
-        <label for="assist-issue-issueDescription">問題說明：</label><br>
-        <textarea id="assist-issue-issueDescription" placeholder="請輸入問題說明" rows="5" cols="50"></textarea>
-    </div>
-    
-    <div class="assist-issue-output" id="assist-issue-outputContainer">
-    </div>
-</div>
-</div>
-
-    <script>
         function escapeHtml(text) {
             return text
                 .replace(/&/g, "&amp;")
@@ -111,7 +60,3 @@
 
         document.getElementById('assist-issue-classInfo').addEventListener('input', generateOutput);
         document.getElementById('assist-issue-issueDescription').addEventListener('input', generateOutput);
-    </script>
-    
-</body>
-</html>
