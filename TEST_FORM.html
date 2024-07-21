@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <title>課程資訊輸出</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        .form-container {
+            margin-bottom: 20px;
+        }
+        .output {
+            margin-top: 20px;
+        }
+        .output-item {
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="form-container">
+        <label for="classInfo">課程資訊：</label><br>
+        <textarea id="classInfo" placeholder="請貼上課程資訊" rows="10" cols="50"></textarea>
+    </div>
+    
+    <div class="output" id="outputContainer">
+    </div>
+
+    <script>
+        document.getElementById('classInfo').addEventListener('input', function() {
+            const classInfo = document.getElementById('classInfo').value;
+            const outputContainer = document.getElementById('outputContainer');
+            
+            // 清除之前的輸出
+            outputContainer.innerHTML = '';
+            
+            // 如果沒有輸入值，直接返回
+            if (!classInfo.trim()) {
+                return;
+            }
+
+            const lines = classInfo.split('\n').filter(line => line.trim() !== '');
+            
+            if (lines.length < 6) {
+                alert('請確保輸入的資訊格式正確。');
+                return;
+            }
+            
+            const dateTime = lines[0] + " " + lines[1];
+            const studentName = lines[3];
+            const teacherName = lines[5];
+            
+            const outputItem = document.createElement('div');
+            outputItem.className = 'output-item';
+            
+            const studentOutput = document.createElement('span');
+            studentOutput.textContent = `學生姓名：${studentName}`;
+            
+            const classOutput = document.createElement('span');
+            classOutput.textContent = `課程資訊：${dateTime} 老師：${teacherName}`;
+            
+            const issueOutput = document.createElement('span');
+            issueOutput.textContent = '問題說明：';
+            
+            outputItem.appendChild(studentOutput);
+            outputItem.appendChild(document.createElement('br'));
+            outputItem.appendChild(classOutput);
+            outputItem.appendChild(document.createElement('br'));
+            outputItem.appendChild(issueOutput);
+            outputItem.appendChild(document.createElement('br'));
+            
+            outputContainer.appendChild(outputItem);
+        });
+    </script>
+</body>
+</html>
