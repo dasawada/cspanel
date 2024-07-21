@@ -9,19 +9,20 @@ document.querySelectorAll('.optitle-input').forEach(input => {
     });
     input.addEventListener('blur', () => {
         if (!input.value) {
-    placeholder.style.visibility = 'visible';
+            placeholder.style.visibility = 'visible';
         }
     });
     input.addEventListener('input', () => {
         if (input.value) {
-    placeholder.style.visibility = 'hidden';
+            placeholder.style.visibility = 'hidden';
         } else {
-    placeholder.style.visibility = 'visible';
+            placeholder.style.visibility = 'visible';
         }
+        checkInputs(); // 每次輸入改變時檢查輸入框值
     });
 });
 
-// 標題生成，輸入框有值生成文本，空時清除輸出
+// 檢查輸入框值，並生成或清除輸出
 function checkInputs() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
@@ -34,6 +35,7 @@ function checkInputs() {
         clearOutput(); // 當所有輸入框都為空時清除輸出內容
     }
 }
+
 // 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
 function generateText() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
@@ -110,21 +112,7 @@ function clearFields() {
     }, 1000); // 動畫持續時間1秒
 }
 
-// 檢查輸入框值，並生成或清除輸出
-function checkInputs() {
-    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
-    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
-    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
-    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
-
-    if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
-        generateText();
-    } else {
-        clearOutput(); // 當所有輸入框都為空時清除輸出內容
-    }
-}
-
-//Copyicon
+// 複製按鈕功能
 function OPtitle_copyText() {
     event.preventDefault();
     var textToCopy = document.getElementById("optitleoutput").innerText;
@@ -151,7 +139,6 @@ function OPtitle_copyText() {
     }, 3000);
 }
 
-
 // search 函數只處理 consultantName
 function search() {
     var searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
@@ -160,10 +147,10 @@ function search() {
         const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
         const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
         if (searchResultsDiv) {
-    searchResultsDiv.innerHTML = '';
+            searchResultsDiv.innerHTML = '';
         }
         if (searchResultsSpan) {
-    searchResultsSpan.innerHTML = '';
+            searchResultsSpan.innerHTML = '';
         }
         clearOutput(); // 清除輸出內容
         return;
@@ -181,93 +168,96 @@ function search() {
         search_SAWHO_ResultsSpan.innerHTML = '';
         search_SAWHO_ResultsDiv.innerHTML = '';
 
-let found = false;
-for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
-    for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
-        const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
-        if (cellValue === searchString.toLowerCase()) {
-    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-    const teamLeaderRow = 3;
-    const teamRow = teamLeaderRow - 1;
+        let found = false;
+        for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
+            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+                const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
+                if (cellValue === searchString.toLowerCase()) {
+                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                    const teamLeaderRow = 3;
+                    const teamRow = teamLeaderRow - 1;
 
-    const consultantName = response.values[rowIndex][columnIndex];
-    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-    const teamValue = response.values[teamRow][columnIndex];
+                    const consultantName = response.values[rowIndex][columnIndex];
+                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+                    const teamValue = response.values[teamRow][columnIndex];
 
-    const p = document.createElement('p');
+                    const p = document.createElement('p');
 
-    // 顧問名稱部分
-    const consultantSpan = document.createElement('span');
-    consultantSpan.textContent = consultantName;
-    consultantSpan.className = 'green-gradient-text copyable-text';
-    consultantSpan.style.cursor = 'pointer';
-    consultantSpan.title = '點我一下複製名字';
+                    // 顧問名稱部分
+                    const consultantSpan = document.createElement('span');
+                    consultantSpan.textContent = consultantName;
+                    consultantSpan.className = 'green-gradient-text copyable-text';
+                    consultantSpan.style.cursor = 'pointer';
+                    consultantSpan.title = '點我一下複製名字';
 
-consultantSpan.addEventListener('click', function() {
-    const tempInput = document.createElement('input');
-    if (consultantName.length <= 2) {
-        tempInput.value = consultantName.slice(-1); // 若顧問名為兩個字符或更少，複製最後一個字符
-    } else {
-        tempInput.value = consultantName.slice(-2); // 複製最後兩個字符
-    }
-    document.body.appendChild(tempInput);
-    tempInput.select();
-    document.execCommand('copy');
-    document.body.removeChild(tempInput);
-    consultantSpan.title = '已複製！';
-    
-    // 一秒後復原 title
-    setTimeout(function() {
-        consultantSpan.title = '點我一下複製名字';
-    }, 1000); // 1000 毫秒 = 1 秒
-});
+                    consultantSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        if (consultantName.length <= 2) {
+                            tempInput.value = consultantName.slice(-1); // 若顧問名為兩個字符或更少，複製最後一個字符
+                        } else {
+                            tempInput.value = consultantName.slice(-2); // 複製最後兩個字符
+                        }
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        consultantSpan.title = '已複製！';
+                        
+                        // 一秒後復原 title
+                        setTimeout(function() {
+                            consultantSpan.title = '點我一下複製名字';
+                        }, 1000); // 1000 毫秒 = 1 秒
+                    });
 
+                    // 組長部分
+                    const leaderSpan = document.createElement('span');
+                    leaderSpan.textContent = teamLeaderValue;
+                    leaderSpan.className = 'yellow-gradient-text copyable-text';
+                    leaderSpan.style.cursor = 'pointer';
+                    leaderSpan.title = '點我一下複製名字';
 
-			// 組長部分
-			const leaderSpan = document.createElement('span');
-			leaderSpan.textContent = teamLeaderValue;
-			leaderSpan.className = 'yellow-gradient-text copyable-text';
-			leaderSpan.style.cursor = 'pointer';
-			leaderSpan.title = '點我一下複製名字';
+                    leaderSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = teamLeaderValue.slice(-2); // 複製第二個字起的組長名
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        leaderSpan.title = '已複製！';
 
-			leaderSpan.addEventListener('click', function() {
-				const tempInput = document.createElement('input');
-				tempInput.value = teamLeaderValue.slice(-2); // 複製第二個字起的組長名
-				document.body.appendChild(tempInput);
-				tempInput.select();
-				document.execCommand('copy');
-				document.body.removeChild(tempInput);
-				leaderSpan.title = '已複製！';
+                        // 一秒後復原 title
+                        setTimeout(function() {
+                            leaderSpan.title = '點我一下複製名字';
+                        }, 1000); // 1000 毫秒 = 1 秒
+                    });
 
-				// 一秒後復原 title
-				setTimeout(function() {
-					leaderSpan.title = '點我一下複製名字';
-				}, 1000); // 1000 毫秒 = 1 秒
-			});
+                    // 構建完整的文本
+                    p.appendChild(document.createTextNode('顧問'));
+                    p.appendChild(consultantSpan);
+                    p.appendChild(document.createTextNode('的組長是：'));
+                    p.appendChild(leaderSpan);
+                    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
 
+                    document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
 
-    // 構建完整的文本
-    p.appendChild(document.createTextNode('顧問'));
-    p.appendChild(consultantSpan);
-    p.appendChild(document.createTextNode('的組長是：'));
-    p.appendChild(leaderSpan);
-    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
-
-    document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
-
-    found = true;
-    break;
+                    found = true;
+                    break;
+                }
+            }
+            if (found) {
+                break;
+            }
         }
-    }
-    if (found) {
-        break;
-    }
-}
 
         if (!found) {
-    const p = document.createElement('p');
-    p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
-    search_SAWHO_ResultsDiv.appendChild(p);
+            const p = document.createElement('p');
+            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
+            search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
 }
+
+// 在 document 加載完成後設置事件監聽器
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('clearButton').addEventListener('click', clearFields);
+});
