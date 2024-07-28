@@ -91,15 +91,7 @@ body, button, textarea {
 	overflow: hidden; /* 確保內容不會超出範圍 */
 }
 
-/* 針對每個元素的位置和層次進行獨立定義 */
-.consultantlistgooglesheet {
-	height: 700px;
-	width: 950px;
-    z-index: 1000; /* 確保顯示在最上層 */
-	top: 0px;
-    left: 440px; /* 根據需要調整 */
-    right: 20px; /* 緊貼右側 */
-}
+
 .idsearchpanel {
 	width: 560px;
 	height: 600px;
@@ -114,29 +106,38 @@ body, button, textarea {
 }
 .DT_panel {
 position: absolute; 
-left: 575px; 
-top: 0px;
-z-index: 996;
+	z-index: 995;
+	top: 0px;
+    left: 710px;
 width:550px;
 }
 
 .assist_googlesheet {
 	position: absolute; 
-	z-index: 995;
+    z-index: 1000; 
 	top: 0px;
-    left: 710px;
-	height:780px;
-	width: 1080px;
+    left: 440px; /* 根據需要調整 */
+	height:800px;
+	width: 900px;
 	vertical-align: middle; /* 垂直對齊方式 */
 }
 .assist-issue {
 	position: absolute; 
-	z-index: 994;
-	top: 0px;
-    left: 850px;
+left: 575px; 
+top: 0px;
+z-index: 996;
 	height:auto;
 	width: 400px;
 	vertical-align: middle; /* 垂直對齊方式 */
+}
+.consultantlistgooglesheet {
+	position: absolute; 
+	height: 700px;
+	width: 950px;
+    right: 20px; /* 緊貼右側 */
+	z-index: 994;
+	top: 0px;
+    left: 850px;
 }
 
 .IPsearch_in_panelALL {
