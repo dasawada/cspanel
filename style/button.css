@@ -303,9 +303,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             display: inline-block;
         }
 
-        #anydeskDL {
-            display: block;
-        }
+
 
         .hover-overlay {
             position: absolute;
@@ -313,22 +311,25 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0, 0, 0, 0.5);
+            background-color: rgba(0, 0, 0, 0.3);
             color: white;
             display: flex;
             align-items: center;
             justify-content: center;
-            opacity: 0;
-            transition: opacity 0.1s ease;
-            font-size: 12px;
+            opacity: 1; /* 默認為可見 */
+            transition: opacity 0.2s ease;
+            font-size: 14px;
             pointer-events: none; /* 確保遮罩層不攔截點擊事件 */
             text-align: center;
             flex-direction: column; /* 使內部元素縱向排列 */
             line-height: 1.5;
+            border-radius: 15px; /* 圓角 */
+            backdrop-filter: blur(5px); /* 背景模糊 */
+            overflow: hidden; /* 確保圓角內部內容不溢出 */
         }
 
         .hover-container:hover .hover-overlay {
-            opacity: 1;
+            opacity: 0; /* 懸停時隱藏 overlay */
         }
 
         .hover-overlay br {
