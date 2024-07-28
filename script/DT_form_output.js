@@ -69,6 +69,7 @@ function generateOutput() {
         --------<br>
         測試問題：<br>
         <pre style="white-space: pre-wrap;">${issues}</pre><br>
+		<br>
         處理過程：<br>
         <pre style="white-space: pre-wrap;">${process}</pre><br>
         <b>${boldbrief}</b>
