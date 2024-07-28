@@ -117,8 +117,8 @@ width:550px;
     z-index: 1000; 
 	top: 0px;
     left: 440px; /* 根據需要調整 */
-	height:800px;
-	width: 900px;
+	height:600px;
+	width: 800px;
 	vertical-align: middle; /* 垂直對齊方式 */
 }
 .assist-issue {
