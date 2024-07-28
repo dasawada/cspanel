@@ -320,11 +320,17 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             justify-content: center;
             opacity: 0;
             transition: opacity 0.1s ease;
-            font-size: 14px;
-			pointer-events: none; /* 確保遮罩層不攔截點擊事件 */
-			text-align: center; /* 確保多行文字居中對齊 */
+            font-size: 12px;
+            pointer-events: none; /* 確保遮罩層不攔截點擊事件 */
+            text-align: center;
+            flex-direction: column; /* 使內部元素縱向排列 */
+            line-height: 1.5;
         }
 
         .hover-container:hover .hover-overlay {
             opacity: 1;
+        }
+
+        .hover-overlay br {
+            line-height: 0; /* 確保 <br> 不會增加多餘的間距 */
         }
