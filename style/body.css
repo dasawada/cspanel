@@ -109,7 +109,9 @@ position: absolute;
 	z-index: 995;
 	top: 0px;
     left: 710px;
-width:550px;
+width:500px;
+height:800px;
+padding-bottom:20px;
 }
 
 .assist_googlesheet {
@@ -123,11 +125,11 @@ width:550px;
 }
 .assist-issue {
 	position: absolute; 
-left: 575px; 
-top: 0px;
-z-index: 996;
+	left: 575px; 
+	top: 0px;
+	z-index: 996;
 	height:auto;
-	width: 400px;
+	width: 300px;
 	vertical-align: middle; /* 垂直對齊方式 */
 }
 .consultantlistgooglesheet {
