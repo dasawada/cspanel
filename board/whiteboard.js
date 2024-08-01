@@ -6,6 +6,7 @@ const contextMenu = document.getElementById('context-menu');
 let drawing = false;
 let selecting = false;
 let resizing = false;
+let moving = false;
 let tool = 'arrow';
 let startX, startY;
 let currentX, currentY;
@@ -58,11 +59,18 @@ canvas.addEventListener('mousedown', (e) => {
     if (e.button === 2) return; // Ignore right-click
     startX = e.offsetX;
     startY = e.offsetY;
-    if (tool === 'rect' || tool === 'arrow') {
+    if (tool === 'rect' || tool === 'arrow' || tool === 'transparentRect' || tool === 'mosaicRect') {
         drawing = true;
     } else if (tool === 'select') {
         selecting = true;
         selectedShapes.length = 0;
+        selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
+        if (selectedShapeIndex !== null) {
+            const shape = savedShapes[selectedShapeIndex];
+            if (shape.type === 'image') {
+                moving = true;
+            }
+        }
     }
 });
 
@@ -73,21 +81,29 @@ canvas.addEventListener('mouseup', (e) => {
             drawArrow(startX, startY, currentX, currentY, true);
         } else if (tool === 'rect') {
             drawRect(startX, startY, currentX, currentY, true);
+        } else if (tool === 'transparentRect') {
+            drawTransparentRect(startX, startY, currentX, currentY, true);
+        } else if (tool === 'mosaicRect') {
+            drawMosaicRect(startX, startY, currentX, currentY, true);
         }
     } else if (selecting) {
-        selectedShapes.length = 0;
-        const selectRect = {
-            fromX: Math.min(startX, currentX),
-            fromY: Math.min(startY, currentY),
-            toX: Math.max(startX, currentX),
-            toY: Math.max(startY, currentY)
-        };
-        savedShapes.forEach((shape, index) => {
-            if (shapeInRect(shape, selectRect)) {
-                selectedShapes.push(index);
-            }
-        });
-        redrawCanvas();
+        if (moving) {
+            moving = false;
+        } else {
+            selectedShapes.length = 0;
+            const selectRect = {
+                fromX: Math.min(startX, currentX),
+                fromY: Math.min(startY, currentY),
+                toX: Math.max(startX, currentX),
+                toY: Math.max(startY, currentY)
+            };
+            savedShapes.forEach((shape, index) => {
+                if (shapeInRect(shape, selectRect)) {
+                    selectedShapes.push(index);
+                }
+            });
+            redrawCanvas();
+        }
     }
     drawing = false;
     selecting = false;
@@ -97,7 +113,7 @@ canvas.addEventListener('mouseup', (e) => {
 canvas.addEventListener('mousemove', (e) => {
     currentX = e.offsetX;
     currentY = e.offsetY;
-    if (!drawing && !selecting) return;
+    if (!drawing && !selecting && !moving) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawCanvas();
     ctx.strokeStyle = currentColor;
@@ -106,11 +122,22 @@ canvas.addEventListener('mousemove', (e) => {
         drawArrow(startX, startY, currentX, currentY);
     } else if (tool === 'rect' && drawing) {
         drawRect(startX, startY, currentX, currentY);
+    } else if (tool === 'transparentRect' && drawing) {
+        drawTransparentRect(startX, startY, currentX, currentY);
+    } else if (tool === 'mosaicRect' && drawing) {
+        drawMosaicRect(startX, startY, currentX, currentY);
     } else if (tool === 'select' && selecting) {
         ctx.strokeStyle = 'blue';
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
         ctx.setLineDash([]);
+    } else if (moving) {
+        const shape = savedShapes[selectedShapeIndex];
+        if (shape.type === 'image') {
+            shape.x = currentX - (shape.width / 2);
+            shape.y = currentY - (shape.height / 2);
+            redrawCanvas();
+        }
     }
 });
 
@@ -166,6 +193,34 @@ const drawRect = (fromX, fromY, toX, toY, final = false) => {
     }
 };
 
+const drawTransparentRect = (fromX, fromY, toX, toY, final = false) => {
+    ctx.globalAlpha = 0.2; // 更高透明度
+    ctx.fillStyle = currentColor;
+    ctx.fillRect(fromX, fromY, toX - fromX, toY - fromY);
+    ctx.globalAlpha = 1.0;
+
+    if (final) {
+        saveShape({ type: 'transparentRect', fromX, fromY, toX, toY, color: currentColor });
+    }
+};
+
+const drawMosaicRect = (fromX, fromY, toX, toY, final = false) => {
+    const mosaicSize = 10;
+    const width = toX - fromX;
+    const height = toY - fromY;
+    for (let x = 0; x < width; x += mosaicSize) {
+        for (let y = 0; y < height; y += mosaicSize) {
+            const pixelData = ctx.getImageData(fromX + x, fromY + y, 1, 1).data;
+            ctx.fillStyle = `rgb(${pixelData[0]}, ${pixelData[1]}, ${pixelData[2]})`;
+            ctx.fillRect(fromX + x, fromY + y, mosaicSize, mosaicSize);
+        }
+    }
+
+    if (final) {
+        saveShape({ type: 'mosaicRect', fromX, fromY, toX, toY });
+    }
+};
+
 const saveShape = (shape) => {
     savedShapes.push(shape);
     undoneShapes.length = 0;
@@ -198,6 +253,12 @@ const redrawCanvas = () => {
             case 'rect':
                 drawRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
+            case 'transparentRect':
+                drawTransparentRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
+                break;
+            case 'mosaicRect':
+                drawMosaicRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
+                break;
             case 'image':
                 ctx.drawImage(shape.img, shape.x, shape.y, shape.width, shape.height);
                 break;
@@ -214,7 +275,7 @@ const highlightShape = (shape) => {
     ctx.lineWidth = 2;
     ctx.shadowColor = 'black';
     ctx.shadowBlur = 5;
-    if (shape.type === 'rect') {
+    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
         ctx.strokeRect(shape.fromX, shape.fromY, shape.toX - shape.fromX, shape.toY - shape.fromY);
     } else if (shape.type === 'arrow') {
         ctx.beginPath();
@@ -228,7 +289,7 @@ const highlightShape = (shape) => {
 };
 
 const shapeInRect = (shape, rect) => {
-    if (shape.type === 'rect') {
+    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
         return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
     } else if (shape.type === 'arrow') {
         return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
@@ -241,7 +302,7 @@ const shapeInRect = (shape, rect) => {
 const getShapeIndexAtCoordinates = (x, y) => {
     for (let i = savedShapes.length - 1; i >= 0; i--) {
         const shape = savedShapes[i];
-        if (shape.type === 'rect') {
+        if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
             if (x >= shape.fromX && x <= shape.toX && y >= shape.fromY && y <= shape.toY) {
                 return i;
             }
