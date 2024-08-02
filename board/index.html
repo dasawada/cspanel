@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-TW">
+<html lang="zh-Hant">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -11,61 +11,45 @@
         }
         #canvas {
             border: 1px solid black;
-            cursor: crosshair;
         }
         .resizer {
-            position: absolute;
             width: 10px;
             height: 10px;
             background: red;
+            position: absolute;
             right: 0;
             bottom: 0;
             cursor: se-resize;
         }
-        .tools {
-            margin-bottom: 10px;
-        }
-        .context-menu {
-            display: none;
+        #context-menu {
             position: absolute;
-            background-color: white;
-            border: 1px solid #ccc;
+            display: none;
+            background: white;
+            border: 1px solid black;
             z-index: 1000;
         }
-        .context-menu ul {
-            list-style-type: none;
-            padding: 5px;
-            margin: 0;
-        }
-        .context-menu ul li {
-            padding: 5px 10px;
-            cursor: pointer;
-        }
-        .context-menu ul li:hover {
-            background-color: #eee;
+        #context-menu button {
+            display: block;
         }
     </style>
 </head>
 <body>
-    <div class="tools">
-        <button onclick="setTool('arrow')">箭頭</button>
-        <button onclick="setTool('rect')">框選</button>
-        <button onclick="setTool('transparentRect')">透明矩形</button>
-        <button onclick="setTool('mosaicRect')">馬賽克矩形</button>
-        <button onclick="setTool('select')">選取</button>
-        <button onclick="undo()">撤銷</button>
-        <button onclick="redo()">重做</button>
-        <button onclick="exportImage()">導出圖片</button>
-        <input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
+    <div>
+        <button onclick="setTool('select')">框選</button>
+        <button onclick="setTool('move')">移動物件</button>
+        <button onclick="setTool('arrow')">畫箭頭</button>
+        <button onclick="setTool('rect')">畫外框</button>
+        <button onclick="setTool('transparentRect')">類似螢光筆</button>
+        <button onclick="setTool('mosaicRect')">馬賽克</button>
+        <button onclick="exportAndCopyImage()">輸出圖檔並複製到剪貼簿</button>
+        <input type="color" id="colorPicker" onchange="updateColor()">
     </div>
     <div id="canvas-container">
         <canvas id="canvas" width="800" height="600"></canvas>
         <div class="resizer"></div>
     </div>
-    <div class="context-menu" id="context-menu">
-        <ul>
-            <li onclick="deleteShape()">刪除</li>
-        </ul>
+    <div id="context-menu">
+        <button onclick="deleteShape()">刪除</button>
     </div>
     <script src="whiteboard.js"></script>
 </body>

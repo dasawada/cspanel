@@ -19,7 +19,13 @@ let currentColor = document.getElementById('colorPicker').value;
 
 const setTool = (selectedTool) => {
     tool = selectedTool;
-    canvas.style.cursor = 'crosshair';
+    if (tool === 'move') {
+        canvas.style.cursor = 'move';
+    } else if (tool === 'select') {
+        canvas.style.cursor = 'crosshair';
+    } else {
+        canvas.style.cursor = 'crosshair';
+    }
 };
 
 const updateColor = () => {
@@ -65,11 +71,12 @@ canvas.addEventListener('mousedown', (e) => {
         selecting = true;
         selectedShapes.length = 0;
         selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
+    } else if (tool === 'move') {
+        selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
         if (selectedShapeIndex !== null) {
-            const shape = savedShapes[selectedShapeIndex];
-            if (shape.type === 'image') {
-                moving = true;
-            }
+            moving = true;
+            startX = e.offsetX;
+            startY = e.offsetY;
         }
     }
 });
@@ -87,26 +94,23 @@ canvas.addEventListener('mouseup', (e) => {
             drawMosaicRect(startX, startY, currentX, currentY, true);
         }
     } else if (selecting) {
-        if (moving) {
-            moving = false;
-        } else {
-            selectedShapes.length = 0;
-            const selectRect = {
-                fromX: Math.min(startX, currentX),
-                fromY: Math.min(startY, currentY),
-                toX: Math.max(startX, currentX),
-                toY: Math.max(startY, currentY)
-            };
-            savedShapes.forEach((shape, index) => {
-                if (shapeInRect(shape, selectRect)) {
-                    selectedShapes.push(index);
-                }
-            });
-            redrawCanvas();
-        }
+        selectedShapes.length = 0;
+        const selectRect = {
+            fromX: Math.min(startX, currentX),
+            fromY: Math.min(startY, currentY),
+            toX: Math.max(startX, currentX),
+            toY: Math.max(startY, currentY)
+        };
+        savedShapes.forEach((shape, index) => {
+            if (shapeInRect(shape, selectRect)) {
+                selectedShapes.push(index);
+            }
+        });
+        redrawCanvas();
     }
     drawing = false;
     selecting = false;
+    moving = false;
     ctx.beginPath();
 });
 
@@ -131,13 +135,15 @@ canvas.addEventListener('mousemove', (e) => {
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
         ctx.setLineDash([]);
-    } else if (moving) {
+    } else if (tool === 'move' && moving) {
         const shape = savedShapes[selectedShapeIndex];
-        if (shape.type === 'image') {
-            shape.x = currentX - (shape.width / 2);
-            shape.y = currentY - (shape.height / 2);
-            redrawCanvas();
-        }
+        const dx = currentX - startX;
+        const dy = currentY - startY;
+        shape.x += dx;
+        shape.y += dy;
+        startX = currentX;
+        startY = currentY;
+        redrawCanvas();
     }
 });
 
@@ -164,21 +170,31 @@ const drawArrow = (fromX, fromY, toX, toY, final = false) => {
     const dy = toY - fromY;
     const angle = Math.atan2(dy, dx);
 
-    ctx.beginPath();
-    ctx.moveTo(fromX, fromY);
-    ctx.lineTo(toX, toY);
-    ctx.stroke();
+    const path = new Path2D();
+    path.moveTo(fromX, fromY);
+    path.lineTo(toX, toY);
 
-    ctx.beginPath();
-    ctx.moveTo(toX, toY);
-    ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
-    ctx.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
-    ctx.lineTo(toX, toY);
-    ctx.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
-    ctx.stroke();
+    path.moveTo(toX, toY);
+    path.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+    path.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+    path.lineTo(toX, toY);
+    path.closePath();
+
+    ctx.stroke(path);
+    ctx.fillStyle = ctx.strokeStyle;
+    ctx.fill(path);
 
     if (final) {
-        saveShape({ type: 'arrow', fromX, fromY, toX, toY, color: currentColor });
+        saveShape({
+            type: 'arrow',
+            fromX,
+            fromY,
+            toX,
+            toY,
+            color: currentColor,
+            path,
+            headPath: new Path2D(path)
+        });
     }
 };
 
@@ -189,7 +205,14 @@ const drawRect = (fromX, fromY, toX, toY, final = false) => {
     ctx.stroke();
 
     if (final) {
-        saveShape({ type: 'rect', fromX, fromY, toX, toY, color: currentColor });
+        saveShape({
+            type: 'rect',
+            fromX,
+            fromY,
+            toX,
+            toY,
+            color: currentColor
+        });
     }
 };
 
@@ -200,7 +223,14 @@ const drawTransparentRect = (fromX, fromY, toX, toY, final = false) => {
     ctx.globalAlpha = 1.0;
 
     if (final) {
-        saveShape({ type: 'transparentRect', fromX, fromY, toX, toY, color: currentColor });
+        saveShape({
+            type: 'transparentRect',
+            fromX,
+            fromY,
+            toX,
+            toY,
+            color: currentColor
+        });
     }
 };
 
@@ -217,7 +247,13 @@ const drawMosaicRect = (fromX, fromY, toX, toY, final = false) => {
     }
 
     if (final) {
-        saveShape({ type: 'mosaicRect', fromX, fromY, toX, toY });
+        saveShape({
+            type: 'mosaicRect',
+            fromX,
+            fromY,
+            toX,
+            toY
+        });
     }
 };
 
@@ -282,6 +318,7 @@ const highlightShape = (shape) => {
         ctx.moveTo(shape.fromX, shape.fromY);
         ctx.lineTo(shape.toX, shape.toY);
         ctx.stroke();
+        ctx.fill(shape.headPath); // Highlight arrow head
     } else if (shape.type === 'image') {
         ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
     }
@@ -300,6 +337,8 @@ const shapeInRect = (shape, rect) => {
 };
 
 const getShapeIndexAtCoordinates = (x, y) => {
+    const tolerance = 5; // Increase the tolerance for selection
+
     for (let i = savedShapes.length - 1; i >= 0; i--) {
         const shape = savedShapes[i];
         if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
@@ -307,14 +346,16 @@ const getShapeIndexAtCoordinates = (x, y) => {
                 return i;
             }
         } else if (shape.type === 'arrow') {
-            const dx = shape.toX - shape.fromX;
-            const dy = shape.toY - shape.fromY;
-            const length = Math.sqrt(dx * dx + dy * dy);
-            const dot = ((x - shape.fromX) * dx + (y - shape.fromY) * dy) / (length * length);
-            const closestX = shape.fromX + dot * dx;
-            const closestY = shape.fromY + dot * dy;
-            const distance = Math.sqrt((x - closestX) * (x - closestX) + (y - closestY) * (y - closestY));
-            if (distance < 5) {
+            // Check if the point is within a reasonable distance of the arrow path
+            const path = new Path2D();
+            path.moveTo(shape.fromX, shape.fromY);
+            path.lineTo(shape.toX, shape.toY);
+            path.moveTo(shape.toX, shape.toY);
+            path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6));
+            path.moveTo(shape.toX, shape.toY);
+            path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6));
+            ctx.lineWidth = tolerance;
+            if (ctx.isPointInStroke(path, x, y) || ctx.isPointInPath(shape.headPath, x, y)) {
                 return i;
             }
         } else if (shape.type === 'image') {
@@ -360,7 +401,14 @@ const drawImage = (img, x, y, final = false) => {
     const height = img.height;
     ctx.drawImage(img, x, y, width, height);
     if (final) {
-        saveShape({ type: 'image', img, x, y, width, height });
+        saveShape({
+            type: 'image',
+            img,
+            x,
+            y,
+            width,
+            height
+        });
     }
 };
 
@@ -375,8 +423,22 @@ document.addEventListener('keydown', (e) => {
         deleteShape();
     } else if (e.ctrlKey && e.key === 'v' && clipboard) {
         clipboard.forEach(shape => {
-            savedShapes.push({ ...shape, x: shape.x + 10, y: shape.y + 10 });
+            savedShapes.push({
+                ...shape,
+                x: shape.x + 10,
+                y: shape.y + 10
+            });
         });
         redrawCanvas();
     }
 });
+const exportAndCopyImage = () => {
+    canvas.toBlob(blob => {
+        const item = new ClipboardItem({ 'image/png': blob });
+        navigator.clipboard.write([item]).then(() => {
+            alert('圖檔已輸出並複製到剪貼簿');
+        }).catch(err => {
+            console.error('複製到剪貼簿失敗: ', err);
+        });
+    });
+};
