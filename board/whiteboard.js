@@ -465,7 +465,7 @@ const drawPlaceholderText = () => {
     ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
     ctx.font = '20px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText('【ctrl+v可直接貼上圖片】', canvas.width / 2, canvas.height / 2);
+    ctx.fillText('【ctrl+v可貼圖，希望大家都能開心製圖！😍】', canvas.width / 2, canvas.height / 2);
     ctx.restore();
 };
 
