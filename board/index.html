@@ -58,13 +58,13 @@
 <body>
     <div id="toolbar">
         <button onclick="setTool('select')">框選</button>
-        <button onclick="setTool('moveImage')">移動圖片</button>
+        <button onclick="setTool('moveImage')">移動圖片</button>～
+	<input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
         <button onclick="setTool('arrow')">畫箭頭</button>
-        <button onclick="setTool('rect')">畫外框</button>
+        <button onclick="setTool('rect')">畫外框</button>～
         <button onclick="setTool('transparentRect')">類似螢光筆</button>
-        <button onclick="setTool('mosaicRect')">馬賽克</button>
-        <button onclick="exportAndCopyImage()">輸出圖檔並複製到剪貼簿</button>
-        <input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
+        <button onclick="setTool('mosaicRect')">馬賽克</button>～
+        <button onclick="exportAndCopyImage()">點一下可貼至BX</button>
 		            <button class="icon-button" onclick="undo()">
                 <img src="undo-icon.png" alt="復原">
             </button>
