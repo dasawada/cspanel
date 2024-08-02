@@ -3,10 +3,11 @@ const ctx = canvas.getContext('2d');
 const canvasContainer = document.getElementById('canvas-container');
 const resizer = document.querySelector('.resizer');
 const contextMenu = document.getElementById('context-menu');
+const layerList = document.getElementById('layer-list');
 let drawing = false;
 let selecting = false;
 let resizing = false;
-let moving = false;
+let movingImage = false;
 let tool = 'arrow';
 let startX, startY;
 let currentX, currentY;
@@ -19,12 +20,9 @@ let currentColor = '#ff0000'; // 初始設置為紅色
 
 const setTool = (selectedTool) => {
     tool = selectedTool;
-    if (tool === 'move') {
+    canvas.style.cursor = 'crosshair';
+    if (tool === 'moveImage') {
         canvas.style.cursor = 'move';
-    } else if (tool === 'select') {
-        canvas.style.cursor = 'crosshair';
-    } else {
-        canvas.style.cursor = 'crosshair';
     }
 };
 
@@ -71,12 +69,10 @@ canvas.addEventListener('mousedown', (e) => {
         selecting = true;
         selectedShapes.length = 0;
         selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
-    } else if (tool === 'move') {
+    } else if (tool === 'moveImage') {
         selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
-        if (selectedShapeIndex !== null) {
-            moving = true;
-            startX = e.offsetX;
-            startY = e.offsetY;
+        if (selectedShapeIndex !== null && savedShapes[selectedShapeIndex].type === 'image') {
+            movingImage = true;
         }
     }
 });
@@ -102,7 +98,7 @@ canvas.addEventListener('mouseup', (e) => {
             toY: Math.max(startY, currentY)
         };
         savedShapes.forEach((shape, index) => {
-            if (shapeInRect(shape, selectRect)) {
+            if (shapeInRect(shape, selectRect, 15)) {
                 selectedShapes.push(index);
             }
         });
@@ -110,14 +106,14 @@ canvas.addEventListener('mouseup', (e) => {
     }
     drawing = false;
     selecting = false;
-    moving = false;
+    movingImage = false;
     ctx.beginPath();
 });
 
 canvas.addEventListener('mousemove', (e) => {
     currentX = e.offsetX;
     currentY = e.offsetY;
-    if (!drawing && !selecting && !moving) return;
+    if (!drawing && !selecting && !movingImage) return;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     redrawCanvas();
     ctx.strokeStyle = currentColor;
@@ -135,7 +131,7 @@ canvas.addEventListener('mousemove', (e) => {
         ctx.setLineDash([5, 5]);
         ctx.strokeRect(startX, startY, currentX - startX, currentY - startY);
         ctx.setLineDash([]);
-    } else if (tool === 'move' && moving) {
+    } else if (tool === 'moveImage' && movingImage) {
         const shape = savedShapes[selectedShapeIndex];
         const dx = currentX - startX;
         const dy = currentY - startY;
@@ -174,15 +170,15 @@ const drawArrow = (fromX, fromY, toX, toY, final = false) => {
     path.moveTo(fromX, fromY);
     path.lineTo(toX, toY);
 
-    path.moveTo(toX, toY);
-    path.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
-    path.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
-    path.lineTo(toX, toY);
-    path.closePath();
+    const headPath = new Path2D();
+    headPath.moveTo(toX, toY);
+    headPath.lineTo(toX - headLength * Math.cos(angle - Math.PI / 6), toY - headLength * Math.sin(angle - Math.PI / 6));
+    headPath.lineTo(toX - headLength * Math.cos(angle + Math.PI / 6), toY - headLength * Math.sin(angle + Math.PI / 6));
+    headPath.closePath();
 
     ctx.stroke(path);
     ctx.fillStyle = ctx.strokeStyle;
-    ctx.fill(path);
+    ctx.fill(headPath);
 
     if (final) {
         saveShape({
@@ -193,7 +189,13 @@ const drawArrow = (fromX, fromY, toX, toY, final = false) => {
             toY,
             color: currentColor,
             path,
-            headPath: new Path2D(path)
+            headPath: headPath,
+            boundingBox: {
+                left: Math.min(fromX, toX) - 10,
+                top: Math.min(fromY, toY) - 10,
+                right: Math.max(fromX, toX) + 10,
+                bottom: Math.max(fromY, toY) + 10
+            }
         });
     }
 };
@@ -260,6 +262,7 @@ const drawMosaicRect = (fromX, fromY, toX, toY, final = false) => {
 const saveShape = (shape) => {
     savedShapes.push(shape);
     undoneShapes.length = 0;
+    updateLayerList();
 };
 
 const undo = () => {
@@ -267,6 +270,7 @@ const undo = () => {
         const shape = savedShapes.pop();
         undoneShapes.push(shape);
         redrawCanvas();
+        updateLayerList();
     }
 };
 
@@ -275,16 +279,19 @@ const redo = () => {
         const shape = undoneShapes.pop();
         savedShapes.push(shape);
         redrawCanvas();
+        updateLayerList();
     }
 };
 
 const redrawCanvas = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPlaceholderText();
     savedShapes.forEach((shape, index) => {
         ctx.strokeStyle = shape.color || '#000';
         switch (shape.type) {
             case 'arrow':
-                drawArrow(shape.fromX, shape.fromY, shape.toX, shape.toY);
+                ctx.stroke(shape.path);
+                ctx.fill(shape.headPath);
                 break;
             case 'rect':
                 drawRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
@@ -299,7 +306,7 @@ const redrawCanvas = () => {
                 ctx.drawImage(shape.img, shape.x, shape.y, shape.width, shape.height);
                 break;
         }
-        if (selectedShapes.includes(index) || selectedShapeIndex === index) {
+        if (selectedShapes.includes(index) || (selectedShapeIndex === index)) {
             highlightShape(shape);
         }
     });
@@ -314,10 +321,7 @@ const highlightShape = (shape) => {
     if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
         ctx.strokeRect(shape.fromX, shape.fromY, shape.toX - shape.fromX, shape.toY - shape.fromY);
     } else if (shape.type === 'arrow') {
-        ctx.beginPath();
-        ctx.moveTo(shape.fromX, shape.fromY);
-        ctx.lineTo(shape.toX, shape.toY);
-        ctx.stroke();
+        ctx.stroke(shape.path);
         ctx.fill(shape.headPath); // Highlight arrow head
     } else if (shape.type === 'image') {
         ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
@@ -325,37 +329,49 @@ const highlightShape = (shape) => {
     ctx.restore();
 };
 
-const shapeInRect = (shape, rect) => {
+const shapeInRect = (shape, rect, tolerance = 0) => {
+    const extendedRect = {
+        fromX: rect.fromX - tolerance,
+        fromY: rect.fromY - tolerance,
+        toX: rect.toX + tolerance,
+        toY: rect.toY + tolerance
+    };
     if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
-        return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
+        return (
+            shape.fromX <= extendedRect.toX &&
+            shape.toX >= extendedRect.fromX &&
+            shape.fromY <= extendedRect.toY &&
+            shape.toY >= extendedRect.fromY
+        );
     } else if (shape.type === 'arrow') {
-        return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
+        return (
+            shape.boundingBox.left <= extendedRect.toX &&
+            shape.boundingBox.right >= extendedRect.fromX &&
+            shape.boundingBox.top <= extendedRect.toY &&
+            shape.boundingBox.bottom >= extendedRect.fromY
+        );
     } else if (shape.type === 'image') {
-        return shape.x >= rect.fromX && (shape.x + shape.width) <= rect.toX && shape.y >= rect.fromY && (shape.y + shape.height) <= rect.toY;
+        return (
+            shape.x <= extendedRect.toX &&
+            shape.x + shape.width >= extendedRect.fromX &&
+            shape.y <= extendedRect.toY &&
+            shape.y + shape.height >= extendedRect.fromY
+        );
     }
     return false;
 };
 
 const getShapeIndexAtCoordinates = (x, y) => {
-    const tolerance = 5; // Increase the tolerance for selection
+    const tolerance = 15; // 增加選取寬容度
 
     for (let i = savedShapes.length - 1; i >= 0; i--) {
         const shape = savedShapes[i];
         if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
-            if (x >= shape.fromX && x <= shape.toX && y >= shape.fromY && y <= shape.toY) {
+            if (ctx.isPointInPath(shape.path, x, y) || isWithinTolerance(x, y, shape, tolerance)) {
                 return i;
             }
         } else if (shape.type === 'arrow') {
-            // Check if the point is within a reasonable distance of the arrow path
-            const path = new Path2D();
-            path.moveTo(shape.fromX, shape.fromY);
-            path.lineTo(shape.toX, shape.toY);
-            path.moveTo(shape.toX, shape.toY);
-            path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6));
-            path.moveTo(shape.toX, shape.toY);
-            path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6));
-            ctx.lineWidth = tolerance;
-            if (ctx.isPointInStroke(path, x, y) || ctx.isPointInPath(shape.headPath, x, y)) {
+            if (isWithinBoundingBox(x, y, shape.boundingBox)) {
                 return i;
             }
         } else if (shape.type === 'image') {
@@ -367,11 +383,35 @@ const getShapeIndexAtCoordinates = (x, y) => {
     return null;
 };
 
+const isWithinTolerance = (x, y, shape, tolerance) => {
+    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
+        return (
+            x >= shape.fromX - tolerance &&
+            x <= shape.toX + tolerance &&
+            y >= shape.fromY - tolerance &&
+            y <= shape.toY + tolerance
+        );
+    } else if (shape.type === 'arrow') {
+        return isWithinBoundingBox(x, y, shape.boundingBox);
+    }
+    return false;
+};
+
+const isWithinBoundingBox = (x, y, boundingBox) => {
+    return (
+        x >= boundingBox.left &&
+        x <= boundingBox.right &&
+        y >= boundingBox.top &&
+        y <= boundingBox.bottom
+    );
+};
+
 const deleteShape = () => {
     if (selectedShapeIndex !== null) {
         savedShapes.splice(selectedShapeIndex, 1);
         selectedShapeIndex = null;
         redrawCanvas();
+        updateLayerList();
     }
 };
 
@@ -420,6 +460,15 @@ const drawImage = (img, x, y, final = false) => {
     }
 };
 
+const drawPlaceholderText = () => {
+    ctx.save();
+    ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
+    ctx.font = '20px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('【ctrl+v可直接貼上圖片】', canvas.width / 2, canvas.height / 2);
+    ctx.restore();
+};
+
 window.addEventListener('paste', pasteImage);
 
 document.addEventListener('keydown', (e) => {
@@ -451,3 +500,23 @@ const exportAndCopyImage = () => {
         });
     });
 };
+
+// 更新图层清单
+const updateLayerList = () => {
+    layerList.innerHTML = '';
+    savedShapes.forEach((shape, index) => {
+        const listItem = document.createElement('li');
+        listItem.textContent = `${shape.type} ${index + 1}`;
+        listItem.onclick = () => {
+            selectedShapeIndex = index;
+            selectedShapes.length = 0;
+            selectedShapes.push(index);
+            redrawCanvas();
+        };
+        layerList.appendChild(listItem);
+    });
+};
+
+// 初始化时绘制灰色底字
+drawPlaceholderText();
+updateLayerList();

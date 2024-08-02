@@ -5,6 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>客服-測試白板</title>
     <style>
+        #container {
+            display: flex;
+        }
+        #layers {
+            width: 200px;
+            border-right: 1px solid black;
+            padding: 10px;
+            box-sizing: border-box;
+        }
         #canvas-container {
             position: relative;
             display: inline-block;
@@ -31,12 +40,16 @@
         #context-menu button {
             display: block;
         }
+        #toolbar {
+            display: flex;
+            margin-bottom: 10px;
+        }
     </style>
 </head>
 <body>
-    <div>
+    <div id="toolbar">
         <button onclick="setTool('select')">框選</button>
-        <button onclick="setTool('move')">移動物件</button>
+        <button onclick="setTool('moveImage')">移動圖片</button>
         <button onclick="setTool('arrow')">畫箭頭</button>
         <button onclick="setTool('rect')">畫外框</button>
         <button onclick="setTool('transparentRect')">類似螢光筆</button>
@@ -44,9 +57,15 @@
         <button onclick="exportAndCopyImage()">輸出圖檔並複製到剪貼簿</button>
         <input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
     </div>
-    <div id="canvas-container">
-        <canvas id="canvas" width="800" height="600"></canvas>
-        <div class="resizer"></div>
+    <div id="container">
+        <div id="layers">
+            <h3>圖層清單</h3>
+            <ul id="layer-list"></ul>
+        </div>
+        <div id="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+            <div class="resizer"></div>
+        </div>
     </div>
     <div id="context-menu">
         <button onclick="deleteShape()">刪除</button>
