@@ -71,7 +71,7 @@ canvas.addEventListener('mousedown', (e) => {
         selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
     } else if (tool === 'moveImage') {
         selectedShapeIndex = getShapeIndexAtCoordinates(startX, startY);
-        if (selectedShapeIndex !== null && savedShapes[selectedShapeIndex].type === 'image') {
+        if (selectedShapeIndex !== null && savedShapes[selectedShapeIndex].type === '插入圖片-') {
             movingImage = true;
         }
     }
@@ -182,7 +182,7 @@ const drawArrow = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: 'arrow',
+            type: '箭頭-',
             fromX,
             fromY,
             toX,
@@ -208,7 +208,7 @@ const drawRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: 'rect',
+            type: '外框-',
             fromX,
             fromY,
             toX,
@@ -226,7 +226,7 @@ const drawTransparentRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: 'transparentRect',
+            type: '螢光筆-',
             fromX,
             fromY,
             toX,
@@ -250,7 +250,7 @@ const drawMosaicRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: 'mosaicRect',
+            type: '馬賽克-',
             fromX,
             fromY,
             toX,
@@ -289,20 +289,20 @@ const redrawCanvas = () => {
     savedShapes.forEach((shape, index) => {
         ctx.strokeStyle = shape.color || '#000';
         switch (shape.type) {
-            case 'arrow':
+            case '箭頭-':
                 ctx.stroke(shape.path);
                 ctx.fill(shape.headPath);
                 break;
-            case 'rect':
+            case '外框-':
                 drawRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case 'transparentRect':
+            case '螢光筆-':
                 drawTransparentRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case 'mosaicRect':
+            case '馬賽克-':
                 drawMosaicRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case 'image':
+            case '插入圖片-':
                 ctx.drawImage(shape.img, shape.x, shape.y, shape.width, shape.height);
                 break;
         }
@@ -318,12 +318,12 @@ const highlightShape = (shape) => {
     ctx.lineWidth = 2;
     ctx.shadowColor = 'black';
     ctx.shadowBlur = 5;
-    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
-        ctx.strokeRect(shape.fromX, shape.fromY, shape.toX - shape.fromX, shape.toY - shape.fromY);
-    } else if (shape.type === 'arrow') {
+    if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
+        ctx.strokeRect(shape.fromX, shape.fromY, shape.toX - shape從X, shape.toY - shape從Y);
+    } else if (shape.type === '箭頭-') {
         ctx.stroke(shape.path);
-        ctx.fill(shape.headPath); // Highlight arrow head
-    } else if (shape.type === 'image') {
+        ctx.fill(shape.headPath); // 突出顯示箭頭
+    } else if (shape.type === '插入圖片-') {
         ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
     }
     ctx.restore();
@@ -336,26 +336,26 @@ const shapeInRect = (shape, rect, tolerance = 0) => {
         toX: rect.toX + tolerance,
         toY: rect.toY + tolerance
     };
-    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
+    if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
         return (
             shape.fromX <= extendedRect.toX &&
             shape.toX >= extendedRect.fromX &&
             shape.fromY <= extendedRect.toY &&
-            shape.toY >= extendedRect.fromY
+            shape.toY >= extendedRect從Y
         );
-    } else if (shape.type === 'arrow') {
+    } else if (shape.type === '箭頭-') {
         return (
             shape.boundingBox.left <= extendedRect.toX &&
-            shape.boundingBox.right >= extendedRect.fromX &&
-            shape.boundingBox.top <= extendedRect.toY &&
-            shape.boundingBox.bottom >= extendedRect.fromY
+            shape.boundingBox.right >= extendedRect從X &&
+            shape.boundingBox.top <= extendedRect從Y &&
+            shape.boundingBox.bottom >= extendedRect從Y
         );
-    } else if (shape.type === 'image') {
+    } else if (shape.type === '插入圖片-') {
         return (
             shape.x <= extendedRect.toX &&
-            shape.x + shape.width >= extendedRect.fromX &&
-            shape.y <= extendedRect.toY &&
-            shape.y + shape.height >= extendedRect.fromY
+            shape.x + shape.width >= extendedRect從X &&
+            shape.y <= extendedRect從Y &&
+            shape.y + shape.height >= extendedRect從Y
         );
     }
     return false;
@@ -366,15 +366,15 @@ const getShapeIndexAtCoordinates = (x, y) => {
 
     for (let i = savedShapes.length - 1; i >= 0; i--) {
         const shape = savedShapes[i];
-        if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
+        if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
             if (ctx.isPointInPath(shape.path, x, y) || isWithinTolerance(x, y, shape, tolerance)) {
                 return i;
             }
-        } else if (shape.type === 'arrow') {
+        } else if (shape.type === '箭頭-') {
             if (isWithinBoundingBox(x, y, shape.boundingBox)) {
                 return i;
             }
-        } else if (shape.type === 'image') {
+        } else if (shape.type === '插入圖片-') {
             if (x >= shape.x && x <= shape.x + shape.width && y >= shape.y && y <= shape.y + shape.height) {
                 return i;
             }
@@ -384,14 +384,14 @@ const getShapeIndexAtCoordinates = (x, y) => {
 };
 
 const isWithinTolerance = (x, y, shape, tolerance) => {
-    if (shape.type === 'rect' || shape.type === 'transparentRect' || shape.type === 'mosaicRect') {
+    if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
         return (
             x >= shape.fromX - tolerance &&
             x <= shape.toX + tolerance &&
             y >= shape.fromY - tolerance &&
             y <= shape.toY + tolerance
         );
-    } else if (shape.type === 'arrow') {
+    } else if (shape.type === '箭頭-') {
         return isWithinBoundingBox(x, y, shape.boundingBox);
     }
     return false;
@@ -450,7 +450,7 @@ const drawImage = (img, x, y, final = false) => {
     ctx.drawImage(img, x, y, width, height);
     if (final) {
         saveShape({
-            type: 'image',
+            type: '插入圖片-',
             img,
             x,
             y,
