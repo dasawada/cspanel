@@ -15,7 +15,7 @@ const savedShapes = [];
 const selectedShapes = [];
 const undoneShapes = [];
 let clipboard = null;
-let currentColor = document.getElementById('colorPicker').value;
+let currentColor = '#ff0000'; // 初始設置為紅色
 
 const setTool = (selectedTool) => {
     tool = selectedTool;
@@ -382,10 +382,18 @@ const pasteImage = async (event) => {
         if (item.kind === 'file') {
             const blob = item.getAsFile();
             const img = new Image();
-            img.onload = () => drawImage(img, 10, 10, true);
+            img.onload = () => {
+                resizeCanvasToImage(img.width, img.height);
+                drawImage(img, 0, 0, true);
+            };
             img.src = URL.createObjectURL(blob);
         }
     }
+};
+
+const resizeCanvasToImage = (width, height) => {
+    canvas.width = width;
+    canvas.height = height;
 };
 
 const exportImage = () => {
@@ -432,6 +440,7 @@ document.addEventListener('keydown', (e) => {
         redrawCanvas();
     }
 });
+
 const exportAndCopyImage = () => {
     canvas.toBlob(blob => {
         const item = new ClipboardItem({ 'image/png': blob });
