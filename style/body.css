@@ -195,7 +195,7 @@ padding-bottom:20px;
     position: absolute; /* 固定位置 */
     top: 110px;
     left: 440px;
-	width: 400px;
+	width: 600px;
 }
 .appicon:hover {
     background-color: #f7f7f7;
@@ -268,6 +268,14 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     font-size: 15px;
     color: #737373;
     transition: transform 0.1s ease, opacity 0.1s ease;
+}
+.board {
+    position: absolute; /* 增加 position 屬性，確保位置可以生效 */
+    z-index: 900;
+    width: 1200px;
+    height: 600px;
+    left: 0px;
+    top: 410px;
 }
 
 #op-title-output-div {
