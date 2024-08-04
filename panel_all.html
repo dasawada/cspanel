@@ -12,6 +12,10 @@
   gtag('config', 'G-1638R1H1FB');
 </script>
 <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.production.min.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.min.css">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★客服小工具ALL★</title>
@@ -425,9 +429,24 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 <!--白板-->
     <div class="board">
-        <div>
-正在製作中的白板功能，試車中：<a href="https://dasawada.github.io/cspanel/board/" target="_blank">點擊開啟</a>
-        </div>
+            <div id="excalidraw-container"></div>
+    <script type="text/javascript">
+        (function() {
+            const { createElement, useRef } = window.React;
+            const { render } = window.ReactDOM;
+            const { Excalidraw } = window.ExcalidrawLib;
+
+            function ExcalidrawApp() {
+                const excalidrawRef = useRef(null);
+
+                return createElement('div', { style: { height: '100%', width: '100%' } },
+                    createElement(Excalidraw, { ref: excalidrawRef, langCode: "zh-TW" })
+                );
+            }
+
+            render(createElement(ExcalidrawApp), document.getElementById('excalidraw-container'));
+        })();
+    </script>
     </div>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>

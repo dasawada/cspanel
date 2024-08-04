@@ -195,7 +195,7 @@ padding-bottom:20px;
     position: absolute; /* 固定位置 */
     top: 110px;
     left: 440px;
-	width: 600px;
+	width: 460px;
 }
 .appicon:hover {
     background-color: #f7f7f7;
@@ -270,12 +270,21 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     transition: transform 0.1s ease, opacity 0.1s ease;
 }
 .board {
-    position: absolute; /* 增加 position 屬性，確保位置可以生效 */
+    padding: 10px; 
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    height: auto; /* 固定高度 */
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
     z-index: 900;
-    width: 1200px;
+    width: 900px;
     height: 600px;
     left: 0px;
     top: 410px;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 }
 
 #op-title-output-div {
@@ -352,3 +361,7 @@ h3 {
 	text-align: center;
 }
 
+        #excalidraw-container {
+            width: 100%;
+            height: 100%;
+        }
