@@ -53,24 +53,38 @@
             width: 24px;
             height: 24px;
         }
+        .delete-icon {
+            margin-left: 10px;
+            cursor: pointer;
+            display: none; /* Initially hide the delete icon */
+        }
+        .layer-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px;
+        }
+        .layer-item.selected {
+            background-color: lightgray;
+        }
     </style>
 </head>
 <body>
     <div id="toolbar">
-        <button onclick="setTool('select')">選擇元素</button>
-        <button onclick="setTool('moveImage')">移動圖片</button>～
-	<input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
-        <button onclick="setTool('arrow')">箭頭</button>
-        <button onclick="setTool('rect')">外框</button>
-        <button onclick="setTool('transparentRect')">螢光筆</button>～
-        <button onclick="setTool('mosaicRect')">馬賽克遮罩</button>～
-        <button onclick="exportAndCopyImage()">點一下貼至BX</button>
-		            <button class="icon-button" onclick="undo()">
-                <img src="undo-icon.png" alt="復原">
-            </button>
-            <button class="icon-button" onclick="redo()">
-                <img src="redo-icon.png" alt="重作">
-            </button>
+        <button onclick="setTool('select')">框選</button>
+        <button onclick="setTool('moveImage')">移動圖片</button>
+        <button onclick="setTool('arrow')">畫箭頭</button>
+        <button onclick="setTool('rect')">畫外框</button>
+        <button onclick="setTool('transparentRect')">類似螢光筆</button>
+        <button onclick="setTool('mosaicRect')">馬賽克</button>
+        <button onclick="exportAndCopyImage()">輸出圖檔並複製到剪貼簿</button>
+        <input type="color" id="colorPicker" value="#ff0000" onchange="updateColor()">
+        <button class="icon-button" onclick="undo()">
+            <img src="undo-icon.png" alt="復原">
+        </button>
+        <button class="icon-button" onclick="redo()">
+            <img src="redo-icon.png" alt="重作">
+        </button>
     </div>
     <div id="container">
         <div id="layers">
