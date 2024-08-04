@@ -382,3 +382,19 @@ h3 {
         .dropdown-menu-group {
             display: none !important;
         }
+        /* 隐藏“說明”按钮 */
+        .dropdown-menu-item[title="說明"] {
+            display: none !important;
+        }
+        /* 隐藏“深色模式”按钮 */
+        .dropdown-menu-item[title="深色模式"] {
+            display: none !important;
+        }
+        /* 隐藏页脚右下角“說明”按钮 */
+        .help-icon {
+            display: none !important;
+        }
+        /* 隐藏“儲存至...”按钮 */
+        .dropdown-menu-item[title="儲存至..."] {
+            display: none !important;
+        }
