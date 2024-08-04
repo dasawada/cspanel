@@ -7,15 +7,16 @@ let drawing = false;
 let selecting = false;
 let resizing = false;
 let moving = false;
-let tool = 'loadImage'; // 初始設置為loadImage，防止初次點擊進行繪製
+let tool = 'arrow';
 let startX, startY;
 let currentX, currentY;
 let selectedShapeIndex = null;
+let hasLoadedImage = false;
 const savedShapes = [];
 const selectedShapes = [];
 const undoneShapes = [];
 let clipboard = null;
-let currentColor = '#ff0000'; // 初始設置為紅色
+let currentColor = '#ff0000'; 
 
 const setTool = (selectedTool) => {
     tool = selectedTool;
@@ -61,30 +62,12 @@ resizer.addEventListener('mousedown', startResizing);
 window.addEventListener('mousemove', resizeCanvas);
 window.addEventListener('mouseup', stopResizing);
 
-const loadImageAtPosition = (e) => {
-    const x = e.offsetX;
-    const y = e.offsetY;
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = (event) => {
-        const file = event.target.files[0];
-        const img = new Image();
-        img.onload = () => {
-            resizeCanvasToImage(img.width, img.height);
-            drawImage(img, x, y, true);
-        };
-        img.src = URL.createObjectURL(file);
-    };
-    input.click();
-};
-
 canvas.addEventListener('mousedown', (e) => {
     if (e.button === 2) return; // Ignore right-click
     startX = e.offsetX;
     startY = e.offsetY;
-    if (tool === 'loadImage') {
-        loadImageAtPosition(e);
+    if (!hasLoadedImage) {
+        loadImage();
     } else if (tool === 'rect' || tool === 'arrow' || tool === 'transparentRect' || tool === 'mosaicRect') {
         drawing = true;
     } else if (tool === 'select') {
@@ -104,16 +87,14 @@ canvas.addEventListener('mousedown', (e) => {
 canvas.addEventListener('mouseup', (e) => {
     if (e.button === 2) return; // Ignore right-click
     if (drawing) {
-        if (Math.abs(startX - currentX) > 4 || Math.abs(startY - currentY) > 4) {
-            if (tool === 'arrow') {
-                drawArrow(startX, startY, currentX, currentY, true);
-            } else if (tool === 'rect') {
-                drawRect(startX, startY, currentX, currentY, true);
-            } else if (tool === 'transparentRect') {
-                drawTransparentRect(startX, startY, currentX, currentY, true);
-            } else if (tool === 'mosaicRect') {
-                drawMosaicRect(startX, startY, currentX, currentY, true);
-            }
+        if (tool === 'arrow') {
+            drawArrow(startX, startY, currentX, currentY, true);
+        } else if (tool === 'rect') {
+            drawRect(startX, startY, currentX, currentY, true);
+        } else if (tool === 'transparentRect') {
+            drawTransparentRect(startX, startY, currentX, currentY, true);
+        } else if (tool === 'mosaicRect') {
+            drawMosaicRect(startX, startY, currentX, currentY, true);
         }
     } else if (selecting) {
         selectedShapes.length = 0;
@@ -306,7 +287,7 @@ const redo = () => {
 
 const redrawCanvas = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    drawPlaceholderText(); // 確保占位符文本在畫布初始化時顯示
+    drawPlaceholderText();
     savedShapes.forEach((shape, index) => {
         ctx.strokeStyle = shape.color || '#000';
         switch (shape.type) {
@@ -376,10 +357,9 @@ const getShapeIndexAtCoordinates = (x, y) => {
             // Check if the point is within a reasonable distance of the arrow path
             const path = new Path2D();
             path.moveTo(shape.fromX, shape.fromY);
-            path.lineTo(shape.toX, shape.toY);
-            path.moveTo(shape.toX, shape.toY);
+            path.lineTo(shape.toX, toY);
             path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) - Math.PI / 6));
-            path.moveTo(shape.toX, shape.toY);
+            path.lineTo(shape.toX, shape.toY);
             path.lineTo(shape.toX - 10 * Math.cos(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6), shape.toY - 10 * Math.sin(Math.atan2(shape.toY - shape.fromY, shape.toX - shape.fromX) + Math.PI / 6));
             ctx.lineWidth = tolerance;
             if (ctx.isPointInStroke(path, x, y) || ctx.isPointInPath(shape.headPath, x, y)) {
@@ -413,10 +393,28 @@ const pasteImage = async (event) => {
             img.onload = () => {
                 resizeCanvasToImage(img.width, img.height);
                 drawImage(img, 0, 0, true);
+                hasLoadedImage = true;
             };
             img.src = URL.createObjectURL(blob);
         }
     }
+};
+
+const loadImage = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        const img = new Image();
+        img.onload = () => {
+            resizeCanvasToImage(img.width, img.height);
+            drawImage(img, 0, 0, true);
+            hasLoadedImage = true;
+        };
+        img.src = URL.createObjectURL(file);
+    };
+    input.click();
 };
 
 const resizeCanvasToImage = (width, height) => {
@@ -449,12 +447,14 @@ const drawImage = (img, x, y, final = false) => {
 };
 
 const drawPlaceholderText = () => {
-    ctx.save();
-    ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
-    ctx.font = '20px Arial';
-    ctx.textAlign = 'center';
-    ctx.fillText('【ctrl+v可直接貼上圖片】', canvas.width / 2, canvas.height / 2);
-    ctx.restore();
+    if (!hasLoadedImage) {
+        ctx.save();
+        ctx.fillStyle = 'rgba(128, 128, 128, 0.5)';
+        ctx.font = '20px Arial';
+        ctx.textAlign = 'center';
+        ctx.fillText('【ctrl+v可直接貼上圖片】', canvas.width / 2, canvas.height / 2);
+        ctx.restore();
+    }
 };
 
 window.addEventListener('paste', pasteImage);
