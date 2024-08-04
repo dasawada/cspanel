@@ -277,7 +277,7 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     z-index: 900;
-    width: 900px;
+    width: 1100px;
     height: 600px;
     left: 0px;
     top: 410px;
@@ -367,18 +367,23 @@ h3 {
         /* 自定义 zoom-actions 位置 */
         .layer-ui__wrapper__footer-left {
             position: absolute;
-            top: -545px; /* 根据需要调整 */
-            left: 650px; /* 根据需要调整 */
+            top: -560px; /* 根据需要调整 */
+            left: 860px; /* 根据需要调整 */
         }
         /* 自定义形状工具栏位置 */
         .shapes-section {
-            position: absolute;
-            left: 80px; /* 根据需要调整 */
+            position: relative;
+            right: 100px; /* 根据需要调整 */
+			
 		}
 		.App-menu_top__left {
             position: relative;
-            left: -10px; /* 左移20px */
+            left: -10px;
         }
+		.App-menu_top {
+            position: relative;
+            top: -15px;
+		}
         /* 隐藏其他不需要的按钮 */
 		.App-toolbar__divider,
         .App-toolbar__extra-tools-trigger,
