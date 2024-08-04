@@ -7,7 +7,7 @@ let drawing = false;
 let selecting = false;
 let resizing = false;
 let moving = false;
-let tool = 'arrow';
+let tool = 'loadImage'; // 初始設置為loadImage，防止初次點擊進行繪製
 let startX, startY;
 let currentX, currentY;
 let selectedShapeIndex = null;
@@ -15,11 +15,17 @@ const savedShapes = [];
 const selectedShapes = [];
 const undoneShapes = [];
 let clipboard = null;
-let currentColor = '#ff0000'; 
+let currentColor = '#ff0000'; // 初始設置為紅色
 
 const setTool = (selectedTool) => {
     tool = selectedTool;
-    canvas.style.cursor = tool === 'moveImage' ? 'move' : 'crosshair';
+    if (tool === 'moveImage') {
+        canvas.style.cursor = 'move';
+    } else if (tool === 'select') {
+        canvas.style.cursor = 'crosshair';
+    } else {
+        canvas.style.cursor = 'crosshair';
+    }
 };
 
 const updateColor = () => {
@@ -55,11 +61,31 @@ resizer.addEventListener('mousedown', startResizing);
 window.addEventListener('mousemove', resizeCanvas);
 window.addEventListener('mouseup', stopResizing);
 
+const loadImageAtPosition = (e) => {
+    const x = e.offsetX;
+    const y = e.offsetY;
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (event) => {
+        const file = event.target.files[0];
+        const img = new Image();
+        img.onload = () => {
+            resizeCanvasToImage(img.width, img.height);
+            drawImage(img, x, y, true);
+        };
+        img.src = URL.createObjectURL(file);
+    };
+    input.click();
+};
+
 canvas.addEventListener('mousedown', (e) => {
-    if (e.button === 2) return;
+    if (e.button === 2) return; // Ignore right-click
     startX = e.offsetX;
     startY = e.offsetY;
-    if (tool === 'rect' || tool === 'arrow' || tool === 'transparentRect' || tool === 'mosaicRect') {
+    if (tool === 'loadImage') {
+        loadImageAtPosition(e);
+    } else if (tool === 'rect' || tool === 'arrow' || tool === 'transparentRect' || tool === 'mosaicRect') {
         drawing = true;
     } else if (tool === 'select') {
         selecting = true;
@@ -76,16 +102,18 @@ canvas.addEventListener('mousedown', (e) => {
 });
 
 canvas.addEventListener('mouseup', (e) => {
-    if (e.button === 2) return;
+    if (e.button === 2) return; // Ignore right-click
     if (drawing) {
-        if (tool === 'arrow') {
-            drawArrow(startX, startY, currentX, currentY, true);
-        } else if (tool === 'rect') {
-            drawRect(startX, startY, currentX, currentY, true);
-        } else if (tool === 'transparentRect') {
-            drawTransparentRect(startX, startY, currentX, currentY, true);
-        } else if (tool === 'mosaicRect') {
-            drawMosaicRect(startX, startY, currentX, currentY, true);
+        if (Math.abs(startX - currentX) > 4 || Math.abs(startY - currentY) > 4) {
+            if (tool === 'arrow') {
+                drawArrow(startX, startY, currentX, currentY, true);
+            } else if (tool === 'rect') {
+                drawRect(startX, startY, currentX, currentY, true);
+            } else if (tool === 'transparentRect') {
+                drawTransparentRect(startX, startY, currentX, currentY, true);
+            } else if (tool === 'mosaicRect') {
+                drawMosaicRect(startX, startY, currentX, currentY, true);
+            }
         }
     } else if (selecting) {
         selectedShapes.length = 0;
@@ -181,7 +209,7 @@ const drawArrow = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: '箭頭-',
+            type: '箭頭',
             fromX,
             fromY,
             toX,
@@ -201,7 +229,7 @@ const drawRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: '外框-',
+            type: '外框',
             fromX,
             fromY,
             toX,
@@ -219,7 +247,7 @@ const drawTransparentRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: '螢光筆-',
+            type: '螢光筆',
             fromX,
             fromY,
             toX,
@@ -243,7 +271,7 @@ const drawMosaicRect = (fromX, fromY, toX, toY, final = false) => {
 
     if (final) {
         saveShape({
-            type: '馬賽克-',
+            type: '馬賽克',
             fromX,
             fromY,
             toX,
@@ -278,22 +306,23 @@ const redo = () => {
 
 const redrawCanvas = () => {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
+    drawPlaceholderText(); // 確保占位符文本在畫布初始化時顯示
     savedShapes.forEach((shape, index) => {
         ctx.strokeStyle = shape.color || '#000';
         switch (shape.type) {
-            case '箭頭-':
+            case '箭頭':
                 drawArrow(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case '外框-':
+            case '外框':
                 drawRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case '螢光筆-':
+            case '螢光筆':
                 drawTransparentRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case '馬賽克-':
+            case '馬賽克':
                 drawMosaicRect(shape.fromX, shape.fromY, shape.toX, shape.toY);
                 break;
-            case '插入圖片-':
+            case '插入圖片':
                 ctx.drawImage(shape.img, shape.x, shape.y, shape.width, shape.height);
                 break;
         }
@@ -309,41 +338,42 @@ const highlightShape = (shape) => {
     ctx.lineWidth = 2;
     ctx.shadowColor = 'black';
     ctx.shadowBlur = 5;
-    if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
+    if (shape.type === '外框' || shape.type === '螢光筆' || shape.type === '馬賽克') {
         ctx.strokeRect(shape.fromX, shape.fromY, shape.toX - shape.fromX, shape.toY - shape.fromY);
-    } else if (shape.type === '箭頭-') {
+    } else if (shape.type === '箭頭') {
         ctx.beginPath();
         ctx.moveTo(shape.fromX, shape.fromY);
         ctx.lineTo(shape.toX, shape.toY);
         ctx.stroke();
         ctx.fill(shape.headPath); // Highlight arrow head
-    } else if (shape.type === '插入圖片-') {
+    } else if (shape.type === '插入圖片') {
         ctx.strokeRect(shape.x, shape.y, shape.width, shape.height);
     }
     ctx.restore();
 };
 
 const shapeInRect = (shape, rect) => {
-    if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
+    if (shape.type === '外框' || shape.type === '螢光筆' || shape.type === '馬賽克') {
         return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
-    } else if (shape.type === '箭頭-') {
+    } else if (shape.type === '箭頭') {
         return shape.fromX >= rect.fromX && shape.toX <= rect.toX && shape.fromY >= rect.fromY && shape.toY <= rect.toY;
-    } else if (shape.type === '插入圖片-') {
+    } else if (shape.type === '插入圖片') {
         return shape.x >= rect.fromX && (shape.x + shape.width) <= rect.toX && shape.y >= rect.fromY && (shape.y + shape.height) <= rect.toY;
     }
     return false;
 };
 
 const getShapeIndexAtCoordinates = (x, y) => {
-    const tolerance = 5; 
+    const tolerance = 5; // Increase the tolerance for selection
 
     for (let i = savedShapes.length - 1; i >= 0; i--) {
         const shape = savedShapes[i];
-        if (shape.type === '外框-' || shape.type === '螢光筆-' || shape.type === '馬賽克-') {
+        if (shape.type === '外框' || shape.type === '螢光筆' || shape.type === '馬賽克') {
             if (x >= shape.fromX && x <= shape.toX && y >= shape.fromY && y <= shape.toY) {
                 return i;
             }
-        } else if (shape.type === '箭頭-') {
+        } else if (shape.type === '箭頭') {
+            // Check if the point is within a reasonable distance of the arrow path
             const path = new Path2D();
             path.moveTo(shape.fromX, shape.fromY);
             path.lineTo(shape.toX, shape.toY);
@@ -355,7 +385,7 @@ const getShapeIndexAtCoordinates = (x, y) => {
             if (ctx.isPointInStroke(path, x, y) || ctx.isPointInPath(shape.headPath, x, y)) {
                 return i;
             }
-        } else if (shape.type === '插入圖片-') {
+        } else if (shape.type === '插入圖片') {
             if (x >= shape.x && x <= shape.x + shape.width && y >= shape.y && y <= shape.y + shape.height) {
                 return i;
             }
@@ -408,7 +438,7 @@ const drawImage = (img, x, y, final = false) => {
     ctx.drawImage(img, x, y, width, height);
     if (final) {
         saveShape({
-            type: '插入圖片-',
+            type: '插入圖片',
             img,
             x,
             y,
