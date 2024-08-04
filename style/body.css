@@ -27,6 +27,8 @@ body, button, textarea {
 	left: 0px;
     top:  0px;
 	border: 10px;
+	padding: 10px;
+	margin:10px;
 }
 .roofbutton {
     width: 430px;
@@ -272,9 +274,6 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
 .board {
     padding: 10px; 
     border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: auto; /* 固定高度 */
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     z-index: 900;
@@ -282,7 +281,6 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     height: 600px;
     left: 0px;
     top: 410px;
-    border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 }
@@ -366,35 +364,29 @@ h3 {
             height: 100%;
         }
 		
-        /* 隐藏“更多工具”按钮 */
-        .App-toolbar__extra-tools-trigger {
-            display: none !important;
+        /* 自定义 zoom-actions 位置 */
+        .layer-ui__wrapper__footer-left {
+            position: absolute;
+            top: -545px; /* 根据需要调整 */
+            left: 650px; /* 根据需要调整 */
         }
-        /* 隐藏“資料庫”按钮 */
-        .sidebar-trigger {
-            display: none !important;
+        /* 自定义形状工具栏位置 */
+        .shapes-section {
+            position: absolute;
+            left: 80px; /* 根据需要调整 */
+		}
+		.App-menu_top__left {
+            position: relative;
+            left: -10px; /* 左移20px */
         }
-        /* 隐藏“開啟”按钮 */
-        .dropdown-menu-item[title="開啟"] {
-            display: none !important;
-        }
-        /* 隐藏所有Excalidraw链接 */
-        .dropdown-menu-group {
-            display: none !important;
-        }
-        /* 隐藏“說明”按钮 */
-        .dropdown-menu-item[title="說明"] {
-            display: none !important;
-        }
-        /* 隐藏“深色模式”按钮 */
-        .dropdown-menu-item[title="深色模式"] {
-            display: none !important;
-        }
-        /* 隐藏页脚右下角“說明”按钮 */
-        .help-icon {
-            display: none !important;
-        }
-        /* 隐藏“儲存至...”按钮 */
+        /* 隐藏其他不需要的按钮 */
+        .App-toolbar__extra-tools-trigger,
+        .sidebar-trigger,
+        .dropdown-menu-item[title="開啟"],
+        .dropdown-menu-group,
+        .dropdown-menu-item[title="說明"],
+        .dropdown-menu-item[title="深色模式"],
+        .help-icon,
         .dropdown-menu-item[title="儲存至..."] {
             display: none !important;
         }
