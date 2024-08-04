@@ -380,6 +380,7 @@ h3 {
             left: -10px; /* 左移20px */
         }
         /* 隐藏其他不需要的按钮 */
+		.App-toolbar__divider,
         .App-toolbar__extra-tools-trigger,
         .sidebar-trigger,
         .dropdown-menu-item[title="開啟"],
