@@ -15,7 +15,7 @@
             height: 100%;
             width: 100%;
             display: flex;
-            flex-direction: column;
+            justify-content: center;
             align-items: center;
             background-color: #f0f0f0;
         }
@@ -23,25 +23,9 @@
             width: 100%;
             height: 100%;
         }
-        .toolbar {
-            width: 100%;
-            padding: 10px;
-            background: #fff;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-            display: flex;
-            justify-content: space-between;
-        }
-        .toolbar button {
-            margin: 0 5px;
-        }
     </style>
 </head>
 <body>
-    <div class="toolbar">
-        <button onclick="saveDrawing()">Save</button>
-        <button onclick="loadDrawing()">Load</button>
-        <input type="file" id="fileInput" style="display: none;" onchange="handleFileSelect(event)">
-    </div>
     <div id="app"></div>
     <script type="text/javascript">
         const { createElement, useRef } = window.React;
@@ -51,37 +35,8 @@
         function App() {
             const excalidrawRef = useRef(null);
 
-            window.saveDrawing = () => {
-                const scene = excalidrawRef.current.getSceneElements();
-                const json = JSON.stringify(scene);
-                const blob = new Blob([json], { type: "application/json" });
-                const url = URL.createObjectURL(blob);
-                const a = document.createElement("a");
-                a.href = url;
-                a.download = "drawing.excalidraw";
-                a.click();
-                URL.revokeObjectURL(url);
-            };
-
-            window.loadDrawing = () => {
-                document.getElementById('fileInput').click();
-            };
-
-            window.handleFileSelect = (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    const reader = new FileReader();
-                    reader.onload = (e) => {
-                        const json = e.target.result;
-                        const elements = JSON.parse(json);
-                        excalidrawRef.current.updateScene({ elements });
-                    };
-                    reader.readAsText(file);
-                }
-            };
-
-            return createElement('div', { style: { height: '100%' } },
-                createElement(Excalidraw, { ref: excalidrawRef })
+            return createElement('div', { style: { height: '100%', width: '100%' } },
+                createElement(Excalidraw, { ref: excalidrawRef, langCode: "zh-TW" })
             );
         }
 
