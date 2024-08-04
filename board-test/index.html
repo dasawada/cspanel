@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>客服-測試白板</title>
+    <link rel="stylesheet" href="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.min.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        #excalidraw-wrapper {
+            width: 100%;
+            height: 80vh;
+            border: 1px solid #ccc;
+            margin-top: 20px;
+        }
+        #toolbar {
+            display: flex;
+            gap: 10px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div id="toolbar">
+        <button onclick="saveData()">保存數據</button>
+        <button onclick="loadData()">加載數據</button>
+        <input type="color" id="colorPicker" value="#ff0000">
+    </div>
+    <div id="excalidraw-wrapper"></div>
+
+    <script src="https://unpkg.com/react/umd/react.production.min.js"></script>
+    <script src="https://unpkg.com/react-dom/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.umd.min.js"></script>
+    <script>
+        const { useRef, useState, useEffect } = React;
+        const { Excalidraw } = ExcalidrawLib;
+
+        const App = () => {
+            const excalidrawRef = useRef(null);
+            const [data, setData] = useState(null);
+
+            const saveData = () => {
+                const elements = excalidrawRef.current.getSceneElements();
+                localStorage.setItem('excalidraw', JSON.stringify(elements));
+                alert('數據已保存');
+            };
+
+            const loadData = () => {
+                const savedData = localStorage.getItem('excalidraw');
+                if (savedData) {
+                    setData(JSON.parse(savedData));
+                }
+            };
+
+            useEffect(() => {
+                document.getElementById('colorPicker').addEventListener('change', (e) => {
+                    const color = e.target.value;
+                    if (excalidrawRef.current) {
+                        excalidrawRef.current.updateScene({
+                            appState: { currentItemStrokeColor: color }
+                        });
+                    }
+                });
+            }, []);
+
+            return (
+                React.createElement(Excalidraw, { ref: excalidrawRef, initialData: data })
+            );
+        };
+
+        ReactDOM.render(React.createElement(App), document.getElementById('excalidraw-wrapper'));
+    </script>
+</body>
+</html>
