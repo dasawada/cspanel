@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>現主時會議</title>
+    <style>
+        #form-container {
+            width: 300px;
+            margin: 0 auto;
+        }
+        #result, #error, #account-results {
+            margin-top: 20px;
+        }
+        #result {
+            color: green; /* 結果文字的顏色 */
+        }
+        #error {
+            color: red; /* 錯誤信息的顏色 */
+        }
+        #account-results {
+            margin-top: 20px;
+        }
+        .meeting-item {
+            margin-bottom: 15px;
+        }
+        .separator {
+            border-bottom: 1px solid #ccc;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            color: #999; /* 分隔線的顏色 */
+        }
+        .ongoing {
+            color: red; /* 進行中的會議顏色 */
+        }
+        .upcoming {
+            color: blue; /* 即將開始的會議顏色 */
+        }
+    </style>
+</head>
+<body>
+    <div id="form-container">
+        <h2>現主時會議</h2>
+        <button id="fetch-meetings">點一下查詢！</button>
+        <div id="result"></div>
+        <div id="error"></div>
+        <div id="account-results"></div>
+    </div>
+
+    <script>
+        document.getElementById('fetch-meetings').addEventListener('click', async function() {
+            const now = new Date();
+            const currentDate = now.toISOString().split('T')[0];  // 獲取當前日期 yyyy-mm-dd
+            const currentTime = now.toTimeString().split(' ')[0].slice(0, 5); // 獲取當前時間 hh:mm
+
+            await fetchMeetings(currentDate, currentTime);
+        });
+
+        function parseTime(input) {
+            // 解析兩種格式：0000 或 00:00
+            const timePattern1 = /(\d{2})(\d{2})/; // 0000
+            const timePattern2 = /(\d{2}):(\d{2})/; // 00:00
+            let match = input.match(timePattern1);
+            if (match) {
+                return `${match[1]}:${match[2]}`;
+            }
+            match = input.match(timePattern2);
+            if (match) {
+                return `${match[1]}:${match[2]}`;
+            }
+            return null;
+        }
+
+        async function fetchMeetings(currentDate, currentTime) {
+            const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+            const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+            const range = '課程列表!A:I';  // 假設數據在Sheet1的A到I列
+
+            try {
+                const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
+                const data = await response.json();
+                const rows = data.values;
+
+                const ongoingMeetings = [];
+                const upcomingMeetings = [];
+
+                for (let i = 1; i < rows.length; i++) { // 假設第一行是標題
+                    const meetingName = rows[i][0];
+                    const startDate = new Date(rows[i][1]);
+                    const endDate = new Date(rows[i][2]);
+                    const repeatPattern = rows[i][3].split(',');  // 多個工作日
+                    const meetingTimeRange = rows[i][4].split('-');
+                    const meetingStartTime = parseTime(meetingTimeRange[0]);
+                    const meetingEndTime = parseTime(meetingTimeRange[1]);
+                    const meetingInfo = rows[i][6];
+
+                    const today = new Date();
+                    const dayOfWeek = today.getDay();
+                    const dayMap = {
+                        0: '日',
+                        1: '一',
+                        2: '二',
+                        3: '三',
+                        4: '四',
+                        5: '五',
+                        6: '六'
+                    };
+
+                    // 檢查日期範圍和重複模式
+                    if (today >= startDate && today <= endDate && repeatPattern.includes(dayMap[dayOfWeek])) {
+                        // 檢查會議是否正在進行中
+                        if (currentTime >= meetingStartTime && currentTime < meetingEndTime) {
+                            ongoingMeetings.push({
+                                name: meetingName,
+                                startTime: meetingStartTime,
+                                endTime: meetingEndTime,
+                                info: meetingInfo
+                            });
+                        }
+                        // 檢查會議是否即將開始
+                        else if (currentTime < meetingStartTime) {
+                            upcomingMeetings.push({
+                                name: meetingName,
+                                startTime: meetingStartTime,
+                                endTime: meetingEndTime,
+                                info: meetingInfo
+                            });
+                        }
+                    }
+                }
+
+                // 按開始時間昇冪排序
+                ongoingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+                upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+
+                const resultDiv = document.getElementById('account-results');
+                resultDiv.innerHTML = '';
+
+                if (ongoingMeetings.length > 0) {
+                    resultDiv.innerHTML += `<strong>進行中：</strong>`;
+                    ongoingMeetings.forEach(meeting => {
+                        const meetingDiv = document.createElement('div');
+                        meetingDiv.className = 'meeting-item ongoing';
+                        meetingDiv.innerHTML = `
+                            ${meeting.name}（${meeting.startTime}~${meeting.endTime}）<br>
+                            會議資訊：<br>
+                            ${meeting.info.replace(/\n/g, '<br>')}
+                        `;
+                        resultDiv.appendChild(meetingDiv);
+
+                        const separatorDiv = document.createElement('div');
+                        separatorDiv.className = 'separator';
+                        separatorDiv.innerHTML = '    ';
+                        resultDiv.appendChild(separatorDiv);
+                    });
+                }
+
+                if (upcomingMeetings.length > 0) {
+                    resultDiv.innerHTML += `<strong>即將開始：</strong>`;
+                    upcomingMeetings.forEach(meeting => {
+                        const meetingDiv = document.createElement('div');
+                        meetingDiv.className = 'meeting-item upcoming';
+                        meetingDiv.innerHTML = `
+                            ${meeting.name}（${meeting.startTime}~${meeting.endTime}）<br>
+                            會議資訊：<br>
+                            ${meeting.info.replace(/\n/g, '<br>')}
+                        `;
+                        resultDiv.appendChild(meetingDiv);
+
+                        const separatorDiv = document.createElement('div');
+                        separatorDiv.className = 'separator';
+                        separatorDiv.innerHTML = '    ';
+                        resultDiv.appendChild(separatorDiv);
+                    });
+                }
+
+                if (ongoingMeetings.length === 0 && upcomingMeetings.length === 0) {
+                    resultDiv.textContent = '今日沒有即將開始或進行中的會議。';
+                }
+            } catch (error) {
+                document.getElementById('error').textContent = '請求失敗：' + error.message;
+            }
+        }
+    </script>
+</body>
+</html>
