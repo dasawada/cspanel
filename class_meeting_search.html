@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>會議查詢系統</title>
+    <title>会議查询系统</title>
     <style>
         #form-container {
             width: 300px;
@@ -25,21 +25,21 @@
 </head>
 <body>
     <div id="form-container">
-        <h2>會議查詢</h2>
+        <h2>会議查询</h2>
         <form id="meeting-form">
             <div class="form-group">
-                <label for="date">輸入日期：</label>
+                <label for="date">输入日期：</label>
                 <input type="text" id="date" name="date" placeholder="yyyy mm dd" required>
             </div>
             <div class="form-group">
-                <label for="start-time">開始時間：</label>
+                <label for="start-time">开始时间：</label>
                 <input type="text" id="start-time" name="start-time" placeholder="hh mm" required>
             </div>
             <div class="form-group">
-                <label for="end-time">結束時間：</label>
+                <label for="end-time">结束时间：</label>
                 <input type="text" id="end-time" name="end-time" placeholder="hh mm" required>
             </div>
-            <button type="submit">查詢</button>
+            <button type="submit">查询</button>
         </form>
         <div id="result"></div>
         <div id="error"></div>
@@ -54,7 +54,7 @@
             const endTimeInput = document.getElementById('end-time').value;
 
             if (!dateInput || !startTimeInput || !endTimeInput) {
-                document.getElementById('error').textContent = '請輸入有效的日期和時間範圍。';
+                document.getElementById('error').textContent = '请輸入有效的日期和时间范围。';
                 return;
             }
 
@@ -63,7 +63,7 @@
             const endTime = parseTime(endTimeInput);
 
             if (!date || !startTime || !endTime) {
-                document.getElementById('error').textContent = '請輸入有效的日期和時間格式。';
+                document.getElementById('error').textContent = '请輸入有效的日期和时间格式。';
                 return;
             }
 
@@ -80,8 +80,14 @@
         }
 
         function parseTime(input) {
-            const timePattern = /(\d{2})[.\-: ]?(\d{2})/;
-            const match = input.match(timePattern);
+            // 解析两种格式：0000 或 00:00
+            const timePattern1 = /(\d{2})(\d{2})/; // 0000
+            const timePattern2 = /(\d{2}):(\d{2})/; // 00:00
+            let match = input.match(timePattern1);
+            if (match) {
+                return `${match[1]}:${match[2]}`;
+            }
+            match = input.match(timePattern2);
             if (match) {
                 return `${match[1]}:${match[2]}`;
             }
@@ -91,14 +97,14 @@
         async function checkMeeting(date, startTime, endTime) {
             const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
             const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-            const range = '課程列表!A:I';  // 假設數據在Sheet1的A到I列
+            const range = '课程列表!A:I';  // 假设数据在Sheet1的A到I列
 
             try {
                 const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
                 const data = await response.json();
                 const rows = data.values;
 
-                const accountResults = {};  // 存儲每個帳號的查找結果
+                const accountResults = {};  // 存储每个账号的查找结果
                 const checkDate = new Date(date);
                 const checkDay = checkDate.getDay();
 
@@ -112,7 +118,7 @@
                     6: '六'
                 };
 
-                // 初始化帳號結果
+                // 初始化账号结果
                 for (let i = 1; i < rows.length; i++) {
                     const account = rows[i][8];
                     if (!accountResults[account]) {
@@ -123,22 +129,22 @@
                     }
                 }
 
-                for (let i = 1; i < rows.length; i++) { // 假設第一行是標題
+                for (let i = 1; i < rows.length; i++) { // 假设第一行是标题
                     const account = rows[i][8];
                     const meetingName = rows[i][0];
                     const startDate = new Date(rows[i][1]);
                     const endDate = new Date(rows[i][2]);
-                    const repeatPattern = rows[i][3].split(',');  // 多個工作日
+                    const repeatPattern = rows[i][3].split(',');  // 多个工作日
                     const meetingTimeRange = rows[i][4].split('-');
-                    const meetingStartTime = meetingTimeRange[0];
-                    const meetingEndTime = meetingTimeRange[1];
+                    const meetingStartTime = parseTime(meetingTimeRange[0]);
+                    const meetingEndTime = parseTime(meetingTimeRange[1]);
                     const meetingInfo = rows[i][6];
 
-                    // 檢查日期範圍
+                    // 检查日期范围
                     if (checkDate >= startDate && checkDate <= endDate) {
-                        // 檢查重複模式
+                        // 检查重复模式
                         if (repeatPattern.includes(dayMap[checkDay])) {
-                            // 檢查時間範圍
+                            // 检查时间范围
                             if ((startTime < meetingEndTime && endTime > meetingStartTime)) {
                                 accountResults[account].hasMeeting = true;
                                 accountResults[account].overlappingMeetings.push({
@@ -159,34 +165,34 @@
                 const accountResultsDiv = document.getElementById('account-results');
                 accountResultsDiv.innerHTML = '';
 
-                resultDiv.textContent = '查詢結果如下:';
+                resultDiv.textContent = '查询结果如下:';
                 resultDiv.style.color = 'green';
                 errorDiv.textContent = '';
 
                 for (const account in accountResults) {
                     const accountResult = document.createElement('div');
-                    accountResult.innerHTML = `<strong>帳號: ${account}</strong>`;
+                    accountResult.innerHTML = `<strong>账号: ${account}</strong>`;
                     if (accountResults[account].hasMeeting) {
-                        accountResult.innerHTML += `<p>已有會議安排</p>`;
+                        accountResult.innerHTML += `<p>已有会议安排</p>`;
                         accountResults[account].overlappingMeetings.forEach(meeting => {
                             const meetingInfoDiv = document.createElement('div');
                             meetingInfoDiv.innerHTML = `
-                                會議名稱: ${meeting.name}<br>
+                                会议名称: ${meeting.name}<br>
                                 起始日: ${meeting.startDate.toISOString().split('T')[0]}<br>
-                                結束日: ${meeting.endDate.toISOString().split('T')[0]}<br>
-                                重複模式: ${meeting.repeatPattern}<br>
-                                會議時間: ${meeting.timeRange}<br>
-                                會議資訊: ${meeting.info.replace(/\n/g, '<br>')}
+                                结束日: ${meeting.endDate.toISOString().split('T')[0]}<br>
+                                重复模式: ${meeting.repeatPattern}<br>
+                                会议时间: ${meeting.timeRange}<br>
+                                会议信息: ${meeting.info.replace(/\n/g, '<br>')}
                             `;
                             accountResult.appendChild(meetingInfoDiv);
                         });
                     } else {
-                        accountResult.innerHTML += `<p>沒有會議安排</p>`;
+                        accountResult.innerHTML += `<p>没有会议安排</p>`;
                     }
                     accountResultsDiv.appendChild(accountResult);
                 }
             } catch (error) {
-                document.getElementById('error').textContent = '請求失敗：' + error.message;
+                document.getElementById('error').textContent = '请求失败：' + error.message;
             }
         }
     </script>
