@@ -121,11 +121,11 @@
                 
                 const noMeetingGroup = document.createElement('div');
                 noMeetingGroup.className = 'meeting-check-result-group meeting-check-no-meeting';
-                noMeetingGroup.innerHTML = '<h3>可安排會議的帳號：</h3>';
+                noMeetingGroup.innerHTML = '<h3>可排會議的帳號：</h3>';
                 
                 const hasMeetingGroup = document.createElement('div');
                 hasMeetingGroup.className = 'meeting-check-result-group meeting-check-has-meeting';
-                hasMeetingGroup.innerHTML = '<h3>已有會議安排：</h3>';
+                hasMeetingGroup.innerHTML = '<h3>已存在的會議安排：</h3>';
 
                 for (const account in accountResults) {
                     const accountResult = document.createElement('div');
