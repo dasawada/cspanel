@@ -121,7 +121,7 @@
                 
                 const noMeetingGroup = document.createElement('div');
                 noMeetingGroup.className = 'meeting-check-result-group meeting-check-no-meeting';
-                noMeetingGroup.innerHTML = '<h3>沒有會議安排的帳號：</h3>';
+                noMeetingGroup.innerHTML = '<h3>可安排會議的帳號：</h3>';
                 
                 const hasMeetingGroup = document.createElement('div');
                 hasMeetingGroup.className = 'meeting-check-result-group meeting-check-has-meeting';
