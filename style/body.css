@@ -297,6 +297,19 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 }
+.meeting-check-search{
+	padding: 10px; 
+    border: 1px solid #ccc;
+    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
+    position: absolute; /* 固定位置 */
+    z-index: 898;
+    width: 320px;
+    height: 403px;
+    left: 1210px;
+    top: 0px;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+}
 
 #op-title-output-div {
         height: 18px;

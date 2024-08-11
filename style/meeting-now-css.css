@@ -56,11 +56,12 @@
         }
         .meetingsearch-info {
             display: none; /* 初始状态下隐藏会议信息 */
-            padding: 10px;
+            padding: 2px;
             background-color: #e0e0e0;
             border-radius: 5px;
             max-height: 200px;
             overflow-y: auto;
+			font-size: 11px;
         }
 
         .meetingsearch-ongoing {

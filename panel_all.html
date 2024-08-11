@@ -27,6 +27,7 @@
 <link rel="stylesheet" href="style/as_num.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="style/meeting-now-css.css">
+<link rel="stylesheet" href="style/meeting-match-check.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -449,9 +450,9 @@ setTimeout(showAllRows, 1000);\n\
 
     </script>
     </div>
-<!--短網址-->
+<!--今日會議查詢-->
 <div class="meeting-now-search">
-    <b>ZOOM、騰訊 今日會議查詢</b>
+    <b>[ZOOM、騰訊] 今日會議</b>
 <div id="meetingsearchnow-form-container">
     <!-- 名稱搜尋今日會議 -->
     <div id="meetingsearch-filter-container">
@@ -466,6 +467,33 @@ setTimeout(showAllRows, 1000);\n\
 	</div>
 </div>
 </div>
+<!--衝堂查詢-->
+<div class="meeting-check-search">
+    <b>[ZOOM、騰訊] 衝堂查詢</b>
+    <div id="meeting-check-form-container">
+
+        <form id="meeting-check-form" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
+                <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+            </div>
+            <div class="meeting-check-form-group" style="flex: 1 1 15%;">
+                <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
+            </div>
+            <div class="meeting-check-form-group" style="flex: 1 1 15%;">
+                <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
+            </div>
+            <div class="meeting-check-form-group" style="flex: 1 1 auto;">
+                <button type="submit" style="width: 100%;">查詢</button>
+            </div>
+        </form>
+	<div id="meeting-check-result-scrollbar">
+        <div id="meeting-check-result"></div>
+        <div id="meeting-check-error"></div>
+        <div id="meeting-check-account-results"></div>
+	</div>
+    </div>
+</div>
+	<script src="script/meeting-match-check.js"></script>
 	<script src="script/meeting-now.js"></script>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
