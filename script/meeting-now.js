@@ -133,7 +133,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             ongoingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index);
                 resultDiv.appendChild(meetingItem);
-                resultDiv.appendChild(document.createElement('div')).className = 'meetingsearch-separator';
+                
             });
         }
 
@@ -143,7 +143,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             upcomingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index);
                 resultDiv.appendChild(meetingItem);
-                resultDiv.appendChild(document.createElement('div')).className = 'meetingsearch-separator';
+                
             });
         }
 
@@ -153,7 +153,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             waitingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index);
                 resultDiv.appendChild(meetingItem);
-                resultDiv.appendChild(document.createElement('div')).className = 'meetingsearch-separator';
+                
             });
         }
 
@@ -163,7 +163,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             endedMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index);
                 resultDiv.appendChild(meetingItem);
-                resultDiv.appendChild(document.createElement('div')).className = 'meetingsearch-separator';
+                
             });
         }
 
