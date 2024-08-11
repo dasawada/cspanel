@@ -97,3 +97,27 @@
         }
 		#meeting-check-form{height: 20px;
 		gap:0px;}
+
+/* 調整 Flatpickr 日期按鈕的大小 */
+.flatpickr-day {
+    width: 20px;
+    height: 20px;
+    line-height: 20px; /* 確保文字垂直居中 */
+    padding: 0;
+    margin: 2px; /* 調整按鈕之間的間距 */
+    font-size: 12px; /* 根據需要調整字體大小 */
+    border-radius: 4px; /* 可選：設置按鈕的圓角 */
+}
+
+.flatpickr-day.today {
+    border-color: #b3b3b3; /* 今日日期的邊框顏色 */
+}
+
+.flatpickr-day:hover {
+    background: #e6e6e6; /* 懸停時的背景顏色 */
+}
+
+.flatpickr-day.selected {
+    background-color: #3b82f6; /* 選中日期的背景顏色 */
+    color: #ffffff; /* 選中日期的字體顏色 */
+}

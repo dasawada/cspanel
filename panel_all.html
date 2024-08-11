@@ -15,6 +15,8 @@
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@excalidraw/excalidraw/dist/excalidraw.production.min.js"></script>
+	<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
+	<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★客服小工具ALL★</title>
@@ -473,9 +475,20 @@ setTimeout(showAllRows, 1000);\n\
     <div id="meeting-check-form-container">
 
         <form id="meeting-check-form" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-            <div class="meeting-check-form-group" style="flex: 1 1 5%; max-width: 100px;">
-    <input type="date" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
+    <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
 </div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        flatpickr("#meeting-check-date", {
+            dateFormat: "Y-m-d", // 設置日期格式
+            altInput: true,
+            altFormat: "F j, Y", // 替代顯示格式
+            allowInput: true
+        });
+    });
+</script>
             <div class="meeting-check-form-group" style="flex: 1 1 20%;">
                 <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
             </div>
