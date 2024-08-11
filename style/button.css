@@ -154,7 +154,7 @@ textarea:focus {
 }
 /* 長網址input */
 #longUrl {
-    width: 290px; 
+    width: 350px; 
     margin-right: 6px;
 }
 
@@ -174,7 +174,7 @@ textarea:focus {
 
 /* 短網址輸出欄 */
 #shortUrlOutput {
-    width: 290px;
+    width: 350px;
     margin-right: 6px;
     background-color: #F5F5F5;
 }
