@@ -51,7 +51,12 @@
 
 <div id="meetingsearch-form-container">
     <h2>會議查詢</h2>
-    <button id="meetingsearch-fetch-meetings">點擊送出</button>
+    <!-- 搜尋今日會議的按鈕 -->
+    <button id="meetingsearch-fetch-meetings">搜尋今日所有會議</button>
+    <!-- 新增的搜索框 -->
+    <div id="meetingsearch-filter-container">
+        <input type="text" id="meetingsearch-filter-input" placeholder="輸入學生，查詢今日會議">
+    </div>
     <div id="meetingsearch-result"></div>
     <div id="meetingsearch-error"></div>
     <div id="meetingsearch-account-results"></div>
@@ -98,7 +103,7 @@ function createMeetingItem(meeting, className, index) {
     return meetingDiv;
 }
 
-async function meetingsearchFetchMeetings(currentDate, currentTime, now) {
+async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
     const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
     const range = '課程列表!A:I';  // 假設數據在Sheet1的A到I列
@@ -137,6 +142,11 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now) {
 
             // 檢查日期範圍和重複模式
             if (today >= startDate && today <= endDate && repeatPattern.includes(dayMap[dayOfWeek])) {
+                // 先过滤会议信息
+                if (filterText && !meetingName.toLowerCase().includes(filterText.toLowerCase())) {
+                    continue;
+                }
+
                 // 檢查會議是否正在進行中
                 if (currentTime >= meetingStartTime && currentTime < meetingEndTime) {
                     ongoingMeetings.push({
@@ -243,7 +253,15 @@ document.getElementById('meetingsearch-account-results').addEventListener('click
     }
 });
 
+// 自動監聽輸入框的值，並根據輸入的值篩選會議
+document.getElementById('meetingsearch-filter-input').addEventListener('input', function() {
+    const filterText = document.getElementById('meetingsearch-filter-input').value.toLowerCase();
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0];  // 獲取當前日期 yyyy-mm-dd
+    const currentTime = now.toTimeString().split(' ')[0].slice(0, 5); // 獲取當前時間 hh:mm
 
+    meetingsearchFetchMeetings(currentDate, currentTime, now, filterText);
+});
 </script>
 
 </body>
