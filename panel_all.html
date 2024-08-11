@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="style/ipsearch_css.css">
 <link rel="stylesheet" href="style/as_num.css">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<link rel="stylesheet" href="style/meeting-now-css.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -103,17 +104,17 @@ setTimeout(showAllRows, 1000);\n\
                     </label>
                     <span class="optitle-text-form">]</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
-                        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 85px;">
+                        <input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
                     </label>
                     <span class="optitle-text-form">/</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
-                        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 85px;">
+                        <input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
                     </label>
                     <span class="optitle-text-form">#</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
-                        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 75px;">
+                        <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 70px;">
                         <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
                     </label>
                 </form>
@@ -309,7 +310,7 @@ setTimeout(showAllRows, 1000);\n\
 <div class="consultantlistgooglesheet small-size" style="top:0px">
     <div class="toggle-container">
         <input type="checkbox" id="toggleCheckbox">
-        <label for="toggleCheckbox">顧問組別清單</label>
+        <label for="toggleCheckbox">顧問組別</label>
     </div>
     <div id="content" style="display: none;">
         <iframe class="responsive-iframe" src="SA_iframe.html"></iframe>
@@ -409,7 +410,7 @@ setTimeout(showAllRows, 1000);\n\
 <div class="assist-issue small-size">
     <div class="toggle-container">
         <input type="checkbox" id="assist-issue-toggleCheckbox">
-        <label for="assist-issue-toggleCheckbox">📝輔導單模板</label>
+        <label for="assist-issue-toggleCheckbox">📝輔導單</label>
     </div>
     <div id="content" style="display: none;">
     <div class="assist-issue-form-container">
@@ -448,6 +449,24 @@ setTimeout(showAllRows, 1000);\n\
 
     </script>
     </div>
+<!--短網址-->
+<div class="meeting-now-search">
+    <b>ZOOM、騰訊 今日會議查詢</b>
+<div id="meetingsearchnow-form-container">
+    <!-- 名稱搜尋今日會議 -->
+    <div id="meetingsearch-filter-container">
+        <input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別學生">
+        <button id="meetingsearch-fetch-meetings">所有學生會議</button>
+    </div>
+	<div class="meeting-now-result-flow">
+    <!-- 搜尋所有今日會議 -->
+    <div id="meetingsearch-result"></div>
+    <div id="meetingsearch-error"></div>
+    <div id="meetingsearch-account-results"></div>
+	</div>
+</div>
+</div>
+	<script src="script/meeting-now.js"></script>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
     <script src="script/optitlearange.js"></script>
