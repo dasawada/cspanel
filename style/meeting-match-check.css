@@ -1,0 +1,99 @@
+        #meeting-check-form-container {
+            width: 300px;
+            margin: 0 auto;
+        }
+#meeting-check-result-scrollbar {
+    height: 338px;
+    width: 300px;
+    margin: 0 auto;
+    overflow-y: auto;
+    scrollbar-width: thin; /* 對 Firefox 生效，設置滾動條寬度為細 */
+    scrollbar-color: #f5f5f5 #ffffff; /* 對 Firefox 生效，設置滾動條顏色和軌道顏色 */
+}
+
+/* Chrome、Edge、Safari 瀏覽器 */
+#meeting-check-result-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+#meeting-check-result-scrollbar::-webkit-scrollbar-track {
+    background: #ffffff;
+}
+
+#meeting-check-result-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    border: 2px solid #ffffff;
+}
+		}
+        #meeting-check-result {
+            margin-top: 5px;
+            color: green;
+        }
+        #meeting-check-error {
+            margin-top: 20px;
+            color: red;
+        }
+        #meeting-check-account-results {
+            margin-top: 20px;
+        }
+        .meeting-check-form-group {
+            margin-bottom: 15px;
+        }
+        .meeting-check-result-group {
+            padding: 5px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #f9f9f9;
+        }
+        .meeting-check-result-group h3 {
+            margin-top: 0;
+        }
+        .meeting-check-info {
+            margin-top: 10px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            background-color: #fff;
+            overflow-y: auto;
+            max-height: 150px;
+        }
+        .meeting-check-no-meeting, .meeting-check-has-meeting {
+            margin-bottom: 20px;
+        }
+        .meeting-check-account-title {
+            font-weight: bold;
+        }
+        .meeting-check-card {
+            border-bottom: 1px solid #ddd;
+            padding-bottom: 8px;
+            margin-bottom: 8px;
+            border-radius: 5px;
+            background: linear-gradient(to top, #f0f0f0 5%, #ffffff 100%);
+        }
+        .meeting-check-title {
+            margin-top: 0;
+            color: #333;
+            margin-bottom: 0;
+        }
+        .meeting-check-info {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 8px;
+            font-size: 12px;
+        }
+        .meeting-check-info div {
+            flex: 1 1 100%;
+            margin-bottom: 4px;
+        }
+        .meeting-check-info div i {
+            margin-right: 5px;
+        }
+        .meeting-check-details {
+            margin-top: 11px;
+            font-style: italic;
+            color: #666;
+            font-size: 10px;
+        }
+		#meeting-check-form{height: 20px;
+		gap:0px;}
