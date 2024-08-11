@@ -456,8 +456,8 @@ setTimeout(showAllRows, 1000);\n\
 <div id="meetingsearchnow-form-container">
     <!-- 名稱搜尋今日會議 -->
     <div id="meetingsearch-filter-container">
-        <input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別學生">
-        <button id="meetingsearch-fetch-meetings">所有學生會議</button>
+        <input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議">
+        <button id="meetingsearch-fetch-meetings">列出所有會議</button>
     </div>
 	<div class="meeting-now-result-flow">
     <!-- 搜尋所有今日會議 -->
@@ -473,16 +473,16 @@ setTimeout(showAllRows, 1000);\n\
     <div id="meeting-check-form-container">
 
         <form id="meeting-check-form" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
+            <div class="meeting-check-form-group" style="flex: 1 1 5%; max-width: 100px;">
+    <input type="date" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+</div>
             <div class="meeting-check-form-group" style="flex: 1 1 20%;">
-                <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
-            </div>
-            <div class="meeting-check-form-group" style="flex: 1 1 15%;">
                 <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
             </div>
-            <div class="meeting-check-form-group" style="flex: 1 1 15%;">
+            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
                 <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
             </div>
-            <div class="meeting-check-form-group" style="flex: 1 1 auto;">
+            <div class="meeting-check-form-group" style="flex: 1 1 15%">
                 <button type="submit" style="width: 100%;">查詢</button>
             </div>
         </form>
