@@ -1,3 +1,4 @@
+// 點擊 "搜尋今日所有會議" 按鈕時觸發的事件
 document.getElementById('meetingsearch-fetch-meetings').addEventListener('click', async function() {
     const now = new Date();
     const currentDate = now.toISOString().split('T')[0];  // 獲取當前日期 yyyy-mm-dd
@@ -6,6 +7,7 @@ document.getElementById('meetingsearch-fetch-meetings').addEventListener('click'
     await meetingsearchFetchMeetings(currentDate, currentTime, now);
 });
 
+// 解析時間字串的函數
 function meetingsearchParseTime(input) {
     // 解析兩種格式：0000 或 00:00
     const timePattern1 = /(\d{2})(\d{2})/; // 0000
@@ -21,27 +23,78 @@ function meetingsearchParseTime(input) {
     return null;
 }
 
+// 創建會議項目的函數
 function createMeetingItem(meeting, className, index) {
     const meetingDiv = document.createElement('div');
     const uniqueId = `meeting-${className}-${index}`;  // 生成唯一ID
     meetingDiv.className = `meetingsearch-meeting-item ${className}`;
     meetingDiv.id = uniqueId;
-    meetingDiv.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
+
+    // 創建 + / - 按鈕，用於收合
+    const toggleButton = document.createElement('button');
+    toggleButton.textContent = '+'; // 初始狀態為“+”
+    toggleButton.style.marginRight = '10px'; // 按鈕和文本之間的間距
+
+    // 為按鈕添加點擊事件
+    toggleButton.addEventListener('click', function(event) {
+        // 切換按鈕的文本
+        toggleButton.textContent = toggleButton.textContent === '+' ? '-' : '+';
+
+        // 切換會議資訊的顯示狀態
+        const infoDiv = meetingDiv.querySelector('.meetingsearch-info');
+        if (infoDiv) {
+            infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+        }
+
+        // 阻止事件冒泡，防止點擊按鈕時觸發父元素的點擊事件
+        event.stopPropagation();
+    });
+
+    // 創建會議內容和超連結元素
+    const meetingContent = document.createElement('span');
+    meetingContent.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
+
+    // 創建圖標並包裹在超連結中
+    const iconLink = document.createElement('a');
+    iconLink.href = meeting.link;
+    iconLink.target = '_blank'; // 在新標籤頁打開連結
+
+    const iconImg = document.createElement('img');
+    if (meeting.type.toLowerCase() === 'voov') {
+        iconImg.src = 'img/voov.png';
+        iconImg.alt = 'voov';
+    } else if (meeting.type.toLowerCase() === 'zoom') {
+        iconImg.src = 'img/zoom.png';
+        iconImg.alt = 'zoom';
+    }
+    iconImg.className = 'meeting-icon'; // 設置圖標的 CSS 類名
+    iconLink.appendChild(iconImg); // 將圖標圖片添加到超連結中
+
+    // 將內容、圖標連結和文本連結添加到 meetingDiv 中
+    const parentDiv = document.createElement('div'); // 創建上一層元素
+    parentDiv.style.position = 'relative'; // 父元素設置為相對定位
+
+    parentDiv.appendChild(toggleButton);
+    parentDiv.appendChild(meetingContent);
+    parentDiv.appendChild(iconLink); // 添加圖標連結
+
+    meetingDiv.appendChild(parentDiv); // 將 parentDiv 添加到 meetingDiv 中
 
     const infoDiv = document.createElement('div');
     infoDiv.className = 'meetingsearch-info';
     infoDiv.id = `info-${uniqueId}`;  // 生成唯一ID
     infoDiv.innerHTML = `會議資訊：<br>${meeting.info.replace(/\n/g, '<br>')}`;
-    infoDiv.style.display = 'none'; // 初始状态下隐藏会议信息
+    infoDiv.style.display = 'none'; // 初始狀態下隱藏會議資訊
     meetingDiv.appendChild(infoDiv);
 
-    return meetingDiv;
+    return meetingDiv; // 別忘了返回創建的元素
 }
 
+// 搜尋並顯示會議的主要函數
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
     const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-    const range = '外部課程列表!A:K';  // 假設數據在Sheet1的A到I列
+    const range = '外部課程列表!A:K';  // 假設數據在Google Sheets的A到K列
 
     try {
         const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
@@ -59,11 +112,11 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             const endDate = new Date(rows[i][2]); // 結束日期 (C)
             const repeatPattern = rows[i][3] ? rows[i][3].split(',') : []; // 重複模式 (D)
             const meetingTimeRange = rows[i][4].split('-'); // 時間範圍 (E)
-            const meetingStartTime = parseTime(meetingTimeRange[0]); // 會議開始時間
-            const meetingEndTime = parseTime(meetingTimeRange[1]); // 會議結束時間
+            const meetingStartTime = meetingsearchParseTime(meetingTimeRange[0]); // 會議開始時間
+            const meetingEndTime = meetingsearchParseTime(meetingTimeRange[1]); // 會議結束時間
             const meetingType = rows[i][5]; // 會議類型 (F)
             const meetingInfo = rows[i][7]; // 會議資訊 (H)
-            const account = rows[i][9]; // 會議開立帳號 (J)
+            const meetingLink = rows[i][10]; // 會議連結 (K)
 
             const today = new Date();
             const dayOfWeek = today.getDay();
@@ -79,7 +132,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
 
             // 檢查日期範圍和重複模式
             if (today >= startDate && today <= endDate && repeatPattern.includes(dayMap[dayOfWeek])) {
-                // 先过滤会议信息
+                // 先過濾會議名稱
                 if (filterText && !meetingName.toLowerCase().includes(filterText.toLowerCase())) {
                     continue;
                 }
@@ -90,27 +143,33 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                         name: meetingName,
                         startTime: meetingStartTime,
                         endTime: meetingEndTime,
-                        info: meetingInfo
+                        info: meetingInfo,
+                        type: meetingType,
+                        link: meetingLink
                     });
                 }
                 // 檢查會議是否即將開始（半小時內）
                 else if (currentTime < meetingStartTime) {
                     const meetingStartDateTime = new Date(`${currentDate}T${meetingStartTime}`);
-                    const timeDifferenceInHours = (meetingStartDateTime - now) / (1000 * 60 * 60); // 计算时间差，以小时为单位
+                    const timeDifferenceInHours = (meetingStartDateTime - now) / (1000 * 60 * 60); // 計算時間差，以小時為單位
 
                     if (timeDifferenceInHours <= 0.5) {  // 如果時間差在半小時內
                         upcomingMeetings.push({
                             name: meetingName,
                             startTime: meetingStartTime,
                             endTime: meetingEndTime,
-                            info: meetingInfo
+                            info: meetingInfo,
+                            type: meetingType,
+                            link: meetingLink
                         });
                     } else {
-                        waitingMeetings.push({  // 如果时间差超过半小時
+                        waitingMeetings.push({  // 如果時間差超過半小時
                             name: meetingName,
                             startTime: meetingStartTime,
                             endTime: meetingEndTime,
-                            info: meetingInfo
+                            info: meetingInfo,
+                            type: meetingType,
+                            link: meetingLink
                         });
                     }
                 }
@@ -120,56 +179,58 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                         name: meetingName,
                         startTime: meetingStartTime,
                         endTime: meetingEndTime,
-                        info: meetingInfo
+                        info: meetingInfo,
+                        type: meetingType,
+                        link: meetingLink
                     });
                 }
             }
         }
 
         const resultDiv = document.getElementById('meetingsearch-account-results');
-        resultDiv.innerHTML = '';  // 清空之前的内容
+        resultDiv.innerHTML = '';  // 清空之前的內容
 
-        // 处理进行中的会议
-if (ongoingMeetings.length > 0) {
-    ongoingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
-    resultDiv.innerHTML += `<strong>進行中：</strong>`;
-    ongoingMeetings.forEach((meeting, index) => {
-        const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index);
-        resultDiv.appendChild(meetingItem);
-    });
-}
+        // 處理進行中的會議
+        if (ongoingMeetings.length > 0) {
+            ongoingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
+            resultDiv.innerHTML += `<strong>進行中：</strong>`;
+            ongoingMeetings.forEach((meeting, index) => {
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index);
+                resultDiv.appendChild(meetingItem);
+            });
+        }
 
-        // 处理即将开始的会议
-if (upcomingMeetings.length > 0) {
-    upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
-    resultDiv.innerHTML += `<strong>即將開始 (半小時內)：</strong>`;
-    upcomingMeetings.forEach((meeting, index) => {
-        const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index);
-        resultDiv.appendChild(meetingItem);
-    });
-}
+        // 處理即將開始的會議
+        if (upcomingMeetings.length > 0) {
+            upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
+            resultDiv.innerHTML += `<strong>即將開始 (半小時內)：</strong>`;
+            upcomingMeetings.forEach((meeting, index) => {
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index);
+                resultDiv.appendChild(meetingItem);
+            });
+        }
 
-        // 处理等待中的会议
-if (waitingMeetings.length > 0) {
-    waitingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
-    resultDiv.innerHTML += `<strong>等待中：</strong>`;
-    waitingMeetings.forEach((meeting, index) => {
-        const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index);
-        resultDiv.appendChild(meetingItem);
-    });
-}
+        // 處理等待中的會議
+        if (waitingMeetings.length > 0) {
+            waitingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
+            resultDiv.innerHTML += `<strong>等待中：</strong>`;
+            waitingMeetings.forEach((meeting, index) => {
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index);
+                resultDiv.appendChild(meetingItem);
+            });
+        }
 
-        // 处理已结束的会议
-if (endedMeetings.length > 0) {
-    endedMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
-    resultDiv.innerHTML += `<strong>已結束：</strong>`;
-    endedMeetings.forEach((meeting, index) => {
-        const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index);
-        resultDiv.appendChild(meetingItem);
-    });
-}
+        // 處理已結束的會議
+        if (endedMeetings.length > 0) {
+            endedMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
+            resultDiv.innerHTML += `<strong>已結束：</strong>`;
+            endedMeetings.forEach((meeting, index) => {
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index);
+                resultDiv.appendChild(meetingItem);
+            });
+        }
 
-        // 如果没有任何会议
+        // 如果沒有任何會議
         if (ongoingMeetings.length === 0 && upcomingMeetings.length === 0 && waitingMeetings.length === 0 && endedMeetings.length === 0) {
             resultDiv.textContent = '今日沒有會議安排。';
         }
@@ -179,10 +240,12 @@ if (endedMeetings.length > 0) {
     }
 }
 
-// 使用事件委托处理点击事件
+// 使用事件委託處理點擊事件
 document.getElementById('meetingsearch-account-results').addEventListener('click', function(event) {
     const target = event.target.closest('.meetingsearch-meeting-item');
-    if (target) {
+
+    // 僅當點擊的目標是收合按鈕時才進行操作
+    if (target && event.target.tagName.toLowerCase() === 'button') {
         const infoDiv = target.querySelector('.meetingsearch-info');
         if (infoDiv) {
             infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
