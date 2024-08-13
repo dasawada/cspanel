@@ -44,7 +44,6 @@
         .meetingsearch-meeting-item {
             margin-bottom: 5px;
             padding: 10px;
-            cursor: pointer;
             border-radius: 5px;
             background-color: #f5f5f5;
         }
@@ -62,6 +61,9 @@
             max-height: 200px;
             overflow-y: auto;
 			font-size: 11px;
+			    position: relative; /* 相对于父元素定位 */
+    z-index: 10; /* 设置较高的 z-index 以确保在图层上方 */
+	cursor: default;
         }
 
         .meetingsearch-ongoing {
@@ -76,3 +78,11 @@
         .meetingsearch-ended {
             color: #A9A9A9;
         }
+		
+.meeting-icon {
+    position: absolute;
+    right: 10px; /* 距離右側的距離 */
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    width: 16px; /* 設置圖標大小 */
+}
