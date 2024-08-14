@@ -22,41 +22,41 @@ function meetingsearchParseTime(input) {
     return null;
 }
 
-// 创建会议信息项的函数
+// 創建會議資訊項的函數
 function createMeetingItem(meeting, className, index, accountid) {
     const meetingDiv = document.createElement('div');
     const uniqueId = `meeting-${className}-${index}`;  // 生成唯一ID
     meetingDiv.className = `meetingsearch-meeting-item ${className}`;
     meetingDiv.id = uniqueId;
 
-    // 创建 + / - 按钮，用于收合
+    // 創建 + / - 按鈕，用於收合
     const toggleButton = document.createElement('button');
-    toggleButton.textContent = '+'; // 初始状态为 "+"
-    toggleButton.style.marginRight = '10px'; // 按钮和文本之间的间距
+    toggleButton.textContent = '+';// 初始狀態為 "+"
+    toggleButton.style.marginRight = '10px'; // 按鈕和文本之間的間距
 
-    // 为按钮添加点击事件
+    // 為按鈕添加點擊事件
     toggleButton.addEventListener('click', function(event) {
-        // 切换按钮的文本
+        // 切換按鈕的文本
         toggleButton.textContent = toggleButton.textContent === '+' ? '-' : '+';
 
-        // 切换会议信息的显示状态
+        // 切換會議資訊的顯示狀態
         const infoDiv = meetingDiv.querySelector('.meetingsearch-info');
         if (infoDiv) {
             infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
         }
 
-        // 阻止事件冒泡，防止点击按钮时触发父元素的点击事件
+        // 阻止事件冒泡，防止點擊按鈕時觸發父元素的點擊事件
         event.stopPropagation();
     });
 
-    // 创建会议内容和超链接元素
+    // 創建會議內容和link元素
     const meetingContent = document.createElement('span');
     meetingContent.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
 
-    // 创建图标并包裹在超链接中
+    // 創建圖示並包裹在link中
     const iconLink = document.createElement('a');
     iconLink.href = meeting.link;
-    iconLink.target = '_blank'; // 在新标签页打开链接
+    iconLink.target = '_blank'; 
 
     const iconImg = document.createElement('img');
     if (meeting.type.toLowerCase() === 'voov') {
@@ -66,53 +66,53 @@ function createMeetingItem(meeting, className, index, accountid) {
         iconImg.src = 'img/zoom.png';
         iconImg.alt = 'zoom';
     }
-    iconImg.className = 'meeting-icon'; // 设置图标的 CSS 类名
-    iconLink.appendChild(iconImg); // 将图标图片添加到超链接中
+    iconImg.className = 'meeting-icon'; // 設定圖示的 CSS 類名
+    iconLink.appendChild(iconImg); // 將圖示圖片添加到超連結中
 
-    // 将内容、图标链接和文本链接添加到 meetingDiv 中
-    const parentDiv = document.createElement('div'); // 创建上一层元素
-    parentDiv.style.position = 'relative'; // 父元素设置为相对定位
+    // 將內容、圖示連結和文本連結添加到 meetingDiv 中
+    const parentDiv = document.createElement('div'); //創建上一層元素
+    parentDiv.style.position = 'relative'; // 創建上一層元素
 
     parentDiv.appendChild(toggleButton);
     parentDiv.appendChild(meetingContent);
-    parentDiv.appendChild(iconLink); // 添加图标链接
+    parentDiv.appendChild(iconLink); // 添加圖示連結
 
-    meetingDiv.appendChild(parentDiv); // 将 parentDiv 添加到 meetingDiv 中
+    meetingDiv.appendChild(parentDiv); // 將 parentDiv 添加到 meetingDiv 中
 
-    // 创建会议信息的 div
+    // 創建會議資訊 div
     const infoDiv = document.createElement('div');
     infoDiv.className = 'meetingsearch-info';
     infoDiv.id = `info-${uniqueId}`;  // 生成唯一ID
-    infoDiv.innerHTML = `会议信息：<br>${meeting.info.replace(/\n/g, '<br>')}`;
-    infoDiv.style.display = 'none'; // 初始状态下隐藏会议信息
+    infoDiv.innerHTML = `會議資訊：<br>${meeting.info.replace(/\n/g, '<br>')}`;
+    infoDiv.style.display = 'none'; // 初始狀態下隱藏會議資訊
 
-    // 创建没有任何样式的 account 信息 div，并将其加入 infoDiv 中
+    // 創建沒有任何樣式的 account 資訊 div，並將其加入 infoDiv 中
     const accountDiv = document.createElement('div');
-    const accountSpan = createCopyableAccountElement(accountid); // 使用 createCopyableAccountElement 函数创建可复制的 account 信息
-    accountDiv.appendChild(accountSpan); // 将 account 信息添加到 div 中
+    const accountSpan = createCopyableAccountElement(accountid); // 使用 createCopyableAccountElement 函數創建可複製的 account 資訊
+    accountDiv.appendChild(accountSpan); // 將 account 資訊添加到 div 中
 
-    infoDiv.appendChild(accountDiv); // 将 accountDiv 添加到会议信息 div 中
+    infoDiv.appendChild(accountDiv); // 將 accountDiv 添加到會議資訊 div 中
 
-    // 将会议信息 div 添加到 meetingDiv 中
+    // 將會議資訊 div 添加到 meetingDiv 中
     meetingDiv.appendChild(infoDiv);
 
-    return meetingDiv; // 返回创建的元素
+    return meetingDiv; // 返回創建的元素
 }
 
-// 创建可复制的 account 信息元素的函数
+// 創建可複製的 account 資訊元素的函數
 function createCopyableAccountElement(accountid) {
     const accountSpan = document.createElement('span');
     accountSpan.textContent = accountid;
-    accountSpan.className = 'meeting-now-account-span'; // 添加 CSS 类
+    accountSpan.className = 'meeting-now-account-span'; // 添加 CSS 類
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray'; // 初始颜色设置为灰色
+    accountSpan.style.color = 'gray'; // 初始顏色設定為灰色
 
-    // 悬停变色效果
+    // 懸停變色效果
     accountSpan.addEventListener('mouseover', function() {
         accountSpan.style.color = 'blue';
     });
     accountSpan.addEventListener('mouseout', function() {
-        accountSpan.style.color = 'gray'; // 悬停离开时恢复为灰色
+        accountSpan.style.color = 'gray'; // 懸停離開時恢復為灰色
     });
 
     return accountSpan;
@@ -263,13 +263,13 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
     }
 }
 
-// 使用事件委托处理所有点击事件
+// 使用事件委託處理所有點擊事件
 document.getElementById('meetingsearch-account-results').addEventListener('click', function(event) {
     const targetMeetingItem = event.target.closest('.meetingsearch-meeting-item');
     const targetAccountSpan = event.target.closest('.meeting-now-account-span');
 
     if (targetAccountSpan) {
-        // 处理点击账号的复制事件
+        // 處理點擊帳號的複製事件
         try {
             const tempInput = document.createElement('input');
             tempInput.value = targetAccountSpan.textContent;
@@ -278,21 +278,21 @@ document.getElementById('meetingsearch-account-results').addEventListener('click
             document.execCommand('copy');
             document.body.removeChild(tempInput);
 
-            // 改变文本颜色表示已复制
+            // 改變文本顏色表示已複製
             const originalColor = targetAccountSpan.style.color;
-            targetAccountSpan.style.color = 'green'; // 复制后变绿色
+            targetAccountSpan.style.color = 'green';// 複製後變綠色
             setTimeout(function() {
-                targetAccountSpan.style.color = originalColor; // 1秒后恢复原颜色
+                targetAccountSpan.style.color = originalColor;// 1秒後恢復原顏色
             }, 1000);
         } catch (error) {
             console.error('複製失敗', error);
-            targetAccountSpan.style.color = 'red'; // 如果复制失败，文本变为红色
+            targetAccountSpan.style.color = 'red';// 如果複製失敗，文本變為紅色
             setTimeout(function() {
-                targetAccountSpan.style.color = originalColor; // 1秒后恢复原颜色
+                targetAccountSpan.style.color = originalColor; // 1秒後恢復原顏色
             }, 1000);
         }
     } else if (targetMeetingItem && event.target.tagName.toLowerCase() === 'button') {
-        // 处理 + / - 按钮的点击事件
+        // 處理 + / - 按鈕的點擊事件
         const infoDiv = targetMeetingItem.querySelector('.meetingsearch-info');
         if (infoDiv) {
             infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
@@ -304,7 +304,7 @@ document.getElementById('meetingsearch-account-results').addEventListener('mouse
     const targetAccountSpan = event.target.closest('.meeting-now-account-span');
     
     if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'black'; // 悬停时变蓝色
+        targetAccountSpan.style.color = 'black'; // 懸停時變藍色
     }
 });
 
@@ -312,7 +312,7 @@ document.getElementById('meetingsearch-account-results').addEventListener('mouse
     const targetAccountSpan = event.target.closest('.meeting-now-account-span');
     
     if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'gray'; // 悬停离开时恢复灰色
+        targetAccountSpan.style.color = 'gray'; // 懸停離開時恢復灰色
     }
 });
 
