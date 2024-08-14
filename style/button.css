@@ -169,7 +169,7 @@ textarea:focus {
 /* 隱藏的複製按鈕 */
 #ShrtURL_copyButton {
     visibility: hidden; /* 隱藏但仍保留空間 */
-    width: 85px; /* 固定寬度，可以根據需要調整 */
+    width: 60px; /* 固定寬度，可以根據需要調整 */
 }
 
 /* 短網址輸出欄 */
@@ -335,3 +335,31 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
         .hover-overlay br {
             line-height: 0; /* 確保 <br> 不會增加多餘的間距 */
         }
+		
+#shorturl_clearButton {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    position: absolute;
+    bottom: 8px; /* 確保距離父元素底部一定距離 */
+    right: 5px; /* 確保距離父元素右側一定距離 */
+}
+
+#shorturl_clearButton:hover {
+    opacity: 0.6;
+}
+
+#shorturl_clearButton i { /* Font Awesome 图标的样式 */
+    font-size: 16px; /* 根据需要调整图标大小 */
+    color: inherit; /* 继承按钮的颜色 */
+}
+
+#shorturl_clearButton:hover i {
+    opacity: 0.6;
+}
