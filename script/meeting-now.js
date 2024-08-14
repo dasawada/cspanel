@@ -80,15 +80,27 @@ function createMeetingItem(meeting, className, index) {
 
     meetingDiv.appendChild(parentDiv); // 將 parentDiv 添加到 meetingDiv 中
 
+    // 創建會議資訊的 div
     const infoDiv = document.createElement('div');
     infoDiv.className = 'meetingsearch-info';
     infoDiv.id = `info-${uniqueId}`;  // 生成唯一ID
     infoDiv.innerHTML = `會議資訊：<br>${meeting.info.replace(/\n/g, '<br>')}`;
     infoDiv.style.display = 'none'; // 初始狀態下隱藏會議資訊
+
+    // 直接顯示帳號文字
+    const accountText = document.createElement('p');
+    accountText.textContent = `會議開立帳號：${meeting.account}`;
+    accountText.style.marginTop = '10px';
+
+    // 將帳號文字添加到會議資訊 div 中
+    infoDiv.appendChild(accountText);
+
+    // 將會議資訊 div 添加到 meetingDiv 中
     meetingDiv.appendChild(infoDiv);
 
     return meetingDiv; // 別忘了返回創建的元素
 }
+
 
 // 搜尋並顯示會議的主要函數
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
@@ -116,6 +128,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             const meetingEndTime = meetingsearchParseTime(meetingTimeRange[1]); // 會議結束時間
             const meetingType = rows[i][5]; // 會議類型 (F)
             const meetingInfo = rows[i][7]; // 會議資訊 (H)
+            const accountid = rows[i][9]; // 會議開立帳號 (J)
             const meetingLink = rows[i][10]; // 會議連結 (K)
 
             const today = new Date();
@@ -145,7 +158,8 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                         endTime: meetingEndTime,
                         info: meetingInfo,
                         type: meetingType,
-                        link: meetingLink
+                        link: meetingLink,
+                        account: accountid // 正確傳遞 account 值
                     });
                 }
                 // 檢查會議是否即將開始（半小時內）
@@ -160,7 +174,8 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                             endTime: meetingEndTime,
                             info: meetingInfo,
                             type: meetingType,
-                            link: meetingLink
+                            link: meetingLink,
+                            account: accountid // 正確傳遞 account 值
                         });
                     } else {
                         waitingMeetings.push({  // 如果時間差超過半小時
@@ -169,7 +184,8 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                             endTime: meetingEndTime,
                             info: meetingInfo,
                             type: meetingType,
-                            link: meetingLink
+                            link: meetingLink,
+                            account: accountid // 正確傳遞 account 值
                         });
                     }
                 }
@@ -181,7 +197,8 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                         endTime: meetingEndTime,
                         info: meetingInfo,
                         type: meetingType,
-                        link: meetingLink
+                        link: meetingLink,
+                        account: accountid // 正確傳遞 account 值
                     });
                 }
             }
@@ -239,6 +256,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         document.getElementById('meetingsearch-error').textContent = '請求失敗：' + error.message;
     }
 }
+
 
 // 使用事件委託處理點擊事件
 document.getElementById('meetingsearch-account-results').addEventListener('click', function(event) {
