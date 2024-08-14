@@ -87,17 +87,30 @@ function createMeetingItem(meeting, className, index, accountid) {
     infoDiv.innerHTML = `會議資訊：<br>${meeting.info.replace(/\n/g, '<br>')}`;
     infoDiv.style.display = 'none'; // 初始狀態下隱藏會議資訊
 
-    // 創建會議開立帳號的文本並設為可點擊
-    const accountText = document.createElement('p');
-    accountText.textContent = `會議開立帳號：${accountid}`;
-    accountText.style.marginTop = '10px';
-    accountText.className = 'meeting-now-account';
-    accountText.style.cursor = 'pointer';
+// 創建會議開立帳號的文本並設為可點擊
+const accountText = document.createElement('p');
+const accountTextContent = `會議開立帳號：${accountid}`; // 使用模板字符串创建内容
+accountText.textContent = accountTextContent; 
+accountText.style.marginTop = '10px';
+accountText.className = 'meeting-now-account';
+accountText.style.cursor = 'pointer';
 
-    // 點擊帳號文本時自動複製到剪貼簿，使用自定義函數
-    accountText.addEventListener('click', function() {
-        meetingNowCopyToClipboard(accountid, accountText);
+accountText.addEventListener('click', function() {
+    // 复制前端显示的文本内容，而不是直接复制 accountid
+    const textToCopy = accountText.textContent.split('：')[1]; // 仅复制“会議開立帳號：”之后的部分
+    navigator.clipboard.writeText(textToCopy).then(function() {
+        accountText.textContent = '已複製！';
+        setTimeout(() => {
+            accountText.textContent = accountTextContent; // 还原显示的文本内容
+        }, 2000);
+    }).catch(function(error) {
+        console.error('複製失敗', error);
+        accountText.textContent = '複製失敗';
+        setTimeout(() => {
+            accountText.textContent = accountTextContent; // 还原显示的文本内容
+        }, 2000);
     });
+});
 
     // 將帳號文本添加到會議資訊 div 中
     infoDiv.appendChild(accountText);
