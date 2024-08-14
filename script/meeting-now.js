@@ -24,7 +24,7 @@ function meetingsearchParseTime(input) {
 }
 
 // 創建會議項目的函數
-function createMeetingItem(meeting, className, index) {
+function createMeetingItem(meeting, className, index, accountid) {
     const meetingDiv = document.createElement('div');
     const uniqueId = `meeting-${className}-${index}`;  // 生成唯一ID
     meetingDiv.className = `meetingsearch-meeting-item ${className}`;
@@ -87,12 +87,19 @@ function createMeetingItem(meeting, className, index) {
     infoDiv.innerHTML = `會議資訊：<br>${meeting.info.replace(/\n/g, '<br>')}`;
     infoDiv.style.display = 'none'; // 初始狀態下隱藏會議資訊
 
-    // 直接顯示帳號文字
+    // 創建會議開立帳號的文本並設為可點擊
     const accountText = document.createElement('p');
-    accountText.textContent = `會議開立帳號：${meeting.account}`;
+    accountText.textContent = `會議開立帳號：${accountid}`;
     accountText.style.marginTop = '10px';
+    accountText.className = 'meeting-now-account';
+    accountText.style.cursor = 'pointer';
 
-    // 將帳號文字添加到會議資訊 div 中
+    // 點擊帳號文本時自動複製到剪貼簿，使用自定義函數
+    accountText.addEventListener('click', function() {
+        meetingNowCopyToClipboard(accountid, accountText);
+    });
+
+    // 將帳號文本添加到會議資訊 div 中
     infoDiv.appendChild(accountText);
 
     // 將會議資訊 div 添加到 meetingDiv 中
@@ -100,7 +107,6 @@ function createMeetingItem(meeting, className, index) {
 
     return meetingDiv; // 別忘了返回創建的元素
 }
-
 
 // 搜尋並顯示會議的主要函數
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
@@ -212,7 +218,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             ongoingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
             resultDiv.innerHTML += `<strong>進行中：</strong>`;
             ongoingMeetings.forEach((meeting, index) => {
-                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index);
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
             });
         }
@@ -222,7 +228,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
             resultDiv.innerHTML += `<strong>即將開始 (半小時內)：</strong>`;
             upcomingMeetings.forEach((meeting, index) => {
-                const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index);
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
             });
         }
@@ -232,7 +238,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             waitingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
             resultDiv.innerHTML += `<strong>等待中：</strong>`;
             waitingMeetings.forEach((meeting, index) => {
-                const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index);
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
             });
         }
@@ -242,7 +248,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             endedMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));  // 按照時間排序
             resultDiv.innerHTML += `<strong>已結束：</strong>`;
             endedMeetings.forEach((meeting, index) => {
-                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index);
+                const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
             });
         }
