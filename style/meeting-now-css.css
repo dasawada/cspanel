@@ -81,8 +81,14 @@
 		
 .meeting-icon {
     position: absolute;
-    right: 10px; /* 距離右側的距離 */
+    right: 0px; /* 距離右側的距離 */
     top: 50%;
     transform: translateY(-50%); /* 垂直居中 */
     width: 16px; /* 設置圖標大小 */
+}
+
+.meeting-now-account-span {
+    cursor: pointer;
+	color: gray; /* 默认显示灰色 */
+    transition: color 0.3s; /* 添加过渡效果 */
 }
