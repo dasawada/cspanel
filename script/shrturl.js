@@ -83,3 +83,20 @@ function checkInputValue() {
 
     // 初始化檢查按鈕狀態
     document.addEventListener('DOMContentLoaded', checkInputValue);
+	
+// 清除指定的輸入欄位
+function shorturl_clearInput() {
+    // 清空欄位的邏輯
+    document.getElementById('longUrl').value = ''; // 清空输入字段
+    document.getElementById('shortUrlOutput').value = ''; // 清空输出字段
+
+    // 獲取垃圾桶按鈕元素並添加動畫效果
+    const icon = document.querySelector('#shorturl_clearButton i');
+    if (icon) {
+        icon.classList.add('trash-animated');
+
+        setTimeout(() => {
+            icon.classList.remove('trash-animated');
+        }, 1000); // 动画持续时间1秒
+    }
+}
