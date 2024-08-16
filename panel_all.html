@@ -477,12 +477,38 @@ setTimeout(showAllRows, 1000);\n\
 <div class="meeting-check-search">
     <b>[騰訊] 衝堂查詢</b>
     <div id="meeting-check-form-container">
+<form id="meeting-check-form" style="display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;">
+    <!-- 第一行 -->
+    <div class="meeting-check-form-group">
+        <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+    </div>
+    <div class="meeting-check-form-group">
+        <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
+    </div>
+    <div class="meeting-check-form-group">
+        <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
+    </div>
+    <div class="meeting-check-form-group">
+        <button type="submit" style="width: 100%;">查詢</button>
+    </div>
 
-        <form id="meeting-check-form" style="display: flex; flex-wrap: wrap; align-items: center; gap: 10px;">
-            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
-    <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+    <!-- 第二行 -->
+    <div class="meeting-check-form-group">
+        <label><input type="radio" name="meeting-type" value="長週期" checked> 長週期</label>
+    </div>
+    <div class="meeting-check-form-group">
+        <label><input type="radio" name="meeting-type" value="短週期"> 短週期</label>
+    </div>
+    <div class="meeting-check-form-group"></div> <!-- 留空 -->
+    <div class="meeting-check-form-group"></div> <!-- 留空 -->
+</form>
+	<div id="meeting-check-result-scrollbar">
+        <div id="meeting-check-result"></div>
+        <div id="meeting-check-error"></div>
+        <div id="meeting-check-account-results"></div>
+	</div>
+    </div>
 </div>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         flatpickr("#meeting-check-date", {
@@ -493,23 +519,6 @@ setTimeout(showAllRows, 1000);\n\
         });
     });
 </script>
-            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
-                <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
-            </div>
-            <div class="meeting-check-form-group" style="flex: 1 1 20%;">
-                <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
-            </div>
-            <div class="meeting-check-form-group" style="flex: 1 1 15%">
-                <button type="submit" style="width: 100%;">查詢</button>
-            </div>
-        </form>
-	<div id="meeting-check-result-scrollbar">
-        <div id="meeting-check-result"></div>
-        <div id="meeting-check-error"></div>
-        <div id="meeting-check-account-results"></div>
-	</div>
-    </div>
-</div>
 	<script src="script/meeting-match-check.js"></script>
 	<script src="script/meeting-now.js"></script>
     <script src="script/imgcp2bx.js"></script>
