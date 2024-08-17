@@ -132,7 +132,14 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
 function displayResults(accountResults) {
     const resultDiv = document.getElementById('meeting-check-result');
     const accountResultsDiv = document.getElementById('meeting-check-account-results');
-    accountResultsDiv.innerHTML = '';
+    
+    // 檢查父容器是否存在
+    if (!accountResultsDiv) {
+        console.error('父容器 meeting-check-account-results 不存在！');
+        return;
+    }
+
+    accountResultsDiv.innerHTML = '';  // 清空之前的結果
 
     resultDiv.textContent = '查詢結果如下:';
     resultDiv.style.color = 'green';
@@ -150,54 +157,61 @@ function displayResults(accountResults) {
         accountResult.className = 'meeting-check-account-title';
         accountResult.innerHTML = `<strong>帳號: </strong>`;
 
-        // 使用 createCopyableAccountElement 創建可點擊的帳號元素
+        // 創建可複製的帳號元素並插入
         const accountSpan = createCopyableAccountElement(account);
-        accountResult.appendChild(accountSpan); //
+        accountResult.appendChild(accountSpan);
 
+        // 沒有會議的帳號
         if (!accountResults[account].hasMeeting) {
             noMeetingGroup.appendChild(accountResult);
         } else {
+            // 有會議的帳號
             accountResults[account].overlappingMeetings.forEach(meeting => {
                 const meetingDiv = document.createElement('div');
                 meetingDiv.className = 'meeting-check-card';
 
-                // 建立會議卡片的頭部
-                const meetingHeader = document.createElement('div');
-                meetingHeader.className = 'meeting-check-title';
-                meetingHeader.innerHTML = `<i class="fa fa-calendar"></i> ${meeting.name} <i class="fa fa-plus"></i>`;
-                meetingHeader.style.cursor = 'pointer';
+// 建立會議卡片的標題部分
+const meetingHeader = document.createElement('div');
+meetingHeader.className = 'meeting-check-title';
+meetingHeader.innerHTML = `<i class="fa fa-calendar"></i> ${meeting.name} <i class="fa fa-plus toggle-icon"></i>`;
+meetingHeader.style.position = 'relative'; // 確保父元素是相對定位
+meetingHeader.style.cursor = 'pointer';
 
                 // 會議詳細內容
                 const meetingDetails = document.createElement('div');
                 meetingDetails.className = 'meeting-check-info';
                 meetingDetails.style.display = 'none'; // 初始隱藏
+
+                // 插入會議的詳細內容
                 meetingDetails.innerHTML = `
                     <div>
-                        <i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
-                    </div>
+                    <i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
+                    　<i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
+					</div>
                     <div>
                         <i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
-                    </div>
-                    <div>
-                        <i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
                     </div>
                     <p class="meeting-check-details">
                         <i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
                     </p>
                 `;
 
-                // 點擊會議頭部展開/收合內容
-                meetingHeader.addEventListener('click', function() {
-                    if (meetingDetails.style.display === 'none') {
-                        meetingDetails.style.display = 'block';
-                        meetingHeader.querySelector('i.fa-plus').className = 'fa fa-minus';
-                    } else {
-                        meetingDetails.style.display = 'none';
-                        meetingHeader.querySelector('i.fa-minus').className = 'fa fa-plus';
-                    }
-                });
+                // 為會議卡片內部插入可複製的帳號元素
+                const meetingAccountSpan = createCopyableAccountElement(account);
+                meetingDetails.appendChild(meetingAccountSpan);
 
-                // 將頭部和內容加入卡片
+// 展開/收合會議卡片的內容
+meetingHeader.addEventListener('click', function() {
+    if (meetingDetails.style.display === 'none') {
+        meetingDetails.style.display = 'block';
+        meetingHeader.querySelector('.toggle-icon').className = 'fa fa-minus toggle-icon'; // 切換為減號
+    } else {
+        meetingDetails.style.display = 'none';
+        meetingHeader.querySelector('.toggle-icon').className = 'fa fa-plus toggle-icon'; // 切換為加號
+    }
+});
+
+                // 將會議標題和內容添加到卡片中
                 meetingDiv.appendChild(meetingHeader);
                 meetingDiv.appendChild(meetingDetails);
                 hasMeetingGroup.appendChild(meetingDiv);
@@ -205,68 +219,64 @@ function displayResults(accountResults) {
         }
     }
 
+    // 如果有可排會議的帳號，顯示在無會議組中
     if (noMeetingGroup.children.length > 1) {
         accountResultsDiv.appendChild(noMeetingGroup);
     }
 
+    // 如果有已排會議的帳號，顯示在有會議組中
     if (Object.values(accountResults).some(result => result.hasMeeting)) {
         accountResultsDiv.appendChild(hasMeetingGroup);
     }
 }
-// 創建可複製的 account 資訊元素的函數（不再添加事件）
+
 function createCopyableAccountElement(accountid) {
     const accountSpan = document.createElement('span');
     accountSpan.textContent = accountid;
-    accountSpan.className = 'meeting-check-account-span'; // 添加 CSS 類
+    accountSpan.className = 'meeting-now-account-span'; // 確保使用這個 class
     accountSpan.style.cursor = 'pointer';
     accountSpan.style.color = 'gray'; // 初始顏色設定為灰色
+
     return accountSpan;
 }
 
 // 使用事件委託處理所有點擊事件
 document.getElementById('meeting-check-account-results').addEventListener('click', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-now-account-span'); // 尋找帳號 span
+    const targetAccountSpan = event.target.closest('.meeting-now-account-span'); // 確保使用的是 .meeting-now-account-span
 
     if (targetAccountSpan) {
         // 處理點擊帳號的複製事件
-        try {
-            const tempInput = document.createElement('input');
-            tempInput.value = targetAccountSpan.textContent;
-            document.body.appendChild(tempInput);
-            tempInput.select();
-            document.execCommand('copy');
-            document.body.removeChild(tempInput);
-
-            // 改變文本顏色表示已複製
+        navigator.clipboard.writeText(targetAccountSpan.textContent)
+        .then(function() {
             const originalColor = targetAccountSpan.style.color;
             targetAccountSpan.style.color = 'green'; // 複製後變綠色
             setTimeout(function() {
-                targetAccountSpan.style.color = originalColor; // 1秒後恢復原顏色
+                targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
             }, 1000);
-        } catch (error) {
+        })
+        .catch(function(error) {
             console.error('複製失敗', error);
-            targetAccountSpan.style.color = 'red'; // 如果複製失敗，文本變為紅色
+            targetAccountSpan.style.color = 'red'; // 複製失敗變紅色
             setTimeout(function() {
-                targetAccountSpan.style.color = originalColor; // 1秒後恢復原顏色
+                targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
             }, 1000);
-        }
+        });
     }
 });
 
-// 事件委託：鼠標懸停時變色
+// 懸停變色效果
 document.getElementById('meeting-check-account-results').addEventListener('mouseover', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-check-account-span');
-
+    const targetAccountSpan = event.target.closest('.meeting-now-account-span');
     if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'blue'; // 懸停時變藍色
+        targetAccountSpan.style.color = 'blue';
     }
 });
 
-// 事件委託：鼠標離開時恢復顏色
+// 移開時恢復顏色
 document.getElementById('meeting-check-account-results').addEventListener('mouseout', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-check-account-span');
-
+    const targetAccountSpan = event.target.closest('.meeting-now-account-span');
     if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'gray'; // 懸停離開時恢復灰色
+        targetAccountSpan.style.color = 'gray';
     }
 });
+

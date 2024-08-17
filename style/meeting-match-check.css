@@ -29,7 +29,6 @@
 }
 
 #meeting-check-result {
-
     color: green;
 }
 
@@ -39,8 +38,7 @@
 }
 
 #meeting-check-account-results {
-
-    width: 310px;
+    width: auto;
 }
 
 .meeting-check-result-group {
@@ -74,15 +72,16 @@
 
 .meeting-check-card {
     border-bottom: 1px solid #ddd;
-    padding-bottom: 8px;
+    padding-bottom: 0px;
     margin-bottom: 8px;
     border-radius: 5px;
     background: linear-gradient(to top, #f0f0f0 5%, #ffffff 100%);
-    width: 290px; /* 調整寬度以確保與其他元素對齊 */
+    width: auto; /* 調整寬度以確保與其他元素對齊 */
 }
 
 .meeting-check-title {
-    margin-top: 0;
+    margin-top: 5px;
+	margin-left: 5px;
     color: #333;
     margin-bottom: 0;
 }
@@ -104,7 +103,6 @@
 }
 
 .meeting-check-details {
-    margin-top: 11px;
     font-style: italic;
     color: #666;
     font-size: 10px;
@@ -139,3 +137,10 @@
     color: #ffffff; /* 選中日期的字體顏色 */
 }
 
+.meeting-check-title .toggle-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    cursor: pointer;
+}
