@@ -148,7 +148,11 @@ function displayResults(accountResults) {
     for (const account in accountResults) {
         const accountResult = document.createElement('div');
         accountResult.className = 'meeting-check-account-title';
-        accountResult.innerHTML = `<strong>帳號: ${account}</strong>`;
+        accountResult.innerHTML = `<strong>帳號: </strong>`;
+
+        // 使用 createCopyableAccountElement 創建可點擊的帳號元素
+        const accountSpan = createCopyableAccountElement(account);
+        accountResult.appendChild(accountSpan); //
 
         if (!accountResults[account].hasMeeting) {
             noMeetingGroup.appendChild(accountResult);
@@ -209,3 +213,60 @@ function displayResults(accountResults) {
         accountResultsDiv.appendChild(hasMeetingGroup);
     }
 }
+// 創建可複製的 account 資訊元素的函數（不再添加事件）
+function createCopyableAccountElement(accountid) {
+    const accountSpan = document.createElement('span');
+    accountSpan.textContent = accountid;
+    accountSpan.className = 'meeting-check-account-span'; // 添加 CSS 類
+    accountSpan.style.cursor = 'pointer';
+    accountSpan.style.color = 'gray'; // 初始顏色設定為灰色
+    return accountSpan;
+}
+
+// 使用事件委託處理所有點擊事件
+document.getElementById('meeting-check-account-results').addEventListener('click', function(event) {
+    const targetAccountSpan = event.target.closest('.meeting-now-account-span'); // 尋找帳號 span
+
+    if (targetAccountSpan) {
+        // 處理點擊帳號的複製事件
+        try {
+            const tempInput = document.createElement('input');
+            tempInput.value = targetAccountSpan.textContent;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+
+            // 改變文本顏色表示已複製
+            const originalColor = targetAccountSpan.style.color;
+            targetAccountSpan.style.color = 'green'; // 複製後變綠色
+            setTimeout(function() {
+                targetAccountSpan.style.color = originalColor; // 1秒後恢復原顏色
+            }, 1000);
+        } catch (error) {
+            console.error('複製失敗', error);
+            targetAccountSpan.style.color = 'red'; // 如果複製失敗，文本變為紅色
+            setTimeout(function() {
+                targetAccountSpan.style.color = originalColor; // 1秒後恢復原顏色
+            }, 1000);
+        }
+    }
+});
+
+// 事件委託：鼠標懸停時變色
+document.getElementById('meeting-check-account-results').addEventListener('mouseover', function(event) {
+    const targetAccountSpan = event.target.closest('.meeting-check-account-span');
+
+    if (targetAccountSpan) {
+        targetAccountSpan.style.color = 'blue'; // 懸停時變藍色
+    }
+});
+
+// 事件委託：鼠標離開時恢復顏色
+document.getElementById('meeting-check-account-results').addEventListener('mouseout', function(event) {
+    const targetAccountSpan = event.target.closest('.meeting-check-account-span');
+
+    if (targetAccountSpan) {
+        targetAccountSpan.style.color = 'gray'; // 懸停離開時恢復灰色
+    }
+});

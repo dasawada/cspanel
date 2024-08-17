@@ -1,7 +1,6 @@
 #meeting-check-form-container {
     width: 320px; /* 調整寬度以匹配結果區域 */
-    margin: 0 auto;
-    margin-bottom: 20px; /* 增加表單與結果區域之間的間距 */
+    margin: 0;
     height: 403px;
 }
 
@@ -139,3 +138,4 @@
     background-color: #3b82f6; /* 選中日期的背景顏色 */
     color: #ffffff; /* 選中日期的字體顏色 */
 }
+
