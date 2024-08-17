@@ -303,8 +303,8 @@ transform: translateZ(0); /* 强制 GPU 渲染 */
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     z-index: 898;
-    width: 320px;
-    height: 403px;
+    width: 340px;
+    height: auto;
     left: 1210px;
     top: 0px;
     border-radius: 10px;
