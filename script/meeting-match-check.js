@@ -52,14 +52,14 @@ function parseTime(input) {
 
 async function checkMeeting(date, startTime, endTime, meetingType) {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-    const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';
     
     // 根據選擇的類型設定搜尋的 Sheet 名稱
     let sheetName = '';
     if (meetingType === '長週期') {
-        sheetName = '長';  // 搜尋名為 "長" 的 sheet
+        sheetName = '「騰訊會議(長週期)」的副本';  // 搜尋名為 "長" 的 sheet
     } else if (meetingType === '短週期') {
-        sheetName = '短';  // 搜尋名為 "短" 的 sheet
+        sheetName = '「騰訊會議(短週期)」的副本';  // 搜尋名為 "短" 的 sheet
     }
 
     const range = `${sheetName}!A:L`;  // 假設數據在選定的 Sheet 的 A 到 L 列
@@ -83,41 +83,53 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
             6: '六'
         };
 
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 12) continue;
 
-            const meetingType = row[11]; // 會議類型 (L)
-            const account = row[5]; // 會議開立帳號 (F)
+for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 12) continue; // 保證行數據存在並且有足夠的列數
 
-            if (!meetingType || typeof meetingType !== 'string' || meetingType.toLowerCase() !== 'voov') continue;
+    const meetingName = row[0]; // 會議名稱 (A)
+    const startDate = new Date(row[1]); // 開始日期 (B)
+    const endDate = new Date(row[7]); // 結束日期 (H)
+    const meetingTimeRange = row[4] ? row[4].split('-') : null; // 時間範圍 (E)
+    const accountid = row[5]; // 會議開立帳號 (F)
+    const meetingInfo = row[6] ? row[6] : ''; // 會議資訊 (G)，如果不存在設置為空字串
+    const repeatPattern = row[2] ? row[2].split(',') : []; // 重複模式 (C)，如果不存在設置為空數組
 
-            if (account && !accountResults[account]) {
-                accountResults[account] = {
-                    hasMeeting: false,
-                    overlappingMeetings: []
-                };
-            }
+    // 檢查是否存在缺失的關鍵字段
+    if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
+        console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
+        continue; // 跳過這一行
+    }
 
-            const meetingName = row[0]; // 會議名稱 (A)
-            const startDate = new Date(row[1]); // 開始日期 (B)
-            const endDate = new Date(row[7]); // 結束日期 (H)
-            const repeatPattern = row[2] ? row[2].split(',') : []; // 重複模式 (C)
-            const meetingTimeRange = row[4].split('-'); // 時間範圍 (E)
-            const meetingStartTime = parseTime(meetingTimeRange[0]); // 會議開始時間
-            const meetingEndTime = parseTime(meetingTimeRange[1]); // 會議結束時間
-            const meetingInfo = row[6]; // 會議資訊 (G)
+    const meetingStartTime = parseTime(meetingTimeRange[0]);
+    const meetingEndTime = parseTime(meetingTimeRange[1]);
 
-            if (checkDate >= startDate && checkDate <= endDate && repeatPattern.includes(dayMap[checkDay])) {
-                if (startTime < meetingEndTime && endTime > meetingStartTime) {
-                    accountResults[account].hasMeeting = true;
-                    accountResults[account].overlappingMeetings.push({
-                        name: meetingName,
-                        startDate: startDate,
-                        endDate: endDate,
-                        repeatPattern: repeatPattern.join(','),
-                        timeRange: `${meetingStartTime} - ${meetingEndTime}`,
-                        info: meetingInfo
+    // 檢查時間範圍解析是否成功
+    if (!meetingStartTime || !meetingEndTime) {
+        console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
+        continue;
+    }
+
+    // 初始化 accountResults[accountid] 如果尚未存在
+    if (!accountResults[accountid]) {
+        accountResults[accountid] = {
+            hasMeeting: false,
+            overlappingMeetings: []
+        };
+    }
+
+    // 檢查會議日期和時間
+    if (checkDate >= startDate && checkDate <= endDate && repeatPattern.includes(dayMap[checkDay])) {
+        if (startTime < meetingEndTime && endTime > meetingStartTime) {
+            accountResults[accountid].hasMeeting = true;
+            accountResults[accountid].overlappingMeetings.push({
+                name: meetingName,
+                startDate: startDate,
+                endDate: endDate,
+                repeatPattern: repeatPattern.join(','),
+                timeRange: `${meetingStartTime} - ${meetingEndTime}`,
+                info: meetingInfo // 使用已定義的 meetingInfo
                     });
                 }
             }
