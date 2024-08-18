@@ -471,6 +471,21 @@ setTimeout(showAllRows, 1000);\n\
 	</div>
 </div>
 </div>
+<!--所有會議查詢-->
+<div id="all-meeting-search-panel">
+    <div class="all-meeting-search">
+        <div id="all-meeting-search-container">
+            <i class="fa fa-search"></i>
+            <input type="text" id="all-meeting-search-input" placeholder="搜尋">
+        </div>
+    </div>
+
+    <!-- 搜尋結果顯示區域 -->
+    <div id="all-meeting-result-container"></div>
+
+    <!-- 錯誤顯示區域 -->
+    <div id="all-meeting-error"></div>
+</div>
 <!--衝堂查詢-->
 <div class="meeting-check-search">
     <b>[騰訊] 衝堂查詢（已串接固定名單-副本）</b>
@@ -532,6 +547,7 @@ setTimeout(showAllRows, 1000);\n\
     <script src="script/IP_search_asn.js"></script>
 	<script src="script/assist_issue.js"></script>
 	<script src="script/as_num.js"></script>
+	<script src="script/meeting-all.js"></script>
 
 </body>
 </html>
