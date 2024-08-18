@@ -338,5 +338,3 @@ function createCopyableAccountElement(accountid) {
 
     return accountSpan;
 }
-
-
