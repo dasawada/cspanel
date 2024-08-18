@@ -422,3 +422,133 @@ h3 {
         .dropdown-menu-item[title="儲存至..."] {
             display: none !important;
         }
+		
+/* 搜尋按鈕面板的絕對定位 */
+#all-meeting-search-panel {
+    position: absolute;
+    top: 420px;
+    left: 880px;
+    width: 320;
+    max-width: 320px; /* 限制最大寬度 */
+	z-index: 895;
+
+}
+/* 搜尋框樣式 */
+#all-meeting-search-container {
+    display: flex;
+    align-items: center;
+    background-color: #f1f1f1;
+    border-radius: 20px;
+    padding: 5px;
+    width: auto;
+    position: relative; /* 讓結果框能夠依附在搜尋框下方 */
+    margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
+	z-index: 897;
+}
+
+#all-meeting-search-container i {
+    margin-right: 10px;
+    color: #333;
+}
+
+#all-meeting-search-input {
+    border: none;
+    outline: none;
+    background: none;
+    flex-grow: 1;
+    padding-left: 10px;
+}
+
+#all-meeting-result-container {
+    position: relative;
+    top: -25;
+    left: 1;
+    width: 316;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 896;
+    margin-top: 0px;
+    padding-top: 20px;
+    display: none;
+}
+
+#all-meeting-result-container div {
+    padding: 5px;
+    cursor: pointer;
+}
+
+#all-meeting-result-container div:last-child {
+    border-bottom: none;
+}
+
+#all-meeting-result-container div:hover {
+    background-color: #f1f1f1;
+}
+
+/* 錯誤顯示區域樣式 */
+#all-meeting-error {
+    margin-top: 20px;
+    color: red;
+    font-size: 14px;
+    width: 300px; /* 與搜尋框寬度一致 */
+    text-align: left;
+    padding-left: 10px;
+}
+
+/* 沒有結果的樣式 */
+.all-no-results {
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+}
+
+.all-meeting-result-item {
+    margin-bottom: 8px; /* 縮小間隔 */
+    font-size: 12px; /* 縮小字體 */
+}
+
+.all-meeting-title {
+    font-size: 14px; /* 會議名稱稍微大一點 */
+    font-weight: bold;
+    margin-bottom: 4px; /* 縮小標題與詳細資訊的間隔 */
+}
+
+.all-meeting-details {
+    background-color: #ffffff !important; /* 永遠為白色，無論是否 hover */
+    border-radius: 8px; /* 圓角 */
+    padding: 8px; /* 縮小內邊距 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
+    margin-bottom: 4px; /* 縮小每個項目之間的距離 */
+    max-height: 200px; /* 限制最大高度 */
+    overflow-y: auto; /* 超過高度時允許垂直滾動 */
+}
+
+/* 移除 hover 狀態下的背景顏色更改 */
+.all-meeting-details:hover {
+    background-color: #ffffff !important; /* 在 hover 時依然為白色 */
+}
+
+.all-meeting-details p {
+    margin: 2px 0; /* 縮小段落之間的間距 */
+    line-height: 1.2; /* 縮小行距 */
+}
+
+.all-meeting-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    position: relative;
+}
+
+.all-meeting-toggle-btn {
+    cursor: pointer;
+    font-size: 12px;
+    margin-left: 10px; /* 調整按鈕和標題的間距 */
+}
