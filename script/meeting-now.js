@@ -56,7 +56,7 @@ const meetingEndTime = meetingTimeRange[1] ? parseTime(meetingTimeRange[1]) : nu
 
 const accountid = row[5]; // 會議開立帳號 (F列)
 const meetingInfo = row[6]; // 會議資訊 (G列)
-const meetingLink = row[9]; // 會議連結 (J列)
+const meetingLink = row[10]; // 會議連結 (J列)
 const meetingType = row[11]; // 會議類型 (L列)
 
                 if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
