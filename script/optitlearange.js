@@ -24,15 +24,17 @@ document.querySelectorAll('.optitle-input').forEach(input => {
 
 // 檢查輸入框值，並生成或清除輸出
 function checkInputs() {
-    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
-    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
-    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
-    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    var consultantName = document.getElementById("consultantName").value.trim();
+    var studentName = document.getElementById("studentName").value.trim();
+    var parentName = document.getElementById("parentName").value.trim();
+    var invoiceNumber = document.getElementById("invoiceNumber").value.trim();
 
-    if (consultantName !== '' || studentName !== '' || parentName !== '' || invoiceNumber !== '') {
-        generateText();
+    // 如果所有輸入框都為空，則清除輸出並顯示預設文本
+    if (consultantName === '' && studentName === '' && parentName === '' && invoiceNumber === '') {
+        clearOutput(); // 清除輸出內容
     } else {
-        clearOutput(); // 當所有輸入框都為空時清除輸出內容
+        // 如果其中任一輸入框有值，則生成結果
+        generateText();
     }
 }
 
@@ -74,7 +76,7 @@ function generateText() {
 }
 
 
-// 清除文本
+// 清除文本，重置為預設文本
 function clearOutput() {
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
@@ -86,35 +88,12 @@ function clearOutput() {
         optitleOutput.style.opacity = "1";
     }, 1000);
 }
+// 每次輸入變化時，統一通過 checkInputs() 函數來檢查所有輸入框的值
+document.getElementById('consultantName').addEventListener('input', checkInputs);
+document.getElementById('studentName').addEventListener('input', checkInputs);
+document.getElementById('parentName').addEventListener('input', checkInputs);
+document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
 
-document.getElementById('consultantName').addEventListener('input', function() {
-    if (!this.value.trim()) {
-        clearOutput();
-    } else {
-        generateText();
-    }
-});
-document.getElementById('studentName').addEventListener('input', function() {
-    if (!this.value.trim()) {
-        clearOutput();
-    } else {
-        generateText();
-    }
-});
-document.getElementById('parentName').addEventListener('input', function() {
-    if (!this.value.trim()) {
-        clearOutput();
-    } else {
-        generateText();
-    }
-});
-document.getElementById('invoiceNumber').addEventListener('input', function() {
-    if (!this.value.trim()) {
-        clearOutput();
-    } else {
-        generateText();
-    }
-});
 
 // 清除指定的輸入欄位
 function clearFields() {
@@ -293,6 +272,11 @@ function search() {
 
 // 在 document 加載完成後設置事件監聽器
 document.addEventListener('DOMContentLoaded', function() {
+    // 將事件綁定到輸入框，輸入變化時檢查並更新結果
+    document.getElementById('consultantName').addEventListener('input', checkInputs);
+    document.getElementById('studentName').addEventListener('input', checkInputs);
+    document.getElementById('parentName').addEventListener('input', checkInputs);
+    document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
     document.getElementById('clearButton').addEventListener('click', clearFields);
 });
 let previousOptitleOutput = '';
