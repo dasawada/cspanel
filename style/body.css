@@ -535,7 +535,7 @@ h3 {
     background-color: #ffffff !important; /* 永遠為白色，無論是否 hover */
 	position: relative;
     border-radius: 8px; /* 圓角 */
-    padding: 8px; /* 縮小內邊距 */
+    padding: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
     margin-bottom: 4px; /* 縮小每個項目之間的距離 */
     max-height: 200px; /* 限制最大高度 */

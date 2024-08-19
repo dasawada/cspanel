@@ -142,11 +142,11 @@ function displayMeetings(meetings) {
                     justify-content: center;
                     width: fit-content;
                     position: absolute;
-                    right: 15px;
-                    bottom: 25px;
+                    right: 3px;
+                    bottom: 3px;
                     opacity: 0.7;
-					border-radius: 8px;
-					fontsize:10px;
+					border-radius: 7px;
+					font-size: 10px;
                 `;
                 meetingDetails.appendChild(tagElement);
             }
