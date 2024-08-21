@@ -57,9 +57,9 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
     // 根據選擇的類型設定搜尋的 Sheet 名稱
     let sheetName = '';
     if (meetingType === '長週期') {
-        sheetName = '「騰訊會議(長週期)」的副本';  // 搜尋名為 "長" 的 sheet
+        sheetName = '「騰訊會議(長週期)」';  // 搜尋名為 "長" 的 sheet
     } else if (meetingType === '短週期') {
-        sheetName = '「騰訊會議(短週期)」的副本';  // 搜尋名為 "短" 的 sheet
+        sheetName = '「騰訊會議(短週期)」';  // 搜尋名為 "短" 的 sheet
     }
 
     const range = `${sheetName}!A:L`;  // 假設數據在選定的 Sheet 的 A 到 L 列

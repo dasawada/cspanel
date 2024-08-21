@@ -26,7 +26,7 @@ function parseTime(input) {
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
     const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';
-    const ranges = ['「US版Zoom學員名單(5/15)」的副本!A:L', '「騰訊會議(長週期)」的副本!A:L', '「騰訊會議(短週期)」的副本!A:L'];
+    const ranges = ['「US版Zoom學員名單(5/15)」!A:L', '「騰訊會議(長週期)」!A:L', '「騰訊會議(短週期)」!A:L'];
 
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
