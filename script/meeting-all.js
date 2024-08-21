@@ -45,6 +45,17 @@ async function fetchAllMeetings(query) {
     }
 }
 
+// 定義中文星期的對應數值
+const dayMapping = {
+    '一': 1,
+    '二': 2,
+    '三': 3,
+    '四': 4,
+    '五': 5,
+    '六': 6,
+    '日': 7
+};
+
 // 顯示會議名稱和相關資訊，並將邏輯修改為四層結構
 function displayMeetings(meetings) {
     const resultContainer = document.getElementById('all-meeting-result-container');
@@ -63,19 +74,27 @@ function displayMeetings(meetings) {
         const meetingName = meeting[0]; // 會議名稱 (A列)
 
         if (!meetingMap[meetingName]) {
-            // 如果這個會議名稱尚未出現，初始化為空陣列
-            meetingMap[meetingName] = [];
+            // 初始化會議名稱對應的空對象，將週期作為鍵來儲存
+            meetingMap[meetingName] = {};
         }
 
-        // 將相同會議名稱的詳細資訊存入對應的會議名稱
-        meetingMap[meetingName].push({
-            startDate: new Date(meeting[1]),
-            endDate: new Date(meeting[7]),
-            repeatPattern: meeting[2] ? meeting[2].split(',') : [],
-            meetingTimeRange: meeting[4] ? meeting[4].split('-') : null,
-            meetingInfo: meeting[6] ? meeting[6] : '無會議資訊',
-            accountid: meeting[5],
-            tag: meeting[3] // 標籤來自 D 欄
+        // 處理會議的詳細資訊
+        const repeatPattern = meeting[2] ? meeting[2].split(',') : [];
+        const timeRange = meeting[4] ? meeting[4].split('-') : null;
+
+        // 如果該週期尚未出現，初始化為空陣列
+        repeatPattern.forEach(pattern => {
+            if (!meetingMap[meetingName][pattern]) {
+                meetingMap[meetingName][pattern] = [];
+            }
+
+            // 將時間範圍及相關詳細資料推入對應的週期
+            meetingMap[meetingName][pattern].push({
+                meetingTimeRange: timeRange,
+                meetingInfo: meeting[6] ? meeting[6] : '無會議資訊',
+                accountid: meeting[5],
+                tag: meeting[3] // 標籤來自 D 欄
+            });
         });
     });
 
@@ -92,7 +111,7 @@ function displayMeetings(meetings) {
         const titleText = document.createElement('span');
         titleText.textContent = meetingName;
         meetingTitle.appendChild(titleText);
-        
+
         // 添加第一層摺疊按鈕
         const mainToggleButton = document.createElement('span');
         mainToggleButton.className = 'all-meeting-main-toggle-btn fa fa-plus'; // 初始顯示 + 號
@@ -102,76 +121,68 @@ function displayMeetings(meetings) {
         whiteDiv.className = 'all-white-background-div';
         whiteDiv.style.display = 'none'; // 初始隱藏
 
-        const uniqueRepeatPatterns = new Set(); // 記錄唯一的重複模式
-
-        meetingMap[meetingName].forEach(details => {
-            // 將所有的重複模式合併到 Set 中
-            details.repeatPattern.forEach(pattern => uniqueRepeatPatterns.add(pattern));
-
-            // 第三層 時間範圍
-            const meetingTimeRange = document.createElement('div');
-            meetingTimeRange.className = 'all-meeting-time-range';
-            meetingTimeRange.style.position = 'relative';
-
-            // 如果有標籤，顯示於按鈕左側
-            if (details.tag) {
-                const tagElement = document.createElement('div');
-                tagElement.textContent = details.tag;
-                tagElement.style.cssText = `
-                    color: rgb(34, 154, 22);
-                    border: 1px solid rgb(34, 154, 22);
-                    padding: 1px 4px;
-                    justify-content: center;
-                    width: fit-content;
-                    margin-right: 8px;
-                    display: inline-block;
-                    opacity: 0.7;
-                    border-radius: 7px;
-                    font-size: 10px;
-                `;
-                meetingTimeRange.appendChild(tagElement);
-            }
-
-            // 添加時間範圍
-            const timeText = document.createElement('span');
-            timeText.textContent = details.meetingTimeRange 
-                ? `${details.meetingTimeRange[0]} - ${details.meetingTimeRange[1]}` 
-                : '無時間範圍';
-            meetingTimeRange.appendChild(timeText);
-
-            const timeToggleButton = document.createElement('span');
-            timeToggleButton.className = 'all-meeting-time-toggle-btn fa fa-angle-down'; // 使用上下箭頭
-            timeToggleButton.style.position = 'absolute';
-            timeToggleButton.style.right = '0';
-            meetingTimeRange.appendChild(timeToggleButton);
-
-            const detailDiv = document.createElement('div');
-            detailDiv.className = 'all-details-background-div';
-            detailDiv.style.display = 'none'; // 初始隱藏
-
-            // 第四層 摺疊後的會議詳細資訊
-            const meetingDetails = document.createElement('div');
-            meetingDetails.className = 'all-meeting-details';
-            meetingDetails.style.display = 'none';
-
-            const meetingInfoElement = document.createElement('p');
-            meetingInfoElement.innerHTML = `<i class="fa fa-info-circle" aria-hidden="true"></i> ${details.meetingInfo}`;
-
-            const accountElement = document.createElement('p');
-            accountElement.textContent = `開立帳號: ${details.accountid}`;
-
-            meetingDetails.appendChild(meetingInfoElement);
-            meetingDetails.appendChild(accountElement);
-
-            whiteDiv.appendChild(meetingTimeRange);
-            whiteDiv.appendChild(meetingDetails);
+        // 排序每個會議的週期
+        const sortedRepeatPatterns = Object.keys(meetingMap[meetingName]).sort((a, b) => {
+            return dayMapping[a.charAt(0)] - dayMapping[b.charAt(0)];
         });
 
-        // 合併相同的週期顯示
-        const meetingRepeat = document.createElement('div');
-        meetingRepeat.className = 'all-meeting-repeat';
-        meetingRepeat.textContent = `每週 ${Array.from(uniqueRepeatPatterns).join(', ')}`;
-        whiteDiv.appendChild(meetingRepeat);
+        // 遍歷排序後的週期
+        sortedRepeatPatterns.forEach(repeatPattern => {
+            // 第二層 - 週期
+            const meetingRepeat = document.createElement('div');
+            meetingRepeat.className = 'all-meeting-repeat';
+            meetingRepeat.textContent = `每週 ${repeatPattern}`;
+
+            const repeatToggleButton = document.createElement('span');
+            repeatToggleButton.className = 'all-meeting-repeat-toggle-btn fa fa-angle-down'; // 使用上下箭頭
+            meetingRepeat.appendChild(repeatToggleButton);
+
+            const timeDiv = document.createElement('div');
+            timeDiv.className = 'all-time-background-div';
+            timeDiv.style.display = 'none'; // 初始隱藏
+
+            // 遍歷該週期的所有時間範圍和詳細資料
+            meetingMap[meetingName][repeatPattern].forEach(details => {
+                // 第三層 - 時間範圍
+                const meetingTimeRange = document.createElement('div');
+                meetingTimeRange.className = 'all-meeting-time-range';
+                meetingTimeRange.textContent = details.meetingTimeRange 
+                    ? `${details.meetingTimeRange[0]} - ${details.meetingTimeRange[1]}` 
+                    : '無時間範圍';
+
+                const timeToggleButton = document.createElement('span');
+                timeToggleButton.className = 'all-meeting-time-toggle-btn fa fa-angle-down'; // 使用上下箭頭
+                meetingTimeRange.appendChild(timeToggleButton);
+
+                const detailDiv = document.createElement('div');
+                detailDiv.className = 'all-details-background-div';
+                detailDiv.style.display = 'none'; // 初始隱藏
+
+                // 第四層 - 詳細資訊
+                const meetingDetails = document.createElement('div');
+                meetingDetails.className = 'all-meeting-details';
+
+                const meetingInfoElement = document.createElement('p');
+                meetingInfoElement.innerHTML = `<i class="fa fa-info-circle" aria-hidden="true"></i> ${details.meetingInfo}`;
+
+                const accountElement = document.createElement('p');
+                accountElement.textContent = `開立帳號: ${details.accountid}`;
+
+                meetingDetails.appendChild(meetingInfoElement);
+                meetingDetails.appendChild(accountElement);
+
+                // 添加到詳細資訊層
+                detailDiv.appendChild(meetingDetails);
+
+                // 添加時間範圍及詳細資訊到 timeDiv
+                timeDiv.appendChild(meetingTimeRange);
+                timeDiv.appendChild(detailDiv);
+            });
+
+            // 將週期、時間範圍和詳細資訊組合到 whiteDiv
+            whiteDiv.appendChild(meetingRepeat);
+            whiteDiv.appendChild(timeDiv);
+        });
 
         meetingItem.appendChild(meetingTitle);
         meetingItem.appendChild(whiteDiv);
@@ -182,54 +193,32 @@ function displayMeetings(meetings) {
     resultContainer.style.display = 'block';
 }
 
-
-// 使用事件委託來處理四層的展開和收合功能
+// 使用事件委託來處理展開和收合功能
 document.getElementById('all-meeting-result-container').addEventListener('click', function(event) {
-    // 第一層 會議名稱的摺疊
+    // 第一層展開收合
     if (event.target.classList.contains('all-meeting-main-toggle-btn')) {
         const mainToggleBtn = event.target;
         const whiteDiv = mainToggleBtn.closest('.all-meeting-result-item').querySelector('.all-white-background-div');
-
-        if (whiteDiv.style.display === 'none') {
-            whiteDiv.style.display = 'block';
-            mainToggleBtn.classList.remove('fa-plus');
-            mainToggleBtn.classList.add('fa-minus');
-        } else {
-            whiteDiv.style.display = 'none';
-            mainToggleBtn.classList.remove('fa-minus');
-            mainToggleBtn.classList.add('fa-plus');
-        }
+        whiteDiv.style.display = whiteDiv.style.display === 'none' ? 'block' : 'none';
+        mainToggleBtn.classList.toggle('fa-plus');
+        mainToggleBtn.classList.toggle('fa-minus');
     }
 
-    // 第二層 週期的摺疊
+    // 第二層展開收合 (週期)
     if (event.target.classList.contains('all-meeting-repeat-toggle-btn')) {
         const repeatToggleBtn = event.target;
         const timeDiv = repeatToggleBtn.closest('.all-meeting-repeat').nextElementSibling;
-
-        if (timeDiv.style.display === 'none') {
-            timeDiv.style.display = 'block';
-            repeatToggleBtn.classList.remove('fa-angle-down');
-            repeatToggleBtn.classList.add('fa-angle-up');
-        } else {
-            timeDiv.style.display = 'none';
-            repeatToggleBtn.classList.remove('fa-angle-up');
-            repeatToggleBtn.classList.add('fa-angle-down');
-        }
+        timeDiv.style.display = timeDiv.style.display === 'none' ? 'block' : 'none';
+        repeatToggleBtn.classList.toggle('fa-angle-down');
+        repeatToggleBtn.classList.toggle('fa-angle-up');
     }
 
-    // 第三層 時間的摺疊
+    // 第三層展開收合 (時間範圍)
     if (event.target.classList.contains('all-meeting-time-toggle-btn')) {
         const timeToggleBtn = event.target;
         const detailDiv = timeToggleBtn.closest('.all-meeting-time-range').nextElementSibling;
-
-        if (detailDiv.style.display === 'none') {
-            detailDiv.style.display = 'block';
-            timeToggleBtn.classList.remove('fa-angle-down');
-            timeToggleBtn.classList.add('fa-angle-up');
-        } else {
-            detailDiv.style.display = 'none';
-            timeToggleBtn.classList.remove('fa-angle-up');
-            timeToggleBtn.classList.add('fa-angle-down');
-        }
+        detailDiv.style.display = detailDiv.style.display === 'none' ? 'block' : 'none';
+        timeToggleBtn.classList.toggle('fa-angle-down');
+        timeToggleBtn.classList.toggle('fa-angle-up');
     }
 });
