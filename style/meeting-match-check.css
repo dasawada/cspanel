@@ -78,12 +78,24 @@
     background: linear-gradient(to top, #f0f0f0 5%, #ffffff 100%);
     width: auto; /* 調整寬度以確保與其他元素對齊 */
 }
+.meeting-check-card:hover {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    width: auto; /* 調整寬度以確保與其他元素對齊 */
+    background: #e0e0e0;
+}
+
 
 .meeting-check-title {
     margin-top: 5px;
 	margin-left: 5px;
     color: #333;
     margin-bottom: 0;
+}
+.meeting-check-info:not(:last-child) {
+    border-bottom: 1px solid #ccc; /* 灰色分隔線 */
 }
 
 .meeting-check-info {
@@ -143,4 +155,13 @@
     top: 50%;
     transform: translateY(-50%); /* 垂直居中 */
     cursor: pointer;
+}
+.meeting-check-info.selected {
+    border: 1px solid black;
+}
+.meeting-check-info:focus-within {
+    border: 1px solid black;
+}
+.meeting-check-info:hover {
+    border: 1px solid black;
 }
