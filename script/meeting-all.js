@@ -195,30 +195,30 @@ function displayMeetings(meetings) {
 
 // 使用事件委託來處理展開和收合功能
 document.getElementById('all-meeting-result-container').addEventListener('click', function(event) {
-    // 第一層展開收合
-    if (event.target.classList.contains('all-meeting-main-toggle-btn')) {
-        const mainToggleBtn = event.target;
-        const whiteDiv = mainToggleBtn.closest('.all-meeting-result-item').querySelector('.all-white-background-div');
-        whiteDiv.style.display = whiteDiv.style.display === 'none' ? 'block' : 'none';
-        mainToggleBtn.classList.toggle('fa-plus');
-        mainToggleBtn.classList.toggle('fa-minus');
-    }
+	// 第一層展開收合 (綁定在 all-meeting-title)
+	if (event.target.closest('.all-meeting-title')) {
+		const mainToggleBtn = event.target.closest('.all-meeting-title').querySelector('.all-meeting-main-toggle-btn');
+		const whiteDiv = mainToggleBtn.closest('.all-meeting-result-item').querySelector('.all-white-background-div');
+		whiteDiv.style.display = whiteDiv.style.display === 'none' ? 'block' : 'none';
+		mainToggleBtn.classList.toggle('fa-plus');
+		mainToggleBtn.classList.toggle('fa-minus');
+	}
 
-    // 第二層展開收合 (週期)
-    if (event.target.classList.contains('all-meeting-repeat-toggle-btn')) {
-        const repeatToggleBtn = event.target;
-        const timeDiv = repeatToggleBtn.closest('.all-meeting-repeat').nextElementSibling;
-        timeDiv.style.display = timeDiv.style.display === 'none' ? 'block' : 'none';
-        repeatToggleBtn.classList.toggle('fa-angle-down');
-        repeatToggleBtn.classList.toggle('fa-angle-up');
-    }
+	// 第二層展開收合 (週期，綁定在 all-meeting-repeat)
+	if (event.target.closest('.all-meeting-repeat')) {
+		const repeatToggleBtn = event.target.closest('.all-meeting-repeat').querySelector('.all-meeting-repeat-toggle-btn');
+		const timeDiv = repeatToggleBtn.closest('.all-meeting-repeat').nextElementSibling;
+		timeDiv.style.display = timeDiv.style.display === 'none' ? 'block' : 'none';
+		repeatToggleBtn.classList.toggle('fa-angle-down');
+		repeatToggleBtn.classList.toggle('fa-angle-up');
+	}
 
-    // 第三層展開收合 (時間範圍)
-    if (event.target.classList.contains('all-meeting-time-toggle-btn')) {
-        const timeToggleBtn = event.target;
-        const detailDiv = timeToggleBtn.closest('.all-meeting-time-range').nextElementSibling;
-        detailDiv.style.display = detailDiv.style.display === 'none' ? 'block' : 'none';
-        timeToggleBtn.classList.toggle('fa-angle-down');
-        timeToggleBtn.classList.toggle('fa-angle-up');
-    }
+	// 第三層展開收合 (時間範圍，綁定在 all-meeting-time-range)
+	if (event.target.closest('.all-meeting-time-range')) {
+		const timeToggleBtn = event.target.closest('.all-meeting-time-range').querySelector('.all-meeting-time-toggle-btn');
+		const detailDiv = timeToggleBtn.closest('.all-meeting-time-range').nextElementSibling;
+		detailDiv.style.display = detailDiv.style.display === 'none' ? 'block' : 'none';
+		timeToggleBtn.classList.toggle('fa-angle-down');
+		timeToggleBtn.classList.toggle('fa-angle-up');
+	}
 });

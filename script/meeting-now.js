@@ -40,7 +40,17 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         data.valueRanges.forEach((sheetData) => {
             const rows = sheetData.values;
             for (let i = 1; i < rows.length; i++) {
-                const row = rows[i];
+                const row = rows[i]; // 每一行資料
+
+                // 根據 F 列前四碼判斷會議類型
+                const accountIdPrefix = row[5]?.slice(0, 4).toLowerCase(); // 取前四個字符，轉為小寫
+                let meetingType = ''; // 初始化會議類型
+
+                if (accountIdPrefix === 'voov') {
+                    meetingType = 'voov';
+                } else if (accountIdPrefix === 'zoom') {
+                    meetingType = 'zoom';
+                }
 
 const meetingName = row[0]; // 會議名稱 (A列)
 const startDate = new Date(row[1]); // 開始日期 (B列)
@@ -57,7 +67,7 @@ const meetingEndTime = meetingTimeRange[1] ? parseTime(meetingTimeRange[1]) : nu
 const accountid = row[5]; // 會議開立帳號 (F列)
 const meetingInfo = row[6]; // 會議資訊 (G列)
 const meetingLink = row[10]; // 會議連結 (J列)
-const meetingType = row[11]; // 會議類型 (L列)
+
 
                 if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
                     console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
@@ -252,7 +262,7 @@ function createMeetingItem(meeting, className, index, accountid) {
 
     // 創建 + / - 按鈕，用於收合
     const toggleButton = document.createElement('button');
-    toggleButton.textContent = '+';// 初始狀態為 "+"
+    toggleButton.textContent = '+'; // 初始狀態為 "+"
     toggleButton.style.marginRight = '10px'; // 按鈕和文本之間的間距
 
     // 為按鈕添加點擊事件
@@ -270,6 +280,16 @@ function createMeetingItem(meeting, className, index, accountid) {
         event.stopPropagation();
     });
 
+    // 根據會議物件的 accountid 前四碼判斷會議類型
+    const accountIdPrefix = accountid.slice(0, 4).toLowerCase(); // 取前四個字符，轉為小寫
+    let meetingType = ''; // 初始化會議類型
+
+    if (accountIdPrefix === 'voov') {
+        meetingType = 'voov';
+    } else if (accountIdPrefix === 'zoom') {
+        meetingType = 'zoom';
+    }
+
     // 創建會議內容和link元素
     const meetingContent = document.createElement('span');
     meetingContent.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
@@ -277,13 +297,13 @@ function createMeetingItem(meeting, className, index, accountid) {
     // 創建圖示並包裹在link中
     const iconLink = document.createElement('a');
     iconLink.href = meeting.link;
-    iconLink.target = '_blank'; 
+    iconLink.target = '_blank';
 
     const iconImg = document.createElement('img');
-    if (meeting.type.toLowerCase() === 'voov') {
+    if (meetingType === 'voov') {
         iconImg.src = 'img/voov.png';
         iconImg.alt = 'voov';
-    } else if (meeting.type.toLowerCase() === 'zoom') {
+    } else if (meetingType === 'zoom') {
         iconImg.src = 'img/zoom.png';
         iconImg.alt = 'zoom';
     }
@@ -319,7 +339,6 @@ function createMeetingItem(meeting, className, index, accountid) {
 
     return meetingDiv; // 返回創建的元素
 }
-
 // 創建可複製的 account 資訊元素的函數
 function createCopyableAccountElement(accountid) {
     const accountSpan = document.createElement('span');
