@@ -233,8 +233,10 @@ function displayResults(accountResults) {
 
                 // 動態設置樣式
                 if (meeting.label === '一次性') {
-                    labelElement.style.color = 'rgb(154, 22, 22)';
-                    labelElement.style.border = '1px solid rgb(154, 22, 22)';
+labelElement.style.color = '#ffffff'; // 設置文字顏色為白色
+labelElement.style.backgroundColor = 'rgb(207, 4, 4)'; // 設置底色為紅色
+labelElement.style.border = '1px solid rgb(207, 4, 4)'; // 邊框顏色
+labelElement.style.fontWeight = 'bold'; // 設置文字為粗體
                 } else if (meeting.label === '短週期') {
                     labelElement.style.color = 'rgb(34, 154, 22)';
                     labelElement.style.border = '1px solid rgb(34, 154, 22)';
@@ -305,12 +307,12 @@ function createCopyableAccountElement(accountid) {
     }
 
     const accountSpan = document.createElement('span');
-    accountSpan.textContent = accountid;  // 確保這裡賦值了正確的帳號
+    accountSpan.textContent = accountid;  // 顯示帳號名稱
     accountSpan.className = 'meeting-now-account-span';  // 使用該 class
     accountSpan.style.cursor = 'pointer';
     accountSpan.style.color = 'gray';  // 初始顏色設置為灰色
 
-    return accountSpan;
+    return accountSpan; // 不顯示 Email，只返回帳號元素
 }
 
 // 使用事件委託處理所有點擊事件
@@ -318,22 +320,30 @@ document.getElementById('meeting-check-account-results').addEventListener('click
     const targetAccountSpan = event.target.closest('.meeting-now-account-span'); // 確保使用的是 .meeting-now-account-span
 
     if (targetAccountSpan) {
-        // 處理點擊帳號的複製事件
-        navigator.clipboard.writeText(targetAccountSpan.textContent)
-        .then(function() {
-            const originalColor = targetAccountSpan.style.color;
-            targetAccountSpan.style.color = 'green'; // 複製後變綠色
-            setTimeout(function() {
-                targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
-            }, 1000);
-        })
-        .catch(function(error) {
-            console.error('複製失敗', error);
-            targetAccountSpan.style.color = 'red'; // 複製失敗變紅色
-            setTimeout(function() {
-                targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
-            }, 1000);
-        });
+        const accountName = targetAccountSpan.textContent.trim(); // 獲取點擊的帳號名稱
+        const email = accountEmailMap[accountName]; // 根據帳號名稱查找對應的 Email
+
+        if (email) {
+            // 處理點擊帳號的複製事件
+            navigator.clipboard.writeText(email)
+            .then(function() {
+                const originalColor = targetAccountSpan.style.color;
+                targetAccountSpan.style.color = 'green'; // 複製後變綠色
+                setTimeout(function() {
+                    targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
+                }, 1000);
+                console.log(`已複製: ${email}`); // 打印複製的 Email
+            })
+            .catch(function(error) {
+                console.error('複製失敗', error);
+                targetAccountSpan.style.color = 'red'; // 複製失敗變紅色
+                setTimeout(function() {
+                    targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
+                }, 1000);
+            });
+        } else {
+            console.error('無法找到對應的 Email');
+        }
     }
 });
 
@@ -363,3 +373,18 @@ document.querySelectorAll('.meeting-check-info').forEach(function(infoDiv) {
         infoDiv.classList.add('selected');
     });
 });
+
+// 帳號與 Email 的對應關係
+const accountEmailMap = {
+    "Zoom 01": "oneclasszoomit01@gmail.com",
+    "Zoom 02": "oneclasszoomit02@gmail.com",
+    "Zoom 03": "oneclasszoomit03@gmail.com",
+    "Zoom 04": "oneclasszoomit04@oneclass.tw",
+    "VooV 05": "oneclassservice05@gmail.com",
+    "VooV 06": "oneclassservice06@gmail.com",
+    "VooV it01": "oneclassit01@gmail.com",
+    "VooV 客服用": "service@oneclass.tw",
+    "VooV 客服用01": "service01@oneclass.tw",
+    "VooV 客服用02": "service02@oneclass.tw",
+    "VooV 客服用03": "service03@oneclass.tw"
+};
