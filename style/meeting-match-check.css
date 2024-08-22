@@ -165,3 +165,15 @@
 .meeting-check-info:hover {
     border: 1px solid black;
 }
+.meeting-check-create-document {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 10px; /* 如果需要邊距，可以調整 */
+    text-decoration: none;
+    color: inherit; /* 保持原來的顏色，或修改顏色 */
+}
+
+.meeting-check-create-document:hover i {
+    color: #bdbdbd; /* 在懸停時改變圖示顏色 */
+}
