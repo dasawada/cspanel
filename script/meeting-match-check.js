@@ -1,6 +1,7 @@
-// 表單提交事件
 document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
-    event.preventDefault(); // 阻止表單的默認行為
+    event.preventDefault();  // 這行代碼應該阻止表單提交
+    console.log('表單提交被攔截');
+
     const dateInput = document.getElementById('meeting-check-date').value;
     const startTimeInput = document.getElementById('meeting-check-start-time').value;
     const endTimeInput = document.getElementById('meeting-check-end-time').value;
@@ -23,9 +24,10 @@ document.getElementById('meeting-check-form').addEventListener('submit', functio
         return;
     }
 
-    // 將 meetingType 傳入 checkMeeting 函式
+    // 呼叫 checkMeeting 函數，檢查會議衝突
     checkMeeting(date, startTime, endTime, meetingType);
 });
+
 
 function parseDate(input) {
     const datePattern = /(\d{4})[.\-/ ]?(\d{2})[.\-/ ]?(\d{2})/;
@@ -83,55 +85,59 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
             6: '六'
         };
 
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 12) continue; // 保證行數據存在並且有足夠的列數
 
-for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length < 12) continue; // 保證行數據存在並且有足夠的列數
+            // 對所有欄位進行防呆檢查
+            const meetingName = row[0] || ''; 
+            const startDate = row[1] ? new Date(row[1]) : null;
+            const endDate = row[7] ? new Date(row[7]) : null;
+            const meetingTimeRange = row[4] ? row[4].split('-') : null;
+            const accountid = row[5] || '';
+            const meetingInfo = row[6] || '';
+            const repeatPattern = row[2] ? row[2].split(',') : [];
+            const label = (row.length > 3 && row[3]) ? row[3] : ''; // 確保 `row[3]` 存在並有值
 
-    const meetingName = row[0]; // 會議名稱 (A)
-    const startDate = new Date(row[1]); // 開始日期 (B)
-    const endDate = new Date(row[7]); // 結束日期 (H)
-    const meetingTimeRange = row[4] ? row[4].split('-') : null; // 時間範圍 (E)
-    const accountid = row[5]; // 會議開立帳號 (F)
-    const meetingInfo = row[6] ? row[6] : ''; // 會議資訊 (G)，如果不存在設置為空字串
-    const repeatPattern = row[2] ? row[2].split(',') : []; // 重複模式 (C)，如果不存在設置為空數組
+            // 檢查是否存在缺失的關鍵字段
+            if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
+                console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
+                continue; // 跳過這一行
+            }
 
-    // 檢查是否存在缺失的關鍵字段
-    if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
-        console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
-        continue; // 跳過這一行
-    }
+            const meetingStartTime = parseTime(meetingTimeRange[0]);
+            const meetingEndTime = parseTime(meetingTimeRange[1]);
 
-    const meetingStartTime = parseTime(meetingTimeRange[0]);
-    const meetingEndTime = parseTime(meetingTimeRange[1]);
+            // 檢查時間範圍解析是否成功
+            if (!meetingStartTime || !meetingEndTime) {
+                console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
+                continue;
+            }
 
-    // 檢查時間範圍解析是否成功
-    if (!meetingStartTime || !meetingEndTime) {
-        console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
-        continue;
-    }
+            const labelTag = label ? `【${label}】` : ''; // 如果存在標籤，生成標籤
 
-    // 初始化 accountResults[accountid] 如果尚未存在
-    if (!accountResults[accountid]) {
-        accountResults[accountid] = {
-            hasMeeting: false,
-            overlappingMeetings: []
-        };
-    }
+            // 初始化 accountResults[accountid] 如果尚未存在
+            if (!accountResults[accountid]) {
+                accountResults[accountid] = {
+                    hasMeeting: false,
+                    overlappingMeetings: []
+                };
+            }
 
-    // 檢查會議日期和時間
-    if (checkDate >= startDate && checkDate <= endDate && repeatPattern.includes(dayMap[checkDay])) {
-        if (startTime < meetingEndTime && endTime > meetingStartTime) {
-            accountResults[accountid].hasMeeting = true;
-			accountResults[accountid].overlappingMeetings.push({
-				name: meetingName,
-				startDate: startDate,
-				endDate: endDate,
-				repeatPattern: repeatPattern.join(','),
-				timeRange: `${meetingStartTime} - ${meetingEndTime}`,
-				info: meetingInfo,
-				account: accountid // 將 accountid 一起保存
-			});
+            // 檢查會議日期和時間
+            if (checkDate >= startDate && checkDate <= endDate && repeatPattern.includes(dayMap[checkDay])) {
+                if (startTime < meetingEndTime && endTime > meetingStartTime) {
+                    accountResults[accountid].hasMeeting = true;
+                    accountResults[accountid].overlappingMeetings.push({
+                        name: meetingName,
+                        startDate: startDate,
+                        endDate: endDate,
+                        repeatPattern: repeatPattern.join(','),
+                        timeRange: `${meetingStartTime} - ${meetingEndTime}`,
+                        info: meetingInfo,
+                        account: accountid, // 將 accountid 一起保存
+                        label: label // 存儲標籤
+                    });
                 }
             }
         }
@@ -202,40 +208,69 @@ function displayResults(accountResults) {
         meetingDetailsContainer.className = 'meeting-check-info';
         meetingDetailsContainer.style.display = 'none'; // 預設收合
 
-		// 確保每次傳遞 accountid
-		meetingsByName[meetingName].forEach((meeting, index, array) => {
-			const meetingDetails = document.createElement('div');
-			meetingDetails.innerHTML = `
-				<div>
-					<i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
-				</div>
-				<div>
-					<i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
-				</div>
-				<div>
-					<i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
-				</div>
-				<p class="meeting-check-details">
-					<i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
-				</p>
-			`;
+        meetingsByName[meetingName].forEach((meeting, index, array) => {
+            const meetingDetails = document.createElement('div');
+            meetingDetails.innerHTML = `
+                <div>
+                    <i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
+                </div>
+                <div>
+                    <i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
+                </div>
+                <div>
+                    <i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
+                </div>
+                <p class="meeting-check-details">
+                    <i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
+                </p>
+            `;
 
-			const meetingAccountSpan = createCopyableAccountElement(meeting.account);  // 使用 meeting.account
-			if (meetingAccountSpan) {
-				meetingDetails.appendChild(meetingAccountSpan);
-			}
+            // 生成標籤並應用樣式
+            let labelElement = '';  // 初始化標籤元素
+            if (meeting.label) {
+                labelElement = document.createElement('span');
+                labelElement.textContent = `${meeting.label}`;
 
-			// 將會議詳細資訊添加到容器
-			meetingDetailsContainer.appendChild(meetingDetails);
+                // 動態設置樣式
+                if (meeting.label === '一次性') {
+                    labelElement.style.color = 'rgb(154, 22, 22)';
+                    labelElement.style.border = '1px solid rgb(154, 22, 22)';
+                } else if (meeting.label === '短週期') {
+                    labelElement.style.color = 'rgb(34, 154, 22)';
+                    labelElement.style.border = '1px solid rgb(34, 154, 22)';
+                }
 
-			// 如果不是最後一個會議，則插入分隔線
-			if (index < array.length - 1) {
-				const hr = document.createElement('hr');
-				hr.style.border = '1px solid #ccc';  // 設定分隔線樣式
-				hr.style.margin = '10px 0';  // 控制分隔線的上下距離
-				meetingDetailsContainer.appendChild(hr);
-			}
-		});
+                // 公共樣式設置
+                labelElement.style.padding = '1px 4px';
+                labelElement.style.marginLeft = '8px';
+                labelElement.style.fontSize = '10px';
+				labelElement.style.borderRadius = '4px';
+                
+                // 將標籤插入到正確的位置
+                const repeatDiv = meetingDetails.querySelector('div:nth-child(1)');
+                if (repeatDiv) {
+                    repeatDiv.appendChild(labelElement);
+                } else {
+                    console.error('Repeat div not found');
+                }
+            }
+
+            const meetingAccountSpan = createCopyableAccountElement(meeting.account);  // 使用 meeting.account
+            if (meetingAccountSpan) {
+                meetingDetails.appendChild(meetingAccountSpan);
+            }
+            
+            // 將會議詳細資訊添加到容器
+            meetingDetailsContainer.appendChild(meetingDetails);
+
+            // 如果不是最後一個會議，則插入分隔線
+            if (index < array.length - 1) {
+                const hr = document.createElement('hr');
+                hr.style.border = '1px solid #ccc';  // 設定分隔線樣式
+                hr.style.margin = '10px 0';  // 控制分隔線的上下距離
+                meetingDetailsContainer.appendChild(hr);
+            }
+        });
 
         // 點擊標題展開/收合會議內容
         meetingHeader.addEventListener('click', function () {
