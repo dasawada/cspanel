@@ -1,24 +1,21 @@
 // 點擊 "搜尋今日所有會議" 按鈕時觸發的事件
 document.getElementById('meetingsearch-fetch-meetings').addEventListener('click', async function() {
-const now = new Date();
-const currentDate = now ? now.toISOString().split('T')[0] : ''; // 獲取當前日期 yyyy-mm-dd
-const currentTime = now ? now.toTimeString().split(' ')[0].slice(0, 5) : ''; // 獲取當前時間 hh:mm
+    const now = new Date();
+    const currentDate = now.toISOString().split('T')[0]; // 獲取當前日期 yyyy-mm-dd
+    const currentTime = now.toTimeString().split(' ')[0].slice(0, 5); // 獲取當前時間 hh:mm
 
     await meetingsearchFetchMeetings(currentDate, currentTime, now);
 });
 
 // 解析時間字串的函數
-function parseTime(input) {
-    const timePattern1 = /(\d{2})(\d{2})/; // 0000
-    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00
-    let match = input.match(timePattern1);
-    if (match) {
-        return `${match[1]}:${match[2]}`;
+function parseTime(timeString) {
+    // 檢查時間字符串的格式
+    if (/^\d{4}$/.test(timeString)) {
+        const hours = parseInt(timeString.substring(0, 2), 10);
+        const minutes = parseInt(timeString.substring(2, 4), 10);
+        return new Date(0, 0, 0, hours, minutes);
     }
-    match = input.match(timePattern2);
-    if (match) {
-        return `${match[1]}:${match[2]}`;
-    }
+    console.error('Invalid time string:', timeString);
     return null;
 }
 
@@ -52,22 +49,21 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                     meetingType = 'zoom';
                 }
 
-const meetingName = row[0]; // 會議名稱 (A列)
-const startDate = new Date(row[1]); // 開始日期 (B列)
-const endDate = new Date(row[7]); // 結束日期 (H列)
+                const meetingName = row[0]; // 會議名稱 (A列)
+                const startDate = new Date(row[1]); // 開始日期 (B列)
+                const endDate = new Date(row[7]); // 結束日期 (H列)
 
-const repeatPatternString = row[2] || ''; // 確保有空字串作為默認值
-const repeatPattern = repeatPatternString ? repeatPatternString.split(',') : []; // 檢查並拆分重複模式
+                const repeatPatternString = row[2] || ''; // 確保有空字串作為默認值
+                const repeatPattern = repeatPatternString ? repeatPatternString.split(',') : []; // 檢查並拆分重複模式
 
-const meetingTimeRangeString = row[4] || ''; // 確保有一個空字串作為默認值
-const meetingTimeRange = meetingTimeRangeString ? meetingTimeRangeString.split('-') : []; // 檢查並拆分時間範圍
-const meetingStartTime = meetingTimeRange[0] ? parseTime(meetingTimeRange[0]) : null; // 確保有值才解析開始時間
-const meetingEndTime = meetingTimeRange[1] ? parseTime(meetingTimeRange[1]) : null; // 確保有值才解析結束時間
+                const meetingTimeRangeString = row[4] || ''; // 確保有一個空字串作為默認值
+                const meetingTimeRange = meetingTimeRangeString ? meetingTimeRangeString.split('-') : []; // 檢查並拆分時間範圍
+                const meetingStartTime = meetingTimeRange[0] ? parseTime(meetingTimeRange[0]) : null; // 確保有值才解析開始時間
+                const meetingEndTime = meetingTimeRange[1] ? parseTime(meetingTimeRange[1]) : null; // 確保有值才解析結束時間
 
-const accountid = row[5]; // 會議開立帳號 (F列)
-const meetingInfo = row[6]; // 會議資訊 (G列)
-const meetingLink = row[10]; // 會議連結 (J列)
-
+                const accountid = row[5]; // 會議開立帳號 (F列)
+                const meetingInfo = row[6]; // 會議資訊 (G列)
+                const meetingLink = row[10]; // 會議連結 (J列)
 
                 if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
                     console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
@@ -93,22 +89,9 @@ const meetingLink = row[10]; // 會議連結 (J列)
                     }
 
                     // 進行會議分類
-                    if (currentTime >= meetingStartTime && currentTime < meetingEndTime) {
-                        ongoingMeetings.push({
-                            name: meetingName,
-                            startTime: meetingStartTime,
-                            endTime: meetingEndTime,
-                            info: meetingInfo,
-                            type: meetingType,
-                            link: meetingLink,
-                            account: accountid
-                        });
-                    } else if (currentTime < meetingStartTime) {
-                        const meetingStartDateTime = new Date(`${currentDate}T${meetingStartTime}`);
-                        const timeDifferenceInHours = (meetingStartDateTime - now) / (1000 * 60 * 60);
-
-                        if (timeDifferenceInHours <= 0.5) {
-                            upcomingMeetings.push({
+                    if (meetingStartTime && meetingEndTime) {
+                        if (currentTime >= meetingStartTime && currentTime < meetingEndTime) {
+                            ongoingMeetings.push({
                                 name: meetingName,
                                 startTime: meetingStartTime,
                                 endTime: meetingEndTime,
@@ -117,8 +100,33 @@ const meetingLink = row[10]; // 會議連結 (J列)
                                 link: meetingLink,
                                 account: accountid
                             });
-                        } else {
-                            waitingMeetings.push({
+                        } else if (currentTime < meetingStartTime) {
+                            const meetingStartDateTime = new Date(`${currentDate}T${meetingStartTime}`);
+                            const timeDifferenceInHours = (meetingStartDateTime - now) / (1000 * 60 * 60);
+
+                            if (timeDifferenceInHours <= 0.5) {
+                                upcomingMeetings.push({
+                                    name: meetingName,
+                                    startTime: meetingStartTime,
+                                    endTime: meetingEndTime,
+                                    info: meetingInfo,
+                                    type: meetingType,
+                                    link: meetingLink,
+                                    account: accountid
+                                });
+                            } else {
+                                waitingMeetings.push({
+                                    name: meetingName,
+                                    startTime: meetingStartTime,
+                                    endTime: meetingEndTime,
+                                    info: meetingInfo,
+                                    type: meetingType,
+                                    link: meetingLink,
+                                    account: accountid
+                                });
+                            }
+                        } else if (currentTime >= meetingEndTime) {
+                            endedMeetings.push({
                                 name: meetingName,
                                 startTime: meetingStartTime,
                                 endTime: meetingEndTime,
@@ -128,16 +136,6 @@ const meetingLink = row[10]; // 會議連結 (J列)
                                 account: accountid
                             });
                         }
-                    } else if (currentTime >= meetingEndTime) {
-                        endedMeetings.push({
-                            name: meetingName,
-                            startTime: meetingStartTime,
-                            endTime: meetingEndTime,
-                            info: meetingInfo,
-                            type: meetingType,
-                            link: meetingLink,
-                            account: accountid
-                        });
                     }
                 }
             }
@@ -157,7 +155,7 @@ const meetingLink = row[10]; // 會議連結 (J列)
 
         if (upcomingMeetings.length > 0) {
             upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
-            resultDiv.innerHTML += `<strong>即將開始 (半小時內)：</strong>`;
+            resultDiv.innerHTML += `<strong>即將開始：</strong>`;
             upcomingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
@@ -166,7 +164,7 @@ const meetingLink = row[10]; // 會議連結 (J列)
 
         if (waitingMeetings.length > 0) {
             waitingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
-            resultDiv.innerHTML += `<strong>等待中：</strong>`;
+            resultDiv.innerHTML += `<strong>待開始：</strong>`;
             waitingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index, meeting.account);
                 resultDiv.appendChild(meetingItem);
