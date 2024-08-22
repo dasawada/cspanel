@@ -611,14 +611,17 @@ h3 {
 /* 調整每層的按鈕位置（週期和時間範圍的按鈕位於右側） */
 .all-meeting-repeat-toggle-btn, .all-meeting-time-toggle-btn {
     position: absolute;
-    right: 0;
+    right: 10;
     cursor: pointer;
 }
 /* 調整每一層內部的 grid 排列 */
 .all-meeting-repeat {
     display: block; /* 保證每個項目換行垂直排列 */
     position: relative;
-    padding: 5px;
+}
+
+.all-meeting-repeat:hover {
+    background-color: #b3b3b3 !important;
 }
 /* 定義 grid 容器和列的布局 */
 .all-white-background-div {
@@ -633,6 +636,9 @@ h3 {
     align-items: center;
     position: relative;
     padding: 5px;
+}
+.all-meeting-time-range:hover {
+    background-color: #949494 !important;
 }
 
 /* 調整標籤元素的位置 */
