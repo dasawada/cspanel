@@ -1,3 +1,14 @@
+// 定義 dayMapping 在頂部
+const dayMapping = {
+    '一': 1,
+    '二': 2,
+    '三': 3,
+    '四': 4,
+    '五': 5,
+    '六': 6,
+    '日': 7
+};
+
 // 動態監聽輸入框並顯示結果
 document.getElementById('all-meeting-search-input').addEventListener('input', function() {
     const query = this.value.trim();
@@ -45,17 +56,6 @@ async function fetchAllMeetings(query) {
     }
 }
 
-// 定義中文星期的對應數值
-const dayMapping = {
-    '一': 1,
-    '二': 2,
-    '三': 3,
-    '四': 4,
-    '五': 5,
-    '六': 6,
-    '日': 7
-};
-
 // 顯示會議名稱和相關資訊，並將邏輯修改為四層結構
 function displayMeetings(meetings) {
     const resultContainer = document.getElementById('all-meeting-result-container');
@@ -72,6 +72,11 @@ function displayMeetings(meetings) {
 
     meetings.forEach(meeting => {
         const meetingName = meeting[0]; // 會議名稱 (A列)
+        const meetingLink = meeting[10] || '#'; // 會議連結 (J列)，避免 undefined，給定預設值
+        const accountId = meeting[5]; // 開立帳號 (F列)
+
+        // 使用 column F 的前四碼判斷會議類型
+        const meetingType = accountId ? accountId.substring(0, 4).toLowerCase() : '';
 
         if (!meetingMap[meetingName]) {
             // 初始化會議名稱對應的空對象，將週期作為鍵來儲存
@@ -92,8 +97,10 @@ function displayMeetings(meetings) {
             meetingMap[meetingName][pattern].push({
                 meetingTimeRange: timeRange,
                 meetingInfo: meeting[6] ? meeting[6] : '無會議資訊',
-                accountid: meeting[5],
-                tag: meeting[3] // 標籤來自 D 欄
+                accountid: accountId,
+                tag: meeting[3], // 標籤來自 D 欄
+                link: meetingLink,
+                type: meetingType // 會議類型來自帳號的前四碼
             });
         });
     });
@@ -149,6 +156,24 @@ function displayMeetings(meetings) {
                 meetingTimeRange.textContent = details.meetingTimeRange 
                     ? `${details.meetingTimeRange[0]} - ${details.meetingTimeRange[1]}` 
                     : '無時間範圍';
+
+                // 創建圖示並包裹在link中
+                const iconLink = document.createElement('a');
+                iconLink.href = details.link;
+                iconLink.target = '_blank'; 
+
+                const iconImg = document.createElement('img');
+                if (details.type === 'voov') {
+                    iconImg.src = 'img/voov.png';
+                    iconImg.alt = 'voov';
+                } else if (details.type === 'zoom') {
+                    iconImg.src = 'img/zoom.png';
+                    iconImg.alt = 'zoom';
+                }
+                iconImg.className = 'meeting-icon'; // 設定圖示的 CSS 類名
+                iconLink.appendChild(iconImg); // 將圖示圖片添加到超連結中
+
+                meetingTimeRange.appendChild(iconLink); // 將圖示連結添加到時間範圍後方
 
                 const timeToggleButton = document.createElement('span');
                 timeToggleButton.className = 'all-meeting-time-toggle-btn fa fa-angle-down'; // 使用上下箭頭
