@@ -123,14 +123,15 @@ for (let i = 1; i < rows.length; i++) {
     if (checkDate >= startDate && checkDate <= endDate && repeatPattern.includes(dayMap[checkDay])) {
         if (startTime < meetingEndTime && endTime > meetingStartTime) {
             accountResults[accountid].hasMeeting = true;
-            accountResults[accountid].overlappingMeetings.push({
-                name: meetingName,
-                startDate: startDate,
-                endDate: endDate,
-                repeatPattern: repeatPattern.join(','),
-                timeRange: `${meetingStartTime} - ${meetingEndTime}`,
-                info: meetingInfo // 使用已定義的 meetingInfo
-                    });
+			accountResults[accountid].overlappingMeetings.push({
+				name: meetingName,
+				startDate: startDate,
+				endDate: endDate,
+				repeatPattern: repeatPattern.join(','),
+				timeRange: `${meetingStartTime} - ${meetingEndTime}`,
+				info: meetingInfo,
+				account: accountid // 將 accountid 一起保存
+			});
                 }
             }
         }
@@ -144,14 +145,13 @@ for (let i = 1; i < rows.length; i++) {
 function displayResults(accountResults) {
     const resultDiv = document.getElementById('meeting-check-result');
     const accountResultsDiv = document.getElementById('meeting-check-account-results');
-    
-    // 檢查父容器是否存在
+
     if (!accountResultsDiv) {
         console.error('父容器 meeting-check-account-results 不存在！');
         return;
     }
 
-    accountResultsDiv.innerHTML = '';  // 清空之前的結果
+    accountResultsDiv.innerHTML = '';
 
     resultDiv.textContent = '查詢結果如下:';
     resultDiv.style.color = 'green';
@@ -164,90 +164,116 @@ function displayResults(accountResults) {
     hasMeetingGroup.className = 'meeting-check-result-group meeting-check-has-meeting';
     hasMeetingGroup.innerHTML = '<h3>已存在的會議安排：</h3>';
 
+    const meetingsByName = {}; // 用於統整相同名稱的會議
+
     for (const account in accountResults) {
         const accountResult = document.createElement('div');
         accountResult.className = 'meeting-check-account-title';
         accountResult.innerHTML = `<strong>帳號: </strong>`;
 
-        // 創建可複製的帳號元素並插入
         const accountSpan = createCopyableAccountElement(account);
         accountResult.appendChild(accountSpan);
 
-        // 沒有會議的帳號
         if (!accountResults[account].hasMeeting) {
             noMeetingGroup.appendChild(accountResult);
         } else {
-            // 有會議的帳號
+            // 統整相同會議名稱的會議資訊
             accountResults[account].overlappingMeetings.forEach(meeting => {
-                const meetingDiv = document.createElement('div');
-                meetingDiv.className = 'meeting-check-card';
-
-// 建立會議卡片的標題部分
-const meetingHeader = document.createElement('div');
-meetingHeader.className = 'meeting-check-title';
-meetingHeader.innerHTML = `<i class="fa fa-calendar"></i> ${meeting.name} <i class="fa fa-plus toggle-icon"></i>`;
-meetingHeader.style.position = 'relative'; // 確保父元素是相對定位
-meetingHeader.style.cursor = 'pointer';
-
-                // 會議詳細內容
-                const meetingDetails = document.createElement('div');
-                meetingDetails.className = 'meeting-check-info';
-                meetingDetails.style.display = 'none'; // 初始隱藏
-
-                // 插入會議的詳細內容
-                meetingDetails.innerHTML = `
-                    <div>
-                    <i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
-                    　<i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
-					</div>
-                    <div>
-                        <i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
-                    </div>
-                    <p class="meeting-check-details">
-                        <i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
-                    </p>
-                `;
-
-                // 為會議卡片內部插入可複製的帳號元素
-                const meetingAccountSpan = createCopyableAccountElement(account);
-                meetingDetails.appendChild(meetingAccountSpan);
-
-// 展開/收合會議卡片的內容
-meetingHeader.addEventListener('click', function() {
-    if (meetingDetails.style.display === 'none') {
-        meetingDetails.style.display = 'block';
-        meetingHeader.querySelector('.toggle-icon').className = 'fa fa-minus toggle-icon'; // 切換為減號
-    } else {
-        meetingDetails.style.display = 'none';
-        meetingHeader.querySelector('.toggle-icon').className = 'fa fa-plus toggle-icon'; // 切換為加號
-    }
-});
-
-                // 將會議標題和內容添加到卡片中
-                meetingDiv.appendChild(meetingHeader);
-                meetingDiv.appendChild(meetingDetails);
-                hasMeetingGroup.appendChild(meetingDiv);
+                if (!meetingsByName[meeting.name]) {
+                    meetingsByName[meeting.name] = []; // 初始化會議名稱
+                }
+                meetingsByName[meeting.name].push(meeting); // 將會議加入對應名稱的數組
             });
         }
     }
 
-    // 如果有可排會議的帳號，顯示在無會議組中
-    if (noMeetingGroup.children.length > 1) {
+    // 顯示統整後的會議資訊
+    for (const meetingName in meetingsByName) {
+        const meetingGroupDiv = document.createElement('div');
+        meetingGroupDiv.className = 'meeting-check-card'; // 卡片容器
+
+        const meetingHeader = document.createElement('div');
+        meetingHeader.className = 'meeting-check-title';
+        meetingHeader.innerHTML = `<i class="fa fa-calendar"></i> ${meetingName} <i class="fa fa-plus toggle-icon"></i>`;
+        meetingHeader.style.position = 'relative';
+        meetingHeader.style.cursor = 'pointer';
+
+        const meetingDetailsContainer = document.createElement('div');
+        meetingDetailsContainer.className = 'meeting-check-info';
+        meetingDetailsContainer.style.display = 'none'; // 預設收合
+
+		// 確保每次傳遞 accountid
+		meetingsByName[meetingName].forEach((meeting, index, array) => {
+			const meetingDetails = document.createElement('div');
+			meetingDetails.innerHTML = `
+				<div>
+					<i class="fa fa-repeat"></i> <strong>每週</strong> ${meeting.repeatPattern}
+				</div>
+				<div>
+					<i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
+				</div>
+				<div>
+					<i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
+				</div>
+				<p class="meeting-check-details">
+					<i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
+				</p>
+			`;
+
+			const meetingAccountSpan = createCopyableAccountElement(meeting.account);  // 使用 meeting.account
+			if (meetingAccountSpan) {
+				meetingDetails.appendChild(meetingAccountSpan);
+			}
+
+			// 將會議詳細資訊添加到容器
+			meetingDetailsContainer.appendChild(meetingDetails);
+
+			// 如果不是最後一個會議，則插入分隔線
+			if (index < array.length - 1) {
+				const hr = document.createElement('hr');
+				hr.style.border = '1px solid #ccc';  // 設定分隔線樣式
+				hr.style.margin = '10px 0';  // 控制分隔線的上下距離
+				meetingDetailsContainer.appendChild(hr);
+			}
+		});
+
+        // 點擊標題展開/收合會議內容
+        meetingHeader.addEventListener('click', function () {
+            if (meetingDetailsContainer.style.display === 'none') {
+                meetingDetailsContainer.style.display = 'block';
+                meetingHeader.querySelector('.toggle-icon').className = 'fa fa-minus toggle-icon'; // 切換為減號
+            } else {
+                meetingDetailsContainer.style.display = 'none';
+                meetingHeader.querySelector('.toggle-icon').className = 'fa fa-plus toggle-icon'; // 切換為加號
+            }
+        });
+
+        meetingGroupDiv.appendChild(meetingHeader);
+        meetingGroupDiv.appendChild(meetingDetailsContainer);
+        hasMeetingGroup.appendChild(meetingGroupDiv);
+    }
+
+    if (noMeetingGroup.children.length > 0) {
         accountResultsDiv.appendChild(noMeetingGroup);
     }
 
-    // 如果有已排會議的帳號，顯示在有會議組中
-    if (Object.values(accountResults).some(result => result.hasMeeting)) {
+    if (hasMeetingGroup.children.length > 0) {
         accountResultsDiv.appendChild(hasMeetingGroup);
     }
 }
 
+// 創建可複製帳號元素的函數
 function createCopyableAccountElement(accountid) {
+    if (!accountid) {
+        console.error('accountid 為空');
+        return null;
+    }
+
     const accountSpan = document.createElement('span');
-    accountSpan.textContent = accountid;
-    accountSpan.className = 'meeting-now-account-span'; // 確保使用這個 class
+    accountSpan.textContent = accountid;  // 確保這裡賦值了正確的帳號
+    accountSpan.className = 'meeting-now-account-span';  // 使用該 class
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray'; // 初始顏色設定為灰色
+    accountSpan.style.color = 'gray';  // 初始顏色設置為灰色
 
     return accountSpan;
 }
@@ -292,3 +318,13 @@ document.getElementById('meeting-check-account-results').addEventListener('mouse
     }
 });
 
+document.querySelectorAll('.meeting-check-info').forEach(function(infoDiv) {
+    infoDiv.addEventListener('click', function() {
+        // 移除其他元素的 "selected" 類
+        document.querySelectorAll('.meeting-check-info').forEach(function(div) {
+            div.classList.remove('selected');
+        });
+        // 為當前選取的元素增加 "selected" 類
+        infoDiv.classList.add('selected');
+    });
+});
