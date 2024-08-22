@@ -11,8 +11,13 @@ document.getElementById('meetingsearch-fetch-meetings').addEventListener('click'
 function parseTime(timeString) {
     // 檢查時間字符串的格式
     if (/^\d{4}$/.test(timeString)) {
+        // 格式為 "hhmm"
         const hours = parseInt(timeString.substring(0, 2), 10);
         const minutes = parseInt(timeString.substring(2, 4), 10);
+        return new Date(0, 0, 0, hours, minutes);
+    } else if (/^\d{2}:\d{2}$/.test(timeString)) {
+        // 格式為 "hh:mm"
+        const [hours, minutes] = timeString.split(':').map(Number);
         return new Date(0, 0, 0, hours, minutes);
     }
     console.error('Invalid time string:', timeString);
@@ -23,7 +28,11 @@ function parseTime(timeString) {
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
     const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';
-    const ranges = ['「US版Zoom學員名單(5/15)」!A:L', '「騰訊會議(長週期)」!A:L', '「騰訊會議(短週期)」!A:L'];
+    const ranges = [
+        '「US版Zoom學員名單(5/15)」!A:L',
+        '「騰訊會議(長週期)」!A:L',
+        '「騰訊會議(短週期)」!A:L'
+    ];
 
     try {
         const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
@@ -145,7 +154,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         resultDiv.innerHTML = '';
 
         if (ongoingMeetings.length > 0) {
-            ongoingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            ongoingMeetings.sort((a, b) => a.startTime - b.startTime);
             resultDiv.innerHTML += `<strong>進行中：</strong>`;
             ongoingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-ongoing', index, meeting.account);
@@ -154,7 +163,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         }
 
         if (upcomingMeetings.length > 0) {
-            upcomingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            upcomingMeetings.sort((a, b) => a.startTime - b.startTime);
             resultDiv.innerHTML += `<strong>即將開始：</strong>`;
             upcomingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-upcoming', index, meeting.account);
@@ -163,7 +172,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         }
 
         if (waitingMeetings.length > 0) {
-            waitingMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            waitingMeetings.sort((a, b) => a.startTime - b.startTime);
             resultDiv.innerHTML += `<strong>待開始：</strong>`;
             waitingMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-waiting', index, meeting.account);
@@ -172,7 +181,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         }
 
         if (endedMeetings.length > 0) {
-            endedMeetings.sort((a, b) => a.startTime.localeCompare(b.startTime));
+            endedMeetings.sort((a, b) => b.endTime - a.endTime);
             resultDiv.innerHTML += `<strong>已結束：</strong>`;
             endedMeetings.forEach((meeting, index) => {
                 const meetingItem = createMeetingItem(meeting, 'meetingsearch-ended', index, meeting.account);
