@@ -28,6 +28,7 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <link rel="stylesheet" href="style/meeting-now-css.css">
 <link rel="stylesheet" href="style/meeting-match-check.css">
+<link rel="stylesheet" href="style/all-meeting.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -432,8 +433,13 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 <button class="assist-issue-copy-button" id="assist-issue-copyButton">複製內容</button>
 </div>
-<!--白板
-    <div class="board">
+<!--白板-->
+<div class="board small-size">
+    <div class="toggle-container">
+        <input type="checkbox" id="board-toggleCheckbox">
+        <label for="board-toggleCheckbox">製圖白板</label>
+    </div>
+    <div id="content" style="display: none;">
             <div id="excalidraw-container"></div>
     <script type="text/javascript">
         (function() {
@@ -453,7 +459,8 @@ setTimeout(showAllRows, 1000);\n\
         })();
 
     </script>
-    </div>-->
+</div>
+</div>
 <!--今日會議查詢-->
 <div class="meeting-now-search">
     <b>[ZOOM、騰訊] 今日會議</b>
