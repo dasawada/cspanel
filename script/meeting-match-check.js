@@ -16,8 +16,8 @@ document.getElementById('meeting-check-form').addEventListener('submit', functio
     }
 
     const date = new Date(dateInput);
-    const startTime = parseTime(startTimeInput);
-    const endTime = parseTime(endTimeInput);
+    const startTime = meetingCheckParseTime(startTimeInput);
+    const endTime = meetingCheckParseTime(endTimeInput);
 
     if (!startTime || !endTime) {
         document.getElementById('meeting-check-error').textContent = '請輸入有效的時間格式。';
@@ -28,19 +28,20 @@ document.getElementById('meeting-check-form').addEventListener('submit', functio
     checkMeeting(date, startTime, endTime, meetingType);
 });
 
-function parseTime(input) {
-    const timePattern1 = /(\d{2})(\d{2})/; // 0000
-    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00
+function meetingCheckParseTime(input) {
+    const timePattern1 = /(\d{2})(\d{2})/; // 0000 格式
+    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00 格式
     let match = input.match(timePattern1);
     if (match) {
-        return `${match[1]}:${match[2]}`;
+        return `${match[1]}:${match[2]}`;  // 返回格式化的字符串
     }
     match = input.match(timePattern2);
     if (match) {
-        return `${match[1]}:${match[2]}`;
+        return `${match[1]}:${match[2]}`;  // 返回格式化的字符串
     }
-    return null;
+    return null;  // 如果解析失败，返回 null
 }
+
 
 async function checkMeeting(date, startTime, endTime, meetingType) {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
@@ -78,22 +79,39 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
             const row = rows[i];
             if (!row || row.length < 12) continue; // 確保行數據存在並且有足夠的列數
 
-            const meetingName = row[0] || ''; 
-            const startDate = row[1] ? new Date(row[1]) : null;
-            const endDate = row[7] ? new Date(row[7]) : null;
-            const meetingTimeRange = row[4] ? row[4].split('-') : null;
-            const accountid = row[5] || '';
-            const meetingInfo = row[6] || '';
-            const repeatPattern = row[2] ? row[2].split(',') : [];
-            const label = (row.length > 3 && row[3]) ? row[3] : '';
+const meetingName = row[0] || ''; 
+const startDate = row[1] ? new Date(row[1]) : null;
+const endDate = row[7] ? new Date(row[7]) : null;
+const meetingTimeRange = row[4] ? row[4].split('-') : null;
+const accountid = row[5] || '';
+const meetingInfo = row[6] || '';
+const repeatPattern = row[2] ? row[2].split(',') : [];
+const label = (row.length > 3 && row[3]) ? row[3] : '';
 
-            if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
-                console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
-                continue;
-            }
+// 打印變量的值
+console.log(`第 ${i + 1} 行:`);
+console.log(`會議名稱: ${meetingName}`);
+console.log(`開始日期: ${startDate}`);
+console.log(`結束日期: ${endDate}`);
+console.log(`會議時間範圍: ${meetingTimeRange}`);
+console.log(`會議帳號: ${accountid}`);
+console.log(`會議資訊: ${meetingInfo}`);
+console.log(`重複模式: ${repeatPattern}`);
+console.log(`標籤: ${label}`);
 
-            const meetingStartTime = parseTime(meetingTimeRange[0]);
-            const meetingEndTime = parseTime(meetingTimeRange[1]);
+if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
+    console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
+    continue;
+}
+
+const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
+const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
+
+// 打印解析出的會議開始和結束時間
+console.log(`會議開始時間: ${meetingStartTime}`);
+console.log(`會議結束時間: ${meetingEndTime}`);
+
+
 
             if (!meetingStartTime || !meetingEndTime) {
                 console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
@@ -131,7 +149,12 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
         document.getElementById('meeting-check-error').textContent = '請求失敗：' + error.message;
     }
 }
-
+function formatDateToLocal(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 function displayResults(accountResults) {
     const resultDiv = document.getElementById('meeting-check-result');
     const accountResultsDiv = document.getElementById('meeting-check-account-results');
@@ -202,7 +225,7 @@ function displayResults(accountResults) {
                     <i class="fa fa-clock"></i> <strong>時間:</strong> ${meeting.timeRange}
                 </div>
                 <div>
-                    <i class="fa fa-calendar-alt"></i> ${meeting.startDate.toISOString().split('T')[0]} ～ ${meeting.endDate.toISOString().split('T')[0]}
+                    <i class="fa fa-calendar-alt"></i> ${formatDateToLocal(meeting.startDate)} ～ ${formatDateToLocal(meeting.endDate)}
                 </div>
                 <p class="meeting-check-details">
                     <i class="fa fa-info-circle"></i> ${meeting.info.replace(/\n/g, '<br>')}
@@ -217,10 +240,10 @@ function displayResults(accountResults) {
 
                 // 動態設置樣式
                 if (meeting.label === '一次性') {
-labelElement.style.color = '#ffffff'; // 設置文字顏色為白色
-labelElement.style.backgroundColor = 'rgb(207, 4, 4)'; // 設置底色為紅色
-labelElement.style.border = '1px solid rgb(207, 4, 4)'; // 邊框顏色
-labelElement.style.fontWeight = 'bold'; // 設置文字為粗體
+                    labelElement.style.color = '#ffffff'; // 設置文字顏色為白色
+                    labelElement.style.backgroundColor = 'rgb(207, 4, 4)'; // 設置底色為紅色
+                    labelElement.style.border = '1px solid rgb(207, 4, 4)'; // 邊框顏色
+                    labelElement.style.fontWeight = 'bold'; // 設置文字為粗體
                 } else if (meeting.label === '短週期') {
                     labelElement.style.color = 'rgb(34, 154, 22)';
                     labelElement.style.border = '1px solid rgb(34, 154, 22)';
