@@ -1,11 +1,11 @@
 #meeting-check-form-container {
     width: 320px; /* 調整寬度以匹配結果區域 */
     margin: 0;
-    height: 403px;
+    height: auto;
 }
 
 #meeting-check-result-scrollbar {
-    height: 338px;
+	max-height: 450px;
     width: 320px; /* 調整寬度以匹配表單區域 */
     margin: 0 auto;
     overflow-y: auto;
@@ -103,6 +103,7 @@
     flex-wrap: wrap;
     margin-top: 8px;
     font-size: 12px;
+	max-height:330px;
 }
 
 .meeting-check-info div {

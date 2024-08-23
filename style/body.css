@@ -251,7 +251,7 @@ padding-bottom:20px;
     height: 100%;
     overflow: hidden; /* 完全禁用卷軸 */
     border: none;
-transform: translateZ(0); /* 强制 GPU 渲染 */
+	transform: translateZ(0); /* 强制 GPU 渲染 */
 }
 #usersearch {
     display: none;
