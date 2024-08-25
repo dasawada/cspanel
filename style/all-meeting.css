@@ -115,11 +115,13 @@
 /* 移除 hover 狀態下的背景顏色更改 */
 .all-meeting-details:hover {
     background-color: #ffffff !important;
+    transition: all .5s ease 0s;
 }
 
 .all-meeting-summary:hover {
     background-color: #e0e0e0 !important; /* 在 hover 時改變背景顏色 */
     border-radius: 6px; /* 圓角 */
+    transition: all .5s ease 0s;
 }
 
 .all-meeting-details p {
@@ -186,9 +188,15 @@
     display: block; /* 保證每個項目換行垂直排列 */
     position: relative;
 }
-
-.all-meeting-repeat:hover {
-    background-color: #b3b3b3 !important;
+.all-meeting-per-list {
+    border: 1px solid transparent;
+    transition: all .5s ease 0s;
+	border-radius: 10px;
+}
+.all-meeting-per-list:hover {
+    border: 1px solid #ababab;
+    transition: all .5s ease 0s;
+	border-radius: 10px;
 }
 /* 定義 grid 容器和列的布局 */
 .all-white-background-div {
@@ -205,7 +213,8 @@
 	flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
 }
 .meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
-    background-color: #949494 !important;
+    background-color: #e0e0e0 !important;
+
 }
 .meeting-wrapper{
 	border-radius:10px;
