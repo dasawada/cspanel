@@ -22,7 +22,8 @@
             margin-top: 10px;
         }
 		.meeting-now-result-flow {
-    height: 345px;
+    height: auto;
+	max-height: 450px;
     overflow-y: auto;
     scrollbar-width: thin; /* 对Firefox生效，设置滚动条宽度为细 */
     scrollbar-color: #f5f5f5 #ffffff; /* 对Firefox生效，设置滚动条颜色和轨道颜色 */
@@ -80,11 +81,8 @@
         }
 		
 .meeting-icon {
-    position: absolute;
-    right: 0px; /* 距離右側的距離 */
-    top: 50%;
-    transform: translateY(-50%); /* 垂直居中 */
-    width: 16px; /* 設置圖標大小 */
+    width: 16px;                 /* 設置圖標大小 */
+    height: auto;                /* 保持圖標的比例 */
 }
 
 .meeting-now-account-span {
@@ -92,3 +90,11 @@
 	color: gray; /* 默认显示灰色 */
     transition: color 0.3s; /* 添加过渡效果 */
 }
+.meeting-now-row {
+    display: flex;
+    justify-content: space-between; /* 讓 div1, div2, div3 之間保持適當的距離 */
+    align-items: center;            /* 垂直居中子元素 */
+}
+.meeting-now-div1{width:auto;}
+.meeting-now-div2{width:100%;}
+.meeting-now-div3{width:20px;}

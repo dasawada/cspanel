@@ -1,5 +1,5 @@
 #meeting-check-form-container {
-    width: 320px; /* 調整寬度以匹配結果區域 */
+    width: auto; /* 調整寬度以匹配結果區域 */
     margin: 0;
     height: auto;
 }
@@ -123,7 +123,7 @@
 
 #meeting-check-form {
     height: auto;
-    gap: 0px;
+    gap: 5px;
 }
 
 /* 調整 Flatpickr 日期按鈕的大小 */

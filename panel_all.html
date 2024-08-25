@@ -461,75 +461,93 @@ setTimeout(showAllRows, 1000);\n\
     </script>
 </div>
 </div>
-<!--今日會議查詢-->
-<div class="meeting-now-search">
-    <b>[ZOOM、騰訊] 今日會議</b>
-<div id="meetingsearchnow-form-container">
-    <!-- 名稱搜尋今日會議 -->
-    <div id="meetingsearch-filter-container">
-        <input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議">
-        <button id="meetingsearch-fetch-meetings">列出所有會議</button>
-    </div>
-	<div class="meeting-now-result-flow">
-    <!-- 搜尋所有今日會議 -->
-    <div id="meetingsearch-result"></div>
-    <div id="meetingsearch-error"></div>
-    <div id="meetingsearch-account-results"></div>
-	</div>
-</div>
-</div>
-<!--所有會議查詢-->
-<div id="all-meeting-search-panel">
-    <div class="all-meeting-search">
-        <div id="all-meeting-search-container">
-            <i class="fa fa-search"></i>
-            <input type="text" id="all-meeting-search-input" placeholder="在此搜尋不限時間、所有會議">
-        </div>
-    </div>
+<!--會議面板-->
+<div class="meeting-search-panel-menu">
+    <nav>
+        <a href="#" class="active" data-target="meeting-now-search">今日會議查詢</a>
+        <a href="#" data-target="meeting-check-search">騰訊衝堂查詢</a>
+        <a href="#" data-target="all-meeting-search-panel">所有會議查詢</a>
+        <div class="animation start-meeting-now-search"></div>
+    </nav>
 
-    <!-- 搜尋結果顯示區域 -->
-    <div id="all-meeting-result-container"></div>
+    <div id="meeting-menu-content">
+        <div id="meeting-now-search" class="meeting-menu-content-section active">
+			<!--今日會議查詢-->
+			<div class="meeting-now-search">
+				<b>[ZOOM、騰訊] 今日會議</b>
+			<div id="meetingsearchnow-form-container">
+				<!-- 名稱搜尋今日會議 -->
+				<div id="meetingsearch-filter-container">
+					<input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議">
+					<button id="meetingsearch-fetch-meetings" type="button">列出所有會議</button>
+				</div>
+				<div class="meeting-now-result-flow">
+				<!-- 搜尋所有今日會議 -->
+				<div id="meetingsearch-result"></div>
+				<div id="meetingsearch-error"></div>
+				<div id="meetingsearch-account-results"></div>
+				</div>
+			</div>
+			</div>
+		</div>
+        <div id="meeting-check-search" class="meeting-menu-content-section">
+			<!--衝堂查詢-->
+			<div class="meeting-check-search">
+				<a href="https://docs.google.com/document/d/1HF1nKpNAUBMMjcTMvA83cE52Konz-8ejIksisvY7xms/edit#heading=h.i0aa0sgk4vpg" target="_blank" title="查看「第三方視訊軟體開設方式」" class="meeting-check-create-document no-nth-child">
+					<i class="fa-solid fa-glasses"></i>
+				</a>
+				<b>[騰訊] 衝堂查詢</b>
+				<div id="meeting-check-form-container">
+			<form id="meeting-check-form" style="display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;">
+				<!-- 第一行 -->
+				<div class="meeting-check-form-group">
+					<input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+				</div>
+				<div class="meeting-check-form-group">
+					<input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
+				</div>
+				<div class="meeting-check-form-group">
+					<input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
+				</div>
+				<div class="meeting-check-form-group">
+					<button type="submit" style="width: 100%;">查詢</button>
+				</div>
 
-    <!-- 錯誤顯示區域 -->
-    <div id="all-meeting-error"></div>
-</div>
-<!--衝堂查詢-->
-<div class="meeting-check-search">
-    <a href="https://docs.google.com/document/d/1HF1nKpNAUBMMjcTMvA83cE52Konz-8ejIksisvY7xms/edit#heading=h.i0aa0sgk4vpg" target="_blank" title="查看「第三方視訊軟體開設方式」" class="meeting-check-create-document">
-        <i class="fa-solid fa-glasses"></i>
-    </a>
-    <b>[騰訊] 衝堂查詢</b>
-    <div id="meeting-check-form-container">
-<form id="meeting-check-form" style="display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;">
-    <!-- 第一行 -->
-    <div class="meeting-check-form-group">
-        <input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
-    </div>
-    <div class="meeting-check-form-group">
-        <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
-    </div>
-    <div class="meeting-check-form-group">
-        <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
-    </div>
-    <div class="meeting-check-form-group">
-        <button type="submit" style="width: 100%;">查詢</button>
-    </div>
+				<!-- 第二行 -->
+				<div class="meeting-check-form-group">
+					<label><input type="radio" name="meeting-type" value="長週期" checked> 長週期</label>
+				</div>
+				<div class="meeting-check-form-group">
+					<label><input type="radio" name="meeting-type" value="短週期"> 短週期</label>
+				</div>
+				<div class="meeting-check-form-group"></div> <!-- 留空 -->
+				<div class="meeting-check-form-group"></div> <!-- 留空 -->
+			</form>
+				<div id="meeting-check-result-scrollbar">
+					<div id="meeting-check-result"></div>
+					<div id="meeting-check-error"></div>
+					<div id="meeting-check-account-results"></div>
+				</div>
+				</div>
+			</div>	
+		</div>
+        <div id="all-meeting-search-panel" class="meeting-menu-content-section">
+			<!--所有會議查詢-->
+			<div id="all-meeting-search-panel">
+				<div class="all-meeting-search">
+					<div id="all-meeting-search-container">
+						<i class="fa fa-search"></i>
+						<input type="text" id="all-meeting-search-input" placeholder="在此搜尋不限時間、所有會議">
+					</div>
+				</div>
 
-    <!-- 第二行 -->
-    <div class="meeting-check-form-group">
-        <label><input type="radio" name="meeting-type" value="長週期" checked> 長週期</label>
-    </div>
-    <div class="meeting-check-form-group">
-        <label><input type="radio" name="meeting-type" value="短週期"> 短週期</label>
-    </div>
-    <div class="meeting-check-form-group"></div> <!-- 留空 -->
-    <div class="meeting-check-form-group"></div> <!-- 留空 -->
-</form>
-	<div id="meeting-check-result-scrollbar">
-        <div id="meeting-check-result"></div>
-        <div id="meeting-check-error"></div>
-        <div id="meeting-check-account-results"></div>
-	</div>
+				<!-- 搜尋結果顯示區域 -->
+				<div id="all-meeting-result-container"></div>
+
+				<!-- 錯誤顯示區域 -->
+				<div id="all-meeting-error"></div>
+			</div>
+		</div>
     </div>
 </div>
 <script>
@@ -558,6 +576,6 @@ setTimeout(showAllRows, 1000);\n\
 	<script src="script/assist_issue.js"></script>
 	<script src="script/as_num.js"></script>
 	<script src="script/meeting-all.js"></script>
-
+	<script src="script/meeting-search-panel.js"></script>
 </body>
 </html>
