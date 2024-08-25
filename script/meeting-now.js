@@ -325,7 +325,13 @@ function createMeetingItem(meeting, className, index, accountid) {
     meetingDiv.className = `meetingsearch-meeting-item ${className}`;
     meetingDiv.id = uniqueId;
 
+    // 創建包裹 div1, div2, div3 的父元素
+    const meetingRowDiv = document.createElement('div');
+    meetingRowDiv.className = 'meeting-now-row'; // 用來包裹 div1, div2, div3 的父容器
+
     // 創建 + / - 按鈕，用於收合
+    const toggleButtonDiv = document.createElement('div');
+    toggleButtonDiv.className = 'meeting-now-div1'; // 第一個 div
     const toggleButton = document.createElement('button');
     toggleButton.textContent = '+'; // 初始狀態為 "+"
     toggleButton.style.marginRight = '10px'; // 按鈕和文本之間的間距
@@ -344,8 +350,18 @@ function createMeetingItem(meeting, className, index, accountid) {
         // 阻止事件冒泡，防止點擊按鈕時觸發父元素的點擊事件
         event.stopPropagation();
     });
+    toggleButtonDiv.appendChild(toggleButton);
 
-    // 根據會議物件的 accountid 前四碼判斷會議類型
+    // 第二個 div，放置會議內容
+    const meetingContentDiv = document.createElement('div');
+    meetingContentDiv.className = 'meeting-now-div2'; // 第二個 div
+    const meetingContent = document.createElement('span');
+    meetingContent.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
+    meetingContentDiv.appendChild(meetingContent);
+
+    // 第三個 div，放置圖示和連結
+    const iconLinkDiv = document.createElement('div');
+    iconLinkDiv.className = 'meeting-now-div3'; // 第三個 div
     const accountIdPrefix = accountid.slice(0, 4).toLowerCase(); // 取前四個字符，轉為小寫
     let meetingType = ''; // 初始化會議類型
 
@@ -355,11 +371,6 @@ function createMeetingItem(meeting, className, index, accountid) {
         meetingType = 'zoom';
     }
 
-    // 創建會議內容和link元素
-    const meetingContent = document.createElement('span');
-    meetingContent.innerHTML = `${meeting.name}（${meeting.startTime}~${meeting.endTime}）`;
-
-    // 創建圖示並包裹在link中
     const iconLink = document.createElement('a');
     iconLink.href = meeting.link;
     iconLink.target = '_blank';
@@ -373,17 +384,16 @@ function createMeetingItem(meeting, className, index, accountid) {
         iconImg.alt = 'zoom';
     }
     iconImg.className = 'meeting-icon'; // 設定圖示的 CSS 類名
-    iconLink.appendChild(iconImg); // 將圖示圖片添加到超連結中
+    iconLink.appendChild(iconImg);
+    iconLinkDiv.appendChild(iconLink);
 
-    // 將內容、圖示連結和文本連結添加到 meetingDiv 中
-    const parentDiv = document.createElement('div'); //創建上一層元素
-    parentDiv.style.position = 'relative'; // 創建上一層元素
+    // 將 div1, div2, div3 添加到 meetingRowDiv 中
+    meetingRowDiv.appendChild(toggleButtonDiv);
+    meetingRowDiv.appendChild(meetingContentDiv);
+    meetingRowDiv.appendChild(iconLinkDiv);
 
-    parentDiv.appendChild(toggleButton);
-    parentDiv.appendChild(meetingContent);
-    parentDiv.appendChild(iconLink); // 添加圖示連結
-
-    meetingDiv.appendChild(parentDiv); // 將 parentDiv 添加到 meetingDiv 中
+    // 最後將 meetingRowDiv 添加到 meetingDiv 中
+    meetingDiv.appendChild(meetingRowDiv);
 
     // 創建會議資訊 div
     const infoDiv = document.createElement('div');

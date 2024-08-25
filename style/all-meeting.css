@@ -1,12 +1,4 @@
-/* 搜尋按鈕面板的絕對定位 */
-#all-meeting-search-panel {
-    position: absolute;
-    top: 410px;
-    left: 880px;
-    width: 320px;
-    max-width: 320px; /* 限制最大寬度 */
-    z-index: 895;
-}
+
 
 /* 搜尋框樣式 */
 #all-meeting-search-container {
@@ -38,7 +30,7 @@
     position: relative;
     top: -30px;
     left: 1px;
-    width: calc(318px - 5px); /* 固定寬度316px減去捲動條寬度5px */
+	width: calc(auto- 5px);
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 0 0 10px 10px;
@@ -89,7 +81,7 @@
     margin-top: 20px;
     color: red;
     font-size: 14px;
-    width: 300px; /* 與搜尋框寬度一致 */
+    width: auto; /* 與搜尋框寬度一致 */
     text-align: left;
     padding-left: 10px;
 }
@@ -102,7 +94,7 @@
 }
 
 .all-meeting-result-item {
-    margin-bottom: 8px; /* 縮小間隔 */
+    margin-bottom: 4px; /* 縮小間隔 */
     font-size: 12px; /* 縮小字體 */
 }
 
@@ -186,7 +178,7 @@
 /* 調整每層的按鈕位置（週期和時間範圍的按鈕位於右側） */
 .all-meeting-repeat-toggle-btn, .all-meeting-time-toggle-btn {
     position: absolute;
-    right: 10;
+    right: 10px;
     cursor: pointer;
 }
 /* 調整每一層內部的 grid 排列 */
@@ -206,14 +198,17 @@
 }
 /* 定義時間範圍及標籤的排列 */
 .all-meeting-time-range {
-    display: grid;
-    grid-template-columns: auto 1fr auto; /* 左邊放標籤，中間放時間範圍，右邊放按鈕 */
+    display: flex;
     align-items: center;
     position: relative;
     padding: 5px;
+	flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
 }
-.all-meeting-time-range:hover {
+.meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
     background-color: #949494 !important;
+}
+.meeting-wrapper{
+	border-radius:10px;
 }
 
 /* 調整標籤元素的位置 */
@@ -222,4 +217,13 @@
     justify-content: center;
     display: grid;
     width: fit-content;
+}
+.meeting-time-container {
+    display: flex;
+    justify-content: space-between; /* 確保時間範圍和 icon 在同一行的兩邊 */
+    align-items: center;
+    position: relative;
+}
+.icon-container {
+    margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
 }
