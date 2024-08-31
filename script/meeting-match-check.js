@@ -55,7 +55,7 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
         sheetName = '「騰訊會議(短週期)」';
     }
 
-    const range = `${sheetName}!A:L`;
+    const range = `${sheetName}!A:K`;
 
     try {
         const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
@@ -75,9 +75,12 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
             6: '六'
         };
 
-        for (let i = 1; i < rows.length; i++) {
-            const row = rows[i];
-            if (!row || row.length < 12) continue; // 確保行數據存在並且有足夠的列數
+for (let i = 1; i < rows.length; i++) {
+    const row = rows[i];
+    if (!row || row.length < 11) continue; // 確保行數據存在並且有足夠的列數 (A 到 K)
+    
+    // 這裡僅處理前 11 個列
+    const relevantData = row.slice(0, 11); // 只獲取 A 到 K 列的數據
 
 const meetingName = row[0] || ''; 
 const startDate = row[1] ? new Date(row[1]) : null;
