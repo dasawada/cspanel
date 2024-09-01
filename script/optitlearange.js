@@ -169,38 +169,52 @@ function search() {
         return;
     }
 
-    // 始终生成文本
-    generateText();
-	
-    $.get(endpoint, function(response) {
-        console.log(response);
+// 始终生成文本
+generateText();
 
-        const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
-        const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
+$.get(endpoint, function(response) {
+    console.log(response);
 
-        search_SAWHO_ResultsSpan.innerHTML = '';
-        search_SAWHO_ResultsDiv.innerHTML = '';
+    const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
+    const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
 
-        let found = false;
-        for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
-            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
-                const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
-                if (cellValue === searchString.toLowerCase()) {
-                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
-                    const teamLeaderRow = 3;
-                    const teamRow = teamLeaderRow - 1;
+    search_SAWHO_ResultsSpan.innerHTML = '';
+    search_SAWHO_ResultsDiv.innerHTML = '';
 
-                    const consultantName = response.values[rowIndex][columnIndex];
-                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-                    let teamValue = response.values[teamRow][columnIndex];
+    let found = false;
 
-                    // 如果 teamLeaderValue 或 teamValue 為空，自動填入"不知道"
-                    if (!teamLeaderValue) {
-                        teamLeaderValue = "不知道";
-                    }
-                    if (!teamValue) {
-                        teamValue = "不知道";
-                    }
+    // 比較每行的相鄰列
+    for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
+        for (let columnIndex = 0; columnIndex < response.values[rowIndex].length - 1; columnIndex++) {
+            let columnValue1 = response.values[rowIndex][columnIndex] || '不知道'; // 確保空值被填補
+            let columnValue2 = response.values[rowIndex][columnIndex + 1] || '不知道';
+
+            if (columnValue1 !== columnValue2) {
+                console.log(`Row ${rowIndex + 1}, Column ${columnIndex + 1} vs Column ${columnIndex + 2}: "${columnValue1}" 與 "${columnValue2}" 不同`);
+            }
+        }
+    }
+
+    // 查找並顯示顧問名稱和組長信息
+    for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
+        for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+            const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
+            if (cellValue === searchString.toLowerCase()) {
+                const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                const teamLeaderRow = 3;
+                const teamRow = teamLeaderRow - 1;
+
+                const consultantName = response.values[rowIndex][columnIndex];
+                const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+                let teamValue = response.values[teamRow][columnIndex];
+
+                // 如果 teamLeaderValue 或 teamValue 為空，自動填入"不知道"
+                if (!teamLeaderValue) {
+                    teamLeaderValue = "不知道";
+                }
+                if (!teamValue) {
+                    teamValue = "不知道";
+                }
 
                     const p = document.createElement('p');
 
