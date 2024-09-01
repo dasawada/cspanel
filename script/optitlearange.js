@@ -192,7 +192,15 @@ function search() {
 
                     const consultantName = response.values[rowIndex][columnIndex];
                     const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-                    const teamValue = response.values[teamRow][columnIndex];
+                    let teamValue = response.values[teamRow][columnIndex];
+
+                    // 如果 teamLeaderValue 或 teamValue 為空，自動填入"不知道"
+                    if (!teamLeaderValue) {
+                        teamLeaderValue = "不知道";
+                    }
+                    if (!teamValue) {
+                        teamValue = "不知道";
+                    }
 
                     const p = document.createElement('p');
 
