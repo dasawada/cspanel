@@ -23,7 +23,6 @@ document.getElementById('meeting-check-form').addEventListener('submit', functio
         document.getElementById('meeting-check-error').textContent = '請輸入有效的時間格式。';
         return;
     }
-
     // 呼叫 checkMeeting 函數，檢查會議衝突
     checkMeeting(date, startTime, endTime, meetingType);
 });
@@ -91,17 +90,6 @@ const meetingInfo = row[6] || '';
 const repeatPattern = row[2] ? row[2].split(',') : [];
 const label = (row.length > 3 && row[3]) ? row[3] : '';
 
-// 打印變量的值
-console.log(`第 ${i + 1} 行:`);
-console.log(`會議名稱: ${meetingName}`);
-console.log(`開始日期: ${startDate}`);
-console.log(`結束日期: ${endDate}`);
-console.log(`會議時間範圍: ${meetingTimeRange}`);
-console.log(`會議帳號: ${accountid}`);
-console.log(`會議資訊: ${meetingInfo}`);
-console.log(`重複模式: ${repeatPattern}`);
-console.log(`標籤: ${label}`);
-
 if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
     console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
     continue;
@@ -109,12 +97,6 @@ if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
 
 const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
 const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
-
-// 打印解析出的會議開始和結束時間
-console.log(`會議開始時間: ${meetingStartTime}`);
-console.log(`會議結束時間: ${meetingEndTime}`);
-
-
 
             if (!meetingStartTime || !meetingEndTime) {
                 console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
