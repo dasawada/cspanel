@@ -639,3 +639,110 @@ hr {
 .conflict-warning-icon {
     animation: blinkIcon 1s infinite; /* 1秒一循環，無限次數 */
 }
+/* Modal 整體樣式 */
+#zv-metting-list-results-modal {
+    display: none;
+    position: fixed;
+    z-index: 999691;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7); /* 深色背景突出彈窗 */
+    backdrop-filter: blur(5px); /* 模糊背景增強層次 */
+    animation: fadeIn 0.1s ease; /* 添加淡入動畫 */
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Modal 內容布局 */
+#zv-metting-list-modal-content {
+    position: relative;
+    background-color: #fff;
+    margin: 5% auto;
+    padding: 20px;
+    border: 1px solid #ddd;
+    width: 90%;
+    max-width: 400px;
+    border-radius: 10px; /* 更柔和的圓角 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 顯著的陰影 */
+}
+
+/* 關閉按鈕 */
+#zv-metting-list-close-btn {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    font-size: 24px;
+    font-weight: bold;
+    color: #333;
+    cursor: pointer;
+    background-color: transparent;
+    border: none;
+}
+
+#zv-metting-list-close-btn:hover {
+    color: #ff0000; /* 滑過時變為紅色 */
+}
+
+/* 按鈕組樣式，讓按鈕居中 */
+.zv-metting-list-btn-group {
+    text-align: center;
+    margin: 20px 0;
+}
+
+#zv-metting-list-format-btn,
+#zv-metting-list-copy-btn {
+    background-color: #007aff; /* 蘋果藍 */
+    color: white;
+    padding: 8px 16px;
+    border: none;
+    border-radius: 12px; /* 圓潤的邊角 */
+    font-size: 16px;
+    cursor: pointer;
+    transition: background-color 0.3s ease, box-shadow 0.3s ease; /* 平滑的過渡效果 */
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15); /* 蘋果風的陰影 */
+}
+
+/* 懸停時的效果 */
+#zv-metting-list-format-btn:hover,
+#zv-metting-list-copy-btn:hover {
+    background-color: #005fdb; /* 更深的藍色 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2); /* 加強陰影 */
+}
+
+/* 按下時的效果 */
+#zv-metting-list-format-btn:active,
+#zv-metting-list-copy-btn:active {
+    background-color: #004bb5; /* 較深的藍色 */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2); /* 縮小陰影 */
+}
+
+
+/* 課程資料的輸入框和輸出框 */
+textarea {
+    width: 100%;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    padding: 10px;
+    font-size: 14px;
+    margin-bottom: 15px;
+    resize: none; /* 禁止手動調整大小 */
+}
+
+
+.zv-metting-list {
+    position: absolute; /* 將元素定位在相對父容器 */
+    top: 10px;  /* 距離父容器頂部 10px */
+    right:10px; /* 距離父容器右側 10px */
+    width: auto; /* 調整寬度為自適應 */
+    height: auto; /* 調整高度為自適應 */
+}
+.zv-metting-list:hover {
+	color:#bdbdbd;
+	cursor:pointer;
+}

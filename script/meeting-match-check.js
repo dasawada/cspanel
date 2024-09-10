@@ -85,6 +85,9 @@ const meetingName = row[0] || '';
 const startDate = row[1] ? new Date(row[1]) : null;
 const endDate = row[7] ? new Date(row[7]) : null;
 const meetingTimeRange = row[4] ? row[4].split('-') : null;
+if (!meetingTimeRange || !meetingTimeRange[0] || !meetingTimeRange[1]) {
+    continue;  // 跳過這行
+}
 const accountid = row[5] || '';
 const meetingInfo = row[6] || '';
 const repeatPattern = row[2] ? row[2].split(',') : [];
@@ -98,10 +101,9 @@ if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
 const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
 const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
 
-            if (!meetingStartTime || !meetingEndTime) {
-                console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
-                continue;
-            }
+if (!meetingStartTime || !meetingEndTime) {
+    continue;  // 跳過這行
+}
 
             const labelTag = label ? `${label}` : '';
 

@@ -18,7 +18,9 @@ button:hover {
 /* 按鈕點擊時的效果 */
 button:active {
     background-color: #949494; 
+    color: #ffffff;
 }
+
 
 /* 輸入框樣式 */
 input[type=text], input[type=password] {
