@@ -85,12 +85,6 @@ for (let i = 1; i < rows.length; i++) {
 const meetingName = row[0] || ''; 
 const startDate = row[1] ? new Date(row[1]) : null;
 const endDate = row[7] ? new Date(row[7]) : null;
-
-// 設定結束日期的時間為 23:59
-if (endDate) {
-    endDate.setHours(23, 59, 0, 0);  // 設置為 23:59:00
-}
-
 const meetingTimeRange = row[4] ? row[4].split('-') : null;
 const accountid = row[5] || '';
 const meetingInfo = row[6] || '';
