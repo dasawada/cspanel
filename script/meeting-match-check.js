@@ -23,25 +23,31 @@ document.getElementById('meeting-check-form').addEventListener('submit', functio
         document.getElementById('meeting-check-error').textContent = '請輸入有效的時間格式。';
         return;
     }
-
     // 呼叫 checkMeeting 函數，檢查會議衝突
     checkMeeting(date, startTime, endTime, meetingType);
 });
 
 function meetingCheckParseTime(input) {
-    const timePattern1 = /(\d{2})(\d{2})/; // 0000 格式
-    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00 格式
+    if (!input) {
+        return null;  // 如果輸入為空，直接返回 null
+    }
+
+    // 0000 格式 (四位數字) -> 00:00
+    const timePattern1 = /(\d{4})/; // 0000 格式
     let match = input.match(timePattern1);
     if (match) {
-        return `${match[1]}:${match[2]}`;  // 返回格式化的字符串
+        return `${match[1].slice(0, 2)}:${match[1].slice(2, 4)}`;  // 將四位數轉換為 00:00 格式
     }
+
+    // 00:00 格式
+    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00 格式
     match = input.match(timePattern2);
     if (match) {
-        return `${match[1]}:${match[2]}`;  // 返回格式化的字符串
+        return `${match[1]}:${match[2]}`;  // 保持 00:00 格式
     }
-    return null;  // 如果解析失败，返回 null
-}
 
+    return null;  // 如果解析失敗，返回 null
+}
 
 async function checkMeeting(date, startTime, endTime, meetingType) {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
@@ -85,22 +91,24 @@ for (let i = 1; i < rows.length; i++) {
 const meetingName = row[0] || ''; 
 const startDate = row[1] ? new Date(row[1]) : null;
 const endDate = row[7] ? new Date(row[7]) : null;
+
+if (endDate) {
+    // 設置結束日期為當天的 23:59:59
+    endDate.setHours(23, 59, 59, 999);
+}
+
+// 日誌：記錄撈取到的開始日期和結束日期
+console.log(`第 ${i + 1} 行撈取到的開始日期: ${startDate}, 結束日期: ${endDate}`);
+
+if (!startDate || !endDate) {
+    console.warn(`第 ${i + 1} 行的日期無效，跳過該行`);
+    continue;
+}
 const meetingTimeRange = row[4] ? row[4].split('-') : null;
 const accountid = row[5] || '';
 const meetingInfo = row[6] || '';
 const repeatPattern = row[2] ? row[2].split(',') : [];
 const label = (row.length > 3 && row[3]) ? row[3] : '';
-
-// 打印變量的值
-console.log(`第 ${i + 1} 行:`);
-console.log(`會議名稱: ${meetingName}`);
-console.log(`開始日期: ${startDate}`);
-console.log(`結束日期: ${endDate}`);
-console.log(`會議時間範圍: ${meetingTimeRange}`);
-console.log(`會議帳號: ${accountid}`);
-console.log(`會議資訊: ${meetingInfo}`);
-console.log(`重複模式: ${repeatPattern}`);
-console.log(`標籤: ${label}`);
 
 if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
     console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
@@ -110,16 +118,13 @@ if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
 const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
 const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
 
-// 打印解析出的會議開始和結束時間
-console.log(`會議開始時間: ${meetingStartTime}`);
-console.log(`會議結束時間: ${meetingEndTime}`);
+// 日誌：記錄撈取到的會議開始時間和結束時間
+console.log(`會議開始時間: ${meetingStartTime}, 會議結束時間: ${meetingEndTime}`);
 
-
-
-            if (!meetingStartTime || !meetingEndTime) {
-                console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
-                continue;
-            }
+if (!meetingStartTime || !meetingEndTime) {
+    console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
+    continue;
+}
 
             const labelTag = label ? `${label}` : '';
 
