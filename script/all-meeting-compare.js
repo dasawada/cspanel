@@ -24,13 +24,12 @@ async function getSheetData(sheetName) {
 
 // 合併「長週期」和「短週期」會議數據
 async function getCombinedMeetingData() {
-    // 讀取「騰訊會議(長週期)」和「騰訊會議(短週期)」的數據
-    const longCycleData = await getSheetData('「騰訊會議(長週期)」');
-    const shortCycleData = await getSheetData('「騰訊會議(短週期)」');
+    const [longCycleData, shortCycleData] = await Promise.all([
+        getSheetData('「騰訊會議(長週期)」'),
+        getSheetData('「騰訊會議(短週期)」')
+    ]);
 
-    // 合併數據
-    const combinedData = [...longCycleData, ...shortCycleData]; // 將兩個表格的數據合併
-
+    const combinedData = [...longCycleData, ...shortCycleData];
     return combinedData;
 }
 

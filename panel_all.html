@@ -95,9 +95,6 @@ setTimeout(showAllRows, 1000);\n\
 </div>
             <div class="optitlepanel">
                 <form id="consultantForm" style="margin: 0;">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-                        <b>🔖OP標題生成</b>
-                    </div>
 		<div class="op-title-output-div">
                     <span class="optitle-text-form">[顧問</span>
                     <label style="position: relative; display: inline-block; cursor: text;">
@@ -141,7 +138,7 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 
 <!-- 教室log確認 -->
-<div class="ClassLogpanel small-size" style="left: 0px;top: 330px; position: absolute;">
+<div class="ClassLogpanel small-size" style="left: 0px;top: 310px; position: absolute;">
     <div class="toggle-container">
         <input type="checkbox" id="logToggleCheckbox">
         <label for="logToggleCheckbox">📊教室LOG</label>
@@ -432,34 +429,6 @@ setTimeout(showAllRows, 1000);\n\
     </div>
 </div>
 <button class="assist-issue-copy-button" id="assist-issue-copyButton">複製內容</button>
-</div>
-<!--白板-->
-<div class="board small-size">
-    <div class="toggle-container">
-        <input type="checkbox" id="board-toggleCheckbox">
-        <label for="board-toggleCheckbox">製圖白板</label>
-    </div>
-    <div id="content" style="display: none;">
-            <div id="excalidraw-container"></div>
-    <script type="text/javascript">
-        (function() {
-            const { createElement, useRef } = window.React;
-            const { render } = window.ReactDOM;
-            const { Excalidraw } = window.ExcalidrawLib;
-
-            function ExcalidrawApp() {
-                const excalidrawRef = useRef(null);
-
-                return createElement('div', { style: { height: '100%', width: '100%' } },
-                    createElement(Excalidraw, { ref: excalidrawRef, langCode: "zh-TW" })
-                );
-            }
-
-            render(createElement(ExcalidrawApp), document.getElementById('excalidraw-container'));
-        })();
-
-    </script>
-</div>
 </div>
 <!--會議面板-->
 <div class="meeting-search-panel-menu">
