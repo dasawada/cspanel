@@ -43,7 +43,7 @@ body, button, textarea {
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
 	position: absolute; /* 確保容器為相對定位 */
 	left: 0px;
-    top:  0px;
+    top: 120px;
 }
 .roofbutton:hover {
     background-color: #f7f7f7;
@@ -55,11 +55,11 @@ body, button, textarea {
 	border-radius: 10px;
 	box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 	width: 400px;
-	height: 130px;
+	height: 110px;
 	box-sizing: border-box;
-    position: absolute; /* 確保容器為相對定位 */
-	left: 0px;
-    top:  150px;
+    position: absolute;
+    top: 0px;
+    left: 0px;
 }
 .optitlepanel:hover {
     background-color: #f7f7f7;
@@ -99,7 +99,7 @@ body, button, textarea {
 	height: 600px;
     z-index: 999;
     left: 0px;
-    top: 290px;
+    top: 270px;
 }
 .ClassLogpanel {
 	width: 560px;
@@ -145,7 +145,7 @@ padding-bottom:20px;
 }
 
 .IPsearch_in_panelALL {
-  top: 290px;
+  top: 270px;
   left: 120px;
   display: flex;                 /* 使用 Flexbox */
   flex-direction: column;        /* 垂直排列 */
@@ -166,7 +166,7 @@ padding-bottom:20px;
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: 65px; /* 固定高度 */
+    height: 70px; /* 固定高度 */
 	width: 460px;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
@@ -195,7 +195,7 @@ padding-bottom:20px;
     height: auto; /* 固定高度 */
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
-    top: 115px;
+    top: 120px;
     left: 410px;
 	width: 460px;
 }
