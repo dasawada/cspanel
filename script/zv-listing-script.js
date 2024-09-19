@@ -7,7 +7,12 @@ document.getElementById('zv-metting-list-modal-btn').onclick = function() {
 function zvMettingListCloseModal() {
     document.getElementById('zv-metting-list-results-modal').style.display = 'none';
 }
-
+// 點擊背景關閉 modal
+document.getElementById('zv-metting-list-results-modal').onclick = function(event) {
+    if (event.target === document.getElementById('zv-metting-list-results-modal')) {
+        zvMettingListCloseModal();
+    }
+}
 // 整理課程時間的函數
 function zvMettingListFormatData() {
     const input = document.getElementById('zv-metting-list-inputData').value;
