@@ -154,23 +154,13 @@ document.addEventListener('DOMContentLoaded', IP_fetchNewUpdateDate);
 const container = document.querySelector('.IPsearch_in_panelALL');
 const initialHeight = container.style.height || '36px'; // 初始高度
 
-// 檢查容器的高度變化
-setInterval(() => {
-  const currentHeight = container.clientHeight;
-  const newHeight = container.scrollHeight + 'px';
-
-  if (container.style.height !== newHeight) {
-    container.style.height = newHeight;
-  }
-}, 1);
-
-ipInput.addEventListener('input', () => {
-  if (ipInput.value === '') {
-    container.style.transition = 'height 0.1s ease';
-    container.style.height = initialHeight;
-  } else {
-    container.style.transition = 'height 0.1s ease';
-    const newHeight = container.scrollHeight + 'px';
-    container.style.height = newHeight;
-  }
+document.getElementById('ip_input').addEventListener('input', () => {
+    if (document.getElementById('ip_input').value === '') {
+        container.style.transition = 'height 0.3s ease';  // 使用0.3秒过渡效果
+        container.style.height = initialHeight;
+    } else {
+        container.style.transition = 'height 0.3s ease';
+        const newHeight = container.scrollHeight + 'px';
+        container.style.height = newHeight;
+    }
 });
