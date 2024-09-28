@@ -108,7 +108,8 @@ data.valueRanges.forEach((sheetData) => {
 
         const meetingName = row[0]; // 會議名稱 (A列)
         const startDate = new Date(row[1]); // 開始日期 (B列)
-        const endDate = new Date(row[7]); // 結束日期 (H列)
+		const endDate = new Date(row[7]); // 結束日期 (H列)
+		endDate.setHours(23, 59, 59, 999); // 設置為當天的 23:59:59.999
         const repeatPatternString = row[2] || ''; // 確保有空字串作為默認值
         const repeatPattern = repeatPatternString ? repeatPatternString.split(',') : []; // 檢查並拆分重複模式
 
