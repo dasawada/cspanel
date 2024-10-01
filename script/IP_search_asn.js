@@ -157,30 +157,46 @@ const container = document.querySelector('.IPsearch_in_panelALL');
 const initialHeight = '36px'; // 初始高度
 const ipInput = document.getElementById('ip_input');
 
+// 调整高度的函数
 const adjustHeight = () => {
-  // 强制触发浏览器重排
   requestAnimationFrame(() => {
-    const currentHeight = container.clientHeight;
-    const newHeight = container.scrollHeight + 'px';
-    
-    console.log("Current Height:", currentHeight); // 調試: 當前高度
-    console.log("New Height (scrollHeight):", newHeight); // 調試: 新高度
-    
+    const newHeight = container.scrollHeight + 'px'; // 计算新的高度
     container.style.transition = 'height 0.3s ease';
 
     if (ipInput.value === '') {
       container.style.height = initialHeight;
     } else {
-      container.style.height = newHeight;
+      container.style.height = newHeight; // 根据输入内容调整高度
     }
+    
+    console.log("Container height adjusted to:", newHeight);
   });
 };
 
-// 当用户输入或选择 IP 时，調整高度
-ipInput.addEventListener('input', adjustHeight);
-ipInput.addEventListener('paste', () => {
-  setTimeout(adjustHeight, 50);  // 使用setTimeout来确保paste內容已經被粘贴完成再調整高度
+// 添加 MutationObserver 强制监听 DOM 变化
+const observer = new MutationObserver(() => {
+  adjustHeight();  // DOM 有变化时，强制调整高度
 });
 
-// 確保表單的高度也會在focus時更新
-ipInput.addEventListener('focus', adjustHeight);
+// 监听容器内部 DOM 变化，主要观察 IP input 相关的变化
+observer.observe(container, { childList: true, subtree: true });
+
+// 输入框事件监听
+ipInput.addEventListener('input', () => {
+  setTimeout(adjustHeight, 0); // 在每次输入后调整高度
+});
+
+// 处理粘贴内容时的高度调整
+ipInput.addEventListener('paste', () => {
+  setTimeout(adjustHeight, 50);  // 确保内容粘贴完成后调整高度
+});
+
+// 页面加载时检查输入框是否有值
+document.addEventListener('DOMContentLoaded', () => {
+  if (ipInput.value !== '') {
+    adjustHeight(); // 页面加载后如果input有值，调整高度
+  }
+});
+
+// 点击 input 时强制触发高度检查
+ipInput.addEventListener('click', adjustHeight);
