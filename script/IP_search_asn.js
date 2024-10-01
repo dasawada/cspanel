@@ -148,19 +148,39 @@ async function IP_fetchNewUpdateDate() {
     }
 }
 
-document.addEventListener('DOMContentLoaded', IP_fetchNewUpdateDate);
-
-// 展開收合的平滑動畫效果
-const container = document.querySelector('.IPsearch_in_panelALL');
-const initialHeight = container.style.height || '36px'; // 初始高度
-
-document.getElementById('ip_input').addEventListener('input', () => {
-    if (document.getElementById('ip_input').value === '') {
-        container.style.transition = 'height 0.3s ease';  // 使用0.3秒过渡效果
-        container.style.height = initialHeight;
-    } else {
-        container.style.transition = 'height 0.3s ease';
-        const newHeight = container.scrollHeight + 'px';
-        container.style.height = newHeight;
-    }
+document.addEventListener('DOMContentLoaded', () => {
+    IP_fetchNewUpdateDate(); // 確保獲取更新日期
+    adjustHeight(); // 初次加载时的高度调整
 });
+
+const container = document.querySelector('.IPsearch_in_panelALL');
+const initialHeight = '36px'; // 初始高度
+const ipInput = document.getElementById('ip_input');
+
+const adjustHeight = () => {
+  // 强制触发浏览器重排
+  requestAnimationFrame(() => {
+    const currentHeight = container.clientHeight;
+    const newHeight = container.scrollHeight + 'px';
+    
+    console.log("Current Height:", currentHeight); // 調試: 當前高度
+    console.log("New Height (scrollHeight):", newHeight); // 調試: 新高度
+    
+    container.style.transition = 'height 0.3s ease';
+
+    if (ipInput.value === '') {
+      container.style.height = initialHeight;
+    } else {
+      container.style.height = newHeight;
+    }
+  });
+};
+
+// 当用户输入或选择 IP 时，調整高度
+ipInput.addEventListener('input', adjustHeight);
+ipInput.addEventListener('paste', () => {
+  setTimeout(adjustHeight, 50);  // 使用setTimeout来确保paste內容已經被粘贴完成再調整高度
+});
+
+// 確保表單的高度也會在focus時更新
+ipInput.addEventListener('focus', adjustHeight);
