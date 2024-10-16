@@ -434,7 +434,12 @@ setTimeout(showAllRows, 1000);\n\
 <div class="meeting-search-panel-menu">
     <nav>
         <a href="#" class="active" data-target="meeting-now-search">今日會議查詢</a>
-        <a href="#" data-target="meeting-check-search">騰訊衝堂查詢</a>
+        <a href="#" data-target="meeting-check-search">
+    騰訊衝堂查詢
+    <span id="settings-button" class="meeting-check-create-document no-nth-child" style="cursor: pointer; display: none;" title="偵測到衝堂會議">
+        <i class="fa-solid fa-triangle-exclamation conflict-warning-icon"></i>
+    </span>
+</a>
         <a href="#" data-target="all-meeting-search-panel">所有會議查詢</a>
         <div class="animation start-meeting-now-search"></div>
     </nav>
@@ -495,11 +500,6 @@ setTimeout(showAllRows, 1000);\n\
        class="meeting-check-create-document no-nth-child">
         <i class="fa-solid fa-glasses"></i>
     </a>
-    
-<!-- 頁面載入後，如果有會議衝突，這個按鈕會被顯示 -->
-<span id="settings-button" class="meeting-check-create-document no-nth-child" style="cursor: pointer; display: none;" title="偵測到衝堂會議">
-    <i class="fa-solid fa-triangle-exclamation conflict-warning-icon"></i>
-</span>
 
 </div>
 
