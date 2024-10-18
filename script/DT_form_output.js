@@ -1,7 +1,7 @@
-        document.getElementById('DT_form').addEventListener('submit', function (e) {
-            e.preventDefault(); // 阻止表单的默认提交行为
-            generateOutput(); // 直接生成输出
-        });
+document.getElementById('DT_form').addEventListener('submit', function (e) {
+    e.preventDefault(); // 阻止表单的默认提交行为
+    generateOutput(); // 直接生成输出
+});
 
 function generateOutput() {
     const datetime = document.getElementById('DT_datetime').value;
@@ -26,14 +26,21 @@ function generateOutput() {
         const audioSpec = document.querySelector(`input[name="audio_spec_${deviceIndex}"]:checked`)?.value || '';
         const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`)?.value || '';
 
-        deviceOutput += `
-        
-        　設備（${deviceIndex}）：<br>
-        　機型：【${device}】 品牌：【${brand}】 作業系統：【${os}】<br>
-        　版本/硬體條件：【${osVersion}】 瀏覽器：【${browser}】<br>
-        　視訊規格：【${videoSpec}】 視訊品質：【${videoQuality}】<br>
-        　耳麥規格：【${audioSpec}】 聲音品質：【${audioQuality}】<br>
-        `;
+        // 檢查是否要輸出每個字段，避免輸出空值或 "-"
+        let deviceDetails = '';
+        if (device && device !== '-') deviceDetails += `機型：【${device}】 `;
+        if (brand) deviceDetails += `品牌：【${brand}】 `;
+        if (os && os !== '-') deviceDetails += `作業系統：【${os}】<br>`;
+        if (osVersion) deviceDetails += `版本/硬體條件：【${osVersion}】 `;
+        if (browser) deviceDetails += `瀏覽器：【${browser}】<br>`;
+        if (videoSpec) deviceDetails += `視訊規格：【${videoSpec}】 `;
+        if (videoQuality) deviceDetails += `視訊品質：【${videoQuality}】<br>`;
+        if (audioSpec) deviceDetails += `耳麥規格：【${audioSpec}】 `;
+        if (audioQuality) deviceDetails += `聲音品質：【${audioQuality}】<br>`;
+
+        if (deviceDetails) {
+            deviceOutput += `設備（${deviceIndex}）：<br>${deviceDetails}`;
+        }
     });
 
     let connectionOutput = '';
@@ -43,37 +50,30 @@ function generateOutput() {
         const connection = document.getElementById(`DT_connection_${connectionIndex}`).value || '';
         const speed = document.getElementById(`DT_speed_${connectionIndex}`).value || '';
 
-        connectionOutput += `
-        
-        　連線（${connectionIndex}）：<br>
-        　電信業者：【${provider}】 連線方式：【${connection}】<br>
-        　當前網速：【${speed}】<br>
-        `;
+        // 檢查是否要輸出每個字段，避免輸出空值或 "-"
+        let connectionDetails = '';
+        if (provider) connectionDetails += `電信業者：【${provider}】 `;
+        if (connection && connection !== '-') connectionDetails += `連線方式：【${connection}】<br>`;
+        if (speed) connectionDetails += `當前網速：【${speed}】<br>`;
+
+        if (connectionDetails) {
+            connectionOutput += `連線（${connectionIndex}）：<br>${connectionDetails}`;
+        }
     });
 
     const suitable = document.querySelector('input[name="suitable"]:checked')?.value || '';
     const boldbrief = document.getElementById('DT_boldbrief').value || '';
 
     let outputContent = `
-        日期時間：【${formattedDatetime}】<br>
-        學生姓名：【${name}】 ${phone}<br>
-        測試工程師：【${project}】<br>
-		--------<br>
-        使用設備：<br>
-		${deviceOutput}
-		--------<br>
-        網路連線：<br>
-		${connectionOutput}
-		--------<br>
-        是否適合上課：【${suitable}】<br>
-        --------<br>
-        測試問題：<br>
-        <pre style="white-space: pre-wrap;">${issues}</pre><br>
-		　<br>
-        處理過程：<br>
-        <pre style="white-space: pre-wrap;">${process}</pre><br>
-		　<br>
-        <b>${boldbrief}</b>
+        ${formattedDatetime ? `日期時間：【${formattedDatetime}】<br>` : ''}
+        ${name || phone ? `學生姓名：【${name}】 ${phone}<br>` : ''}
+        ${project ? `測試工程師：【${project}】<br>` : ''}
+        ${deviceOutput ? `--------<br>使用設備：<br>${deviceOutput}--------<br>` : ''}
+        ${connectionOutput ? `網路連線：<br>${connectionOutput}--------<br>` : ''}
+        ${suitable ? `是否適合上課：【${suitable}】<br>--------<br>` : ''}
+        ${issues ? `測試問題：<br><pre style="white-space: pre-wrap;">${issues}</pre><br><br>` : ''}
+        ${process ? `處理過程：<br><pre style="white-space: pre-wrap;">${process}</pre><br><br>` : ''}
+        ${boldbrief ? `<b>${boldbrief}</b>` : ''}
     `;
 
     document.getElementById('output_content').innerHTML = outputContent.trim();
