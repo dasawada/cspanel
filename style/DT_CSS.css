@@ -79,11 +79,11 @@
         .DTDV_grid-container {
             display: grid;
             grid-template-columns: 40% 60%;
-            grid-gap: 10px;
             align-items: start;
         }
         .DTDV_grid-item {
             text-align: left; /* 保持單選按鈕跟文字同一行 */
+			padding-left:10px;
         }
         /* DTYN 樣式 */
         .DTYN {

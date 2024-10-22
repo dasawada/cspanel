@@ -48,6 +48,26 @@ function allMeetingCompareParseTime(input) {
     return null;  // 如果解析失敗，返回 null
 }
 
+// 將時間字符串轉換為自午夜以來的分鐘數
+function timeStringToMinutes(timeString) {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+
+// 獲取日期的星期，返回中文表示
+function getDayOfWeek(date) {
+    const dayMap = {
+        0: '日',
+        1: '一',
+        2: '二',
+        3: '三',
+        4: '四',
+        5: '五',
+        6: '六'
+    };
+    return dayMap[date.getDay()];
+}
+
 // 檢查兩個日期是否相同，適用於所有已建立會議比對
 function allMeetingCompareIsSameDay(date1, date2) {
     return date1.getFullYear() === date2.getFullYear() &&
@@ -55,21 +75,41 @@ function allMeetingCompareIsSameDay(date1, date2) {
            date1.getDate() === date2.getDate();
 }
 
+// 檢查日期範圍是否重疊
+function dateRangesOverlap(startDate1, endDate1, startDate2, endDate2) {
+    return (startDate1 <= endDate2) && (startDate2 <= endDate1);
+}
+
 // 檢查會議是否發生在相同的日期或重複週期
 function allMeetingCompareIsSameMeetingDay(meeting1, meeting2) {
     const meeting1StartDate = meeting1.startDate;
+    const meeting1EndDate = meeting1.endDate;
     const meeting2StartDate = meeting2.startDate;
+    const meeting2EndDate = meeting2.endDate;
 
     const meeting1Repeat = meeting1.repeatPattern; // e.g., ['日', '三']
     const meeting2Repeat = meeting2.repeatPattern;
 
+    // 首先檢查日期範圍是否重疊
+    if (!dateRangesOverlap(meeting1StartDate, meeting1EndDate, meeting2StartDate, meeting2EndDate)) {
+        return false; // 日期範圍不重疊
+    }
+
     // 檢查會議是否有相同的重複週期
     if (meeting1Repeat.length > 0 && meeting2Repeat.length > 0) {
         return meeting1Repeat.some(day => meeting2Repeat.includes(day));
+    } else if (meeting1Repeat.length > 0 && meeting2Repeat.length === 0) {
+        // meeting1 重複，meeting2 不重複
+        const meeting2DayOfWeek = getDayOfWeek(meeting2StartDate);
+        return meeting1Repeat.includes(meeting2DayOfWeek);
+    } else if (meeting1Repeat.length === 0 && meeting2Repeat.length > 0) {
+        // meeting2 重複，meeting1 不重複
+        const meeting1DayOfWeek = getDayOfWeek(meeting1StartDate);
+        return meeting2Repeat.includes(meeting1DayOfWeek);
+    } else {
+        // 如果沒有重複週期，則檢查是否是同一天
+        return allMeetingCompareIsSameDay(meeting1StartDate, meeting2StartDate);
     }
-
-    // 如果沒有重複週期，則檢查是否是同一天
-    return allMeetingCompareIsSameDay(meeting1StartDate, meeting2StartDate);
 }
 
 // 檢查會議時間是否重疊
@@ -81,7 +121,7 @@ function allMeetingCompareCheckForConflicts(meetings) {
             const meeting1 = meetings[i];
             const meeting2 = meetings[j];
 
-            // 檢查會議是否在同一天或重複週期匹配
+            // 檢查會議是否在同一天或重複週期匹配，且日期範圍重疊
             if (!allMeetingCompareIsSameMeetingDay(meeting1, meeting2)) {
                 continue; // 如果不是同一天或不同週期，跳過這對會議
             }
@@ -97,13 +137,13 @@ function allMeetingCompareCheckForConflicts(meetings) {
                 continue;
             }
 
-            const meeting1Start = new Date(`1970-01-01T${start1}:00`);
-            const meeting1End = new Date(`1970-01-01T${end1}:00`);
-            const meeting2Start = new Date(`1970-01-01T${start2}:00`);
-            const meeting2End = new Date(`1970-01-01T${end2}:00`);
+            const meeting1StartMinutes = timeStringToMinutes(start1);
+            const meeting1EndMinutes = timeStringToMinutes(end1);
+            const meeting2StartMinutes = timeStringToMinutes(start2);
+            const meeting2EndMinutes = timeStringToMinutes(end2);
 
             // 檢查時間是否重疊
-            if (meeting1End > meeting2Start && meeting1Start < meeting2End) {
+            if (meeting1EndMinutes > meeting2StartMinutes && meeting1StartMinutes < meeting2EndMinutes) {
                 conflicts.push({ meeting1, meeting2 });
             }
         }
@@ -128,54 +168,52 @@ async function processMeetingsAndCheckConflicts() {
 // 用來解析會議的主要邏輯
 async function allMeetingCompareProcessMeetingData(rows) {
     const accountResults = {};
-    const dayMap = {
-        0: '日',
-        1: '一',
-        2: '二',
-        3: '三',
-        4: '四',
-        5: '五',
-        6: '六'
-    };
 
-	for (let i = 1; i < rows.length; i++) {
-		const row = rows[i];
-		if (!row || row.length < 11) continue; // 確保行數據存在並且有足夠的列數 (A 到 K)
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 11) continue; // 確保行數據存在並且有足夠的列數 (A 到 K)
 
-		const meetingName = row[0] || ''; 
-		const startDate = row[1] ? new Date(row[1]) : null;
-		const endDate = row[7] ? new Date(row[7]) : null;
-		const meetingTimeRange = row[4] ? row[4].split('-') : null;
-		const accountid = row[5] || '';
-		const meetingInfo = row[6] || '';
-		const repeatPattern = row[2] ? row[2].split(',') : [];
-		const label = (row.length > 3 && row[3]) ? row[3] : '';
-		const meetingLink = row[10] || ''; // 假設 column K 是第 11 列，存放會議連結
+        const meetingName = row[0] || ''; 
+        const startDate = row[1] ? new Date(row[1]) : null;
+        if (startDate) {
+            startDate.setHours(0, 0, 0, 0);
+        }
+        const endDate = row[7] ? new Date(row[7]) : null;
+        if (endDate) {
+            endDate.setHours(0, 0, 0, 0);
+        }
+        const meetingTimeRange = row[4] ? row[4].split('-') : null;
+        const accountid = row[5] || '';
+        const meetingInfo = row[6] || '';
+        const repeatPattern = row[2] ? row[2].split(',') : [];
+        const label = (row.length > 3 && row[3]) ? row[3] : '';
+        const meetingLink = row[10] || ''; // 假設 column K 是第 11 列，存放會議連結
 
-		if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
-			continue;
-		}
+        if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
+            continue;
+        }
 
-		if (!accountResults[accountid]) {
-			accountResults[accountid] = {
-				hasMeeting: true,
-				meetings: []
-			};
-		}
+        if (!accountResults[accountid]) {
+            accountResults[accountid] = {
+                hasMeeting: true,
+                meetings: []
+            };
+        }
 
-		accountResults[accountid].meetings.push({
-			name: meetingName,
-			startDate: startDate,
-			endDate: endDate,
-			timeRange: `${meetingTimeRange[0]}-${meetingTimeRange[1]}`,
-			repeatPattern: repeatPattern,
-			label: label,
-			link: meetingLink // 將會議連結添加到會議數據中
-		});
-	}
+        accountResults[accountid].meetings.push({
+            name: meetingName,
+            startDate: startDate,
+            endDate: endDate,
+            timeRange: `${meetingTimeRange[0]}-${meetingTimeRange[1]}`,
+            repeatPattern: repeatPattern,
+            label: label,
+            link: meetingLink // 將會議連結添加到會議數據中
+        });
+    }
 
-	return accountResults;
+    return accountResults;
 }
+
 // 根據會議衝突生成結果的 HTML
 function generateConflictsHTML(accountResults) {
     let resultsHTML = '';
@@ -317,7 +355,15 @@ async function checkForConflictsAndToggleButton() {
     }
 }
 
-// 當頁面載入時，自動檢查會議衝突
+// 定義一個定時器來定期檢查會議衝突
+function startConflictCheckInterval() {
+    setInterval(async function() {
+        await checkForConflictsAndToggleButton();
+    }, 5000); // 每5秒檢查一次，可以根據需要調整間隔
+}
+
+// 當頁面載入時，自動檢查會議衝突，並開始定時檢查
 window.addEventListener('DOMContentLoaded', async function() {
-    await checkForConflictsAndToggleButton(); // 檢查並決定是否顯示按鈕
+    await checkForConflictsAndToggleButton(); // 初始檢查
+    startConflictCheckInterval(); // 開始定時檢查
 });
