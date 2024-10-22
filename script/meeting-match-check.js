@@ -187,6 +187,9 @@ function displayResults(accountResults) {
 
     const meetingsByName = {}; // 用於統整相同名稱的會議
 
+    let hasNoMeetingAccounts = false;
+    let hasMeetingAccounts = false;
+
     for (const account in accountResults) {
         const accountResult = document.createElement('div');
         accountResult.className = 'meeting-check-account-title';
@@ -197,8 +200,9 @@ function displayResults(accountResults) {
 
         if (!accountResults[account].hasMeeting) {
             noMeetingGroup.appendChild(accountResult);
+            hasNoMeetingAccounts = true;
         } else {
-            // 統整相同會議名稱的會議資訊
+            hasMeetingAccounts = true;
             accountResults[account].overlappingMeetings.forEach(meeting => {
                 if (!meetingsByName[meeting.name]) {
                     meetingsByName[meeting.name] = []; // 初始化會議名稱
@@ -261,8 +265,8 @@ function displayResults(accountResults) {
                 labelElement.style.padding = '1px 4px';
                 labelElement.style.marginLeft = '8px';
                 labelElement.style.fontSize = '10px';
-				labelElement.style.borderRadius = '4px';
-                
+                labelElement.style.borderRadius = '4px';
+
                 // 將標籤插入到正確的位置
                 const repeatDiv = meetingDetails.querySelector('div:nth-child(1)');
                 if (repeatDiv) {
@@ -276,7 +280,7 @@ function displayResults(accountResults) {
             if (meetingAccountSpan) {
                 meetingDetails.appendChild(meetingAccountSpan);
             }
-            
+
             // 將會議詳細資訊添加到容器
             meetingDetailsContainer.appendChild(meetingDetails);
 
@@ -305,6 +309,16 @@ function displayResults(accountResults) {
         hasMeetingGroup.appendChild(meetingGroupDiv);
     }
 
+    // 檢查是否有無會議帳號
+    if (!hasNoMeetingAccounts) {
+        noMeetingGroup.innerHTML += '<p>此時段無可用帳號</p>';  // 加入「無」說明
+    }
+
+    // 檢查是否有已排會議帳號
+    if (!hasMeetingAccounts) {
+        hasMeetingGroup.innerHTML += '<p>此時段尚無會議</p>';  // 加入「無」說明
+    }
+
     if (noMeetingGroup.children.length > 0) {
         accountResultsDiv.appendChild(noMeetingGroup);
     }
@@ -313,6 +327,7 @@ function displayResults(accountResults) {
         accountResultsDiv.appendChild(hasMeetingGroup);
     }
 }
+
 
 // 創建可複製帳號元素的函數
 function createCopyableAccountElement(accountid) {

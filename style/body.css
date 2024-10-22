@@ -3,6 +3,7 @@ body, button, textarea {
     position: relative; /* 確保 body 的內容在 header 之上 */
     z-index: 1; /* 確保 body 的內容在 header 之上 */
 	font-size:13px;
+	background: rgba(255, 255, 255, 0.5);
 }
         b, h1, h2, h3, h4, h5, h6 {
             font-family: 'PingFangHK', 'SanFrancisco', 'Microsoft JhengHei', 'Microsoft YaHei', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Helvetica', 'sans-serif';
