@@ -168,10 +168,18 @@
 }
 .meeting-check-create-document {
     text-decoration: none;
-    color: inherit; /* 保持原來的顏色，或修改顏色 */
+    color: inherit;
+    cursor: pointer;
 }
 
-.meeting-check-create-document:hover i {
-    color: #bdbdbd; /* 在懸停時改變圖示顏色 */
-	cursor:
+.meeting-check-create-document:hover {
+    color: #bdbdbd; /* 懸停時的顏色 */
+}
+.all-meeting-left-top-icon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 10px;
+    display: flex;
+    gap: 10px;
 }
