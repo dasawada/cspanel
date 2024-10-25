@@ -9,6 +9,7 @@
 
   gtag('config', 'G-1638R1H1FB');
 </script>
+
 <script src="https://apis.google.com/js/api.js"></script>
     <script src="https://unpkg.com/react@18.2.0/umd/react.production.min.js"></script>
     <script src="https://unpkg.com/react-dom@18.2.0/umd/react-dom.production.min.js"></script>
@@ -498,15 +499,25 @@ setTimeout(showAllRows, 1000);\n\
         <div id="meeting-check-search" class="meeting-menu-content-section">
 			<!--衝堂查詢-->
 			<div class="meeting-check-search">
-<div class="all-meeting-left-top-icon" style="position: absolute; top: 0; right: 0; margin: 10px; display: flex; gap: 10px;">
-    <a href="https://docs.google.com/document/d/1HF1nKpNAUBMMjcTMvA83cE52Konz-8ejIksisvY7xms/edit#heading=h.i0aa0sgk4vpg" 
-       target="_blank" 
-       title="查看「第三方視訊軟體開設方式」" 
-       class="meeting-check-create-document no-nth-child">
-        <i class="fa-solid fa-glasses"></i>
-    </a>
+			
+<div class="all-meeting-left-top-icon">
+  <i class="fa-solid fa-pencil meeting-check-create-document" onclick="vvgglesht_openModal()"></i>
 
+  <div id="vvgglesht_modal">
+    <div id="vvgglesht_modal-content">
+      <span id="vvgglesht_close-btn" onclick="vvgglesht_closeModal()">&times;</span>
+      <iframe id="vvgglesht_iframe" src="ggsheet.html"></iframe>
+    </div>
+  </div>
+
+  <a href="https://docs.google.com/document/d/1HF1nKpNAUBMMjcTMvA83cE52Konz-8ejIksisvY7xms/edit#heading=h.i0aa0sgk4vpg" 
+     target="_blank" 
+     title="查看「第三方視訊軟體開設方式」" 
+     class="meeting-check-create-document no-nth-child">
+    <i class="fa-solid fa-glasses"></i>
+  </a>
 </div>
+
 
 <!-- 結果顯示模態框 -->
 <div id="results-modal">
@@ -541,7 +552,9 @@ setTimeout(showAllRows, 1000);\n\
 				<div class="meeting-check-form-group">
 					<label><input type="radio" name="meeting-type" value="短週期"> 短週期</label>
 				</div>
-				<div class="meeting-check-form-group"></div> <!-- 留空 -->
+				<div class="meeting-check-form-group">
+
+				</div> <!-- 留空 -->
 				<div class="meeting-check-form-group"></div> <!-- 留空 -->
 			</form>
 				<div id="meeting-check-result-scrollbar">
@@ -549,6 +562,7 @@ setTimeout(showAllRows, 1000);\n\
 					<div id="meeting-check-error"></div>
 					<div id="meeting-check-account-results"></div>
 				</div>
+
 				</div>
 			</div>	
 		</div>
@@ -600,5 +614,6 @@ setTimeout(showAllRows, 1000);\n\
 	<script src="script/meeting-search-panel.js"></script>
 	<script src="script/all-meeting-compare.js"></script>
 	<script src="script/zv-listing-script.js"></script>
+	<script src="script/vvgglsht-listing-script.js"></script>
 </body>
 </html>
