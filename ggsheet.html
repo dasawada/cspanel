@@ -51,10 +51,13 @@
 </head>
 <body>
   <h1>騰訊會議轉換</h1>
-  <textarea id="meetingContentTextarea" rows="15" placeholder="請在此貼入會議內容..."></textarea><br>
-  <textarea id="taskLinkTextarea" rows="2" placeholder="請在此貼入工單連結..."></textarea>
+  <textarea id="meetingContentTextarea" rows="10" placeholder="貼上完整的【複製全部資訊】"></textarea><br>
+  <textarea id="taskLinkTextarea" rows="1" placeholder="BX工單連結"></textarea>
   <br>
-  <button id="generateButton">轉換並複製</button>
+<div style="display: flex; gap: 10px;">
+    <button id="generateButton">轉換並複製</button>
+    <button id="clearButton">清除</button>
+</div>
 
   <script>
     // 獲取網頁中的 textarea 並提取內容
@@ -181,6 +184,12 @@ function copyToClipboard(text) {
       const durationInDays = (end - start) / (1000 * 60 * 60 * 24);
       return durationInDays <= 100 ? '短週期' : '長週期';
     }
+	
+	document.getElementById('clearButton').addEventListener('click', function() {
+		document.getElementById('meetingContentTextarea').value = '';
+		document.getElementById('taskLinkTextarea').value = '';
+	});
+
   </script>
 </body>
 </html>

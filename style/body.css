@@ -768,7 +768,7 @@ textarea {
       padding: 0;
       border: 1px solid #ddd;
       width: 350px; /* 固定寬度 */
-      height: 450px; /* 固定高度 */
+      height: 400px; /* 固定高度 */
       border-radius: 10px;
       box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
       overflow: hidden;
