@@ -359,7 +359,7 @@ async function checkForConflictsAndToggleButton() {
 function startConflictCheckInterval() {
     setInterval(async function() {
         await checkForConflictsAndToggleButton();
-    }, 5000); // 每5秒檢查一次，可以根據需要調整間隔
+    }, 60000); // 每5秒檢查一次，可以根據需要調整間隔
 }
 
 // 當頁面載入時，自動檢查會議衝突，並開始定時檢查

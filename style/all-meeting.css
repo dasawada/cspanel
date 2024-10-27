@@ -68,13 +68,6 @@
     padding: 5px;
 }
 
-#all-meeting-result-container div:last-child {
-    border-bottom: none;
-}
-
-#all-meeting-result-container div:hover {
-    background-color: #f1f1f1;
-}
 
 /* 錯誤顯示區域樣式 */
 #all-meeting-error {
@@ -96,6 +89,9 @@
 .all-meeting-result-item {
     margin-bottom: 4px; /* 縮小間隔 */
     font-size: 12px; /* 縮小字體 */
+transition: max-height 0.5s cubic-bezier(0.42, 0, 0.58, 1);
+
+
 }
 
 .all-meeting-details {
@@ -137,8 +133,11 @@
     font-weight: bold;
     margin-bottom: 4px;
     position: relative;
+	
 }
-
+.all-meeting-title:hover {
+	background-color: #f1f1f1;
+}
 .all-meeting-main-toggle-btn {
     cursor: pointer;
     position: relative;
@@ -189,21 +188,27 @@
     position: relative;
 }
 .all-meeting-per-list {
-    border: 1px solid transparent;
-    transition: all .5s ease 0s;
-	margin-bottom: 10px;
-}
-.all-meeting-per-list:hover {
     border: 1px solid #cfcfcf;
     transition: all .5s ease 0s;
+	margin-bottom: 10px;
 	border-radius: 10px;
-	
+	background-color: #f1f1f1;
+}
+
+.all-meeting-per-list:hover {
+    border: 1px solid #858585;
+    transition: all .5s ease 0s;
+	border-radius: 10px;
 }
 /* 定義 grid 容器和列的布局 */
 .all-white-background-div {
     display: grid;
     grid-template-columns: 1fr; /* 每層占滿一列，垂直排列 */
     gap: 10px; /* 每層之間的間隔 */
+	border-left: 1px dashed rgb(224, 224, 224);
+    margin-left: 13px;
+    padding: 6px 10px;
+}
 }
 /* 定義時間範圍及標籤的排列 */
 .all-meeting-time-range {
@@ -236,4 +241,18 @@
 }
 .icon-container {
     margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
+}
+/* 無標籤 */
+.tag-group.no-tag {
+    border-left: 4px solid #4a90e2;
+}
+
+/* 短週期 */
+.tag-group.short-cycle {
+    border-left: 4px solid #327d28;
+}
+
+/* 一次性 */
+.tag-group.one-time {
+    border-left: 4px solid #e24a4a;
 }
