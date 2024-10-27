@@ -191,12 +191,13 @@
 .all-meeting-per-list {
     border: 1px solid transparent;
     transition: all .5s ease 0s;
-	border-radius: 10px;
+	margin-bottom: 10px;
 }
 .all-meeting-per-list:hover {
     border: 1px solid #cfcfcf;
     transition: all .5s ease 0s;
 	border-radius: 10px;
+	
 }
 /* 定義 grid 容器和列的布局 */
 .all-white-background-div {
