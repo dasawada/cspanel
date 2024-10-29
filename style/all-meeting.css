@@ -89,9 +89,6 @@
 .all-meeting-result-item {
     margin-bottom: 4px; /* 縮小間隔 */
     font-size: 12px; /* 縮小字體 */
-transition: max-height 0.5s cubic-bezier(0.42, 0, 0.58, 1);
-
-
 }
 
 .all-meeting-details {
@@ -205,10 +202,8 @@ transition: max-height 0.5s cubic-bezier(0.42, 0, 0.58, 1);
     display: grid;
     grid-template-columns: 1fr; /* 每層占滿一列，垂直排列 */
     gap: 10px; /* 每層之間的間隔 */
-	border-left: 1px dashed rgb(224, 224, 224);
+	border-left: 1px dashed #c5c5c5;
     margin-left: 13px;
-    padding: 6px 10px;
-}
 }
 /* 定義時間範圍及標籤的排列 */
 .all-meeting-time-range {
@@ -216,7 +211,8 @@ transition: max-height 0.5s cubic-bezier(0.42, 0, 0.58, 1);
     align-items: center;
     position: relative;
     padding: 5px;
-	flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
+    flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
+    width: 100%; /* 強制佔滿父級寬度 */
 }
 .meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
     background-color: #e0e0e0 !important;
