@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>資料轉換器</title>
+    <style>
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .label {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .textarea-container {
+            display: flex;
+            flex-direction: column;
+        }
+        .full-width {
+            grid-column: span 3;
+        }
+        .copy-button {
+            display: block;
+            width: fit-content;
+            margin-top: 10px;
+            padding: 5px 10px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+        .copy-button:hover {
+            background-color: #45a049;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="textarea-container">
+            <span class="label">CRM資料：</span>
+            <textarea id="inputData" rows="20" cols="30" placeholder="在此輸入CRM資料..."></textarea>
+        </div>
+        
+        <div class="textarea-container">
+            <span class="label">問題內容：</span>
+            <textarea id="issueContent" rows="20" cols="30" placeholder="在此輸入問題內容..."></textarea>
+        </div>
+        
+        <div class="textarea-container">
+            <span class="label">回覆狀況：</span>
+            <textarea id="responseStatus" rows="20" cols="30" placeholder="在此輸入回覆狀況..."></textarea>
+        </div>
+        
+        <div class="textarea-container full-width">
+            <span class="label">轉換資料：</span>
+            <textarea id="outputData" rows="5" cols="90" readonly></textarea>
+            <button class="copy-button" onclick="copyResult()">複製轉換結果</button>
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('inputData').addEventListener('input', formatData);
+        document.getElementById('issueContent').addEventListener('input', formatData);
+        document.getElementById('responseStatus').addEventListener('input', formatData);
+
+        function formatData() {
+            const input = document.getElementById('inputData').value;
+            const issueContent = cleanExtraNewlines(document.getElementById('issueContent').value);
+            const responseStatus = cleanExtraNewlines(document.getElementById('responseStatus').value);
+
+            const regexDate = /日期和時間:\s*([\d-]+)\s*([\d:]+)/;
+            const regexSchool = /學校名稱\*:\s*(.*)/;
+            const regexIdentity = /身份:\s*(.*)/;
+            const regexName = /姓名\*:\s*(.*)/;
+            const regexCitySchool = /(國小|國中|高中)/;
+            
+            const dateMatch = input.match(regexDate);
+            const schoolMatch = input.match(regexSchool);
+            const identityMatch = input.match(regexIdentity);
+            const nameMatch = input.match(regexName);
+            
+            let formattedDate = '';
+            if (dateMatch) {
+                const [year, month, day] = dateMatch[1].split("-");
+                formattedDate = `${month}/${day}`;
+            }
+            const time = dateMatch ? dateMatch[2] : '';
+            const school = schoolMatch ? schoolMatch[1] : '';
+            const identity = identityMatch ? identityMatch[1] : '';
+            const name = nameMatch ? nameMatch[1] : '';
+            let level = '不明';
+            
+            if (regexCitySchool.test(school)) {
+                level = school.match(regexCitySchool)[1];
+            }
+            
+            // 組合輸出，確保問題內容在第 H 欄，回覆狀況在第 I 欄
+            const result = `${formattedDate} ${time}\t\t${level}\t${identity}/${name}/${school}\t\t\t\t"${issueContent}"\t"${responseStatus}"`;
+            document.getElementById('outputData').value = result;
+        }
+
+        // 去除多餘換行，最多保留一個空行
+        function cleanExtraNewlines(text) {
+            return text.replace(/\n\s*\n/g, '\n').replace(/(\n){2,}/g, '\n\n');
+        }
+
+        // 複製轉換結果
+        function copyResult() {
+            const outputData = document.getElementById('outputData');
+            outputData.select();
+            document.execCommand('copy');
+            alert("轉換結果已複製到剪貼簿！");
+        }
+    </script>
+</body>
+</html>
