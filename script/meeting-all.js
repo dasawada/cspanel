@@ -146,6 +146,8 @@ function displayMeetings(meetings) {
 					tagGroupDiv.classList.add('short-cycle');
 				} else if (tag === '一次性') {
 					tagGroupDiv.classList.add('one-time');
+				} else if (tag === '長週期') {
+					tagGroupDiv.classList.add('long-cycle'); // 為長週期添加類別
 				}
 
 				// 如果 tag 不是 "無標籤"，則顯示標籤標題
