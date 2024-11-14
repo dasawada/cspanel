@@ -236,17 +236,8 @@
 .icon-container {
     margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
 }
-/* 無標籤 */
-.tag-group.no-tag {
-    border-left: 4px solid #4a90e2;
-}
-
-/* 短週期 */
-.tag-group.short-cycle {
-    border-left: 4px solid #327d28;
-}
-
-/* 一次性 */
-.tag-group.one-time {
-    border-left: 4px solid #e24a4a;
-}
+        /* 標籤顏色定義 */
+        .tag-group.no-tag { border-left: 4px solid #4a90e2; }
+        .tag-group.short-cycle { border-left: 4px solid #327d28; }
+        .tag-group.one-time { border-left: 4px solid #e24a4a; }
+		.tag-group.long-cycle { border-left: 4px solid #4a90e2;}
