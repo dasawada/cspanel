@@ -134,10 +134,17 @@ function displayMeetings(meetings) {
             timeDiv.className = 'all-time-background-div';
             timeDiv.style.display = 'none';
 
-			Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
-				const tagGroupDiv = document.createElement('div');
-				tagGroupDiv.className = 'tag-group';
-				tagGroupDiv.style.borderTop = '1px solid #ddd';
+Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
+    // 對每個標籤中的會議時間進行排序
+    meetingMap[meetingName][repeatPattern][tag].sort((a, b) => {
+        const timeA = a.meetingTimeRange ? parseInt(a.meetingTimeRange[0].replace(':', ''), 10) : 0;
+        const timeB = b.meetingTimeRange ? parseInt(b.meetingTimeRange[0].replace(':', ''), 10) : 0;
+        return timeA - timeB;
+    });
+
+    const tagGroupDiv = document.createElement('div');
+    tagGroupDiv.className = 'tag-group';
+    tagGroupDiv.style.borderTop = '1px solid #ddd';
 
 				// 根據 tag 名稱添加相應的類別
 				if (tag === '無標籤') {
