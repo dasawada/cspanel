@@ -12,19 +12,20 @@ function handleClientLoad() {
 }
 
 function initClient() {
-    gapi.client.init({
-        apiKey: API_KEY,
-        clientId: CLIENT_ID,
-        discoveryDocs: [DISCOVERY_DOC],
-        scope: SCOPES,
-    }).then(() => {
-        const authInstance = gapi.auth2.getAuthInstance();
-        authInstance.isSignedIn.listen(updateSigninStatus);
-        updateSigninStatus(authInstance.isSignedIn.get());
+gapi.client.init({
+    apiKey: API_KEY,
+    clientId: CLIENT_ID,
+    discoveryDocs: [DISCOVERY_DOC],
+    scope: SCOPES,
+}).then(() => {
+    const authInstance = gapi.auth2.getAuthInstance();
+    authInstance.isSignedIn.listen(updateSigninStatus);
+    updateSigninStatus(authInstance.isSignedIn.get());
+}).catch(error => {
+    console.error('初始化 Google API 客戶端時發生錯誤:', error);
+    document.getElementById('errorDiv').innerText = `Google API 初始化失敗: ${error.details}`;
+});
 
-        document.getElementById('authorize-button').onclick = () => authInstance.signIn();
-        document.getElementById('signout-button').onclick = () => authInstance.signOut();
-    });
 }
 
 function updateSigninStatus(isSignedIn) {
@@ -61,13 +62,19 @@ function search() {
     }
 
 gapi.client.sheets.spreadsheets.values.get({
-    spreadsheetId: '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ',
-    range: '顧問組別清單',
+    spreadsheetId: sheetId,
+    range: range,
 }).then(response => {
-    console.log('資料取得成功:', response.result.values);
+    const values = response.result.values;
+    if (!values || values.length === 0) {
+        console.warn('未取得資料，範圍可能為空');
+        document.getElementById('search_SAWHO_ResultsDiv').innerText = '未找到資料，請確認範圍是否正確。';
+        return;
+    }
+    processSearchResults(values, consultantName);
 }).catch(error => {
-    console.error('錯誤發生:', error);
-    document.getElementById('errorDiv').innerText = `錯誤資訊: ${error.result.error.message}`;
+    console.error('無法取得 Google Sheets 資料:', error);
+    document.getElementById('errorDiv').innerText = `資料存取失敗: ${error.result.error.message}`;
 });
 
 }
