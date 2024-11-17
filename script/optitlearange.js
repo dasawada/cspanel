@@ -1,48 +1,106 @@
-const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
-const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
+// 您的 OAuth 2.0 客户端 ID 和 API 密钥
+const CLIENT_ID = '585720814315-egtk2cbg4jbltvkah9nsmkmer21rkqb4.apps.googleusercontent.com';
+const API_KEY = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
+const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const sheetId = '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ';
 
-// 標題生成的浮水印
-document.querySelectorAll('.optitle-input').forEach(input => {
-    const placeholder = input.nextElementSibling;
-    if (input.value) {
-        placeholder.style.visibility = 'hidden';
+function handleClientLoad() {
+    gapi.load('client:auth2', initClient);
+}
+
+function initClient() {
+    gapi.client.init({
+        apiKey: API_KEY,
+        clientId: CLIENT_ID,
+        discoveryDocs: DISCOVERY_DOCS,
+        scope: SCOPES
+    }).then(function () {
+        // 监听登录状态变化
+        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
+
+        // 初始登录状态
+        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
+
+    }, function(error) {
+        console.error(JSON.stringify(error, null, 2));
+    });
+}
+
+function updateSigninStatus(isSignedIn) {
+    if (isSignedIn) {
+        // 用户已登录，可以调用需要的函数
+        // 例如，您可以在此处调用 search() 或其他初始化函数
+    } else {
+        // 用户未登录，提示用户登录
+        gapi.auth2.getAuthInstance().signIn();
     }
-    input.addEventListener('focus', () => {
-        placeholder.style.visibility = 'hidden';
-    });
-    input.addEventListener('blur', () => {
-        if (!input.value) {
-            placeholder.style.visibility = 'visible';
-        }
-    });
-    input.addEventListener('input', () => {
+}
+
+function handleAuthClick(event) {
+    gapi.auth2.getAuthInstance().signIn();
+}
+
+function handleSignoutClick(event) {
+    gapi.auth2.getAuthInstance().signOut();
+}
+
+// 在页面加载完成后调用
+document.addEventListener('DOMContentLoaded', function() {
+    handleClientLoad();
+
+    // 标题生成的浮水印
+    document.querySelectorAll('.optitle-input').forEach(input => {
+        const placeholder = input.nextElementSibling;
         if (input.value) {
             placeholder.style.visibility = 'hidden';
-        } else {
-            placeholder.style.visibility = 'visible';
         }
-        checkInputs(); // 每次輸入改變時檢查輸入框值
+        input.addEventListener('focus', () => {
+            placeholder.style.visibility = 'hidden';
+        });
+        input.addEventListener('blur', () => {
+            if (!input.value) {
+                placeholder.style.visibility = 'visible';
+            }
+        });
+        input.addEventListener('input', () => {
+            if (input.value) {
+                placeholder.style.visibility = 'hidden';
+            } else {
+                placeholder.style.visibility = 'visible';
+            }
+            checkInputs(); // 每次输入改变时检查输入框值
+        });
     });
+
+    // 事件监听器
+    document.getElementById('consultantName').addEventListener('input', function() {
+        checkInputs();
+        search();
+    });
+    document.getElementById('studentName').addEventListener('input', checkInputs);
+    document.getElementById('parentName').addEventListener('input', checkInputs);
+    document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
+    document.getElementById('clearButton').addEventListener('click', clearFields);
 });
 
-// 檢查輸入框值，並生成或清除輸出
+// 检查输入框值，并生成或清除输出
 function checkInputs() {
     var consultantName = document.getElementById("consultantName").value.trim();
     var studentName = document.getElementById("studentName").value.trim();
     var parentName = document.getElementById("parentName").value.trim();
     var invoiceNumber = document.getElementById("invoiceNumber").value.trim();
 
-    // 如果所有輸入框都為空，則清除輸出並顯示預設文本
+    // 如果所有输入框都为空，则清除输出并显示默认文本
     if (consultantName === '' && studentName === '' && parentName === '' && invoiceNumber === '') {
-        clearOutput(); // 清除輸出內容
+        clearOutput(); // 清除输出内容
     } else {
-        // 如果其中任一輸入框有值，則生成結果
+        // 如果其中任一输入框有值，则生成结果
         generateText();
     }
 }
 
-// 將上面的標題組合成固定格式，並清除空白鍵及單號中的井字
+// 将上述标题组合成固定格式，并清除空白键及单号中的井字
 function generateText() {
     var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
     var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
@@ -61,7 +119,7 @@ function generateText() {
         outputText += " #" + invoiceNumber;
     }
 
-    var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" style="border: none; margin-left: 6px;" title="複製到剪貼簿">' +
+    var copyButtonHTML = '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText(event)" style="border: none; margin-left: 6px;" title="複製到剪貼簿">' +
                          '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
                          '</button>';
 
@@ -79,8 +137,7 @@ function generateText() {
     }, 100);
 }
 
-
-// 清除文本，重置為預設文本
+// 清除文本，重置为默认文本
 function clearOutput() {
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
@@ -92,45 +149,9 @@ function clearOutput() {
         optitleOutput.style.opacity = "1";
     }, 1000);
 }
-// 每次輸入變化時，統一通過 checkInputs() 函數來檢查所有輸入框的值
-document.getElementById('consultantName').addEventListener('input', checkInputs);
-document.getElementById('studentName').addEventListener('input', checkInputs);
-document.getElementById('parentName').addEventListener('input', checkInputs);
-document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
 
-
-// 清除指定的輸入欄位
-function clearFields() {
-    // 清空欄位的邏輯
-    document.getElementById("consultantName").value = "";
-    document.getElementById("studentName").value = "";
-    document.getElementById("parentName").value = "";
-    document.getElementById("invoiceNumber").value = "";
-    
-    // 手動觸發 blur 事件
-    document.getElementById("consultantName").dispatchEvent(new Event('blur'));
-    document.getElementById("studentName").dispatchEvent(new Event('blur'));
-    document.getElementById("parentName").dispatchEvent(new Event('blur'));
-    document.getElementById("invoiceNumber").dispatchEvent(new Event('blur'));
-
-    clearOutput(); // 清除輸出內容
-    search();
-	
-    // 獲取垃圾桶按鈕元素
-    const button = document.getElementById('clearButton');
-    // 獲取圖標元素
-    const icon = button.querySelector('i');
-    // 添加動畫效果
-    icon.classList.add('trash-animated');
-    
-    // 等待動畫結束後移除動畫類
-    setTimeout(() => {
-        icon.classList.remove('trash-animated');
-    }, 1000); // 動畫持續時間1秒
-}
-
-// 複製按鈕功能
-function OPtitle_copyText() {
+// 复制按钮功能
+function OPtitle_copyText(event) {
     event.preventDefault();
     var textToCopy = document.getElementById("optitleoutput").innerText;
     var tempInput = document.createElement("input");
@@ -140,23 +161,52 @@ function OPtitle_copyText() {
     document.execCommand("copy");
     document.body.removeChild(tempInput);
 
-    // 將按鈕設置為已複製狀態
+    // 将按钮设置为已复制状态
     var copyButton = document.getElementById("OPtitle_copyButton");
     copyButton.classList.add("OPtitle_copied", "OPtitle_unclickable");
 	
-	
-    // 重新觸發 title 屬性更新
+    // 重新触发 title 属性更新
     var tempTitle = copyButton.title;
     copyButton.title = "";
     copyButton.title = tempTitle;
 
-    // 三秒後恢復按鈕為可選擇狀態
+    // 三秒后恢复按钮为可点击状态
     setTimeout(function() {
         copyButton.classList.remove("OPtitle_copied", "OPtitle_unclickable");
     }, 3000);
 }
 
-// search 函數只處理 consultantName
+// 清除指定的输入字段
+function clearFields() {
+    // 清空字段的逻辑
+    document.getElementById("consultantName").value = "";
+    document.getElementById("studentName").value = "";
+    document.getElementById("parentName").value = "";
+    document.getElementById("invoiceNumber").value = "";
+    
+    // 手动触发 blur 事件
+    document.getElementById("consultantName").dispatchEvent(new Event('blur'));
+    document.getElementById("studentName").dispatchEvent(new Event('blur'));
+    document.getElementById("parentName").dispatchEvent(new Event('blur'));
+    document.getElementById("invoiceNumber").dispatchEvent(new Event('blur'));
+
+    clearOutput(); // 清除输出内容
+    search();
+	
+    // 获取垃圾桶按钮元素
+    const button = document.getElementById('clearButton');
+    // 获取图标元素
+    const icon = button.querySelector('i');
+    // 添加动画效果
+    icon.classList.add('trash-animated');
+    
+    // 等待动画结束后移除动画类
+    setTimeout(() => {
+        icon.classList.remove('trash-animated');
+    }, 1000); // 动画持续时间1秒
+}
+
+// search 函数只处理 consultantName
 function search() {
     var searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
 
@@ -169,15 +219,23 @@ function search() {
         if (searchResultsSpan) {
             searchResultsSpan.innerHTML = '';
         }
-        clearOutput(); // 清除輸出內容
+        clearOutput(); // 清除输出内容
         return;
     }
 
     // 始终生成文本
     generateText();
-	
-    $.get(endpoint, function(response) {
-        console.log(response);
+
+    // 使用 gapi.client.sheets.spreadsheets.values.get 方法获取数据
+    var params = {
+        spreadsheetId: sheetId,
+        range: '顧問組別清單',
+    };
+
+    gapi.client.sheets.spreadsheets.values.get(params).then(function(response) {
+        var result = response.result;
+        // 处理数据
+        const values = result.values;
 
         const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
         const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
@@ -186,21 +244,21 @@ function search() {
         search_SAWHO_ResultsDiv.innerHTML = '';
 
         let found = false;
-        for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
-            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
-                const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase(); // 去除所有單元格內的空白字符
+        for (let rowIndex = 0; rowIndex < values.length; rowIndex++) {
+            for (let columnIndex = 0; columnIndex < values[rowIndex].length; columnIndex++) {
+                const cellValue = values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase();
                 if (cellValue === searchString.toLowerCase()) {
                     const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
                     const teamLeaderRow = 3;
                     const teamRow = teamLeaderRow - 1;
 
-                    const consultantName = response.values[rowIndex][columnIndex];
-                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
-                    const teamValue = response.values[teamRow][columnIndex];
+                    const consultantName = values[rowIndex][columnIndex];
+                    const teamLeaderValue = values[teamLeaderRow][columnIndex];
+                    const teamValue = values[teamRow][columnIndex];
 
                     const p = document.createElement('p');
 
-                    // 顧問名稱部分
+                    // 顾问名称部分
                     const consultantSpan = document.createElement('span');
                     consultantSpan.textContent = consultantName;
                     consultantSpan.className = 'green-gradient-text copyable-text';
@@ -210,23 +268,23 @@ function search() {
                     consultantSpan.addEventListener('click', function() {
                         const tempInput = document.createElement('input');
                         if (consultantName.length <= 2) {
-                            tempInput.value = consultantName.slice(-1); // 若顧問名為兩個字符或更少，複製最後一個字符
+                            tempInput.value = consultantName.slice(-1); // 若顾问名为两个字符或更少，复制最后一个字符
                         } else {
-                            tempInput.value = consultantName.slice(-2); // 複製最後兩個字符
+                            tempInput.value = consultantName.slice(-2); // 复制最后两个字符
                         }
                         document.body.appendChild(tempInput);
                         tempInput.select();
                         document.execCommand('copy');
                         document.body.removeChild(tempInput);
                         consultantSpan.title = '已複製！';
-                        
-                        // 一秒後復原 title
+
+                        // 一秒后恢复 title
                         setTimeout(function() {
                             consultantSpan.title = '點我一下複製名字';
-                        }, 1000); // 1000 毫秒 = 1 秒
+                        }, 1000);
                     });
 
-                    // 組長部分
+                    // 组长部分
                     const leaderSpan = document.createElement('span');
                     leaderSpan.textContent = teamLeaderValue;
                     leaderSpan.className = 'yellow-gradient-text copyable-text';
@@ -235,27 +293,27 @@ function search() {
 
                     leaderSpan.addEventListener('click', function() {
                         const tempInput = document.createElement('input');
-                        tempInput.value = teamLeaderValue.slice(-2); // 複製第二個字起的組長名
+                        tempInput.value = teamLeaderValue.slice(-2); // 复制第二个字起的组长名
                         document.body.appendChild(tempInput);
                         tempInput.select();
                         document.execCommand('copy');
                         document.body.removeChild(tempInput);
                         leaderSpan.title = '已複製！';
 
-                        // 一秒後復原 title
+                        // 一秒后恢复 title
                         setTimeout(function() {
                             leaderSpan.title = '點我一下複製名字';
-                        }, 1000); // 1000 毫秒 = 1 秒
+                        }, 1000);
                     });
 
-                    // 構建完整的文本
+                    // 构建完整的文本
                     p.appendChild(document.createTextNode('顧問'));
                     p.appendChild(consultantSpan);
                     p.appendChild(document.createTextNode('的組長是：'));
                     p.appendChild(leaderSpan);
                     p.appendChild(document.createTextNode(`（team：${teamValue}）`));
 
-                    document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
+                    search_SAWHO_ResultsSpan.appendChild(p);
 
                     found = true;
                     break;
@@ -271,21 +329,15 @@ function search() {
             p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
             search_SAWHO_ResultsDiv.appendChild(p);
         }
+
+    }, function(reason) {
+        console.error('error: ' + reason.result.error.message);
     });
 }
 
-// 在 document 加載完成後設置事件監聽器
-document.addEventListener('DOMContentLoaded', function() {
-    // 將事件綁定到輸入框，輸入變化時檢查並更新結果
-    document.getElementById('consultantName').addEventListener('input', checkInputs);
-    document.getElementById('studentName').addEventListener('input', checkInputs);
-    document.getElementById('parentName').addEventListener('input', checkInputs);
-    document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
-    document.getElementById('clearButton').addEventListener('click', clearFields);
-});
+// 更新 optitleoutput 的内容
 let previousOptitleOutput = '';
 
-// 更新 optitleoutput 的内容
 function updateOptitleOutput(content) {
     previousOptitleOutput = content;
     document.getElementById('optitleoutput').innerHTML = content;
