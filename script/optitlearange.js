@@ -1,6 +1,6 @@
 const sheetId = "1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ";
 const apiKey = "AIzaSyAACAPVwRkK2Ii1nc8oJ8q0ha1ZF3gHlQU";
-const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey};
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
 
 // 標題生成的浮水印
 document.querySelectorAll('.optitle-input').forEach(input => {
@@ -253,7 +253,7 @@ function search() {
                     p.appendChild(consultantSpan);
                     p.appendChild(document.createTextNode('的組長是：'));
                     p.appendChild(leaderSpan);
-                    p.appendChild(document.createTextNode(（team：${teamValue}）));
+                    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
 
                     document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
 
@@ -268,7 +268,7 @@ function search() {
 
         if (!found) {
             const p = document.createElement('p');
-            p.textContent = 【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ;
+            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
             search_SAWHO_ResultsDiv.appendChild(p);
         }
     });
