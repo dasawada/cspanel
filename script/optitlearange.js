@@ -191,12 +191,13 @@ function clearFields() {
 }
 
 // search 函数只处理 consultantName
+// search 函数只处理 consultantName
 async function search() {
-    const searchString = document.getElementById('consultantName').value.trim().toLowerCase();
+    const searchString = document.getElementById('consultantName').value.trim();
 
     // 输入为空时清理输出并退出
     if (!searchString) {
-        clearOutput();
+        clearOutput(); // 清空输出
         document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
         document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
         return;
@@ -205,6 +206,8 @@ async function search() {
     // 检查 GAPI 客户端是否已初始化
     if (!gapiInited) {
         console.warn('GAPI 客户端未初始化，请稍后再试');
+        // 等待初始化完成后再调用 search
+        setTimeout(search, 500); // 延时 500ms 再次尝试
         return;
     }
 
@@ -229,55 +232,107 @@ async function search() {
         });
 
         const result = response.result;
-        const values = result.values || []; // 防止空值报错
+        const values = result.values;
 
-        // 清理输出区域
+        // 处理数据
         const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
         const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
+
         search_SAWHO_ResultsSpan.innerHTML = '';
         search_SAWHO_ResultsDiv.innerHTML = '';
 
         let found = false;
-
-        // 遍历表格数据，查找匹配项
         for (let rowIndex = 0; rowIndex < values.length; rowIndex++) {
             for (let columnIndex = 0; columnIndex < values[rowIndex].length; columnIndex++) {
-                const cellValue = (values[rowIndex][columnIndex] || '').replace(/\s+/g, '').toLowerCase();
+                const cellValue = values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase();
+                if (cellValue === searchString.toLowerCase()) {
+                    const resultColumnIdentifier = String.fromCharCode('A'.charCodeAt(0) + columnIndex);
+                    const teamLeaderRow = 3;
+                    const teamRow = teamLeaderRow - 1;
 
-                if (cellValue === searchString) {
                     const consultantName = values[rowIndex][columnIndex];
-                    const teamLeaderValue = values[2]?.[columnIndex] || '未知';
-                    const teamValue = values[1]?.[columnIndex] || '未知';
+                    const teamLeaderValue = values[teamLeaderRow][columnIndex];
+                    const teamValue = values[teamRow][columnIndex];
 
-                    const resultHtml = `
-                        <p>
-                            顧問 <span class="green-gradient-text copyable-text" title="點我一下複製名字">${consultantName}</span>
-                            的組長是：
-                            <span class="yellow-gradient-text copyable-text" title="點我一下複製名字">${teamLeaderValue}</span>
-                            （team：${teamValue}）
-                        </p>
-                    `;
+                    const p = document.createElement('p');
 
-                    search_SAWHO_ResultsSpan.innerHTML += resultHtml;
+                    // 顾问名称部分
+                    const consultantSpan = document.createElement('span');
+                    consultantSpan.textContent = consultantName;
+                    consultantSpan.className = 'green-gradient-text copyable-text';
+                    consultantSpan.style.cursor = 'pointer';
+                    consultantSpan.title = '點我一下複製名字';
 
-                    // 为复制功能绑定事件
-                    addCopyEventListeners();
+                    consultantSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        if (consultantName.length <= 2) {
+                            tempInput.value = consultantName.slice(-1); // 若顾问名为两个字符或更少，复制最后一个字符
+                        } else {
+                            tempInput.value = consultantName.slice(-2); // 复制最后两个字符
+                        }
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        consultantSpan.title = '已複製！';
+
+                        // 一秒后恢复 title
+                        setTimeout(function() {
+                            consultantSpan.title = '點我一下複製名字';
+                        }, 1000);
+                    });
+
+                    // 组长部分
+                    const leaderSpan = document.createElement('span');
+                    leaderSpan.textContent = teamLeaderValue;
+                    leaderSpan.className = 'yellow-gradient-text copyable-text';
+                    leaderSpan.style.cursor = 'pointer';
+                    leaderSpan.title = '點我一下複製名字';
+
+                    leaderSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = teamLeaderValue.slice(-2); // 复制第二个字起的组长名
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        leaderSpan.title = '已複製！';
+
+                        // 一秒后恢复 title
+                        setTimeout(function() {
+                            leaderSpan.title = '點我一下複製名字';
+                        }, 1000);
+                    });
+
+                    // 构建完整的文本
+                    p.appendChild(document.createTextNode('顧問'));
+                    p.appendChild(consultantSpan);
+                    p.appendChild(document.createTextNode('的組長是：'));
+                    p.appendChild(leaderSpan);
+                    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
+
+                    search_SAWHO_ResultsSpan.appendChild(p);
 
                     found = true;
                     break;
                 }
             }
-            if (found) break;
+            if (found) {
+                break;
+            }
         }
 
         if (!found) {
-            search_SAWHO_ResultsDiv.innerHTML = `<p>【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ</p>`;
+            const p = document.createElement('p');
+            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
+            search_SAWHO_ResultsDiv.appendChild(p);
         }
+
     } catch (error) {
-        console.error('数据获取失败：', error);
-        document.getElementById('search_SAWHO_ResultsDiv').innerHTML = `<p>無法取得數據，請稍後再試。</p>`;
+        console.error('数据获取失败：' + error.message);
     }
 }
+
 
 // 为动态生成的复制功能绑定事件
 function addCopyEventListeners() {
