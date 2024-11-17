@@ -1,6 +1,6 @@
 // 您的 OAuth 2.0 客户端 ID 和 API 密钥
-const CLIENT_ID = 'YOUR_CLIENT_ID'; // 请替换为您的 OAuth 2.0 客户端 ID
-const API_KEY = 'YOUR_API_KEY'; // 请替换为您的 API 密钥
+const CLIENT_ID = '585720814315-egtk2cbg4jbltvkah9nsmkmer21rkqb4.apps.googleusercontent.com'; // 请替换为您的 OAuth 2.0 客户端 ID
+const API_KEY = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw'; // 请替换为您的 API 密钥
 
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
 const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
