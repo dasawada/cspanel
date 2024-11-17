@@ -31,14 +31,28 @@ function updateSigninStatus(isSignedIn) {
     if (isSignedIn) {
         document.getElementById('authorize-button').style.display = 'none';
         document.getElementById('signout-button').style.display = 'block';
-        search(); // 使用者登入後執行搜尋
+        enableUI();
     } else {
         document.getElementById('authorize-button').style.display = 'block';
         document.getElementById('signout-button').style.display = 'none';
+        disableUI();
     }
 }
 
-// 搜尋函數（OAuth 2.0 驗證後請求 Google Sheets 資料）
+// 啟用 UI
+function enableUI() {
+    document.querySelectorAll('.optitle-input').forEach(input => input.disabled = false);
+    document.getElementById('clearButton').disabled = false;
+}
+
+// 停用 UI
+function disableUI() {
+    document.querySelectorAll('.optitle-input').forEach(input => input.disabled = true);
+    document.getElementById('clearButton').disabled = true;
+    clearOutput();
+}
+
+// 搜尋功能，從 Google Sheets 獲取資料
 function search() {
     const consultantName = document.getElementById('consultantName').value.trim().replace(/\s+/g, '');
     if (!consultantName) {
@@ -58,7 +72,7 @@ function search() {
     });
 }
 
-// 處理搜尋結果
+// 處理搜尋結果並生成 UI
 function processSearchResults(data, searchString) {
     const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
     const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
@@ -119,13 +133,38 @@ function createCopyableSpan(text, className, title) {
     return span;
 }
 
-// 清除輸出
-function clearOutput() {
-    document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
-    document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
+// 清除所有輸入與輸出
+function clearFields() {
+    document.querySelectorAll('.optitle-input').forEach(input => {
+        input.value = '';
+        input.dispatchEvent(new Event('blur')); // 手動觸發失焦事件
+    });
+    clearOutput();
 }
+
+// 清除輸出區域
+function clearOutput() {
+    const searchResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
+    const searchResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
+    searchResultsDiv.innerHTML = '';
+    searchResultsSpan.innerHTML = '';
+    const optitleOutput = document.getElementById('optitleoutput');
+    optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
+}
+
+// 每次輸入時檢查輸入框值
+document.querySelectorAll('.optitle-input').forEach(input => {
+    input.addEventListener('input', () => {
+        if (input.value.trim()) {
+            input.nextElementSibling.style.visibility = 'hidden';
+        } else {
+            input.nextElementSibling.style.visibility = 'visible';
+        }
+    });
+});
 
 // 初始化
 document.addEventListener('DOMContentLoaded', function () {
     handleClientLoad();
+    document.getElementById('clearButton').addEventListener('click', clearFields);
 });
