@@ -1,91 +1,72 @@
 // 您的 OAuth 2.0 客户端 ID 和 API 密钥
-const CLIENT_ID = '585720814315-egtk2cbg4jbltvkah9nsmkmer21rkqb4.apps.googleusercontent.com';
-const API_KEY = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+const CLIENT_ID = 'YOUR_CLIENT_ID'; // 请替换为您的 OAuth 2.0 客户端 ID
+const API_KEY = 'YOUR_API_KEY'; // 请替换为您的 API 密钥
+
 const DISCOVERY_DOCS = ["https://sheets.googleapis.com/$discovery/rest?version=v4"];
-const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly";
+const SCOPES = 'https://www.googleapis.com/auth/spreadsheets.readonly';
 const sheetId = '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ';
 
-function handleClientLoad() {
-    gapi.load('client:auth2', initClient);
+// 全局变量
+let tokenClient;
+let gapiInited = false;
+let gisInited = false;
+let accessToken = null;
+
+// 加载 GAPI 客户端库后调用
+function gapiLoaded() {
+    gapi.load('client', initializeGapiClient);
 }
 
-function initClient() {
-    gapi.client.init({
+// 初始化 GAPI 客户端
+async function initializeGapiClient() {
+    await gapi.client.init({
         apiKey: API_KEY,
-        clientId: CLIENT_ID,
         discoveryDocs: DISCOVERY_DOCS,
-        scope: SCOPES
-    }).then(function () {
-        // 监听登录状态变化
-        gapi.auth2.getAuthInstance().isSignedIn.listen(updateSigninStatus);
-
-        // 初始登录状态
-        updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
-
-        gapiInitialized = true; // 标记初始化完成
-        console.log('Google API 客户端库已初始化');
-    }, function(error) {
-        console.error('Google API 初始化失败：', JSON.stringify(error, null, 2));
     });
+    gapiInited = true;
+    maybeEnableFunctions();
 }
 
-function updateSigninStatus(isSignedIn) {
-    if (isSignedIn) {
-        console.log('用户已登录');
-    } else {
-        console.log('用户未登录，正在引导用户登录');
-        gapi.auth2.getAuthInstance().signIn().catch(function(error) {
-            console.error('登录失败：', error);
+// 加载 GIS 库后调用
+function gisLoaded() {
+    tokenClient = google.accounts.oauth2.initTokenClient({
+        client_id: CLIENT_ID,
+        scope: SCOPES,
+        callback: '', // 在请求令牌时设置回调
+    });
+    gisInited = true;
+    maybeEnableFunctions();
+}
+
+// 当 GAPI 和 GIS 都初始化后，启用功能
+function maybeEnableFunctions() {
+    if (gapiInited && gisInited) {
+        // 事件监听器
+        document.getElementById('consultantName').addEventListener('input', function() {
+            checkInputs();
+            search();
         });
+        document.getElementById('studentName').addEventListener('input', checkInputs);
+        document.getElementById('parentName').addEventListener('input', checkInputs);
+        document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
+        document.getElementById('clearButton').addEventListener('click', clearFields);
     }
 }
 
-function handleAuthClick(event) {
-    gapi.auth2.getAuthInstance().signIn();
-}
-
-function handleSignoutClick(event) {
-    gapi.auth2.getAuthInstance().signOut();
-}
-
-// 在页面加载完成后调用
-document.addEventListener('DOMContentLoaded', function() {
-    handleClientLoad();
-
-    // 标题生成的浮水印
-    document.querySelectorAll('.optitle-input').forEach(input => {
-        const placeholder = input.nextElementSibling;
-        if (input.value) {
-            placeholder.style.visibility = 'hidden';
-        }
-        input.addEventListener('focus', () => {
-            placeholder.style.visibility = 'hidden';
-        });
-        input.addEventListener('blur', () => {
-            if (!input.value) {
-                placeholder.style.visibility = 'visible';
-            }
-        });
-        input.addEventListener('input', () => {
-            if (input.value) {
-                placeholder.style.visibility = 'hidden';
+// 请求访问令牌
+async function getAccessToken() {
+    return new Promise((resolve, reject) => {
+        tokenClient.callback = (resp) => {
+            if (resp.error !== undefined) {
+                reject(resp);
             } else {
-                placeholder.style.visibility = 'visible';
+                accessToken = resp.access_token;
+                resolve();
             }
-            checkInputs(); // 每次输入改变时检查输入框值
-        });
+        };
+        tokenClient.requestAccessToken({ prompt: 'consent' });
     });
-
-    // 事件监听器
-    document.getElementById('consultantName').addEventListener('input', function() {
-        checkInputs();
-        search();
-    });
-    document.getElementById('studentName').addEventListener('input', checkInputs);
-    document.getElementById('parentName').addEventListener('input', checkInputs);
-    document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
-    document.getElementById('clearButton').addEventListener('click', clearFields);
-});
+}
 
 // 检查输入框值，并生成或清除输出
 function checkInputs() {
@@ -111,7 +92,7 @@ function generateText() {
     var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
 
     var outputText = "[顧問 " + consultantName + "] " + studentName;
-    
+
     if (studentName !== '' && parentName !== '') {
         outputText += " / " + parentName;
     } else {
@@ -145,7 +126,7 @@ function clearOutput() {
     const optitleOutput = document.getElementById("optitleoutput");
     optitleOutput.style.transform = "scale(1.1)";
     optitleOutput.style.opacity = "0.5";
-    
+
     setTimeout(() => {
         optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
         optitleOutput.style.transform = "scale(1)";
@@ -167,7 +148,7 @@ function OPtitle_copyText(event) {
     // 将按钮设置为已复制状态
     var copyButton = document.getElementById("OPtitle_copyButton");
     copyButton.classList.add("OPtitle_copied", "OPtitle_unclickable");
-	
+
     // 重新触发 title 属性更新
     var tempTitle = copyButton.title;
     copyButton.title = "";
@@ -186,7 +167,7 @@ function clearFields() {
     document.getElementById("studentName").value = "";
     document.getElementById("parentName").value = "";
     document.getElementById("invoiceNumber").value = "";
-    
+
     // 手动触发 blur 事件
     document.getElementById("consultantName").dispatchEvent(new Event('blur'));
     document.getElementById("studentName").dispatchEvent(new Event('blur'));
@@ -195,14 +176,14 @@ function clearFields() {
 
     clearOutput(); // 清除输出内容
     search();
-	
+
     // 获取垃圾桶按钮元素
     const button = document.getElementById('clearButton');
     // 获取图标元素
     const icon = button.querySelector('i');
     // 添加动画效果
     icon.classList.add('trash-animated');
-    
+
     // 等待动画结束后移除动画类
     setTimeout(() => {
         icon.classList.remove('trash-animated');
@@ -210,7 +191,7 @@ function clearFields() {
 }
 
 // search 函数只处理 consultantName
-function search() {
+async function search() {
     var searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
 
     if (searchString === '') {
@@ -226,38 +207,36 @@ function search() {
         return;
     }
 
-    // 检查 gapi 是否已初始化
-    if (!gapiInitialized) {
-        console.warn('Google API 尚未初始化，等待初始化完成后再尝试');
+    // 确保 GAPI 客户端已初始化
+    if (!gapiInited) {
+        console.warn('GAPI 客户端未初始化，请稍后再试');
         return;
     }
 
-    // 检查用户是否已登录
-    if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
-        console.warn('用户未登录，正在引导用户登录');
-        gapi.auth2.getAuthInstance().signIn().then(() => {
-            // 登录成功后再次调用 search
-            search();
-        }).catch(function(error) {
-            console.error('登录失败：', error);
-        });
-        return;
+    // 确保已获取访问令牌
+    if (!accessToken) {
+        try {
+            await getAccessToken();
+        } catch (error) {
+            console.error('获取访问令牌失败：', error);
+            return;
+        }
     }
 
     // 始终生成文本
     generateText();
 
-    // 使用 gapi.client.sheets.spreadsheets.values.get 方法获取数据
-    var params = {
-        spreadsheetId: sheetId,
-        range: '顧問組別清單',
-    };
+    // 调用 Google Sheets API
+    try {
+        const response = await gapi.client.sheets.spreadsheets.values.get({
+            spreadsheetId: sheetId,
+            range: '顧問組別清單',
+        });
 
-    gapi.client.sheets.spreadsheets.values.get(params).then(function(response) {
-        var result = response.result;
-        // 处理数据
+        const result = response.result;
         const values = result.values;
 
+        // 处理数据
         const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
         const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
 
@@ -351,9 +330,9 @@ function search() {
             search_SAWHO_ResultsDiv.appendChild(p);
         }
 
-    }, function(reason) {
-        console.error('数据获取失败：' + reason.result.error.message);
-    });
+    } catch (error) {
+        console.error('数据获取失败：' + error.message);
+    }
 }
 
 // 更新 optitleoutput 的内容
@@ -368,3 +347,31 @@ function updateOptitleOutput(content) {
 function clearOptitleOutput() {
     document.getElementById('optitleoutput').innerHTML = previousOptitleOutput;
 }
+
+// 在页面加载完成后调用
+document.addEventListener('DOMContentLoaded', function() {
+    // 标题生成的浮水印
+    document.querySelectorAll('.optitle-input').forEach(input => {
+        const placeholder = input.nextElementSibling;
+        if (input.value) {
+            placeholder.style.visibility = 'hidden';
+        }
+        input.addEventListener('focus', () => {
+            placeholder.style.visibility = 'hidden';
+        });
+        input.addEventListener('blur', () => {
+            if (!input.value) {
+                placeholder.style.visibility = 'visible';
+            }
+        });
+        input.addEventListener('input', () => {
+            if (input.value) {
+                placeholder.style.visibility = 'hidden';
+            } else {
+                placeholder.style.visibility = 'visible';
+            }
+            checkInputs(); // 每次输入改变时检查输入框值
+        });
+    });
+    // 不需要调用 handleClientLoad()
+});
