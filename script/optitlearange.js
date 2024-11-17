@@ -22,18 +22,21 @@ function initClient() {
         // 初始登录状态
         updateSigninStatus(gapi.auth2.getAuthInstance().isSignedIn.get());
 
+        gapiInitialized = true; // 标记初始化完成
+        console.log('Google API 客户端库已初始化');
     }, function(error) {
-        console.error(JSON.stringify(error, null, 2));
+        console.error('Google API 初始化失败：', JSON.stringify(error, null, 2));
     });
 }
 
 function updateSigninStatus(isSignedIn) {
     if (isSignedIn) {
-        // 用户已登录，可以调用需要的函数
-        // 例如，您可以在此处调用 search() 或其他初始化函数
+        console.log('用户已登录');
     } else {
-        // 用户未登录，提示用户登录
-        gapi.auth2.getAuthInstance().signIn();
+        console.log('用户未登录，正在引导用户登录');
+        gapi.auth2.getAuthInstance().signIn().catch(function(error) {
+            console.error('登录失败：', error);
+        });
     }
 }
 
@@ -223,6 +226,24 @@ function search() {
         return;
     }
 
+    // 检查 gapi 是否已初始化
+    if (!gapiInitialized) {
+        console.warn('Google API 尚未初始化，等待初始化完成后再尝试');
+        return;
+    }
+
+    // 检查用户是否已登录
+    if (!gapi.auth2.getAuthInstance().isSignedIn.get()) {
+        console.warn('用户未登录，正在引导用户登录');
+        gapi.auth2.getAuthInstance().signIn().then(() => {
+            // 登录成功后再次调用 search
+            search();
+        }).catch(function(error) {
+            console.error('登录失败：', error);
+        });
+        return;
+    }
+
     // 始终生成文本
     generateText();
 
@@ -331,7 +352,7 @@ function search() {
         }
 
     }, function(reason) {
-        console.error('error: ' + reason.result.error.message);
+        console.error('数据获取失败：' + reason.result.error.message);
     });
 }
 
