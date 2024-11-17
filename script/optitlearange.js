@@ -60,22 +60,16 @@ function search() {
         return;
     }
 
-    gapi.client.sheets.spreadsheets.values.get({
-        spreadsheetId: sheetId,
-        range: range,
-    }).then(response => {
-        const data = response.result.values;
-        if (!data || data.length === 0) {
-            console.error('未找到資料');
-            document.getElementById('search_SAWHO_ResultsDiv').innerText = 'Google Sheets 中沒有可用的資料。';
-            return;
-        }
-        processSearchResults(data, consultantName);
-    }).catch(error => {
-        console.error('存取 Google Sheets 發生錯誤:', error);
-        const errorMessage = error.result.error.message || '未知錯誤';
-        document.getElementById('search_SAWHO_ResultsDiv').innerText = `無法存取資料: ${errorMessage}`;
-    });
+gapi.client.sheets.spreadsheets.values.get({
+    spreadsheetId: '1FcjzaPWepGLRwdwyyefvZs_HEXhC168MircYGqpV9eQ',
+    range: '顧問組別清單',
+}).then(response => {
+    console.log('資料取得成功:', response.result.values);
+}).catch(error => {
+    console.error('錯誤發生:', error);
+    document.getElementById('errorDiv').innerText = `錯誤資訊: ${error.result.error.message}`;
+});
+
 }
 
 // 處理搜尋結果並生成 UI
