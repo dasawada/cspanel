@@ -137,20 +137,25 @@
             document.getElementById('outputContainer').innerHTML = '';
         });
 
-        document.getElementById('saveList').addEventListener('click', function () {
-            const outputContainer = document.getElementById('outputContainer');
-            if (!outputContainer.innerHTML.trim()) {
-                alert("沒有可存檔的資料！");
-                return;
-            }
+document.getElementById('saveList').addEventListener('click', function () {
+    const outputContainer = document.getElementById('outputContainer');
+    if (!outputContainer.innerHTML.trim()) {
+        alert("沒有可存檔的資料！");
+        return;
+    }
 
-            const data = collectCurrentData();
-            const blob = new Blob([JSON.stringify(data)], { type: 'application/json' });
-            const a = document.createElement('a');
-            a.href = URL.createObjectURL(blob);
-            a.download = '名單檢查進度.json';
-            a.click();
-        });
+    const data = collectCurrentData(); // 收集當前檢查進度的數據
+    const blob = new Blob([JSON.stringify(data)], { type: 'application/json' }); // 轉成 JSON 格式
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+
+    // 設定預設檔案名稱，讓使用者儲存時可以選擇
+    a.download = "名單檢查進度.json";
+    a.click();
+
+    // 可選：釋放 URL 物件，避免內存洩漏
+    URL.revokeObjectURL(a.href);
+});
 
         document.getElementById('loadList').addEventListener('click', function () {
             const input = document.createElement('input');
