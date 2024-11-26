@@ -70,7 +70,7 @@
       if (flake.melted) return;
 
       const elapsed = (currentTime - flake.startTime) / 1000;
-      const newY = flake.fallSpeed * elapsed * 50;
+      const newY = flake.fallSpeed * elapsed * 30;
       const rotation = elapsed * flake.rotationSpeed * 100;
 
       flake.element.style.transform = `translateY(${newY}px) rotate(${rotation}deg)`;
@@ -91,7 +91,7 @@
   function startSnowfall() {
     setInterval(() => {
       if (snowflakes.length < snowflakeConfig.snowflakeCount) createSnowflake();
-    }, 300);
+    }, 1000);
     updateSnowflakes();
   }
 
