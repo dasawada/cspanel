@@ -294,6 +294,7 @@ padding-bottom:20px;
 	width:100%;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+	background-color: white;
 }
 .meeting-check-search{
 	padding: 10px; 
@@ -304,6 +305,7 @@ padding-bottom:20px;
     height: auto;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+	background-color: white;
 }
 /* 搜尋按鈕面板的絕對定位 */
 #all-meeting-search-panel {
@@ -424,7 +426,6 @@ h3 {
         }
 		
         .meeting-search-panel-menu {
-            background-color: white;
             height: auto;
             width: 360px;
 			position: absolute; /* 確保容器為相對定位 */
@@ -441,6 +442,7 @@ h3 {
 			border-radius: 10px;
 			box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
 			display: flex;
+			background-color: fff;
         }
 
         nav a {
