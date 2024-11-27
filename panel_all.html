@@ -30,6 +30,7 @@
 <link rel="stylesheet" href="style/meeting-now-css.css">
 <link rel="stylesheet" href="style/meeting-match-check.css">
 <link rel="stylesheet" href="style/all-meeting.css">
+<link rel="stylesheet" href="style/shrturl.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -339,17 +340,26 @@ setTimeout(showAllRows, 1000);\n\
 <!--短網址-->
 <div class="linkout">
     <div class="input-container">
-        <input type="text" id="longUrl" placeholder="輸入網址" oninput="checkInputValue()">
-        <button id="shortenButton" onclick="shortenUrlIsGd()">製作短網址</button>
+        <input type="text" id="ShrtURL_longUrl" placeholder="輸入網址" oninput="ShrtURL_checkInputValue()">
+        <button id="ShrtURL_shortenButton" onclick="ShrtURL_generateShortUrls()">製作短網址</button>
     </div>
-    <div id="shortUrlContainer">
-        <input type="text" id="shortUrlOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
-		<div style="width:85px">
-        <button id="ShrtURL_copyButton" onclick="copyShortUrlToClipboard()">Copy</button></div>
+    <div id="ShrtURL_isGdContainer">
+        <input type="text" id="ShrtURL_isGdOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+        <div style="width:85px">
+            <button id="ShrtURL_isGdCopyButton" onclick="ShrtURL_copyUrl('ShrtURL_isGdOutput')">複製</button>
+        </div>
     </div>
-<div id="shorturl_clearButton" onclick="shorturl_clearInput()">
-    <i class="fas fa-trash"></i>
-</div>
+
+    <div id="ShrtURL_reurlContainer">
+        <input type="text" id="ShrtURL_reurlOutput" placeholder="此處將顯示【reurl.cc】短網址" readonly>
+        <div style="width:85px">
+            <button id="ShrtURL_reurlCopyButton" onclick="ShrtURL_copyUrl('ShrtURL_reurlOutput')">複製</button>
+        </div>
+    </div>
+
+    <div id="ShrtURL_clearButton" onclick="ShrtURL_clearInputs()">
+        <i class="fas fa-trash"></i>
+    </div>
 </div>
 
 <!--圖片複製-->
