@@ -312,3 +312,21 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             line-height: 0; /* 確保 <br> 不會增加多餘的間距 */
         }
 		
+  /* 已複製樣式 */
+  .fudausearch-button.copied {
+    color: white;
+    background-color: #28a745;
+    border-color: #28a745;
+  }
+  #fudausearch-input {margin-bottom: 5px;}
+  
+    /* 學務部按鈕特殊樣式 */
+  .fudausearch-button-special {
+    background-color: #a81207; /* 藍色背景 */
+    color: white;             /* 白色文字 */
+  }
+
+  .fudausearch-button-special:hover {
+    background-color: #690a03; /* 深藍背景 */
+    color: white;
+  }

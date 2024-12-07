@@ -44,7 +44,7 @@ body, button, textarea {
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
 	position: absolute; /* 確保容器為相對定位 */
 	left: 0px;
-    top: 120px;
+    top: 205px;
 }
 .roofbutton:hover {
     background-color: #f7f7f7;
@@ -100,7 +100,7 @@ body, button, textarea {
 	height: 600px;
     z-index: 999;
     left: 0px;
-    top: 270px;
+    top: 355px;
 }
 .ClassLogpanel {
 	width: 560px;
@@ -146,7 +146,7 @@ padding-bottom:20px;
 }
 
 .IPsearch_in_panelALL {
-  top: 270px;
+  top: 355px;
   left: 120px;
   display: flex;                 /* 使用 Flexbox */
   flex-direction: column;        /* 垂直排列 */
@@ -791,3 +791,21 @@ textarea {
       height: 100%;
       border: none;
     }
+	
+  /* 容器樣式 */
+  .fudausearch-container {
+    width: 400px;
+    height: 75px;
+    font-size: 12px;
+    color: #4d4d4d;
+    border: 1px solid #ccc;
+    padding: 10px;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    position: absolute;
+    left: 0px;
+    top: 120px;
+  }
+
