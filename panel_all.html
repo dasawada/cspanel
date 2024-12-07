@@ -34,7 +34,7 @@
 </head>
 <body>
 <div class="update-header">※版本更新：
-<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/10/16</a></div>
+<a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2024/12/07</a></div>
 <div class="panel_all_container">
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
@@ -128,6 +128,12 @@ setTimeout(showAllRows, 1000);\n\
 					<i class="fas fa-trash"></i>
 					</div>
             </div>
+<!-- 輔導職代搜尋 -->
+<div class="fudausearch-container" id="fudausearch-container">
+  <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
+  <input type="text" id="fudausearch-input" placeholder="輔導職代搜尋" />
+  <div id="fudausearch-results"></div>
+</div>
 <!-- NaniClub帳號搜尋 -->
 <div class="idsearchpanel small-size">
     <div class="toggle-container">
@@ -140,7 +146,7 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 
 <!-- 教室log確認 -->
-<div class="ClassLogpanel small-size" style="left: 0px;top: 310px; position: absolute;">
+<div class="ClassLogpanel small-size" style="left: 0px;top: 395px; position: absolute;">
     <div class="toggle-container">
         <input type="checkbox" id="logToggleCheckbox">
         <label for="logToggleCheckbox">📊教室LOG</label>
@@ -625,5 +631,6 @@ setTimeout(showAllRows, 1000);\n\
 	<script src="script/all-meeting-compare.js"></script>
 	<script src="script/zv-listing-script.js"></script>
 	<script src="script/vvgglsht-listing-script.js"></script>
+	<script src="script/fusearch.js"></script>
 </body>
 </html>
