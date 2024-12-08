@@ -3,6 +3,16 @@ const fudausearch_SHEET_ID = "1mM2WDKN6LlvNQvMIKrGcgZ8X1s4LYUzDdyVs7ThMBfA";
 const fudausearch_API_KEY = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
 const fudausearch_SHEET_RANGE = "輔導代理人名單!A:F";
 
+// 排序函數
+function fudausearch_sortButtons(results) {
+  const typeOrder = ["學務部", "排課組", "客服工程師", "職代一", "職代二", "公帳號", "B-2"];
+  return results.sort((a, b) => {
+    const indexA = typeOrder.indexOf(a.type);
+    const indexB = typeOrder.indexOf(b.type);
+    return indexA - indexB;
+  });
+}
+
 // 搜尋函數
 async function fudausearch_search() {
   const inputField = document.getElementById("fudausearch-input");
@@ -21,8 +31,8 @@ async function fudausearch_search() {
     { text: "無資料", fullName: "無資料", type: "職代二" },
     { text: "無資料", fullName: "無資料", type: "公帳號" },
     { text: "無資料", fullName: "無資料", type: "B-2" }, // B-2 的初始結果
-    { text: "客服", fullName: "公帳號_客服用", type: "客服工程師" },
-    { text: "排課組", fullName: "課組", type: "排課組" }
+    { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
+    { text: "排", fullName: "課組", type: "排課組" }
   ];
 
   // 取得 Google Sheets 資料
@@ -66,12 +76,15 @@ async function fudausearch_search() {
     }
   });
 
-  // 如果有匹配結果，新增學務部按鈕並置於第一個
+  // 如果有匹配結果，新增學務部按鈕
   if (hasMatch) {
     fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
   } else {
     fudausearch_results = []; // 無匹配時清空結果
   }
+
+  // 排序按鈕
+  fudausearch_results = fudausearch_sortButtons(fudausearch_results);
 
   // 渲染按鈕
   fudausearch_renderButtons(fudausearch_results);
@@ -84,12 +97,17 @@ function fudausearch_renderButtons(fudausearch_results) {
 
   fudausearch_results.forEach((result) => {
     const button = document.createElement("button");
+    
+    // 預設樣式
+    button.className = "fudausearch-button";
 
-    // 檢查是否為學務部按鈕，應用特殊樣式
+    // 根據類型應用特殊樣式
     if (result.type === "學務部") {
-      button.className = "fudausearch-button fudausearch-button-special";
-    } else {
-      button.className = "fudausearch-button";
+      button.classList.add("fudausearch-button-special");
+    } else if (result.type === "排課組") {
+      button.classList.add("fudausearch-button-paikezu");
+    } else if (result.type === "客服工程師") {
+      button.classList.add("fudausearch-button-kefugon");
     }
 
     button.textContent = result.text; // 按鈕只顯示結果
@@ -101,13 +119,10 @@ function fudausearch_renderButtons(fudausearch_results) {
 
 // 複製功能
 function fudausearch_copyToClipboard(content, button) {
-  const originalText = button.textContent; // 保存原始按鈕文字
-  button.classList.add("copied");
-  button.textContent = "已複製";
+  button.classList.add("copied"); // 添加 'copied' 樣式
   navigator.clipboard.writeText(content).then(() => {
     setTimeout(() => {
-      button.classList.remove("copied");
-      button.textContent = originalText; // 恢復原始文字
+      button.classList.remove("copied"); // 恢復原始樣式
     }, 1000);
   });
 }

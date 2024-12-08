@@ -322,11 +322,31 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
   
     /* 學務部按鈕特殊樣式 */
   .fudausearch-button-special {
-    background-color: #a81207; /* 藍色背景 */
-    color: white;             /* 白色文字 */
+    background-color: #df532d; 
+    color: white;             
   }
 
   .fudausearch-button-special:hover {
-    background-color: #690a03; /* 深藍背景 */
+    background-color: #B53A18;
+    color: white;
+  }
+
+  .fudausearch-button-paikezu {
+    background-color: #211898; 
+    color: white;             
+  }
+
+  .fudausearch-button-paikezu:hover {
+    background-color: #312B7A;
+    color: white;
+  }
+  
+  .fudausearch-button-kefugon {
+    background-color: #484661; 
+    color: white;             
+  }
+
+  .fudausearch-button-kefugon:hover {
+    background-color: #2A292E;
     color: white;
   }
