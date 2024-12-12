@@ -5,7 +5,7 @@ const fudausearch_SHEET_RANGE = "輔導代理人名單!A:F";
 
 // 排序函數
 function fudausearch_sortButtons(results) {
-  const typeOrder = ["學務部", "排課組", "客服工程師", "職代一", "職代二", "公帳號", "B-2"];
+  const typeOrder = ["學務部", "排課組", "客服工程師","輔導本人", "職代一", "職代二", "公帳號", "B-2"];
   return results.sort((a, b) => {
     const indexA = typeOrder.indexOf(a.type);
     const indexB = typeOrder.indexOf(b.type);
@@ -76,12 +76,15 @@ async function fudausearch_search() {
     }
   });
 
-  // 如果有匹配結果，新增學務部按鈕
-  if (hasMatch) {
-    fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
-  } else {
-    fudausearch_results = []; // 無匹配時清空結果
-  }
+if (hasMatch) {
+  fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
+
+  // 提取名字部分，只保留姓後的字
+  const nameOnly = input.slice(1); // 假設姓是第一個字
+  fudausearch_results.unshift({ text: input, fullName: nameOnly, type: "輔導本人" }); // 新增按鈕
+} else {
+  fudausearch_results = []; // 無匹配時清空結果
+}
 
   // 排序按鈕
   fudausearch_results = fudausearch_sortButtons(fudausearch_results);
