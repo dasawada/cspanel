@@ -312,6 +312,15 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             line-height: 0; /* 確保 <br> 不會增加多餘的間距 */
         }
 		
+		#appClassDefer {
+			display: block; /* 確保圖片作為塊級元素 */
+			width: 70px; /* 固定寬度 */
+			height: 70px; /* 與寬度一致，實現正方形 */
+			object-fit: cover; /* 保持圖片比例，填充容器 */
+			border-radius: 15px; /* 添加圓角（如果需要） */
+		}
+
+		
   /* 已複製樣式 */
   .fudausearch-button.copied {
     color: white;
