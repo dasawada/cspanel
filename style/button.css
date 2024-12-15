@@ -327,7 +327,6 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
     background-color: #28a745;
     border-color: #28a745;
   }
-  #fudausearch-input {margin-bottom: 5px;}
   
     /* 學務部按鈕特殊樣式 */
   .fudausearch-button-special {
@@ -359,3 +358,29 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
     background-color: #2A292E;
     color: white;
   }
+/* 包裹輸入框與按鈕的容器 */
+.fudausearch-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+#fudausearch-input {
+  flex: 1;
+}
+
+/* 清除按鈕樣式 */
+.fudausearch-clear-btn {
+  position: absolute;
+  right: 5px;
+  background-color: transparent;
+  border: none;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.fudausearch-clear-btn:hover {
+  color: #000;
+}
