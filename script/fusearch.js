@@ -52,6 +52,13 @@ async function fudausearch_search() {
     { text: "排", fullName: "課組", type: "排課組" }
   ];
 
+  // 確保 B-2 的值從 Column B-row2 提取
+  if (fudausearch_cachedData[1] && fudausearch_cachedData[1][1]) {
+    const fullName = fudausearch_cachedData[1][1].trim(); // 確保去掉首尾空白
+    fudausearch_results[3].text = fullName; // 更新按鈕顯示為全名
+    fudausearch_results[3].fullName = fullName.slice(1); // 複製時只複製名字
+  }
+
   // 使用緩存資料進行匹配
   let hasMatch = false;
   fudausearch_cachedData.forEach((row, rowIndex) => {
@@ -72,6 +79,9 @@ async function fudausearch_search() {
       if (group === "學務部") {
         fudausearch_results[2].text = group;
         fudausearch_results[2].fullName = "學務";
+      } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+        fudausearch_results[2].text = `輔導${group.replace("學務", "")}`;
+        fudausearch_results[2].fullName = `輔導${group.replace("學務", "")}`;
       }
     }
   });
@@ -89,6 +99,9 @@ async function fudausearch_search() {
   // 渲染按鈕
   fudausearch_renderButtons(fudausearch_results);
 }
+
+// 其他函數保持不變，如 `fudausearch_renderButtons`、`fudausearch_copyToClipboard` 等。
+
 
 // 更新建議選單，使用緩存資料
 function fudausearch_updateSuggestions() {
@@ -123,14 +136,27 @@ function fudausearch_updateSuggestions() {
 // 渲染按鈕
 function fudausearch_renderButtons(fudausearch_results) {
   const resultsContainer = document.getElementById("fudausearch-results");
-  resultsContainer.innerHTML = "";
+  resultsContainer.innerHTML = ""; // 確保每次渲染時清空容器
 
   fudausearch_results.forEach((result) => {
     const button = document.createElement("button");
+    
+    // 預設樣式
     button.className = "fudausearch-button";
-    if (result.type === "學務部") button.classList.add("fudausearch-button-special");
-    button.textContent = result.text;
+
+    // 根據類型應用特殊樣式
+    if (result.type === "學務部") {
+      button.classList.add("fudausearch-button-special");
+    } else if (result.type === "排課組") {
+      button.classList.add("fudausearch-button-paikezu");
+    } else if (result.type === "客服工程師") {
+      button.classList.add("fudausearch-button-kefugon");
+    }
+
+    button.textContent = result.text; // 按鈕只顯示結果
+    button.dataset.type = result.type; // 保存類型
     button.onclick = () => fudausearch_copyToClipboard(result.fullName || result.text, button);
+
     resultsContainer.appendChild(button);
   });
 }
