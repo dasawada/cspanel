@@ -98,18 +98,18 @@ body, button, textarea {
 .idsearchpanel {
 	width: 560px;
 	height: 600px;
-    z-index: 999;
+    z-index: 998;
     left: 0px;
     top: 355px;
 }
 .ClassLogpanel {
 	width: 560px;
 	height: 700px;
-	z-index: 997;
+	z-index: 996;
 }
 .DT_panel {
 position: absolute; 
-	z-index: 995;
+	z-index: 994;
 	top: 0px;
     left: 640px;
 width:500px;
@@ -153,7 +153,7 @@ padding-bottom:20px;
   justify-content: space-between;/* 子元素在垂直方向上均匀分布 */
   align-items: flex-start;       /* 子元素靠左对齐 */
   padding: 6px 6px 3px 6px;      /* 内边距 */
-  z-index: 998;
+  z-index: 997;
   min-height: 36px;              /* 设置初始最小高度 */
   width: 280px;                  /* 固定宽度 */
   overflow: hidden;              /* 控制内容溢出 */
@@ -809,3 +809,25 @@ textarea {
     top: 120px;
   }
 
+/* 建議選單樣式 */
+.fudausearch-suggestions {
+  position: absolute;
+  top: 100%;
+  left: 4;
+  width: 90%;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  z-index: 999;
+  display: none;
+}
+
+.fudausearch-suggestion-item {
+  padding: 8px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.fudausearch-suggestion-item:hover {
+  background-color: #f0f0f0;
+}
