@@ -90,17 +90,19 @@
 }
 
 .all-meeting-details {
-    background-color: #ffffff !important; /* 永遠為白色，無論是否 hover */
+	white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #ffffff !important;
     position: relative;
-    border-radius: 8px; /* 圓角 */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* 輕微陰影 */
-    margin-bottom: 4px; /* 縮小每個項目之間的距離 */
-    max-height: 200px; /* 限制最大高度 */
-    overflow-y: auto; /* 超過高度時允許垂直滾動 */
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
     border: 1px solid #ccc;
     color: #454545;
-	display: grid;
-    grid-template-columns: 1fr; /* 每一列都占滿整個區域 */
+    display: grid;
+    grid-template-columns: 1fr;
 }
 
 /* 移除 hover 狀態下的背景顏色更改 */
