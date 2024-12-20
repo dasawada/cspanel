@@ -8,38 +8,28 @@ document.addEventListener("DOMContentLoaded", function () {
             width: 100vw;
             height: 100vh;
             background-color: #1e3d59;
+
         }
 
-        .trail {
+        .mouse-glow {
             position: fixed;
-            width: 5px;
-            height: 5px;
-            background: rgba(255, 255, 255, 0.8);
+            width: 30px;
+            height: 30px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.1) 70%, rgba(255,255,255,0) 100%);
             border-radius: 50%;
             pointer-events: none;
-            animation: fade-out 1s forwards;
-        }
-
-        @keyframes fade-out {
-            0% {
-                opacity: 1;
-                transform: scale(1);
-            }
-            100% {
-                opacity: 0;
-                transform: scale(0.5);
-            }
+            transform: translate(-50%, -50%);
+            transition: transform 0.1s ease-out;
         }
     `;
     document.head.appendChild(style);
 
-    document.addEventListener("mousemove", (e) => {
-        const trail = document.createElement("div");
-        trail.className = "trail";
-        trail.style.left = `${e.pageX}px`;
-        trail.style.top = `${e.pageY}px`;
+    const glow = document.createElement("div");
+    glow.className = "mouse-glow";
+    document.body.appendChild(glow);
 
-        document.body.appendChild(trail);
-        trail.addEventListener("animationend", () => trail.remove());
+    document.addEventListener("mousemove", (e) => {
+        glow.style.left = `${e.pageX}px`;
+        glow.style.top = `${e.pageY}px`;
     });
 });
