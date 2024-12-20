@@ -13,9 +13,9 @@ document.addEventListener("DOMContentLoaded", function () {
 
         .golden-particle {
             position: fixed;
-            width: 2px; /* 粒子大小 */
-            height: 2px; /* 粒子大小 */
-            background: radial-gradient(circle, rgba(255,223,0,0.8) 0%, rgba(255,215,0,0.5) 50%, rgba(255,215,0,0) 100%);
+            width: 2px; /* 初始粒子大小 */
+            height: 2px; /* 初始粒子大小 */
+            background: radial-gradient(circle, rgba(255,223,0,0.8) 0%, rgba(255,223,0,0.5) 50%, rgba(255,223,0,0) 100%);
             border-radius: 50%;
             pointer-events: none;
             animation: fade-out 1.5s ease-out forwards, drift 1.5s ease-out;
@@ -24,11 +24,17 @@ document.addEventListener("DOMContentLoaded", function () {
         @keyframes fade-out {
             0% {
                 opacity: 1;
-                transform: scale(1);
+                transform: scale(1); /* 初始大小 */
+                background: rgba(255,223,0,0.8); /* 亮金色 */
+            }
+            50% {
+                transform: scale(1.5); /* 放大 */
+                background: rgba(255,248,220,0.6); /* 柔和金色 */
             }
             100% {
                 opacity: 0;
-                transform: scale(0.5);
+                transform: scale(0.5); /* 縮小 */
+                background: rgba(255,255,255,0); /* 最後透明 */
             }
         }
 
@@ -37,17 +43,17 @@ document.addEventListener("DOMContentLoaded", function () {
                 transform: translate(0, 0);
             }
             100% {
-                transform: translate(var(--dx), var(--dy));
+                transform: translate(var(--dx), var(--dy)); /* 隨機漂移 */
             }
         }
     `;
     document.head.appendChild(style);
 
-    // 設置金色的粒子顏色漸變
+    // 設定金色的粒子顏色漸變池
     const colors = [
-        'rgba(255,223,0,0.8)', // 金黃色
+        'rgba(255,223,0,0.8)', // 亮金色
         'rgba(255,215,0,0.6)', // 柔和金色
-        'rgba(255,248,220,0.8)', // 金白色
+        'rgba(255,248,220,0.8)' // 金白色
     ];
 
     // 監聽鼠標移動事件
@@ -65,9 +71,9 @@ document.addEventListener("DOMContentLoaded", function () {
         // 隨機顏色
         particle.style.background = colors[Math.floor(Math.random() * colors.length)];
 
-        // 隨機方向漂移
-        const dx = (Math.random() - 0.5) * 40; // X 軸偏移 -20px ~ 20px
-        const dy = (Math.random() - 0.5) * 40; // Y 軸偏移 -20px ~ 20px
+        // 隨機漂移方向
+        const dx = (Math.random() - 0.5) * 50; // X 軸偏移 -25px ~ 25px
+        const dy = (Math.random() - 0.5) * 50; // Y 軸偏移 -25px ~ 25px
         particle.style.setProperty('--dx', `${dx}px`);
         particle.style.setProperty('--dy', `${dy}px`);
 
