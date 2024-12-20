@@ -61,7 +61,7 @@ document.addEventListener("DOMContentLoaded", function () {
     snowContainer.className = "snow-container";
     document.body.appendChild(snowContainer);
 
-    const maxSnowflakes = 30; // 限制雪花數量為 30
+    const maxSnowflakes = 60; // 限制雪花數量為 30
     const snowflakes = [];
 
     function resetSnowflake(snowflake) {
