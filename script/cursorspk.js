@@ -8,21 +8,22 @@ document.addEventListener("DOMContentLoaded", function () {
             width: 100vw;
             height: 100vh;
             background-color: #1e3d59;
+            cursor: default;
         }
 
         .particle {
             position: fixed;
-            width: 1px; /* 基本粒子尺寸 */
-            height: 1px; /* 基本粒子尺寸 */
-            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%);
-            border-radius: 50%; /* 圓形粒子 */
+            width: 1px;
+            height: 1px;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0.5) 50%, rgba(255,255,255,0) 100%);
+            border-radius: 50%;
             pointer-events: none;
-            animation: particle-animation 1s ease-out forwards;
+            animation: particle-animation 2s ease-out forwards;
         }
 
         @keyframes particle-animation {
             0% {
-                opacity: 1;
+                opacity: 0.6;
                 transform: translate(0, 0) scale(1);
             }
             100% {
@@ -33,16 +34,15 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
     document.head.appendChild(style);
 
-    // 定義擬真的火花配色
+    // 柔和的光斑顏色
     const colors = [
-        '#FFFFFF', '#FFFFE0', '#FFD700', // 高亮區域 (白、淡黃、亮黃)
-        '#FFA500', '#FF4500',            // 橙色過渡
-        '#8B0000', '#2E2E2E',            // 暗紅與灰色邊緣
-        '#ADD8E6', '#EE82EE'             // 冷色亮點 (藍、紫)
+        'rgba(255,255,255,0.8)', // 柔白
+        'rgba(255,255,224,0.8)', // 淡黃
+        'rgba(240,248,255,0.8)'  // 淡藍
     ];
 
     document.addEventListener("mousemove", (e) => {
-        const particleCount = Math.random() * 6 + 4; // 每次生成 4~10 個粒子
+        const particleCount = Math.random() * 2 + 1; // 每次滑鼠移動生成 1~3 個粒子
         for (let i = 0; i < particleCount; i++) {
             createParticle(e.pageX, e.pageY);
         }
@@ -52,17 +52,17 @@ document.addEventListener("DOMContentLoaded", function () {
         const particle = document.createElement("div");
         particle.className = "particle";
 
-        // 設定隨機顏色
+        // 隨機選擇柔和顏色
         particle.style.background = colors[Math.floor(Math.random() * colors.length)];
 
-        // 隨機大小（模擬不同粒子尺寸）
-        const size = Math.random() * 4 + 2; // 2px ~ 6px
+        // 粒子大小（較小且均一）
+        const size = Math.random() * 2 + 1; // 1px ~ 3px
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
 
-        // 隨機方向漂移
-        const dx = (Math.random() - 0.5) * 120; // X 軸偏移 -60px ~ 60px
-        const dy = Math.random() * 120 - 30; // Y 軸偏移 -30px ~ 90px
+        // 隨機方向漂移（柔和範圍）
+        const dx = (Math.random() - 0.5) * 40; // X 軸偏移 -20px ~ 20px
+        const dy = (Math.random() - 0.5) * 40; // Y 軸偏移 -20px ~ 20px
         particle.style.setProperty('--dx', `${dx}px`);
         particle.style.setProperty('--dy', `${dy}px`);
 
