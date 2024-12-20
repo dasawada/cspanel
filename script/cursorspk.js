@@ -8,7 +8,6 @@ document.addEventListener("DOMContentLoaded", function () {
             width: 100vw;
             height: 100vh;
             background-color: #1e3d59;
-            cursor: crosshair;
         }
 
         .particle {
