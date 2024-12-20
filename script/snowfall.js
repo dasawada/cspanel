@@ -1,22 +1,24 @@
 document.addEventListener("DOMContentLoaded", function () {
     const style = document.createElement("style");
     style.textContent = `
-        html, body {
+        html {
             margin: 0;
             padding: 0;
             background-color: #1e3d59;
-            overflow: hidden;
+        }
+        body, html {
             width: 100vw;
-            height: 100vh;
+            height: auto;
         }
         .snow-container {
             position: fixed;
             top: 0;
             left: 0;
+            overflow: hidden;
             width: 100vw;
             height: 100vh;
-            pointer-events: none;
             z-index: 99999;
+            pointer-events: none;
         }
         .snowflake {
             position: absolute;
@@ -24,7 +26,32 @@ document.addEventListener("DOMContentLoaded", function () {
             border-radius: 50%;
             opacity: 0.8;
             pointer-events: none;
-            transform: translate(0, 0);
+        }
+        @keyframes fall {
+            0% {
+                opacity: 0;
+                transform: translateY(0);
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.5;
+                transform: translateY(100vh);
+            }
+        }
+        @keyframes diagonal-fall {
+            0% {
+                opacity: 0;
+                transform: translate(0, 0);
+            }
+            10% {
+                opacity: 1;
+            }
+            100% {
+                opacity: 0.25;
+                transform: translate(10vw, 100vh);
+            }
         }
     `;
     document.head.appendChild(style);
@@ -33,57 +60,44 @@ document.addEventListener("DOMContentLoaded", function () {
     snowContainer.className = "snow-container";
     document.body.appendChild(snowContainer);
 
+    const particlesPerThousandPixels = 0.1;
+    const fallSpeed = 1.25;
+    const maxSnowflakes = 30;
     const snowflakes = [];
-    const maxSnowflakes = 50;
-    const duration = 30 * 1000; // 30秒
-    const frameRate = 60; // 每秒60幀
-    const totalFrames = (duration / 1000) * frameRate;
 
-    // 預計算雪花路徑
-    function generateSnowflakePaths() {
-        for (let i = 0; i < maxSnowflakes; i++) {
-            const path = [];
-            const size = Math.random() * 5 + 1; // 雪花大小
-            const startX = Math.random() * window.innerWidth;
-            const endX = startX + (Math.random() < 0.5 ? -50 : 50); // 隨機水平偏移
-            const startY = -size;
-            const endY = window.innerHeight + size;
+    function resetSnowflake(snowflake) {
+        const size = Math.random() * 5 + 1;
+        snowflake.style.width = `${size}px`;
+        snowflake.style.height = `${size}px`;
+        snowflake.style.left = `${Math.random() * window.innerWidth}px`;
+        snowflake.style.top = `-${size}px`;
+        snowflake.style.animationDuration = `${(Math.random() * 3 + 2) / fallSpeed}s`;
+        snowflake.style.animationName = Math.random() < 0.5 ? "fall" : "diagonal-fall";
+        snowflake.style.animationTimingFunction = "linear";
+    }
 
-            for (let frame = 0; frame < totalFrames; frame++) {
-                const progress = frame / totalFrames;
-                const x = startX + progress * (endX - startX);
-                const y = startY + progress * (endY - startY);
-                path.push({ x, y });
-            }
+    function createSnowflake() {
+        if (snowflakes.length < maxSnowflakes) {
+            const snowflake = document.createElement("div");
+            snowflake.className = "snowflake";
+            resetSnowflake(snowflake);
+            snowflakes.push(snowflake);
+            snowContainer.appendChild(snowflake);
 
-            snowflakes.push({ size, path, currentFrame: 0 });
+            snowflake.addEventListener("animationend", () => {
+                snowflake.remove();
+                const index = snowflakes.indexOf(snowflake);
+                if (index > -1) snowflakes.splice(index, 1);
+            });
         }
     }
 
-    // 渲染雪花元素
-    function renderSnowflakes() {
-        snowflakes.forEach((flake) => {
-            const snowflake = document.createElement("div");
-            snowflake.className = "snowflake";
-            snowflake.style.width = `${flake.size}px`;
-            snowflake.style.height = `${flake.size}px`;
-            snowContainer.appendChild(snowflake);
-            flake.element = snowflake;
-        });
+    function generateSnowflakes() {
+        const numberOfParticles = Math.ceil((window.innerWidth * window.innerHeight) / 1000) * particlesPerThousandPixels;
+        setInterval(() => {
+            if (snowflakes.length < maxSnowflakes) createSnowflake();
+        }, 1000 / numberOfParticles);
     }
 
-    // 更新雪花位置
-    function updateSnowflakes() {
-        snowflakes.forEach((flake) => {
-            const frame = flake.path[flake.currentFrame];
-            flake.element.style.transform = `translate(${frame.x}px, ${frame.y}px)`;
-            flake.currentFrame = (flake.currentFrame + 1) % totalFrames; // 循環播放
-        });
-        requestAnimationFrame(updateSnowflakes);
-    }
-
-    // 初始化並啟動動畫
-    generateSnowflakePaths();
-    renderSnowflakes();
-    updateSnowflakes();
+    generateSnowflakes();
 });
