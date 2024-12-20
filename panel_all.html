@@ -39,59 +39,10 @@
 <div class="roofbutton">
 <button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')">LINE大廳A</button>
 <button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')">FB_A</button>
-<button onclick="copyToClipboard('直播公開課_A')">直播_A</button>
 <button onclick="copyToClipboard('電話進線_A')">電話進線_A</button>
-<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">MGM_B</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')">顧問MGM</button>
+<button onclick="copyToClipboard('2024年XX月_輔導MGM_B')">輔導MGM</button>
 <p>
-<button class="DienMing" onclick="copyToClipboard_F12script('\
-// 老師點名\n\
-function showRows() {\n\
-    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
-    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
-    // 遍歷每個行元素\n\
-    rows.forEach(function(row) {\n\
-        var cells = row.querySelectorAll(\'.MuiTableCell-root\');\n\
-        var shouldShowRow = false;\n\
-        // 檢查每個單元格中的內容\n\
-        cells.forEach(function(cell) {\n\
-            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
-            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
-            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
-            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
-            // 如果找到了符合條件的子元素，且第二個子元素沒有其他子元素\n\
-            if (box1 && box2 && !box2.querySelector(\'.MuiBox-root\')) {\n\
-                shouldShowRow = true;\n\
-            }\n\
-        });\n\
-        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
-        row.style.display = shouldShowRow ? \'table-row\' : \'none\';\n\
-    });\n\
-}\n\
-// 在延遲1秒後執行顯示/隱藏行的函數\n\
-setTimeout(showRows, 1000);\n\
-', '【點名】函數已複製')">點名</button>
-
-<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
-// 解除點名\n\
-function showAllRows() {\n\
-    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
-    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
-    // 將所有行顯示\n\
-    rows.forEach(function(row) {\n\
-        row.style.display = \'\'; // 設置為空字符串，以使用默認的顯示方式\n\
-    });\n\
-}\n\
-// 在延遲1秒後執行完全顯示所有行的函數\n\
-setTimeout(showAllRows, 1000);\n\
-', '【解除點名】函數已複製')">解除點名</button>
-<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
-<button onclick="copyToClipboard_F12script('查看老師已進入教室了，再麻煩老師補足上課時數哦，謝謝老師！', '【補足時數】話術已複製')" >補足時數</button>
-<button onclick="copyToClipboard_F12script('您好，請問需要什麼協助呢？', '【什麼協助？】話術已複製')" >什麼協助？</button>
-</p>
-<p>
-<button onclick="copyToClipboard_F12script('您好，目前正在確認中，請稍候！', '【確認中】話術已複製')" >(一般)確認中</button>
-<button onclick="copyToClipboard_F12script('家長您好，目前正在確認中、請稍候！', '【家長-確認中】話術已複製')" >(家長)確認中</button>
-<button onclick="copyToClipboard_F12script('老師好，目前正在確認中、請稍候！', '【老師-確認中】話術已複製')" >(老師)確認中</button>
 </p>
 <div id="copyMessage"></div>
 </div>
@@ -150,7 +101,7 @@ setTimeout(showAllRows, 1000);\n\
 </div>
 
 <!-- 教室log確認 -->
-<div class="ClassLogpanel small-size" style="left: 0px;top: 395px; position: absolute;">
+<div class="ClassLogpanel small-size" style="left: 0px;top: 300px; position: absolute;">
     <div class="toggle-container">
         <input type="checkbox" id="logToggleCheckbox">
         <label for="logToggleCheckbox">📊教室LOG</label>
@@ -643,5 +594,7 @@ setTimeout(showAllRows, 1000);\n\
 	<script src="script/zv-listing-script.js"></script>
 	<script src="script/vvgglsht-listing-script.js"></script>
 	<script src="script/fusearch.js"></script>
+	<script src="script/snowfall.js"></script>
+	<script src="script/cursorspk.js"></script>
 </body>
 </html>
