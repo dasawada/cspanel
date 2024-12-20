@@ -13,15 +13,15 @@ document.addEventListener("DOMContentLoaded", function () {
 
         .particle {
             position: fixed;
-            width: 1px; /* 粒子基礎尺寸 */
-            height: 1px; /* 粒子基礎尺寸 */
-            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.5) 70%, rgba(255,255,255,0) 100%);
+            width: 1px; /* 最小粒子大小 */
+            height: 1px; /* 最小粒子大小 */
+            background: radial-gradient(circle, rgba(255,255,255,1) 0%, rgba(255,255,255,0.7) 70%, rgba(255,255,255,0) 100%);
             border-radius: 50%; /* 圓形粒子 */
             pointer-events: none;
-            animation: particle-animation 1.5s ease-out forwards;
+            animation: particle-fade 1.5s ease-out forwards;
         }
 
-        @keyframes particle-animation {
+        @keyframes particle-fade {
             0% {
                 opacity: 1;
                 transform: translate(0, 0) scale(1);
@@ -34,11 +34,12 @@ document.addEventListener("DOMContentLoaded", function () {
     `;
     document.head.appendChild(style);
 
-    // 隨機顏色池，從第二段代碼中繼承
-    const colors = ['#ff0000', '#00ff00', '#ffffff', '#ff00ff', '#ffa500', '#ffff00', '#00ff00', '#ffffff', '#ff00ff'];
+    // 隨機顏色池
+    const colors = ['#ffffff', '#ffcc33', '#ff9966', '#ff6633', '#ff0000'];
 
+    // 監聽鼠標移動事件
     document.addEventListener("mousemove", (e) => {
-        const particleCount = Math.random() * 6 + 4; // 每次鼠標移動生成 4-10 個粒子
+        const particleCount = Math.random() * 4 + 2; // 每次生成 2-6 個粒子
         for (let i = 0; i < particleCount; i++) {
             createParticle(e.pageX, e.pageY);
         }
@@ -51,22 +52,26 @@ document.addEventListener("DOMContentLoaded", function () {
         // 設定隨機顏色
         particle.style.background = colors[Math.floor(Math.random() * colors.length)];
 
-        // 隨機大小（模擬第二段代碼的大粒子與小粒子）
-        const size = Math.random() * 2 + 1; // 3px ~ 8px
+        // 粒子大小 (極小化)
+        const size = Math.random() * 1 + 1; // 1px ~ 2px
         particle.style.width = `${size}px`;
         particle.style.height = `${size}px`;
 
-        // 隨機方向漂移
-        const dx = (Math.random() - 0.5) * 100; // X 軸偏移 -50px ~ 50px
-        const dy = Math.random() * 100; // Y 軸偏移 0px ~ 100px
-        particle.style.setProperty('--dx', `${dx}px`);
-        particle.style.setProperty('--dy', `${dy}px`);
+        // 隨機方向和速度
+        const angle = Math.random() * Math.PI * 2; // 0 ~ 360°
+        const speed = Math.random() * 3 + 1; // 1 ~ 4
+        const dx = Math.cos(angle) * speed; // X 軸速度
+        const dy = Math.sin(angle) * speed - 1; // Y 軸速度 (向上漂移)
 
-        // 粒子起始位置
+        // 設定粒子位移變量
+        particle.style.setProperty('--dx', `${dx * 20}px`); // X 偏移放大以更顯著
+        particle.style.setProperty('--dy', `${dy * 20}px`); // Y 偏移放大以更顯著
+
+        // 初始位置
         particle.style.left = `${x}px`;
         particle.style.top = `${y}px`;
 
-        // 添加到頁面並自動移除
+        // 添加粒子到頁面，並在動畫結束後移除
         document.body.appendChild(particle);
         particle.addEventListener("animationend", () => particle.remove());
     }
