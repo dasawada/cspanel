@@ -1,24 +1,25 @@
 document.addEventListener("DOMContentLoaded", function () {
     const style = document.createElement("style");
     style.textContent = `
-        html {
+        html, body {
             margin: 0;
             padding: 0;
-            background-color: #1e3d59;
-        }
-        body, html {
             width: 100vw;
-            height: auto;
+            height: 100vh;
+            overflow: hidden;
+        }
+        body {
+            background: url('img/截圖 2024-12-21 02.08.01.png') no-repeat center center fixed;
+            background-size: cover;
         }
         .snow-container {
             position: fixed;
             top: 0;
             left: 0;
-            overflow: hidden;
             width: 100vw;
             height: 100vh;
-            z-index: 99999;
             pointer-events: none;
+            z-index: 99999;
         }
         .snowflake {
             position: absolute;
@@ -60,18 +61,16 @@ document.addEventListener("DOMContentLoaded", function () {
     snowContainer.className = "snow-container";
     document.body.appendChild(snowContainer);
 
-    const particlesPerThousandPixels = 0.1;
-    const fallSpeed = 1.25;
-    const maxSnowflakes = 30;
+    const maxSnowflakes = 30; // 限制雪花數量為 30
     const snowflakes = [];
 
     function resetSnowflake(snowflake) {
-        const size = Math.random() * 5 + 1;
+        const size = Math.random() * 5 + 1; // 隨機雪花大小
         snowflake.style.width = `${size}px`;
         snowflake.style.height = `${size}px`;
         snowflake.style.left = `${Math.random() * window.innerWidth}px`;
         snowflake.style.top = `-${size}px`;
-        snowflake.style.animationDuration = `${(Math.random() * 3 + 2) / fallSpeed}s`;
+        snowflake.style.animationDuration = `${Math.random() * 5 + 2}s`;
         snowflake.style.animationName = Math.random() < 0.5 ? "fall" : "diagonal-fall";
         snowflake.style.animationTimingFunction = "linear";
     }
@@ -93,10 +92,9 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function generateSnowflakes() {
-        const numberOfParticles = Math.ceil((window.innerWidth * window.innerHeight) / 1000) * particlesPerThousandPixels;
         setInterval(() => {
             if (snowflakes.length < maxSnowflakes) createSnowflake();
-        }, 1000 / numberOfParticles);
+        }, 200); // 控制生成速度
     }
 
     generateSnowflakes();
