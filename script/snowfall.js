@@ -65,7 +65,7 @@ document.addEventListener("DOMContentLoaded", function () {
     const snowflakes = [];
 
     function resetSnowflake(snowflake) {
-        const size = Math.random() * 5 + 1; // 隨機雪花大小
+        const size = Math.random() * 8 + 1; // 隨機雪花大小
         snowflake.style.width = `${size}px`;
         snowflake.style.height = `${size}px`;
         snowflake.style.left = `${Math.random() * window.innerWidth}px`;
@@ -94,7 +94,7 @@ document.addEventListener("DOMContentLoaded", function () {
     function generateSnowflakes() {
         setInterval(() => {
             if (snowflakes.length < maxSnowflakes) createSnowflake();
-        }, 200); // 控制生成速度
+        }, 1000); // 控制生成速度
     }
 
     generateSnowflakes();
