@@ -53,7 +53,7 @@ document.addEventListener("DOMContentLoaded", function () {
                 transform: translate(10vw, 100vh);
             }
         }
-    ;
+    `;
     document.head.appendChild(style);
 
     const snowContainer = document.createElement("div");
@@ -67,11 +67,11 @@ document.addEventListener("DOMContentLoaded", function () {
 
     function resetSnowflake(snowflake) {
         const size = Math.random() * 5 + 1;
-        snowflake.style.width = ${size}px;
-        snowflake.style.height = ${size}px;
-        snowflake.style.left = ${Math.random() * window.innerWidth}px;
-        snowflake.style.top = -${size}px;
-        snowflake.style.animationDuration = ${(Math.random() * 3 + 2) / fallSpeed}s;
+        snowflake.style.width = `${size}px`;
+        snowflake.style.height = `${size}px`;
+        snowflake.style.left = `${Math.random() * window.innerWidth}px`;
+        snowflake.style.top = `-${size}px`;
+        snowflake.style.animationDuration = `${(Math.random() * 3 + 2) / fallSpeed}s`;
         snowflake.style.animationName = Math.random() < 0.5 ? "fall" : "diagonal-fall";
         snowflake.style.animationTimingFunction = "linear";
     }
@@ -93,7 +93,10 @@ document.addEventListener("DOMContentLoaded", function () {
     }
 
     function generateSnowflakes() {
-        const numberOfParticles = Math.ceil((window.innerWidth * window.innerHeight) / 1000) * particlesPerThousandPixels;
+        const numberOfParticles = Math.max(
+            Math.ceil((window.innerWidth * window.innerHeight) / 1000) * particlesPerThousandPixels,
+            1
+        );
         setInterval(() => {
             if (snowflakes.length < maxSnowflakes) createSnowflake();
         }, 1000 / numberOfParticles);
