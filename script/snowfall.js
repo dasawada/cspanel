@@ -4,7 +4,7 @@ document.addEventListener("DOMContentLoaded", function () {
         html, body {
             margin: 0;
             padding: 0;
-            background-color: #1e3d59;
+            background-color: #c0cad3;
             overflow-y: hidden;
             width: 100vw;
             height: 100vh;
