@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", function () {
             margin: 0;
             padding: 0;
             background-color: #1e3d59;
-            overflow: hidden;
+            overflow-y: hidden;
             width: 100vw;
             height: 100vh;
         }
@@ -24,25 +24,23 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const ctx = canvas.getContext("2d");
     const snowflakes = [];
-    const maxSnowflakes = 80; // 減少雪花數量，遠近景分層
-    const layers = 3; // 增加遠近層級
-    const fallSpeeds = [2, 4, 6]; // 加速不同層的雪花
-    const blurLevels = [5, 10, 20]; // 遠近景模糊效果
+    const maxSnowflakes = 50; // 保持雪花數量較低
+    const fallSpeeds = [1, 2, 3]; // 三種速度
+    const layers = 3; // 遠近層數
 
     function createSnowflake(layer) {
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            size: Math.random() * 3 + layer + 1, // 層級影響大小
-            speed: fallSpeeds[layer] + Math.random(), // 層級影響速度
-            blur: blurLevels[layer], // 模糊程度
-            opacity: Math.random() * 0.5 + 0.2,
+            size: Math.random() * 3 + layer + 1, // 基於層級控制大小
+            speed: fallSpeeds[layer] + Math.random(), // 每層速度稍有隨機性
+            opacity: Math.random() * 0.5 + 0.3,
         };
     }
 
     function generateSnowflakes() {
         for (let layer = 0; layer < layers; layer++) {
-            while (snowflakes.filter(s => s.blur === blurLevels[layer]).length < maxSnowflakes / layers) {
+            while (snowflakes.filter(s => s.size > layer).length < maxSnowflakes / layers) {
                 snowflakes.push(createSnowflake(layer));
             }
         }
@@ -54,30 +52,26 @@ document.addEventListener("DOMContentLoaded", function () {
         snowflakes.forEach(flake => {
             flake.y += flake.speed;
             if (flake.y > canvas.height) {
-                flake.y = -flake.size;
+                flake.y = -flake.size; // 循環使用
                 flake.x = Math.random() * canvas.width;
             }
 
             ctx.beginPath();
             ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
-            ctx.shadowBlur = flake.blur; // 柔焦效果
-            ctx.shadowColor = `rgba(255, 255, 255, ${flake.opacity})`;
             ctx.fill();
         });
     }
 
     function animate() {
-        setTimeout(() => {
-            requestAnimationFrame(animate);
-            updateSnowflakes();
-        }, 1000 / 8); // 限制到每秒 8 幀
+        requestAnimationFrame(animate);
+        updateSnowflakes();
     }
 
     function resizeCanvas() {
         canvas.width = window.innerWidth;
         canvas.height = window.innerHeight;
-        snowflakes.length = 0; // 清空舊的雪花
+        snowflakes.length = 0; // 清空雪花數據
         generateSnowflakes();
     }
 
