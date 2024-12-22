@@ -1,13 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
   const rippleSettings = {
     maxSize: 300,
-    animationSpeed: 5,
+    animationSpeed: 2,
     strokeColor: [255, 255, 255],
   };
 
   const canvasSettings = {
     blur: 10,
-    ratio: 1,
+    ratio: 0.5,
   };
 
   function Coords(x, y) {
@@ -78,10 +78,10 @@ const canvasClick = (e) => {
   const y = e.clientY * canvasSettings.ratio;
 
   // Generate multiple ripples with increasing distance
-  const circleCount = 30; // Number of circles to create
+  const circleCount = 5; // Number of circles to create
   for (let i = 0; i < circleCount; i++) {
     const distanceMultiplier = i * 10; // Gradually increase the distance
-    const randomAngle = Math.random() * Math.PI * 2; // Randomize the direction
+    const randomAngle = Math.random() * Math.PI * 1; // Randomize the direction
 
     // Calculate new ripple position based on angle and distance
     const rippleX = x + Math.cos(randomAngle) * distanceMultiplier;
