@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   const canvasSettings = {
-    blur: 15,
+    blur: 10,
     ratio: 1,
   };
 
