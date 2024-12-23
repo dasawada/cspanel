@@ -81,6 +81,28 @@
         .copy-button:hover {
             background-color: #45a049;
         }
+
+    .button-container {
+        display: flex;
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .clear-button {
+            display: inline-block;
+        width: fit-content;
+        padding: 5px 10px;
+        background-color: #f44336;
+        color: white;
+        border: none;
+        cursor: pointer;
+        border-radius: 5px;
+    }
+
+    .clear-button:hover {
+        background-color: #d32f2f;
+    }
+
     </style>
 </head>
 <body>
@@ -117,6 +139,7 @@
                 </tbody>
             </table>
             <button class="copy-button" onclick="copyTable()">複製轉換結果</button>
+			<button class="clear-button" onclick="clearTable()">清除表單</button>
         </div>
     </div>
 <script>
@@ -276,7 +299,33 @@ function copyTable() {
     document.execCommand('copy');
     document.body.removeChild(tempTextarea);
 
-    alert("表格內容已複製到剪貼簿！");
+    // 修改按鈕樣式顯示通知
+    const copyButton = document.querySelector('.copy-button');
+    const originalText = copyButton.innerText;
+
+    copyButton.innerText = "已複製!";
+    copyButton.style.backgroundColor = "#4CAF50"; // 成功樣式
+    copyButton.style.color = "#fff";
+
+    // 恢復按鈕樣式和文字
+    setTimeout(() => {
+        copyButton.innerText = originalText;
+        copyButton.style.backgroundColor = ""; // 還原預設樣式
+        copyButton.style.color = ""; // 還原預設樣式
+    }, 2000); // 2秒後還原
+}
+
+function clearTable() {
+    const outputTable = document.getElementById('outputTable').querySelector('tbody');
+    outputTable.innerHTML = `
+        <tr>
+            <td colspan="9" style="text-align: center;">尚無資料</td>
+        </tr>
+    `;
+    const copyButton = document.querySelector('.copy-button');
+    copyButton.textContent = "複製轉換結果";
+    copyButton.style.backgroundColor = "";
+    copyButton.style.color = "";
 }
 
 </script>
