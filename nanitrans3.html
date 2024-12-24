@@ -316,12 +316,19 @@ function copyTable() {
 }
 
 function clearTable() {
+    // 清除表單的內容
+    document.getElementById('inputData').value = ""; // 清除 inputData
+    document.getElementById('mergedContent').innerHTML = "<p></p>"; // 清除 editable-container
+
+    // 清除表格內容
     const outputTable = document.getElementById('outputTable').querySelector('tbody');
     outputTable.innerHTML = `
         <tr>
             <td colspan="9" style="text-align: center;">尚無資料</td>
         </tr>
     `;
+
+    // 還原按鈕文字與樣式
     const copyButton = document.querySelector('.copy-button');
     copyButton.textContent = "複製轉換結果";
     copyButton.style.backgroundColor = "";
