@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const ctx = canvas.getContext("2d");
     const snowflakes = [];
-    const maxSnowflakes = 15; // 保持雪花數量較低
+    const maxSnowflakes = 5; // 增加雪花數量
     const fallSpeeds = [1, 2, 3]; // 三種速度
     const layers = 3; // 遠近層數
 
@@ -32,9 +32,10 @@ document.addEventListener("DOMContentLoaded", function () {
         return {
             x: Math.random() * canvas.width,
             y: Math.random() * canvas.height,
-            size: Math.random() * 3 + layer + 1, // 基於層級控制大小
-            speed: fallSpeeds[layer] + Math.random(), // 每層速度稍有隨機性
-            opacity: Math.random() * 0.5 + 0.3,
+            size: Math.random() * 4 + layer + 1, // 增加層級大小差異
+            speed: fallSpeeds[layer] + Math.random(),
+            opacity: Math.random() * 0.7 + 0.3,
+            swing: Math.random() * 0.6 - 0.3, // 增加左右晃動幅度
         };
     }
 
@@ -51,14 +52,17 @@ document.addEventListener("DOMContentLoaded", function () {
 
         snowflakes.forEach(flake => {
             flake.y += flake.speed;
+            flake.x += flake.swing; // 左右晃動
             if (flake.y > canvas.height) {
-                flake.y = -flake.size; // 循環使用
+                flake.y = -flake.size;
                 flake.x = Math.random() * canvas.width;
             }
 
             ctx.beginPath();
             ctx.arc(flake.x, flake.y, flake.size, 0, Math.PI * 2);
             ctx.fillStyle = `rgba(255, 255, 255, ${flake.opacity})`;
+            ctx.shadowBlur = flake.size * 1.5; // 模糊光暈
+            ctx.shadowColor = "rgba(255, 255, 255, 0.8)";
             ctx.fill();
         });
     }
