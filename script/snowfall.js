@@ -24,7 +24,7 @@ document.addEventListener("DOMContentLoaded", function () {
 
     const ctx = canvas.getContext("2d");
     const snowflakes = [];
-    const maxSnowflakes = 50; // 保持雪花數量較低
+    const maxSnowflakes = 15; // 保持雪花數量較低
     const fallSpeeds = [1, 2, 3]; // 三種速度
     const layers = 3; // 遠近層數
 
