@@ -1,7 +1,7 @@
 // Google Sheets 設定
-const fudausearch_SHEET_ID = "1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E";
+const fudausearch_SHEET_ID = "15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU";
 const fudausearch_API_KEY = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
-const fudausearch_SHEET_RANGE = "輔導職代!A:F";
+const fudausearch_SHEET_RANGE = "OMGLIST!A:F";
 
 // 緩存全局資料變量
 let fudausearch_cachedData = [];

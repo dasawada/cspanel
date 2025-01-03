@@ -1,3 +1,3 @@
-const sheetId = "1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E";
+const sheetId = "15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU";
 const apiKey = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
-const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/顧問組別清單?key=${apiKey}`;
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/wtf?key=${apiKey}`;
