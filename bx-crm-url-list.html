@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BX Chatroom Links</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 150px;
+            margin-bottom: 10px;
+        }
+        button {
+            display: block;
+            margin-bottom: 10px;
+            padding: 10px 15px;
+            font-size: 16px;
+            cursor: pointer;
+        }
+        ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        li {
+            margin: 5px 0;
+        }
+        a {
+            color: blue;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>BX Chatroom Links Generator</h1>
+    <textarea id="inputField" placeholder="Paste your content here..."></textarea>
+    <button id="openAllButton" disabled>Open All Links</button>
+    <ul id="linkList"></ul>
+
+    <script>
+        const inputField = document.getElementById('inputField');
+        const linkList = document.getElementById('linkList');
+        const openAllButton = document.getElementById('openAllButton');
+
+        inputField.addEventListener('input', () => {
+            const input = inputField.value;
+
+            // Clear previous results
+            linkList.innerHTML = '';
+
+            // Extract numbers from the input
+            const matches = input.match(/#(\d+)/g);
+            if (matches) {
+                matches.forEach(match => {
+                    const id = match.replace('#', '');
+                    const url = `https://oneclass.bitrix24.com/crm/deal/details/${id}/`;
+
+                    // Create a list item with the link
+                    const listItem = document.createElement('li');
+                    const link = document.createElement('a');
+                    link.href = url;
+                    link.target = '_blank';
+                    link.textContent = url;
+                    listItem.appendChild(link);
+                    linkList.appendChild(listItem);
+                });
+
+                // Enable "Open All Links" button
+                openAllButton.disabled = false;
+            } else {
+                openAllButton.disabled = true;
+            }
+        });
+
+        openAllButton.addEventListener('click', () => {
+            const links = document.querySelectorAll('#linkList a');
+            links.forEach(link => {
+                window.open(link.href, '_blank');
+            });
+        });
+    </script>
+</body>
+</html>
