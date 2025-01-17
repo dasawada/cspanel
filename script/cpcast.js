@@ -6,8 +6,14 @@ function copyToClipboard(button, text, isDynamic = false, type = 'MGM名單') {
         const year = taiwanTime.getUTCFullYear();
         const month = String(taiwanTime.getUTCMonth() + 1).padStart(2, '0'); // 月份補零
 
-        // 動態生成文字
-        text = `${year}年${month}月_${type}_B`;
+        // 根據 type 決定格式
+        if (type === '輔導MGM') {
+            // 格式為【202501_輔導MGM_B】
+            text = `${year}${month}_${type}_B`;
+        } else {
+            // 默認格式為【2025年01月_MGM名單_B】
+            text = `${year}年${month}月_${type}_B`;
+        }
     }
 
     // 複製到剪貼簿
@@ -23,7 +29,7 @@ function copyToClipboard(button, text, isDynamic = false, type = 'MGM名單') {
     button.style.backgroundColor = '#4caf50'; // 設置為綠色
 
     // 延遲恢復原始顏色
-    setTimeout(function() {
+    setTimeout(function () {
         button.style.backgroundColor = originalColor; // 恢復原始背景色
     }, 2000); // 2秒後恢復
 }
