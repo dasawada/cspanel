@@ -1,13 +1,16 @@
-function copyToClipboard(text) {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = '檔次已複製【' + text + '】';
-    copyMessage.classList.remove('hidden'); // 顯示消息
+function copyToClipboard(button, text, isDynamic = false, type = 'MGM名單') {
+    if (isDynamic) {
+        // 獲取當前 UTC 時間並轉換為台灣時間 (+8)
+        const now = new Date();
+        const taiwanTime = new Date(now.getTime() + 8 * 60 * 60 * 1000);
+        const year = taiwanTime.getUTCFullYear();
+        const month = String(taiwanTime.getUTCMonth() + 1).padStart(2, '0'); // 月份補零
 
-    // 移除並重新添加 fade-out 類以重置動畫
-    copyMessage.classList.remove('fade-out');
-    void copyMessage.offsetWidth; // 觸發重排
-    copyMessage.classList.add('fade-out');
+        // 動態生成文字
+        text = `${year}年${month}月_${type}_B`;
+    }
 
+    // 複製到剪貼簿
     var textarea = document.createElement('textarea');
     textarea.value = text;
     document.body.appendChild(textarea);
@@ -15,36 +18,12 @@ function copyToClipboard(text) {
     document.execCommand('copy');
     document.body.removeChild(textarea);
 
+    // 按鈕變色呈現複製狀態
+    var originalColor = button.style.backgroundColor; // 保存原始背景色
+    button.style.backgroundColor = '#4caf50'; // 設置為綠色
+
+    // 延遲恢復原始顏色
     setTimeout(function() {
-        copyMessage.classList.add('hidden'); // 動畫結束後隱藏
-    }, 4000); // 與動畫持續時間匹配
+        button.style.backgroundColor = originalColor; // 恢復原始背景色
+    }, 2000); // 2秒後恢復
 }
-
-function copyToClipboard_F12script(text, message) {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = message;
-    copyMessage.classList.remove('hidden'); // 顯示消息
-
-    // 移除並重新添加 fade-out 類以重置動畫
-    copyMessage.classList.remove('fade-out');
-    void copyMessage.offsetWidth; // 觸發重排
-    copyMessage.classList.add('fade-out');
-
-    var textarea = document.createElement('textarea');
-    textarea.value = text;
-    document.body.appendChild(textarea);
-    textarea.select();
-    document.execCommand('copy');
-    document.body.removeChild(textarea);
-
-    setTimeout(function() {
-        copyMessage.classList.add('hidden'); // 動畫結束後隱藏
-    }, 4000); // 與動畫持續時間匹配
-	
-}
-// 清空檔次提示語函數
-document.addEventListener("DOMContentLoaded", function() {
-    var copyMessage = document.getElementById('copyMessage');
-    copyMessage.textContent = '　';
-});
-
