@@ -22,7 +22,7 @@ async function fudausearch_loadData() {
 
 // 排序函數
 function fudausearch_sortButtons(results) {
-  const typeOrder = ["學務部", "排課組", "客服工程師", "輔導本人", "職代一", "職代二", "公帳號", "B-2"];
+  const typeOrder = ["學務部", "排課組", "客服工程師", "輔導本人", "職代一", "職代二", "公帳號", "B-2", "數字組"];
   return results.sort((a, b) => {
     const indexA = typeOrder.indexOf(a.type);
     const indexB = typeOrder.indexOf(b.type);
@@ -42,49 +42,61 @@ async function fudausearch_search() {
   // 如果 input 為空，直接退出搜尋
   if (!input) return;
 
-  // 初始化結果
-  let fudausearch_results = [
-    { text: "無資料", fullName: "無資料", type: "職代一" },
-    { text: "無資料", fullName: "無資料", type: "職代二" },
-    { text: "無資料", fullName: "無資料", type: "公帳號" },
-    { text: "無資料", fullName: "無資料", type: "B-2" },
-    { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
-    { text: "排", fullName: "課組", type: "排課組" }
-  ];
+// 初始化結果
+let fudausearch_results = [
+  { text: "無資料", fullName: "無資料", type: "職代一" },
+  { text: "無資料", fullName: "無資料", type: "職代二" },
+  { text: "無資料", fullName: "無資料", type: "公帳號" },
+  { text: "無資料", fullName: "無資料", type: "B-2" },
+  { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
+  { text: "排", fullName: "課組", type: "排課組" },
+  { text: "無資料", fullName: "無資料", type: "數字組" } // 新增按鈕，修正為 "數字組"
+];
 
-  // 確保 B-2 的值從 Column B-row2 提取
-  if (fudausearch_cachedData[1] && fudausearch_cachedData[1][1]) {
-    const fullName = fudausearch_cachedData[1][1].trim(); // 確保去掉首尾空白
-    fudausearch_results[3].text = fullName; // 更新按鈕顯示為全名
-    fudausearch_results[3].fullName = fullName.slice(1); // 複製時只複製名字
-  }
+// 確保 B-2 的值從 Column B-row2 提取
+if (fudausearch_cachedData[1] && fudausearch_cachedData[1][1]) {
+  const fullName = fudausearch_cachedData[1][1].trim();
+  fudausearch_results[3].text = fullName;
+  fudausearch_results[3].fullName = fullName.slice(1);
+}
 
-  // 使用緩存資料進行匹配
-  let hasMatch = false;
-  fudausearch_cachedData.forEach((row, rowIndex) => {
-    const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex); // 檢索組別
-    if (row[1] === input) {
-      hasMatch = true;
-      // 更新職代一
-      if (row[3]) {
-        fudausearch_results[0].text = row[3];
-        fudausearch_results[0].fullName = row[3].slice(1);
-      }
-      // 更新職代二
-      if (row[5]) {
-        fudausearch_results[1].text = row[5];
-        fudausearch_results[1].fullName = row[5].slice(1);
-      }
-      // 更新公帳號
-      if (group === "學務部") {
-        fudausearch_results[2].text = group;
-        fudausearch_results[2].fullName = "學務";
-      } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-        fudausearch_results[2].text = `輔導${group.replace("學務", "")}`;
-        fudausearch_results[2].fullName = `輔導${group.replace("學務", "")}`;
-      }
+// 使用緩存資料進行匹配
+let hasMatch = false;
+fudausearch_cachedData.forEach((row, rowIndex) => {
+  const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex); // 檢索組別
+  if (row[1] === input) {
+    hasMatch = true;
+
+    // 更新職代一
+    if (row[3]) {
+      fudausearch_results[0].text = row[3];
+      fudausearch_results[0].fullName = row[3].slice(1);
     }
-  });
+
+    // 更新職代二
+    if (row[5]) {
+      fudausearch_results[1].text = row[5];
+      fudausearch_results[1].fullName = row[5].slice(1);
+    }
+
+    // 更新公帳號
+    if (group === "學務部") {
+      fudausearch_results[2].text = group;
+      fudausearch_results[2].fullName = "學務";
+    } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+      fudausearch_results[2].text = `輔導${group.replace("學務", "")}`;
+      fudausearch_results[2].fullName = `輔導${group.replace("學務", "")}`;
+    }
+
+    // 更新群組
+if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+  const number = group.replace(/學務|組/g, ""); // 同時移除「學務」和「組」
+  fudausearch_results[6].text = number; // 按鈕顯示為數字，例如「二」
+  fudausearch_results[6].fullName = `第${number}組`; // 點擊複製的內容，例如「第二組」
+}
+
+  }
+});
 
   if (hasMatch) {
     fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
@@ -99,9 +111,6 @@ async function fudausearch_search() {
   // 渲染按鈕
   fudausearch_renderButtons(fudausearch_results);
 }
-
-// 其他函數保持不變，如 `fudausearch_renderButtons`、`fudausearch_copyToClipboard` 等。
-
 
 // 更新建議選單，使用緩存資料
 function fudausearch_updateSuggestions() {
@@ -151,6 +160,8 @@ function fudausearch_renderButtons(fudausearch_results) {
       button.classList.add("fudausearch-button-paikezu");
     } else if (result.type === "客服工程師") {
       button.classList.add("fudausearch-button-kefugon");
+    } else if (result.type === "數字組") {
+      button.classList.add("fudausearch-button-groupnumber");
     }
 
     button.textContent = result.text; // 按鈕只顯示結果

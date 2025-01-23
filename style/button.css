@@ -358,6 +358,14 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
     background-color: #2A292E;
     color: white;
   }
+  .fudausearch-button-groupnumber {
+    background-color: #078eda;
+    color: white;
+  }
+  .fudausearch-button-groupnumber:hover {
+    background-color: #163c94;
+    color: white;
+  }
 /* 包裹輸入框與按鈕的容器 */
 .fudausearch-input-wrapper {
   position: relative;
