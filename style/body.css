@@ -45,8 +45,19 @@ body, button, textarea {
 	left: 0px;
     top: 205px;
 }
-.roofbutton:hover {
-    background-color: #f7f7f7;
+.tool_zip_dl {
+    width: 400px;
+    height: 55px;
+    color: #4d4d4d;
+    border: 1px solid #ccc;
+    padding: 5px 10px 5px 10px;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    position: absolute;
+    left: 1250px;
+    top: 0px;
 }
 	.optitlepanel {
 	background-color: white;
@@ -60,9 +71,6 @@ body, button, textarea {
     position: absolute;
     top: 0px;
     left: 0px;
-}
-.optitlepanel:hover {
-    background-color: #f7f7f7;
 }
 
 .idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet,.assist-issue {
@@ -83,7 +91,10 @@ body, button, textarea {
     cursor: pointer;
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover {
+.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
+.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover,.optitlepanel:hover,
+.fudausearch-container:hover,.roofbutton:hover,.meeting-now-search:hover,.meeting-check-search:hover,
+.tool_zip_dl:hover{
     background-color: #f7f7f7;
 }
 
