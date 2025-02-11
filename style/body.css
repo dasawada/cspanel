@@ -95,7 +95,7 @@ body, button, textarea {
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-now-search:hover,.meeting-check-search:hover,
 .tool_zip_dl:hover{
-    background-color: #f7f7f7;
+background: linear-gradient(to bottom, #f7f7f7 30px, #ffffff 100%);
 }
 
 .idsearchpanel.small-size, .consultantlistgooglesheet.small-size, .ClassLogpanel.small-size, .DT_panel.small-size,.assist_googlesheet.small-size,.assist-issue.small-size,.board.small-size  {
@@ -115,7 +115,7 @@ body, button, textarea {
 .ClassLogpanel {
 	width: 560px;
 	height: 700px;
-	z-index: 996;
+	z-index: 997;
 }
 .DT_panel {
 position: absolute; 
@@ -162,8 +162,8 @@ padding-bottom:20px;
   flex-direction: column;        /* 垂直排列 */
   justify-content: space-between;/* 子元素在垂直方向上均匀分布 */
   align-items: flex-start;       /* 子元素靠左对齐 */
-  padding: 6px 6px 3px 6px;      /* 内边距 */
-  z-index: 997;
+  padding: 6px 6px 6px 6px;      /* 内边距 */
+  z-index: 996;
   min-height: 36px;              /* 设置初始最小高度 */
   width: 280px;                  /* 固定宽度 */
   overflow: hidden;              /* 控制内容溢出 */
