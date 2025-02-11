@@ -139,18 +139,18 @@ async function IP_handleIpInput(ip) {
     if (!ipMapContainer) {
       ipMapContainer = document.createElement('div');
       ipMapContainer.id = 'ip_map';
-      ipMapContainer.style.width = '220px';
+      ipMapContainer.style.width = '260px';
       ipMapContainer.style.height = '220px';
       ipMapContainer.style.margin = '5px auto 5px';
       ipResultContainer.appendChild(ipMapContainer);
     }
-    if (data.loc) {
-      const [lat, lon] = data.loc.split(',');
-      const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=15&maptype=roadmap`;
-      ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
-    } else {
-      ipMapContainer.innerHTML = "";
-    }
+	if (data.loc) {
+		const [lat, lon] = data.loc.split(',');
+		const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
+		ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
+	} else {
+		ipMapContainer.innerHTML = "";
+	}
   } catch (error) {
     console.error(error);
     IP_clearOutput();
