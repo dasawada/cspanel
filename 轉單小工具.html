@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>轉單小工具</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: row;
+            height: 100vh;
+            overflow: hidden;
+        }
+        .panel {
+            width: 30%;
+            min-width: 300px;
+            padding: 20px;
+            border-right: 1px solid #ccc;
+            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+            overflow-y: auto;
+            height: 100%;
+            background-color: #f9f9f9;
+        }
+        .input-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        input {
+            flex-grow: 1;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            padding: 6px 10px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+            flex-shrink: 0;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        .iframe-container {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+        iframe {
+            flex-grow: 1;
+            width: 100%;
+            border: none;
+        }
+        .url-display {
+            padding: 10px;
+            background-color: #f8f9fa;
+            border-top: 1px solid #ddd;
+            text-align: center;
+            overflow-x: auto;
+            white-space: nowrap;
+        }
+        pre {
+            background-color: #f8f9fa;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+    </style>
+</head>
+<body>
+    <div class="panel">
+        <div class="input-group">
+            <input type="text" id="dealId" placeholder="Enter Deal ID" onkeypress="if(event.key === 'Enter') fetchDealInfo();">
+            <button onclick="fetchDealInfo()">搜尋</button>
+        </div>
+
+
+        <pre id="result">等待搜尋。</pre>
+    </div>
+
+    <div class="iframe-container">
+        <iframe id="resultIframe" src="about:blank"></iframe>
+        <div class="url-display" id="urlDisplay">No URL loaded.</div>
+    </div>
+
+    <script>
+        async function fetchDealInfo() {
+            const dealIdInput = document.getElementById('dealId');
+            let dealId = dealIdInput.value.trim();
+
+            // Remove '#' and any non-roman characters
+            dealId = dealId.replace(/[^A-Za-z0-9]/g, '');
+            dealIdInput.value = dealId; // Update input value
+
+            const resultContainer = document.getElementById('result');
+            const iframe = document.getElementById('resultIframe');
+            const urlDisplay = document.getElementById('urlDisplay');
+
+            if (!dealId) {
+                resultContainer.textContent = 'Please enter a valid Deal ID.';
+                return;
+            }
+
+            const webhookUrl = 'https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get';
+
+            try {
+                const response = await fetch(`${webhookUrl}?ID=${dealId}`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! Status: ${response.status}`);
+                }
+
+                const data = await response.json();
+
+                if (data.error) {
+                    resultContainer.textContent = `Error: ${data.error_description || 'Unknown error'}`;
+                    iframe.src = "about:blank";
+                    urlDisplay.textContent = "No URL loaded.";
+                } else {
+                    const result = data.result;
+
+                    // Format UF_CRM_1646312993 to replace \r\n with line breaks
+                    const formattedText = result.UF_CRM_1646312993?.replace(/\r\n/g, '\n') || 'No data';
+
+                    // Display the raw URL for UF_CRM_1646313465
+                    const link = result.UF_CRM_1646313465 || 'No link available';
+
+                    // Update the iframe and URL display
+                    iframe.src = link;
+                    urlDisplay.textContent = link;
+
+                    // Display the formatted result
+                    resultContainer.innerHTML = `
+                        <strong>UF_CRM_1646312993:</strong>\n${formattedText}\n\n
+                        <strong>UF_CRM_1646313465:</strong>\n<a href="${link}" target="_blank">${link}</a>
+                    `;
+                }
+            } catch (error) {
+                resultContainer.textContent = `Error: ${error.message}`;
+                iframe.src = "about:blank";
+                urlDisplay.textContent = "No URL loaded.";
+            }
+        }
+    </script>
+</body>
+</html>
