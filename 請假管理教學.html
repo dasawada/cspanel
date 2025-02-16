@@ -2,7 +2,7 @@
 <html lang="zh-Hant">
 <head>
   <meta charset="UTF-8">
-  <title>老師請假處理 SOP - 快速操作指南</title>
+  <title>老師請假處理 SOP - 客服罐頭訊息</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -54,16 +54,9 @@
       padding-bottom: 8px;
       margin-bottom: 20px;
     }
-    #content h3 {
-      font-size: 20px;
-      margin: 20px 0 10px;
-    }
     p, li {
       font-size: 16px;
       line-height: 1.6;
-    }
-    ol {
-      margin-left: 20px;
     }
     pre {
       background: #f7f7f7;
@@ -74,12 +67,47 @@
       white-space: pre-wrap;
       word-wrap: break-word;
     }
+    /* 搜尋欄位容器 */
+    .search-bar {
+      position: relative;
+      width: 100%;
+      max-width: 600px;
+      margin-bottom: 20px;
+    }
+    /* 輸入框：圓角、預留空間給右側 X 按鈕 */
+    .search-input {
+      width: 100%;
+      border: 1px solid #ccc;
+      border-radius: 9999px;
+      padding: 10px 45px 10px 15px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    /* 清除按鈕 (X) */
+    .clear-btn {
+      position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);
+      cursor: pointer;
+      width: 24px;
+      height: 24px;
+      text-align: center;
+      color: #999;
+      font-size: 18px;
+      display: none;
+      z-index: 2;
+    }
+    .clear-btn::before {
+      content: '×';
+    }
     /* 罐頭訊息 tab 區域 */
     .tab-container {
       display: flex;
       border: 1px solid #ddd;
       background: #fff;
-      height: 300px;
+      height: 350px;
+      margin-top: 10px;
     }
     .tab-menu {
       width: 200px;
@@ -112,14 +140,37 @@
     .tab-item.active {
       display: block;
     }
+    textarea {
+      width: 100%;
+      height: 220px;
+      font-size: 16px;
+      padding: 10px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+    .btn-group {
+      margin-top: 10px;
+    }
+    .btn-group button {
+      padding: 8px 12px;
+      margin-right: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+    /* 顯示紅色警示文字 */
+    .warning {
+      color: red;
+      font-weight: bold;
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
-  <!-- 主左側目錄 -->
+  <!-- 左側目錄 -->
   <div id="sidebar">
     <h2>目錄</h2>
     <ul>
-      <li><a href="#overview">概述</a></li>
+      <li><a href="#cannedMessagesSection">罐頭訊息生成器</a></li>
       <li><a href="#step1">1. 篩選假單</a></li>
       <li><a href="#step2">2. 檢查課程</a></li>
       <li><a href="#step3">3. 取消課程</a></li>
@@ -129,19 +180,108 @@
       <li><a href="#step7">7. 通知家長</a></li>
       <li><a href="#step8">8. 通知輔導老師</a></li>
       <li><a href="#notes">其他注意事項</a></li>
-      <li><a href="#cannedMessages">罐頭訊息一覽</a></li>
     </ul>
   </div>
 
   <!-- 右側主要內容 -->
   <div id="content">
-    <!-- 概述 -->
-    <section id="overview">
-      <h2>概述</h2>
-      <p>本指南協助您在老師請假時，依照標準流程完成操作。從篩選假單、檢查受影響課程、取消課程，到安排代課與家長通知，最終通知輔導老師。整個流程設計清晰易懂，確保您能在 5 分鐘內掌握並執行所有步驟。</p>
+    <!-- 罐頭訊息生成器區 -->
+    <section id="cannedMessagesSection">
+      <h2>罐頭訊息生成器</h2>
+
+      <!-- 搜尋欄位 (圓角，按下Enter執行搜尋) -->
+      <div class="search-bar">
+        <input 
+          type="text" 
+          id="courseInput" 
+          class="search-input" 
+          placeholder="貼上包含課程ID的網址（純課程ID也行），按Enter送出"
+        />
+        <span id="clearBtn" class="clear-btn"></span>
+      </div>
+
+      <!-- 顯示家長 Bitrix 連結與警示訊息 -->
+      <div id="courseResult"></div>
+
+      <!-- 罐頭訊息 Tab 區 -->
+      <div class="tab-container">
+        <!-- 左側選單 -->
+        <div class="tab-menu">
+          <ul>
+            <li data-tab="tab1" class="active">確認搶課</li>
+            <li data-tab="tab2">不排搶課（順延）</li>
+            <li data-tab="tab3">搶課失敗</li>
+            <li data-tab="tab4">輔導通知</li>
+          </ul>
+        </div>
+        <!-- 右側內容 (可編輯textarea) -->
+        <div class="tab-content">
+          <div id="tab1" class="tab-item active">
+            <textarea id="textarea-tab1">
+親愛的家長您好：
+
+學員姓名：
+課程時間：
+課程標籤：
+
+老師因故無法出席，為讓孩子的學習不間斷，
+我們已安排代課老師，感謝您的理解與支持！
+            </textarea>
+            <div class="btn-group">
+              <button onclick="copyText('textarea-tab1')">複製</button>
+              <button onclick="restoreAPIText('textarea-tab1')">還原</button>
+            </div>
+          </div>
+          <div id="tab2" class="tab-item">
+            <textarea id="textarea-tab2">
+親愛的家長您好：
+
+以下課程老師因故無法授課，課程將取消，
+如需安排代課，請您聯繫輔導老師為您服務，
+謝謝您的理解與配合。
+
+學員姓名：
+課程時間：
+            </textarea>
+            <div class="btn-group">
+              <button onclick="copyText('textarea-tab2')">複製</button>
+              <button onclick="restoreAPIText('textarea-tab2')">還原</button>
+            </div>
+          </div>
+          <div id="tab3" class="tab-item">
+            <textarea id="textarea-tab3">
+親愛的家長您好：
+
+學員姓名：
+課程時間：
+課程標籤：
+
+因老師們正忙碌中，尚無師資接任課程，
+故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。
+            </textarea>
+            <div class="btn-group">
+              <button onclick="copyText('textarea-tab3')">複製</button>
+              <button onclick="restoreAPIText('textarea-tab3')">還原</button>
+            </div>
+          </div>
+          <div id="tab4" class="tab-item">
+            <textarea id="textarea-tab4">
+老師請假，請於授課提醒內完成學生狀況交接
+
+1、學員姓名：
+2、課程時間：
+3、
+            </textarea>
+            <div class="btn-group">
+              <button onclick="copyText('textarea-tab4')">複製</button>
+              <button onclick="restoreAPIText('textarea-tab4')">還原</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </section>
 
-    <!-- 步驟 1 -->
+    <!-- 示範的操作流程區塊 -->
     <section id="step1">
       <h2>1. 篩選假單</h2>
       <ol>
@@ -149,117 +289,61 @@
         <li>根據請假起迄日篩選出狀態為「待處理」的假單。</li>
       </ol>
     </section>
-
-    <!-- 步驟 2 -->
     <section id="step2">
       <h2>2. 檢查受影響課程</h2>
       <ol>
         <li>點選假單中的「查看」圖示（眼睛），檢視所有受影響課程。</li>
-        <li>若課程內含「OneLink+」字樣（代表 2B 課程），則跳過該課程，由 2B 輔導老師處理。</li>
+        <li>若課程內含「OneLink+」字樣（代表 2B 課程），則跳過，由 2B 輔導老師處理。</li>
       </ol>
     </section>
-
-    <!-- 步驟 3 -->
     <section id="step3">
       <h2>3. 取消課程</h2>
       <p>在假單中，點選鉛筆圖示的【老師請假】按鈕，將受影響課程取消。</p>
     </section>
-
-    <!-- 步驟 4 -->
     <section id="step4">
       <h2>4. 安排代課</h2>
       <ol>
         <li>前往【一般課程管理】中的「已取消」課程列表，找出剛取消的課程。</li>
-        <li>點選課程右側的三個點，選擇【複製到教師搶課】，發送搶課邀請給代課老師。</li>
-        <li>※ 若課程標籤為「國小自然實作探究」，則不發代課邀請，直接使用「不排搶課（順延）」通知家長。</li>
+        <li>對課程選擇【複製到教師搶課】。</li>
+        <p>※ 標籤為「國小自然實作探究」的課跳過，直接「不排搶課（順延）」通知家長。</p>
       </ol>
     </section>
-
-    <!-- 步驟 5 -->
     <section id="step5">
       <h2>5. 設定搶課邀請</h2>
       <ol>
         <li>在搶課邀請畫面中，系統會自動帶入取消課程的所有資訊。</li>
-        <li>根據課程時間調整「有效期限」。</li>
-        <li>若課程名稱未標示代課，請在最前方加入「代課」或「代課：」。</li>
-        <li>點選【發佈】，系統將返回教師搶課管理頁面。</li>
+        <li>「有效期限」調整為 24 小時。</li>
+        <li>請確保課程名稱前面有「代課」或「代課：」字眼。</li>
+        <li>點選【發佈】。</li>
       </ol>
     </section>
-
-    <!-- 步驟 6 -->
     <section id="step6">
       <h2>6. 確認代課狀態</h2>
-      <p>在教師搶課管理頁面中，搜尋該課程，確認【教師】欄位出現老師姓名且狀態為「已排課」，表示代課老師已接單。</p>
+      <p>在教師搶課管理頁面中，搜尋該課程，確認【教師】有老師姓名且狀態為「已排課」，表示代課成功。</p>
     </section>
-
-    <!-- 步驟 7 -->
     <section id="step7">
       <h2>7. 通知家長</h2>
-      <p>依據家長備註，選擇適用通知範本：</p>
-      <h3>7-1. 一般情況</h3>
-      <p>家長無特殊要求時，通知內容為（原【罐頭文1】）：</p>
-      <pre>
-親愛的家長您好：
-
-學員姓名：周芷萱 (一般課程管理開課對象)
-課程時間：2025/01/18 (六) 20:00-20:25 (一般課程管理開課時間)
-課程標籤：國語文寫作青銅
-
-老師因故無法出席，為讓孩子的學習不間斷，
-我們為您安排代課老師，感謝您的理解與支持！
-      </pre>
-      <h3>7-2. 不代課（順延）</h3>
-      <p>若家長備註「不代課」或「只要補課」，則使用（原【罐頭文2】）：</p>
-      <pre>
-親愛的家長您好：
-
-以下課程老師因故無法授課，課程將取消，
-如需安排代課，請您聯繫輔導老師為您服務，
-謝謝您的理解與配合。
-
-學員姓名：周芷萱 (一般課程管理開課對象)
-課程時間：2025/01/18 (六) 20:00-20:25 (一般課程管理開課時間)
-      </pre>
-      <h3>7-3. 搶課失敗</h3>
-      <ol>
-        <li>記錄搶課邀請發出時的學生及時間。</li>
-        <li>至 Slack 頻道「#推播_搶課失效通知」查詢狀態。</li>
-        <li>若無代課老師接單，則使用（原【罐頭文3】）：</li>
-      </ol>
-      <pre>
-親愛的家長您好：
-
-學員姓名：陳巧湉 (一般課程管理開課對象)
-課程時間：2025/1/15 (三) 20:40-21:30 (一般課程管理開課時間)
-課程標籤：高中物理
-
-因老師們正忙碌中，尚無師資接任課程，
-故課程將取消，後續將由輔導老師與您溝通補課事宜，
-謝謝您的配合。
-      </pre>
+      <p>依據家長備註，選擇適用通知範本（參考上方罐頭訊息）：</p>
     </section>
-
-    <!-- 步驟 8 -->
     <section id="step8">
       <h2>8. 通知輔導老師</h2>
-      <p>當代課老師接單後，請至 Slack 頻道「#推播_代課搶課成功」發送通知，內容如下（原【罐頭文4】）：</p>
+      <p>當代課老師接單後，請至 Slack 頻道「#推播_代課搶課成功」發送通知，內容如下：</p>
       <pre>
 老師請假，請於授課提醒內完成學生狀況交接
 
-1、學員姓名：周芷萱 (一般課程管理開課對象)
-2、課程時間：1/18 (週六) 20:00-20:25 (一般課程管理開課時間)
-3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/678753ba9b7a26e4860d8c8b
+1、學員姓名： (請填入)
+2、課程時間： (請填入)
+3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/ (請附上課程ID)
       </pre>
     </section>
-
-    <!-- 其他注意事項 -->
     <section id="notes">
       <h2>其他注意事項</h2>
       <ul>
-        <li>若假單影響多個課程，部分處理後假單狀態保持不變；全部處理完畢後先標記為「處理中」，再點一次變更為「已結案」。</li>
-        <li>試聽課請假時，顧問會直接取消課程，此假單可直接結案。</li>
-        <li>若受影響課程已先取消（狀態不限），且假單僅影響一堂課，可直接結案該假單。</li>
-        <li>若取消課程名稱中含「首課」字樣（如換師首課、換科首課等），取消後請至「首課緊急處理區」的 Line 群組通知輔導組長，格式如下：
+        <li>若假單影響多個課程，僅需於全部處理完畢後，先標記為「處理中」，再切至「已結案」。</li>
+        <li>若有試聽課請假，顧問會取消課程，可直接結案。</li>
+        <li>若受影響課程已先取消（狀態不限），且假單僅影響一堂課，可直接結案。</li>
+        <li>若取消課程名稱中含「首課」字樣（如換師首課、換科首課等），
+          <br>取消後請至「首課緊急處理區」的 Line 群組通知輔導組長，格式如下:
           <pre>
 老師日前請假
 學生：羅虹雅
@@ -270,98 +354,276 @@
         </li>
       </ul>
     </section>
+  </div>
 
-    <!-- 罐頭訊息一覽（Tab 切換介面） -->
-    <section id="cannedMessages">
-      <h2>罐頭訊息一覽</h2>
-      <p>點選左側選單切換各項通知範本，右側即顯示相應內容，可直接複製使用。</p>
-      <div class="tab-container">
-        <!-- 左側切換選單 -->
-        <div class="tab-menu">
-          <ul>
-            <li data-tab="tab1" class="active">確認搶課</li>
-            <li data-tab="tab2">不排搶課（順延）</li>
-            <li data-tab="tab3">搶課失敗</li>
-            <li data-tab="tab4">輔導通知</li>
-          </ul>
-        </div>
-        <!-- 右側 tab 內容 -->
-        <div class="tab-content">
-          <div id="tab1" class="tab-item active">
-            <pre>
-【確認搶課】
+  <script>
+    // ========= 1. Tab 切換功能 =========
+    const tabs = document.querySelectorAll('.tab-menu li');
+    const tabItems = document.querySelectorAll('.tab-item');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', function() {
+        tabs.forEach(item => item.classList.remove('active'));
+        tabItems.forEach(item => item.classList.remove('active'));
+        this.classList.add('active');
+        document.getElementById(this.dataset.tab).classList.add('active');
+      });
+    });
 
-親愛的家長您好：
+    // ========= 2. 罐頭訊息複製功能 =========
+    function copyText(id) {
+      const textarea = document.getElementById(id);
+      textarea.select();
+      document.execCommand('copy');
+      alert('已複製到剪貼簿');
+    }
 
-學員姓名：周芷萱 (一般課程管理開課對象)
-課程時間：2025/01/18 (六) 20:00-20:25 (一般課程管理開課時間)
-課程標籤：國語文寫作青銅
+    // ========= 3. 預設文本 & API 文本儲存 =========
+    // (A) defaultTexts：最初預設文字
+    const defaultTexts = {
+      "textarea-tab1": `親愛的家長您好：
+
+學員姓名：
+課程時間：
+課程標籤：
 
 老師因故無法出席，為讓孩子的學習不間斷，
-我們已安排代課老師，感謝您的理解與支持！
-            </pre>
-          </div>
-          <div id="tab2" class="tab-item">
-            <pre>
-【不排搶課（順延）】
-
-親愛的家長您好：
+我們已安排代課老師，感謝您的理解與支持！`,
+      "textarea-tab2": `親愛的家長您好：
 
 以下課程老師因故無法授課，課程將取消，
 如需安排代課，請您聯繫輔導老師為您服務，
 謝謝您的理解與配合。
 
-學員姓名：周芷萱 (一般課程管理開課對象)
-課程時間：2025/01/18 (六) 20:00-20:25 (一般課程管理開課時間)
-            </pre>
-          </div>
-          <div id="tab3" class="tab-item">
-            <pre>
-【搶課失敗】
+學員姓名：
+課程時間：`,
+      "textarea-tab3": `親愛的家長您好：
 
-親愛的家長您好：
-
-學員姓名：陳巧湉 (一般課程管理開課對象)
-課程時間：2025/1/15 (三) 20:40-21:30 (一般課程管理開課時間)
-課程標籤：高中物理
+學員姓名：
+課程時間：
+課程標籤：
 
 因老師們正忙碌中，尚無師資接任課程，
-故課程將取消，後續將由輔導老師與您溝通補課事宜，
-謝謝您的配合。
-            </pre>
-          </div>
-          <div id="tab4" class="tab-item">
-            <pre>
-【輔導通知】
+故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`,
+      "textarea-tab4": `老師請假，請於授課提醒內完成學生狀況交接
 
-老師請假，請於授課提醒內完成學生狀況交接
+1、學員姓名：
+2、課程時間：
+3、`
+    };
+    // (B) apiTexts：最後一次 API 查詢後的文字 (單層 Undo)
+    let apiTexts = {
+      "textarea-tab1": defaultTexts["textarea-tab1"],
+      "textarea-tab2": defaultTexts["textarea-tab2"],
+      "textarea-tab3": defaultTexts["textarea-tab3"],
+      "textarea-tab4": defaultTexts["textarea-tab4"]
+    };
 
-1、學員姓名：周芷萱 (一般課程管理開課對象)
-2、課程時間：1/18 (週六) 20:00-20:25 (一般課程管理開課時間)
-3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/678753ba9b7a26e4860d8c8b
-            </pre>
-          </div>
-        </div>
-      </div>
-    </section>
-  </div>
+    // ========= 4. 「還原」按鈕：回到最後一次 API 更新 =========
+    function restoreAPIText(id) {
+      const textarea = document.getElementById(id);
+      textarea.value = apiTexts[id] || defaultTexts[id];
+    }
 
-  <script>
-    // 簡易 tab 切換功能
-    const tabs = document.querySelectorAll('.tab-menu li');
-    const tabItems = document.querySelectorAll('.tab-item');
+    // ========= 5. 搜尋欄位：X按鈕、Enter觸發查詢 =========
+    const courseInput = document.getElementById('courseInput');
+    const clearBtn = document.getElementById('clearBtn');
+    const courseResultDiv = document.getElementById('courseResult');
 
-    tabs.forEach(tab => {
-      tab.addEventListener('click', function() {
-        // 清除目前 active 狀態
-        tabs.forEach(item => item.classList.remove('active'));
-        tabItems.forEach(item => item.classList.remove('active'));
-
-        // 加入 active 到點擊的項目及對應 tab
-        this.classList.add('active');
-        document.getElementById(this.dataset.tab).classList.add('active');
-      });
+    // 顯示/隱藏 X
+    courseInput.addEventListener('input', () => {
+      clearBtn.style.display = courseInput.value ? 'block' : 'none';
     });
+    // 點擊 X：清空輸入、回復罐頭到預設、清空 Bitrix 連結
+    clearBtn.addEventListener('click', () => {
+      courseInput.value = '';
+      clearBtn.style.display = 'none';
+      for (let key in defaultTexts) {
+        document.getElementById(key).value = defaultTexts[key];
+      }
+      apiTexts = JSON.parse(JSON.stringify(defaultTexts));
+      courseResultDiv.innerHTML = '';
+    });
+    // 按 Enter 執行查詢
+    courseInput.addEventListener('keyup', (e) => {
+      if (e.key === 'Enter') {
+        doIdentifyCourse();
+      }
+    });
+
+    // ========= 6. 查詢課程 & 家長資訊，更新罐頭 =========
+    function doIdentifyCourse() {
+      const inputVal = courseInput.value.trim();
+      const courseId = extractCourseId(inputVal);
+      if (!courseId) {
+        alert('無法解析出正確的課程ID，請確認貼上的網址格式');
+        return;
+      }
+      // 呼叫第一組 API 取得課程資訊
+      const courseApiUrl = 'https://api-new.oneclass.co/mms/course/UseAggregate';
+      fetch(`${courseApiUrl}/${courseId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('網路請求錯誤，狀態碼：' + response.status);
+        }
+        return response.json();
+      })
+      .then(json => {
+        if (json.status !== 'success') {
+          throw new Error('API 回傳非 success: ' + JSON.stringify(json));
+        }
+        const data = json.data;
+        // 取得學生姓名
+        const studentNames = (data.students || []).map(s => s.name).join('、') || '(無資料)';
+        // 取得標籤 (以 "、" 連接)
+        const tagNames = (data.tags || []).map(t => t.name).join('、') || '(無資料)';
+        // 格式化開始時間
+        const startAt = data.startAt;
+        let formattedStart = '(無資料)';
+        if (startAt) {
+          const date = new Date(startAt);
+          const options = { timeZone: 'Asia/Taipei', weekday: 'short', year: 'numeric', month: 'numeric', day: 'numeric', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+          const dateFormatter = new Intl.DateTimeFormat('zh-TW', options);
+          const parts = dateFormatter.formatToParts(date);
+          const year = parts.find(p => p.type === 'year').value;
+          const month = parts.find(p => p.type === 'month').value;
+          const day = parts.find(p => p.type === 'day').value;
+          const weekday = parts.find(p => p.type === 'weekday').value;
+          const hour = parts.find(p => p.type === 'hour').value.padStart(2, '0');
+          const minute = parts.find(p => p.type === 'minute').value.padStart(2, '0');
+          formattedStart = `${year}/${month}/${day} (${weekday}) ${hour}:${minute}`;
+        }
+        // 格式化結束時間 (僅顯示 HH:mm)
+        const endAt = data.endAt;
+        let formattedEnd = '(無資料)';
+        if (endAt) {
+          const endDate = new Date(endAt);
+          const optionsEnd = { timeZone: 'Asia/Taipei', hour: '2-digit', minute: '2-digit', hourCycle: 'h23' };
+          const dateFormatterEnd = new Intl.DateTimeFormat('zh-TW', optionsEnd);
+          const partsEnd = dateFormatterEnd.formatToParts(endDate);
+          const endHour = partsEnd.find(p => p.type === 'hour').value.padStart(2, '0');
+          const endMinute = partsEnd.find(p => p.type === 'minute').value.padStart(2, '0');
+          formattedEnd = `${endHour}:${endMinute}`;
+        }
+        // 組合課程時間：開始－結束
+        const courseTime = `${formattedStart}－${formattedEnd}`;
+        // 取得第一位學生的 parentOneClubId
+        let parentOneClubId = '';
+        if (data.students && data.students.length > 0) {
+          parentOneClubId = data.students[0].parentOneClubId || '';
+        }
+        if (!parentOneClubId) {
+          throw new Error('無法取得學生的 parentOneClubId');
+        }
+        // 呼叫第二組 API 取得家長資訊
+        const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
+        return fetch(parentApiUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json, text/plain, */*' }
+        })
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('家長 API 請求錯誤，狀態碼：' + response.status);
+          }
+          return response.json();
+        })
+        .then(parentJson => {
+          if (parentJson.status !== 'success') {
+            throw new Error('家長 API 回傳非 success: ' + JSON.stringify(parentJson));
+          }
+          const parentData = parentJson.data;
+          const contactId = parentData.contactId;
+          if (!contactId) {
+            throw new Error('無法取得家長的 contactId');
+          }
+          // 組成家長的 Bitrix 連結
+          const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
+          // 若 tagNames 包含 "國小自然實作探究"，則加上紅色警示
+          let warningMsg = '';
+          const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
+          if (isNongXiao) {
+            warningMsg = `<p class="warning">【國小自然實作探究】不找代課，直接順延！</p>`;
+          }
+          courseResultDiv.innerHTML = `
+            <p><strong>家長 Bitrix 連結：</strong>
+              <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
+            </p>
+            ${warningMsg}
+          `;
+          // 更新罐頭訊息：如果有 "國小自然實作探究"，僅更新【不排搶課（順延）】；其他則保留預設
+          if (isNongXiao) {
+            // 僅更新 tab2
+            apiTexts["textarea-tab2"] = `親愛的家長您好：
+
+以下課程老師因故無法授課，課程將取消，
+如需安排代課，請您聯繫輔導老師為您服務，
+謝謝您的理解與配合。
+
+學員姓名：${studentNames}
+課程時間：${courseTime}`;
+            document.getElementById("textarea-tab2").value = apiTexts["textarea-tab2"];
+            // 其他三個保持原預設值
+            document.getElementById("textarea-tab1").value = defaultTexts["textarea-tab1"];
+            document.getElementById("textarea-tab3").value = defaultTexts["textarea-tab3"];
+            document.getElementById("textarea-tab4").value = defaultTexts["textarea-tab4"];
+            // 同步 apiTexts 也保持預設值
+            apiTexts["textarea-tab1"] = defaultTexts["textarea-tab1"];
+            apiTexts["textarea-tab3"] = defaultTexts["textarea-tab3"];
+            apiTexts["textarea-tab4"] = defaultTexts["textarea-tab4"];
+          } else {
+            // 若沒有國小自然實作探究，則全部依 API 更新
+            apiTexts["textarea-tab1"] = `親愛的家長您好：
+
+學員姓名：${studentNames}
+課程時間：${courseTime}
+課程標籤：${tagNames}
+
+老師因故無法出席，為讓孩子的學習不間斷，
+我們已安排代課老師，感謝您的理解與支持！`;
+            apiTexts["textarea-tab2"] = `親愛的家長您好：
+
+以下課程老師因故無法授課，課程將取消，
+如需安排代課，請您聯繫輔導老師為您服務，
+謝謝您的理解與配合。
+
+學員姓名：${studentNames}
+課程時間：${courseTime}`;
+            apiTexts["textarea-tab3"] = `親愛的家長您好：
+
+學員姓名：${studentNames}
+課程時間：${courseTime}
+課程標籤：${tagNames}
+
+因老師們正忙碌中，尚無師資接任課程，
+故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
+            apiTexts["textarea-tab4"] = `老師請假，請於授課提醒內完成學生狀況交接
+
+1、學員姓名：${studentNames}
+2、課程時間：${courseTime}
+3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+            document.getElementById("textarea-tab1").value = apiTexts["textarea-tab1"];
+            document.getElementById("textarea-tab2").value = apiTexts["textarea-tab2"];
+            document.getElementById("textarea-tab3").value = apiTexts["textarea-tab3"];
+            document.getElementById("textarea-tab4").value = apiTexts["textarea-tab4"];
+          }
+        });
+      })
+      .catch(error => {
+        console.error(error);
+        courseResultDiv.innerHTML = `<p style="color:red;">辨識失敗：${error.message}</p>`;
+      });
+    }
+
+    // ========= 7. Helper：從貼上的網址中解析出課程ID (24位 0-9a-f) =========
+    function extractCourseId(input) {
+      const match = input.match(/([0-9a-fA-F]{24})/);
+      return match ? match[1] : null;
+    }
   </script>
 </body>
 </html>
