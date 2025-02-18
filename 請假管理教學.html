@@ -452,196 +452,199 @@
 
     // ========= 6. 查詢課程 & 家長資訊，更新罐頭 =========
     function doIdentifyCourse() {
-  const inputVal = courseInput.value.trim();
-  const courseId = extractCourseId(inputVal);
-  if (!courseId) {
-    alert('無法解析出正確的課程ID，請確認貼上的網址格式');
-    return;
-  }
-
-  const courseApiUrl = 'https://api-new.oneclass.co/mms/course/UseAggregate';
-  let courseData; // 用於存放課程資料
-
-  fetch(`${courseApiUrl}/${courseId}`, {
-    method: 'GET',
-    headers: {
-      'Accept': 'application/json, text/plain, */*',
-      'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI'
-    }
-  })
-  .then(response => {
-    if (!response.ok) {
-      throw new Error('網路請求錯誤，狀態碼：' + response.status);
-    }
-    return response.json();
-  })
-  .then(json => {
-    if (json.status !== 'success') {
-      throw new Error('API 回傳非 success: ' + JSON.stringify(json));
-    }
-
-    courseData = json.data; // 存入課程資料
-
-    // 定義相關變數
-    const studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
-    const tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
-    const courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
-
-    // 取得第一位學生的 parentOneClubId
-    let parentOneClubId = '';
-    if (courseData.students && courseData.students.length > 0) {
-      parentOneClubId = courseData.students[0].parentOneClubId || '';
-    }
-    if (!parentOneClubId) {
-      throw new Error('無法取得學生的 parentOneClubId');
-    }
-
-    // 呼叫第二組 API 取得家長資訊
-    const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
-    return fetch(parentApiUrl, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json, text/plain, */*' }
-    })
-    .then(response => {
-      if (!response.ok) {
-        throw new Error('家長 API 請求錯誤，狀態碼：' + response.status);
+      const inputVal = courseInput.value.trim();
+      const courseId = extractCourseId(inputVal);
+      if (!courseId) {
+        alert('無法解析出正確的課程ID，請確認貼上的網址格式');
+        return;
       }
-      return response.json();
-    })
-    .then(parentJson => {
-      if (parentJson.status !== 'success') {
-        throw new Error('家長 API 回傳非 success: ' + JSON.stringify(parentJson));
-      }
-      const parentData = parentJson.data;
-      const contactId = parentData.contactId;
-      if (!contactId) {
-        throw new Error('無法取得家長的 contactId');
-      }
-      // 組成家長 Bitrix 連結
-      const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
 
-      // 檢查標籤：若包含 "國小自然實作探究"，則僅更新【不排搶課（順延）】
-      let warningMsg = '';
-      const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
-      if (isNongXiao) {
-        warningMsg = `<p class="warning">【國小自然實作探究】不找代課，直接順延！</p>`;
-      }
-      courseResultDiv.innerHTML = `
-        <p><strong>家長 Bitrix 連結：</strong>
-          <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
-        </p>
-        ${warningMsg}
-      `;
+      const courseApiUrl = 'https://api-new.oneclass.co/mms/course/UseAggregate';
+      let courseData; // 用來儲存課程資料
+      // 將後續需要使用的變數提前宣告
+      let studentNames = '';
+      let tagNames = '';
+      let courseTime = '';
 
-      // 更新各個 tab 的罐頭訊息
-      if (isNongXiao) {
-        // 僅更新 tab2
+      fetch(`${courseApiUrl}/${courseId}`, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json, text/plain, */*',
+          'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI'
+        }
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('網路請求錯誤，狀態碼：' + response.status);
+        }
+        return response.json();
+      })
+      .then(json => {
+        if (json.status !== 'success') {
+          throw new Error('API 回傳非 success: ' + JSON.stringify(json));
+        }
+        courseData = json.data; // 存入課程資料
+
+        // 取得基本資料：學生姓名、標籤、課程時間
+        studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
+        tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
+        courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
+
+        // 取得第一位學生的 parentOneClubId
+        let parentOneClubId = '';
+        if (courseData.students && courseData.students.length > 0) {
+          parentOneClubId = courseData.students[0].parentOneClubId || '';
+        }
+        if (!parentOneClubId) {
+          throw new Error('無法取得學生的 parentOneClubId');
+        }
+
+        // 呼叫第二組 API 取得家長資訊
+        const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
+        return fetch(parentApiUrl, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json, text/plain, */*' }
+        });
+      })
+      .then(response => {
+        if (!response.ok) {
+          throw new Error('家長 API 請求錯誤，狀態碼：' + response.status);
+        }
+        return response.json();
+      })
+      .then(parentJson => {
+        if (parentJson.status !== 'success') {
+          throw new Error('家長 API 回傳非 success: ' + JSON.stringify(parentJson));
+        }
+        const parentData = parentJson.data;
+        const contactId = parentData.contactId;
+        if (!contactId) {
+          throw new Error('無法取得家長的 contactId');
+        }
+        // 組成家長 Bitrix 連結
+        const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
+
+        // 檢查是否為「國小自然實作探究」
+        const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
+
+        // 更新「不排搶課（順延）」 tab2：無論請假與否都以 API 組合訊息輸出
         apiTexts["textarea-tab2"] = `親愛的家長您好：
 
-以下課程老師因故無法授課，課程將取消，
-如需安排代課，請您聯繫輔導老師為您服務，
-謝謝您的理解與配合。
+    以下課程老師因故無法授課，課程將取消，
+    如需安排代課，請您聯繫輔導老師為您服務，
+    謝謝您的理解與配合。
 
-學員姓名：${studentNames}
-課程時間：${courseTime}`;
+    學員姓名：${studentNames}
+    課程時間：${courseTime}`;
         document.getElementById("textarea-tab2").value = apiTexts["textarea-tab2"];
-        // 其他 tab 保持預設
-        document.getElementById("textarea-tab1").value = defaultTexts["textarea-tab1"];
-        document.getElementById("textarea-tab3").value = defaultTexts["textarea-tab3"];
-        document.getElementById("textarea-tab4").value = defaultTexts["textarea-tab4"];
-        apiTexts["textarea-tab1"] = defaultTexts["textarea-tab1"];
-        apiTexts["textarea-tab3"] = defaultTexts["textarea-tab3"];
-        apiTexts["textarea-tab4"] = defaultTexts["textarea-tab4"];
-      } else {
-        // 全部依 API 更新
-        apiTexts["textarea-tab1"] = `親愛的家長您好：
 
-學員姓名：${studentNames}
-課程時間：${courseTime}
-課程標籤：${tagNames}
-
-老師因故無法出席，為讓孩子的學習不間斷，
-我們已安排代課老師，感謝您的理解與支持！`;
-        apiTexts["textarea-tab2"] = `親愛的家長您好：
-
-以下課程老師因故無法授課，課程將取消，
-如需安排代課，請您聯繫輔導老師為您服務，
-謝謝您的理解與配合。
-
-學員姓名：${studentNames}
-課程時間：${courseTime}`;
-        apiTexts["textarea-tab3"] = `親愛的家長您好：
-
-學員姓名：${studentNames}
-課程時間：${courseTime}
-課程標籤：${tagNames}
-
-因老師們正忙碌中，尚無師資接任課程，
-故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
-        apiTexts["textarea-tab4"] = `老師請假，請於授課提醒內完成學生狀況交接
-
-1、學員姓名：${studentNames}
-2、課程時間：${courseTime}
-3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
-        document.getElementById("textarea-tab1").value = apiTexts["textarea-tab1"];
-        document.getElementById("textarea-tab2").value = apiTexts["textarea-tab2"];
-        document.getElementById("textarea-tab3").value = apiTexts["textarea-tab3"];
-        document.getElementById("textarea-tab4").value = apiTexts["textarea-tab4"];
-      }
-
-      // 再來做 leaveOrders 的檢查，確保變數都在此作用域中
-      if (courseData.leaveOrders && courseData.leaveOrders.length > 0) {
-        // 若有請假紀錄，不更新輔導通知罐頭訊息，並顯示警示文字
-        apiTexts["textarea-tab4"] = defaultTexts["textarea-tab4"];
-        document.getElementById("textarea-tab4").value = defaultTexts["textarea-tab4"];
-
-        if (!document.querySelector('#tab4 .warning')) {
-          const warningMessage = '<p class="warning">請注意：本課程老師已請假，若要生成罐頭、請輸入最新代課網址</p>';
-          document.getElementById("tab4").insertAdjacentHTML('afterbegin', warningMessage);
+        // 顯示家長 Bitrix 連結與【國小自然實作探究】的警示（若適用）
+        let warningMsg = '';
+        if (isNongXiao) {
+          warningMsg = `<p class="warning">【國小自然實作探究】不找代課，直接順延！</p>`;
         }
-      } else {
-        // 若無請假紀錄，則移除可能存在的警示文字
-        const warningElem = document.querySelector('#tab4 .warning');
-        if (warningElem) {
-          warningElem.remove();
+        courseResultDiv.innerHTML = `
+          <p><strong>家長 Bitrix 連結：</strong>
+            <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
+          </p>
+          ${warningMsg}
+        `;
+
+        if (isNongXiao) {
+          // 若為國小自然實作探究，僅更新 tab2，其它 tab維持預設
+          document.getElementById("textarea-tab1").value = defaultTexts["textarea-tab1"];
+          document.getElementById("textarea-tab3").value = defaultTexts["textarea-tab3"];
+          document.getElementById("textarea-tab4").value = defaultTexts["textarea-tab4"];
+          apiTexts["textarea-tab1"] = defaultTexts["textarea-tab1"];
+          apiTexts["textarea-tab3"] = defaultTexts["textarea-tab3"];
+          apiTexts["textarea-tab4"] = defaultTexts["textarea-tab4"];
+        } else {
+          // 正常更新其它 tab：確認搶課(tab1)、搶課失敗(tab3) 與 輔導通知(tab4)
+          apiTexts["textarea-tab1"] = `親愛的家長您好：
+
+    學員姓名：${studentNames}
+    課程時間：${courseTime}
+    課程標籤：${tagNames}
+
+    老師因故無法出席，為讓孩子的學習不間斷，
+    我們已安排代課老師，感謝您的理解與支持！`;
+          apiTexts["textarea-tab3"] = `親愛的家長您好：
+
+    學員姓名：${studentNames}
+    課程時間：${courseTime}
+    課程標籤：${tagNames}
+
+    因老師們正忙碌中，尚無師資接任課程，
+    故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
+          apiTexts["textarea-tab4"] = `老師請假，請於授課提醒內完成學生狀況交接
+
+    1、學員姓名：${studentNames}
+    2、課程時間：${courseTime}
+    3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+
+          document.getElementById("textarea-tab1").value = apiTexts["textarea-tab1"];
+          document.getElementById("textarea-tab3").value = apiTexts["textarea-tab3"];
+          document.getElementById("textarea-tab4").value = apiTexts["textarea-tab4"];
         }
+
+        // 統一檢查 leaveOrders（老師請假）
+        if (courseData.leaveOrders && courseData.leaveOrders.length > 0) {
+          // 當老師請假時，確認搶課(tab1)與輔導通知(tab4)回復預設，並插入警示訊息
+          apiTexts["textarea-tab1"] = defaultTexts["textarea-tab1"];
+          apiTexts["textarea-tab4"] = defaultTexts["textarea-tab4"];
+          document.getElementById("textarea-tab1").value = defaultTexts["textarea-tab1"];
+          document.getElementById("textarea-tab4").value = defaultTexts["textarea-tab4"];
+
+          if (!document.querySelector('#tab1 .warning')) {
+            const warningMessage1 = '<p class="warning">請注意：本課程老師已請假，請輸入最新代課網址</p>';
+            document.getElementById("tab1").insertAdjacentHTML('afterbegin', warningMessage1);
+          }
+          if (!document.querySelector('#tab4 .warning')) {
+            const warningMessage4 = '<p class="warning">請注意：本課程老師已請假，請輸入最新代課網址</p>';
+            document.getElementById("tab4").insertAdjacentHTML('afterbegin', warningMessage4);
+          }
+        } else {
+          // 若無老師請假，移除 tab1 與 tab4 可能存在的警示訊息
+          const warningElem1 = document.querySelector('#tab1 .warning');
+          if (warningElem1) warningElem1.remove();
+          const warningElem4 = document.querySelector('#tab4 .warning');
+          if (warningElem4) warningElem4.remove();
+        }
+      })
+      .catch(error => {
+        console.error(error);
+        courseResultDiv.innerHTML = `<p style="color:red;">辨識失敗：${error.message}</p>`;
+      });
+    }
+
+    function formatCourseTime(startAt, endAt) {
+      let formattedStart = '(無資料)';
+      let formattedEnd = '(無資料)';
+
+      if (startAt) {
+        const date = new Date(startAt);
+        formattedStart = date.toLocaleString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          weekday: 'short',
+          year: 'numeric',
+          month: 'numeric',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
       }
-    });
-  })
-  .catch(error => {
-    console.error(error);
-    courseResultDiv.innerHTML = `<p style="color:red;">辨識失敗：${error.message}</p>`;
-  });
-}
-
-function formatCourseTime(startAt, endAt) {
-  let formattedStart = '(無資料)';
-  let formattedEnd = '(無資料)';
-
-  if (startAt) {
-    const date = new Date(startAt);
-    formattedStart = date.toLocaleString('zh-TW', {
-      timeZone: 'Asia/Taipei',
-      weekday: 'short',
-      year: 'numeric',
-      month: 'numeric',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23'
-    });
-  }
-  if (endAt) {
-    const date = new Date(endAt);
-    formattedEnd = date.toLocaleTimeString('zh-TW', {
-      timeZone: 'Asia/Taipei',
-      hour: '2-digit',
-      minute: '2-digit',
-      hourCycle: 'h23'
-    });
-  }
-  return `${formattedStart} - ${formattedEnd}`;
-}
+      if (endAt) {
+        const date = new Date(endAt);
+        formattedEnd = date.toLocaleTimeString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+      }
+      return `${formattedStart} - ${formattedEnd}`;
+    }
 
     // ========= 7. Helper：從貼上的網址中解析出課程ID (24位 0-9a-f) =========
     function extractCourseId(input) {
