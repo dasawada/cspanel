@@ -1,157 +1,440 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="zh">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>轉單小工具</title>
-    <style>
-        * {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            flex-direction: row;
-            height: 100vh;
-            overflow: hidden;
-        }
-        .panel {
-            width: 30%;
-            min-width: 300px;
-            padding: 20px;
-            border-right: 1px solid #ccc;
-            box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
-            overflow-y: auto;
-            height: 100%;
-            background-color: #f9f9f9;
-        }
-        .input-group {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        input {
-            flex-grow: 1;
-            padding: 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-        }
-        button {
-            padding: 6px 10px;
-            border: 1px solid #ccc;
-            border-radius: 4px;
-            background-color: #007BFF;
-            color: white;
-            cursor: pointer;
-            flex-shrink: 0;
-        }
-        button:hover {
-            background-color: #0056b3;
-        }
-        .iframe-container {
-            flex-grow: 1;
-            display: flex;
-            flex-direction: column;
-            height: 100%;
-        }
-        iframe {
-            flex-grow: 1;
-            width: 100%;
-            border: none;
-        }
-        .url-display {
-            padding: 10px;
-            background-color: #f8f9fa;
-            border-top: 1px solid #ddd;
-            text-align: center;
-            overflow-x: auto;
-            white-space: nowrap;
-        }
-        pre {
-            background-color: #f8f9fa;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-        }
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>轉單小工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: row;
+      height: 100vh;
+      overflow: hidden;
+    }
+    /* 左側面板 */
+    .panel {
+      width: 30%;
+      min-width: 300px;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.1);
+      overflow-y: auto;
+      background-color: #f9f9f9;
+    }
+    .input-group {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 1rem;
+    }
+    input[type="text"] {
+      flex: 1;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 6px 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      background-color: #007BFF;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover { background-color: #0056b3; }
+    #result {
+      background-color: #f8f9fa;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      min-height: 60px;
+      white-space: pre-wrap;
+    }
+    /* 右側容器 */
+    .iframe-container {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+    }
+    /* 右側上方：表格區塊 */
+    #orderTableContainer {
+      padding: 10px;
+      background-color: #fff;
+      border-bottom: 1px solid #ddd;
+      overflow-x: auto;
+    }
+    #sheetTable {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    #sheetTable thead th {
+      background-color: #f2f2f2;
+      border: 1px solid #ddd;
+      padding: 6px;
+      text-align: center;
+    }
+    #sheetTable tbody td {
+      border: 1px solid #ddd;
+      padding: 4px;
+      vertical-align: top;
+    }
+    textarea, select {
+      width: 100%;
+      min-height: 36px;
+      box-sizing: border-box;
+      resize: vertical;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      padding: 4px;
+      font-family: Arial, sans-serif;
+    }
+    .table-buttons {
+      text-align: right;
+      margin-top: 8px;
+    }
+    /* 右側下方：iframe + 連結區 */
+    iframe {
+      flex-grow: 1;
+      width: 100%;
+      border: none;
+    }
+    .url-display {
+      padding: 10px;
+      background-color: #f8f9fa;
+      border-top: 1px solid #ddd;
+      text-align: center;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+  </style>
 </head>
 <body>
-    <div class="panel">
-        <div class="input-group">
-            <input type="text" id="dealId" placeholder="Enter Deal ID" onkeypress="if(event.key === 'Enter') fetchDealInfo();">
-            <button onclick="fetchDealInfo()">搜尋</button>
-        </div>
+  <!-- 左側 -->
+  <div class="panel">
+    <div class="input-group">
+      <input type="text" id="dealId" placeholder="輸入Deal ID" />
+      <button id="searchBtn">搜尋</button>
+    </div>
+    <pre id="result">等待搜尋...</pre>
+  </div>
 
-
-        <pre id="result">等待搜尋。</pre>
+  <!-- 右側 -->
+  <div class="iframe-container">
+    <!-- 上方：A~N 欄位的表格 -->
+    <div id="orderTableContainer">
+      <table id="sheetTable">
+        <thead>
+          <tr>
+            <th>A 轉單日</th><th>B 交編</th><th>C 聯絡人</th><th>D</th>
+            <th>E 顧問</th><th>F 學員名</th><th>G 立約人</th><th>H</th>
+            <th>I</th><th>J</th><th>K</th><th>L</th>
+            <th>M 金額</th><th>N OCID</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <!-- A -->
+            <td><textarea id="colA" placeholder="日期(mm/dd)"></textarea></td>
+            <!-- B -->
+            <td><textarea id="colB" placeholder="交易編號(比對)"></textarea></td>
+            <!-- C -->
+            <td><textarea id="colC" placeholder="Bitrix24聯絡人頁面"></textarea></td>
+            <!-- D -->
+            <td><textarea id="colD" placeholder="留空/商品資訊"></textarea></td>
+            <!-- E -->
+            <td><textarea id="colE" placeholder="顧問組別-姓名"></textarea></td>
+            <!-- F -->
+            <td><textarea id="colF" placeholder="學生名單"></textarea></td>
+            <!-- G -->
+            <td><textarea id="colG" placeholder="客戶名稱"></textarea></td>
+            <!-- H -->
+            <td><textarea id="colH"></textarea></td>
+            <!-- I -->
+            <td><textarea id="colI"></textarea></td>
+            <!-- J -->
+            <td><textarea id="colJ"></textarea></td>
+            <!-- K -->
+            <td><textarea id="colK"></textarea></td>
+            <!-- L -->
+            <td><textarea id="colL"></textarea></td>
+            <!-- M -->
+            <td><textarea id="colM" placeholder="金額(amt)"></textarea></td>
+            <!-- N：改為 toggle box，這裡將自動填入 OneClub ID -->
+            <td id="colNContainer"></td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="table-buttons">
+        <button id="restoreBtn">復原</button>
+        <button id="copyBtn">複製</button>
+      </div>
     </div>
 
-    <div class="iframe-container">
-        <iframe id="resultIframe" src="about:blank"></iframe>
-        <div class="url-display" id="urlDisplay">No URL loaded.</div>
+    <!-- 下方：iframe + 連結顯示 -->
+    <iframe id="resultIframe" src="about:blank"></iframe>
+    <div class="url-display">
+      <strong>OneClass商品訂單連結:</strong>
+      <a id="orderLinkDisplay" href="#" target="_blank">無可用連結</a>
     </div>
+  </div>
 
-    <script>
-        async function fetchDealInfo() {
-            const dealIdInput = document.getElementById('dealId');
-            let dealId = dealIdInput.value.trim();
-
-            // Remove '#' and any non-roman characters
-            dealId = dealId.replace(/[^A-Za-z0-9]/g, '');
-            dealIdInput.value = dealId; // Update input value
-
-            const resultContainer = document.getElementById('result');
-            const iframe = document.getElementById('resultIframe');
-            const urlDisplay = document.getElementById('urlDisplay');
-
-            if (!dealId) {
-                resultContainer.textContent = 'Please enter a valid Deal ID.';
-                return;
+  <script>
+    // ======= (1) cccheck.js 機制：顧問組別搜尋 =======
+    const teamSheetEndpoint = "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
+    let teamSheetDataCache = null;
+    async function fetchTeamSheetData() {
+      if (teamSheetDataCache) return teamSheetDataCache;
+      const res = await fetch(teamSheetEndpoint);
+      if (!res.ok) {
+        throw new Error(`顧問組別 GoogleSheet API 錯誤: ${res.status}`);
+      }
+      const data = await res.json();
+      teamSheetDataCache = data.values || [];
+      return teamSheetDataCache;
+    }
+    function findTeamCodeForConsultant(name, sheetData) {
+      if (!name || !sheetData) return "";
+      const searchKey = name.replace(/\s+/g, '').toLowerCase();
+      for (let r = 0; r < sheetData.length; r++) {
+        for (let c = 0; c < sheetData[r].length; c++) {
+          const cellVal = (sheetData[r][c] || "").replace(/\s+/g, '').toLowerCase();
+          if (cellVal === searchKey) {
+            if (sheetData[2] && sheetData[2][c]) {
+              return sheetData[2][c];
             }
-
-            const webhookUrl = 'https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get';
-
-            try {
-                const response = await fetch(`${webhookUrl}?ID=${dealId}`);
-                if (!response.ok) {
-                    throw new Error(`HTTP error! Status: ${response.status}`);
-                }
-
-                const data = await response.json();
-
-                if (data.error) {
-                    resultContainer.textContent = `Error: ${data.error_description || 'Unknown error'}`;
-                    iframe.src = "about:blank";
-                    urlDisplay.textContent = "No URL loaded.";
-                } else {
-                    const result = data.result;
-
-                    // Format UF_CRM_1646312993 to replace \r\n with line breaks
-                    const formattedText = result.UF_CRM_1646312993?.replace(/\r\n/g, '\n') || 'No data';
-
-                    // Display the raw URL for UF_CRM_1646313465
-                    const link = result.UF_CRM_1646313465 || 'No link available';
-
-                    // Update the iframe and URL display
-                    iframe.src = link;
-                    urlDisplay.textContent = link;
-
-                    // Display the formatted result
-                    resultContainer.innerHTML = `
-                        <strong>UF_CRM_1646312993:</strong>\n${formattedText}\n\n
-                        <strong>UF_CRM_1646313465:</strong>\n<a href="${link}" target="_blank">${link}</a>
-                    `;
-                }
-            } catch (error) {
-                resultContainer.textContent = `Error: ${error.message}`;
-                iframe.src = "about:blank";
-                urlDisplay.textContent = "No URL loaded.";
-            }
+          }
         }
-    </script>
+      }
+      return "";
+    }
+
+    // ======= (2) 使用 OneClub API 搜尋 OneClub ID（以家長姓名搜尋） =======
+    const oneClubSearchApi = "https://api.oneclass.co/staff/customers?skip=0&limit=50&name=";
+    const oneClubJwt = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI";
+    async function searchOneClubCustomers(name) {
+      if (!name) return [];
+      const url = oneClubSearchApi + encodeURIComponent(name.trim());
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Authorization": `Bearer ${oneClubJwt}`,
+          "Accept": "application/json, text/plain, */*"
+        }
+      });
+      if (!res.ok) {
+        throw new Error(`OneClub搜尋API錯誤: ${res.status}`);
+      }
+      const jsonData = await res.json();
+      return (jsonData.data && jsonData.data.customers) ? jsonData.data.customers : [];
+    }
+
+    // ======= (3) 主流程：Bitrix Deal 與 OneClass 訂單 =======
+    async function fetchDealInfo() {
+      const dealIdInput = document.getElementById('dealId');
+      let dealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, '');
+      dealIdInput.value = dealId;
+      const resultEl = document.getElementById('result');
+      const iframeEl = document.getElementById('resultIframe');
+      const linkEl = document.getElementById('orderLinkDisplay');
+      if (!dealId) {
+        resultEl.textContent = "請輸入有效的交易編號!";
+        return;
+      }
+      resultEl.textContent = "查詢中...";
+      clearSheetFields();
+      const bitrixUrl = `https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get?ID=${dealId}`;
+      try {
+        const bitrixRes = await fetch(bitrixUrl);
+        if (!bitrixRes.ok) {
+          throw new Error(`Bitrix查詢失敗: ${bitrixRes.status}`);
+        }
+        const bitrixJson = await bitrixRes.json();
+        if (bitrixJson.error) {
+          throw new Error(`Bitrix API錯誤: ${bitrixJson.error_description}`);
+        }
+        const dealData = bitrixJson.result || {};
+        const notes = dealData.UF_CRM_1646312993 ? dealData.UF_CRM_1646312993.replace(/\r\n/g, "\n") : "無備註";
+        const orderLink = dealData.UF_CRM_1646313465 || "無可用連結";
+        const contactId = dealData.CONTACT_ID || "";
+        const contactLink = contactId ? `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/` : "";
+        iframeEl.src = (orderLink === "無可用連結") ? "about:blank" : orderLink;
+        linkEl.href = (orderLink === "無可用連結") ? "#" : orderLink;
+        linkEl.textContent = (orderLink === "無可用連結") ? "無可用連結" : orderLink;
+        const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${dealId}/`;
+        resultEl.textContent =
+          `【備註】\n${notes}\n\n` +
+          `【Bitrix交易連結】\n${dealLink}\n` +
+          `【聯絡人連結】\n${contactLink || "無"}`;
+        if (orderLink !== "無可用連結") {
+          const match = orderLink.match(/order\/(\w+)/);
+          const orderId = match ? match[1] : "";
+          if (orderId) {
+            await fetchOrderData(orderId, dealId, contactLink);
+          }
+        }
+      } catch (err) {
+        resultEl.textContent = "錯誤：" + err.message;
+      }
+    }
+
+    async function fetchOrderData(orderId, bitrixDealId, contactLink) {
+      const orderApi = `https://api.oneclass.co/product/open/orders/${orderId}/`;
+      const resultEl = document.getElementById('result');
+      try {
+        const res = await fetch(orderApi);
+        if (!res.ok) {
+          throw new Error(`OneClass訂單API錯誤: ${res.status}`);
+        }
+        const jsonData = await res.json();
+        const data = jsonData.data || {};
+        // A：當天日期
+        const now = new Date();
+        const mm = String(now.getMonth()+1).padStart(2,'0');
+        const dd = String(now.getDate()).padStart(2,'0');
+        document.getElementById('colA').value = `${mm}/${dd}`;
+        // B：比對 crmNo
+        const crmNo = data.crmNo ? String(data.crmNo) : "";
+        document.getElementById('colB').value =
+          (crmNo === bitrixDealId) ? crmNo : `${bitrixDealId}【需核對】`;
+        // C：聯絡人頁面
+        document.getElementById('colC').value = contactLink;
+        // D：留空
+        document.getElementById('colD').value = "";
+        // E：顧問組別-姓名
+        let advisorName = "";
+        if (data.managers && data.managers.length > 0) {
+          advisorName = data.managers[0].name || "";
+        }
+        if (advisorName) {
+          let teamStr = "";
+          try {
+            const sheetData = await fetchTeamSheetData();
+            teamStr = findTeamCodeForConsultant(advisorName, sheetData);
+          } catch(e) {
+            console.warn("顧問組別搜尋失敗", e);
+          }
+          if (teamStr) {
+            const trimmed = teamStr.replace(/^TEAM/i, '');
+            document.getElementById('colE').value = `${trimmed}組-${advisorName}`;
+          } else {
+            document.getElementById('colE').value = advisorName;
+          }
+        }
+        // F：學生名單
+        if (data.students && Array.isArray(data.students)) {
+          const names = data.students.map(s => s.name).join("＆");
+          document.getElementById('colF').value = names;
+        }
+        // G：客戶名稱
+        const customerName = (data.customerInfo && data.customerInfo.name) || "";
+        document.getElementById('colG').value = customerName;
+        // H, I, J, K, L 留空
+        ["colH","colI","colJ","colK","colL"].forEach(id => {
+          document.getElementById(id).value = "";
+        });
+        // M：金額
+        document.getElementById('colM').value = data.amt || "";
+        // N：以家長姓名搜尋 OneClub ID，並以 toggle box 呈現
+        const colNContainer = document.getElementById('colNContainer');
+        colNContainer.innerHTML = "";
+        if (customerName) {
+          const customers = await searchOneClubCustomers(customerName);
+          if (customers.length === 0) {
+            colNContainer.textContent = "無對應ID";
+          } else if (customers.length === 1) {
+            colNContainer.textContent = customers[0].oneClubId || "";
+          } else {
+            // 多組：建立 radio button 列表
+            customers.forEach((c, index) => {
+              const radio = document.createElement("input");
+              radio.type = "radio";
+              radio.name = "oneClubIdSelection";
+              radio.value = c.oneClubId || "";
+              if (index === 0) radio.checked = true;
+              const link = document.createElement("a");
+              link.href = "https://oneclub.backstage.oneclass.com.tw/customer/customerlist/" + (c.oneClubId || "");
+              link.target = "_blank";
+              link.textContent = `${c.name || ""} (${c.oneClubId || "?"}) - ${c.phone || "無電話"}`;
+              const div = document.createElement("div");
+              div.appendChild(radio);
+              div.appendChild(link);
+              colNContainer.appendChild(div);
+            });
+          }
+        }
+        saveSheetData();
+      } catch (err) {
+        resultEl.textContent = "錯誤：" + err.message;
+      }
+    }
+
+    // ======= (4) 輔助功能：清空、保存、復原、複製 =======
+    function clearSheetFields() {
+      for (let c = 'A'.charCodeAt(0); c <= 'M'.charCodeAt(0); c++) {
+        document.getElementById('col' + String.fromCharCode(c)).value = "";
+      }
+      // 清空 N 欄 toggle box內容
+      document.getElementById('colNContainer').innerHTML = "";
+    }
+    let previousData = {};
+    function saveSheetData() {
+      previousData = {};
+      for (let c = 'A'.charCodeAt(0); c <= 'M'.charCodeAt(0); c++) {
+        const colId = 'col' + String.fromCharCode(c);
+        previousData[colId] = document.getElementById(colId).value;
+      }
+      previousData["colNContainer"] = document.getElementById('colNContainer').innerHTML;
+    }
+    document.getElementById('restoreBtn').addEventListener('click', () => {
+      if (!previousData) return;
+      for (let c = 'A'.charCodeAt(0); c <= 'M'.charCodeAt(0); c++) {
+        const colId = 'col' + String.fromCharCode(c);
+        if (previousData[colId] !== undefined) {
+          document.getElementById(colId).value = previousData[colId];
+        }
+      }
+      document.getElementById('colNContainer').innerHTML = previousData["colNContainer"] || "";
+    });
+    document.getElementById('copyBtn').addEventListener('click', () => {
+      let rowData = [];
+      for (let c = 'A'.charCodeAt(0); c <= 'L'.charCodeAt(0); c++) {
+        const colId = 'col' + String.fromCharCode(c);
+        let val = document.getElementById(colId).value || "";
+        val = val.replace(/\r?\n/g, " / ");
+        rowData.push(val);
+      }
+      // M 欄
+      rowData.push(document.getElementById('colM').value || "");
+      // N 欄：若有 radio，取勾選值；否則取其文字內容
+      const colNContainer = document.getElementById('colNContainer');
+      let oneClubId = "";
+      const radios = colNContainer.querySelectorAll('input[type="radio"]');
+      if (radios.length > 0) {
+        radios.forEach(r => { if (r.checked) oneClubId = r.value; });
+      } else {
+        oneClubId = colNContainer.textContent || "";
+      }
+      rowData.push(oneClubId);
+      const tsvLine = rowData.join("\t");
+      const temp = document.createElement('textarea');
+      temp.value = tsvLine;
+      document.body.appendChild(temp);
+      temp.select();
+      document.execCommand('copy');
+      document.body.removeChild(temp);
+      alert("已複製 A~N 欄位到剪貼簿！");
+    });
+
+    // ======= DOMContentLoaded 後綁定事件 =======
+    document.addEventListener('DOMContentLoaded', function() {
+      document.getElementById('searchBtn').addEventListener('click', fetchDealInfo);
+      document.getElementById('dealId').addEventListener('keypress', function(e) {
+        if (e.key === 'Enter') { fetchDealInfo(); }
+      });
+    });
+    window.fetchDealInfo = fetchDealInfo;
+  </script>
 </body>
 </html>
