@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訂單處理工具</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <!-- Background Decorations -->
+    <div class="bg-decoration bg-decoration-1"></div>
+    <div class="bg-decoration bg-decoration-2"></div>
+
+    <!-- Left Panel -->
+    <div class="panel">
+      <div class="search-container">
+        <input type="text" id="dealId" class="search-input" placeholder="輸入Deal ID">
+        <button id="searchButton" class="search-button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          搜尋
+        </button>
+      </div>
+      <div class="result-container">
+        <pre id="result" class="result-text">等待搜尋...</pre>
+      </div>
+      <!-- 新增連結區塊，固定顯示在左側下方 -->
+      <div id="linksContainer" class="links-container"></div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="panel-container">
+      <!-- Table Container -->
+      <div class="panel table-container">
+        <div class="table-header">
+          <h2 class="table-title">訂單資料表</h2>
+          <div class="table-actions">
+            <button class="button button-outline" id="restoreButton">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
+                <path d="M21 3v5h-5"/>
+              </svg>
+              復原
+            </button>
+            <button class="button button-primary" id="copyButton">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              複製
+            </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>轉單日</th>
+                <th>交編</th>
+                <th>聯絡人</th>
+                <th>狀態</th>
+                <th>顧問</th>
+                <th>學員名</th>
+                <th>立約人</th>
+                <th>科目</th>
+                <th>方案</th>
+                <th>J</th>
+                <th>輔導</th>
+                <th>組別</th>
+                <th>金額</th>
+                <th>OCID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="dataRow">
+                <td><input type="text" class="cell-input" id="colA" placeholder="mm/dd"></td>
+                <td><input type="text" class="cell-input" id="colB" placeholder="交易編號"></td>
+                <td><input type="text" class="cell-input" id="colC" placeholder="聯絡人頁面"></td>
+                <td><input type="text" class="cell-input" id="colD"></td>
+                <td><input type="text" class="cell-input" id="colE" placeholder="顧問組別-姓名"></td>
+                <td><input type="text" class="cell-input" id="colF" placeholder="學生名單"></td>
+                <td><input type="text" class="cell-input" id="colG" placeholder="客戶名稱"></td>
+                <td><input type="text" class="cell-input" id="colH"></td>
+                <td><input type="text" class="cell-input" id="colI"></td>
+                <td><input type="text" class="cell-input" id="colJ"></td>
+                <td><input type="text" class="cell-input" id="colK"></td>
+                <td><input type="text" class="cell-input" id="colL"></td>
+                <td><input type="text" class="cell-input" id="colM" placeholder="金額"></td>
+                <td class="ocid-cell">
+                  <select id="ocidSelect" class="ocid-select">
+                    <option value="">無對應ID</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- iframe Container -->
+      <div class="panel iframe-container">
+        <div class="iframe-content">
+          <iframe id="orderFrame" src="about:blank"></iframe>
+        </div>
+        <div class="iframe-footer">
+          <div class="iframe-link">
+            <strong>OneClass商品訂單連結:</strong>
+            <span id="orderLink" class="text-gray-500">無可用連結</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State management
+    let sheetData = {
+      colA: "",
+      colB: "",
+      colC: "",
+      colD: "",
+      colE: "",
+      colF: "",
+      colG: "",
+      colH: "",
+      colI: "",
+      colJ: "",
+      colK: "",
+      colL: "",
+      colM: "",
+    }
+    let previousData = null
+    let oneClubCustomers = []
+    let selectedOneClubId = ""
+    let teamSheetDataCache = null
+
+    // Constants
+    const TEAM_SHEET_ENDPOINT =
+      "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
+    const ONE_CLUB_SEARCH_API = "https://api.oneclass.co/staff/customers?skip=0&limit=50&name="
+    const ONE_CLUB_JWT =
+      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI"
+
+    // DOM Elements
+    const dealIdInput = document.getElementById("dealId")
+    const searchButton = document.getElementById("searchButton")
+    const resultPre = document.getElementById("result")
+    const linksContainer = document.getElementById("linksContainer")
+    const restoreButton = document.getElementById("restoreButton")
+    const copyButton = document.getElementById("copyButton")
+    const orderFrame = document.getElementById("orderFrame")
+    const orderLinkSpan = document.getElementById("orderLink")
+    const ocidSelect = document.getElementById("ocidSelect")
+
+    // Initialize input handlers
+    Object.keys(sheetData).forEach((key) => {
+      const input = document.getElementById(key)
+      if (input) {
+        input.addEventListener("change", (e) => {
+          sheetData[key] = e.target.value
+        })
+      }
+    })
+
+    // Event Listeners
+    dealIdInput.addEventListener("keypress", (e) => {
+      if (e.key === "Enter") {
+        fetchDealInfo()
+      }
+    })
+
+    searchButton.addEventListener("click", fetchDealInfo)
+    restoreButton.addEventListener("click", restoreSheetData)
+    copyButton.addEventListener("click", copySheetData)
+    ocidSelect.addEventListener("change", (e) => {
+      selectedOneClubId = e.target.value
+    })
+
+    // Functions
+    async function fetchTeamSheetData() {
+      if (teamSheetDataCache) return teamSheetDataCache
+
+      const res = await fetch(TEAM_SHEET_ENDPOINT)
+      if (!res.ok) {
+        throw new Error(`顧問組別 GoogleSheet API 錯誤: ${res.status}`)
+      }
+
+      const data = await res.json()
+      teamSheetDataCache = data.values || []
+      return teamSheetDataCache
+    }
+
+    function findTeamCodeForConsultant(name, sheetData) {
+      if (!name || !sheetData) return ""
+
+      const searchKey = name.replace(/\s+/g, "").toLowerCase()
+      for (let r = 0; r < sheetData.length; r++) {
+        for (let c = 0; c < sheetData[r].length; c++) {
+          const cellVal = (sheetData[r][c] || "").replace(/\s+/g, "").toLowerCase()
+          if (cellVal === searchKey) {
+            if (sheetData[2] && sheetData[2][c]) {
+              return sheetData[2][c]
+            }
+          }
+        }
+      }
+      return ""
+    }
+
+    async function searchOneClubCustomers(name) {
+      if (!name) return []
+
+      const url = ONE_CLUB_SEARCH_API + encodeURIComponent(name.trim())
+      const res = await fetch(url, {
+        method: "GET",
+        headers: {
+          Authorization: `Bearer ${ONE_CLUB_JWT}`,
+          Accept: "application/json, text/plain, */*",
+        },
+      })
+
+      if (!res.ok) {
+        throw new Error(`OneClub搜尋API錯誤: ${res.status}`)
+      }
+
+      const jsonData = await res.json()
+      return jsonData.data && jsonData.data.customers ? jsonData.data.customers : []
+    }
+
+    async function fetchDealInfo() {
+      const cleanDealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, "")
+      dealIdInput.value = cleanDealId
+
+      if (!cleanDealId) {
+        resultPre.textContent = "請輸入有效的交易編號!"
+        return
+      }
+
+      searchButton.disabled = true
+      resultPre.textContent = "查詢中..."
+      clearSheetFields()
+      linksContainer.innerHTML = "" // 清空連結區塊
+
+      const bitrixUrl = `https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get?ID=${cleanDealId}`
+
+      try {
+        const bitrixRes = await fetch(bitrixUrl)
+        if (!bitrixRes.ok) {
+          throw new Error(`Bitrix查詢失敗: ${bitrixRes.status}`)
+        }
+
+        const bitrixJson = await bitrixRes.json()
+        if (bitrixJson.error) {
+          throw new Error(`Bitrix API錯誤: ${bitrixJson.error_description}`)
+        }
+
+        const dealData = bitrixJson.result || {}
+        const notes = dealData.UF_CRM_1646312993 ? dealData.UF_CRM_1646312993.replace(/\r\n/g, "\n") : "無備註"
+        const orderLink = dealData.UF_CRM_1646313465 || "無可用連結"
+        const contactId = dealData.CONTACT_ID || ""
+        const contactLink = contactId ? `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/` : ""
+        const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${cleanDealId}/`
+
+        orderFrame.src = orderLink === "無可用連結" ? "about:blank" : orderLink
+        updateOrderLink(orderLink)
+
+        // 將備註顯示在 result-container
+        resultPre.textContent = `【備註】\n${notes}`
+
+        // 於左側連結區塊產生按鈕
+        linksContainer.innerHTML = ""
+        // 交易連結按鈕
+        const tradeButton = document.createElement("button")
+        tradeButton.textContent = `交編 #${cleanDealId}`
+        tradeButton.onclick = function () {
+          window.open(dealLink, "_blank")
+        }
+        linksContainer.appendChild(tradeButton)
+        // BX聯絡人按鈕（若有 contactId 則產生）
+        if (contactId) {
+          const contactButton = document.createElement("button")
+          contactButton.textContent = `聯絡人 ${contactId}`
+          contactButton.onclick = function () {
+            window.open(contactLink, "_blank")
+          }
+          linksContainer.appendChild(contactButton)
+        }
+
+        if (orderLink !== "無可用連結") {
+          const match = orderLink.match(/order\/(\w+)/)
+          const orderId = match ? match[1] : ""
+          if (orderId) {
+            await fetchOrderData(orderId, cleanDealId, contactLink)
+          }
+        }
+      } catch (err) {
+        resultPre.textContent = "錯誤：" + err.message
+      } finally {
+        searchButton.disabled = false
+      }
+    }
+
+    async function fetchOrderData(orderId, bitrixDealId, contactLink) {
+      const orderApi = `https://api.oneclass.co/product/open/orders/${orderId}/`
+
+      try {
+        const res = await fetch(orderApi)
+        if (!res.ok) {
+          throw new Error(`OneClass訂單API錯誤: ${res.status}`)
+        }
+
+        const jsonData = await res.json()
+        const data = jsonData.data || {}
+
+        // 建立新的 sheetData 物件
+        const newSheetData = { ...sheetData }
+
+        // A：使用 payAt 時間戳記轉換為台北時區的日期 (mm/dd)
+        if (data.payAt) {
+          const payAtTimestamp = parseInt(data.payAt, 10)
+          newSheetData.colA = new Date(payAtTimestamp).toLocaleDateString("en-US", {
+            timeZone: "Asia/Taipei",
+            month: "2-digit",
+            day: "2-digit",
+          })
+        } else {
+          newSheetData.colA = ""
+        }
+
+        // B：比對 crmNo，前方加上 "#"
+        const crmNo = data.crmNo ? String(data.crmNo) : ""
+        newSheetData.colB = `#${crmNo === bitrixDealId ? crmNo : `${bitrixDealId}【需核對】`}`
+
+        // C：聯絡人頁面
+        newSheetData.colC = contactLink
+
+        // D：留空
+        newSheetData.colD = ""
+
+        // E：顧問組別-姓名
+        let advisorName = ""
+        if (data.managers && data.managers.length > 0) {
+          advisorName = data.managers[0].name || ""
+        }
+        if (advisorName) {
+          let teamStr = ""
+          try {
+            const sheetDataFromAPI = await fetchTeamSheetData()
+            teamStr = findTeamCodeForConsultant(advisorName, sheetDataFromAPI)
+          } catch (e) {
+            console.warn("顧問組別搜尋失敗", e)
+          }
+          if (teamStr) {
+            const trimmed = teamStr.replace(/^TEAM/i, "")
+            newSheetData.colE = `${trimmed}組-${advisorName}`
+          } else {
+            newSheetData.colE = advisorName
+          }
+        }
+
+        // F：學生名單
+        if (data.students && Array.isArray(data.students)) {
+          const names = data.students.map((s) => s.name).join("＆")
+          newSheetData.colF = names
+        }
+
+        // G：客戶名稱
+        const customerName = (data.customerInfo && data.customerInfo.name) || ""
+        newSheetData.colG = customerName
+
+        // H, I, J, K, L 留空（I 欄稍後填入 quotation 整理資訊）
+        newSheetData.colH = ""
+        newSheetData.colI = ""
+        newSheetData.colJ = ""
+        newSheetData.colK = ""
+        newSheetData.colL = ""
+
+        // M：金額
+        newSheetData.colM = data.amt || ""
+
+        // 更新表單資料（先更新前面的資料）
+        updateSheetData(newSheetData)
+
+        // N：以家長姓名搜尋 OneClub ID
+        if (customerName) {
+          const customers = await searchOneClubCustomers(customerName)
+          updateOneClubCustomers(customers)
+        } else {
+          updateOneClubCustomers([])
+        }
+
+        // 取得 quotation 資料並整理後填入 I 欄
+        const quotationData = await fetchQuotationData(orderId)
+        const formattedQuotation = formatQuotationData(quotationData)
+        newSheetData.colI = formattedQuotation
+        updateSheetData(newSheetData)
+
+        // 儲存先前的資料以便復原功能使用
+        previousData = {
+          sheetData: { ...newSheetData },
+          oneClubCustomers,
+          selectedOneClubId,
+        }
+      } catch (err) {
+        resultPre.textContent += "\n錯誤：" + err.message
+      }
+    }
+
+    async function fetchQuotationData(orderId) {
+      const quotationApi = `https://api.oneclass.co/product/open/orders/${orderId}/quotation`
+      const res = await fetch(quotationApi)
+      if (!res.ok) throw new Error(`Quotation API 錯誤: ${res.status}`)
+      const jsonData = await res.json()
+      return jsonData.data || []
+    }
+
+    function formatQuotationData(dataArray) {
+      const parts = []
+      dataArray.forEach(item => {
+        // item 格式： [?, category, name, description, ?]
+        const category = item[1] || ""
+        const desc = item[3] || ""
+        // 略過贈品
+        if (category.includes("贈品")) return;
+        // 若為國中進度課，從 item[2] 抓取 x 後的數字
+        if (category.includes("OC+N國中進度課")) {
+          const match = (item[2] || "").match(/x\s*(\d+)/)
+          if (match) {
+            parts.push(`國中${match[1]}`)
+          }
+        }
+        // 活動商品則抓取描述中的數量
+        else if (category.includes("活動商品")) {
+          const match = desc.match(/x\s*(\d+)/)
+          if (match) parts.push(match[1])
+        }
+        // 配套中的團課則特別處理
+        else if (category.includes("配套") || desc.includes("團課")) {
+          const match = desc.match(/團課堂數\s*[\D]*(\d+)/) || desc.match(/團課堂數(\d+)/)
+          if (match) parts.push(`團課堂${match[1]}`)
+        }
+      })
+      return `${parts.join("+")}`
+    }
+
+    function clearSheetFields() {
+      const emptyData = {
+        colA: "",
+        colB: "",
+        colC: "",
+        colD: "",
+        colE: "",
+        colF: "",
+        colG: "",
+        colH: "",
+        colI: "",
+        colJ: "",
+        colK: "",
+        colL: "",
+        colM: "",
+      }
+      updateSheetData(emptyData)
+      updateOneClubCustomers([])
+    }
+
+    function updateSheetData(newData) {
+      sheetData = newData
+      Object.keys(newData).forEach((key) => {
+        const input = document.getElementById(key)
+        if (input) {
+          input.value = newData[key]
+        }
+      })
+    }
+
+    function updateOneClubCustomers(customers) {
+      oneClubCustomers = customers
+      ocidSelect.innerHTML = ""
+      if (customers.length === 0) {
+        ocidSelect.innerHTML = '<option value="">無對應ID</option>'
+      } else {
+        customers.forEach((customer) => {
+          const option = document.createElement("option")
+          option.value = customer.oneClubId || ""
+          option.textContent = `${customer.name} (${customer.oneClubId || "?"})`
+          ocidSelect.appendChild(option)
+        })
+        selectedOneClubId = customers[0]?.oneClubId || ""
+      }
+    }
+
+    function updateOrderLink(link) {
+      if (link && link !== "無可用連結") {
+        const displayLink = link.length > 50 ? link.substring(0, 50) + "..." : link
+        orderLinkSpan.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                ${displayLink}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                </svg>
+            </a>`
+      } else {
+        orderLinkSpan.textContent = "無可用連結"
+      }
+    }
+
+    function restoreSheetData() {
+      if (!previousData) return
+      updateSheetData(previousData.sheetData)
+      updateOneClubCustomers(previousData.oneClubCustomers)
+      selectedOneClubId = previousData.selectedOneClubId
+    }
+
+    function copySheetData() {
+      const rowData = []
+      // A to L columns
+      for (let c = "A".charCodeAt(0); c <= "L".charCodeAt(0); c++) {
+        const colId = "col" + String.fromCharCode(c)
+        let val = sheetData[colId] || ""
+        val = val.replace(/\r?\n/g, " / ")
+        rowData.push(val)
+      }
+      // M column
+      rowData.push(sheetData.colM || "")
+      // N column (OneClub ID)
+      rowData.push(selectedOneClubId || "")
+      const tsvLine = rowData.join("\t")
+      navigator.clipboard
+        .writeText(tsvLine)
+        .then(() => {
+          alert("已複製 A~N 欄位到剪貼簿！")
+        })
+        .catch((err) => {
+          console.error("複製失敗:", err)
+          const temp = document.createElement("textarea")
+          temp.value = tsvLine
+          document.body.appendChild(temp)
+          temp.select()
+          document.execCommand("copy")
+          document.body.removeChild(temp)
+          alert("已複製 A~N 欄位到剪貼簿！")
+        })
+    }
+  </script>
+</body>
+</html>
