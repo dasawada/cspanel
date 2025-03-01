@@ -202,7 +202,7 @@ html, body {
 .table-container {
   flex-shrink: 0;
   padding: 1rem;
-  max-height: 200px; 
+  max-height: 186px; 
   overflow: auto;
   margin-bottom: 1rem;
 }
