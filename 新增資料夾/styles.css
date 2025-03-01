@@ -202,7 +202,7 @@ html, body {
 .table-container {
   flex-shrink: 0;
   padding: 1rem;
-  max-height: 40%; /* 如需固定表格區高度 */
+  max-height: 200px; 
   overflow: auto;
   margin-bottom: 1rem;
 }
