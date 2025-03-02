@@ -418,22 +418,27 @@
       return jsonData.data || []
     }
 
-    // 修正後的 quotation 資料整理：針對所有非贈品商品，使用通用機制提取數量，
-    // 依據已知類別加上前綴（例如：國中進度課、活動商品、配套/團課），
-    // 其他情況則僅輸出數量，考量商品名稱種類可能非常多
+    // 修正後的 quotation 資料整理：
+    // 1. 略過「贈品」
+    // 2. 使用正規表達式從商品名稱或描述中提取「x 數字」
+    // 3. 若商品名稱中包含「國小」、「國中」或「高中」，則記錄為全局學制，
+    //    當商品屬於進度課（例如 category 包含 "OC+N"）時，會以該學制作為前綴
+    // 4. 對於「配套」或描述包含「團課」的，前綴固定為「團課堂」
+    // 5. 其他商品（例如活動商品）僅輸出數量
     function formatQuotationData(dataArray) {
-      const parts = []
+      let globalSchoolType = "";
+      const parts = [];
       dataArray.forEach(item => {
-        // item 格式： [?, category, name, description, ?]
-        const category = item[1] || ""
-        const productName = item[2] || ""
-        const desc = item[3] || ""
+        // item 格式： [?, category, productName, description, ?]
+        const category = item[1] || "";
+        const productName = item[2] || "";
+        const desc = item[3] || "";
         // 略過贈品
         if (category.includes("贈品")) return;
 
-        // 嘗試從商品名稱或描述中提取數量
+        // 使用正規表達式提取數量
         const regex = /x\s*(\d+)/i;
-        let quantity = null;
+        let quantity = "";
         let match = productName.match(regex);
         if (match) {
           quantity = match[1];
@@ -445,16 +450,28 @@
         }
         if (!quantity) return; // 若無法提取數量則略過
 
+        // 若全局學制尚未記錄，嘗試從 productName 中抓取學制
+        if (!globalSchoolType) {
+          if (productName.includes("國小")) {
+            globalSchoolType = "國小";
+          } else if (productName.includes("國中")) {
+            globalSchoolType = "國中";
+          } else if (productName.includes("高中")) {
+            globalSchoolType = "高中";
+          }
+        }
+
+        // 根據 category 與描述決定前綴
         let prefix = "";
-        if (category.includes("OC+N國中進度課")) {
-          prefix = "國中";
-        } else if (category.includes("活動商品")) {
-          prefix = ""; // 活動商品僅輸出數量
-        } else if (category.includes("配套") || desc.includes("團課")) {
+        // 若是進度課則使用全局學制作前綴（若有）
+        if (category.includes("OC+N")) {
+          prefix = globalSchoolType;
+        }
+        // 若為配套或描述中含有團課，固定前綴為「團課堂」
+        else if (category.includes("配套") || desc.includes("團課")) {
           prefix = "團課堂";
         }
-        // 若不屬於已知類別，可根據需求決定是否採用其他前綴或僅輸出數量
-
+        // 其他情況僅輸出數量（不加學制前綴）
         parts.push(prefix + quantity);
       });
       return parts.join("+");
@@ -531,16 +548,16 @@
 
     function copySheetData() {
       const rowData = []
-      // A to L columns
+      // A 到 L 欄位
       for (let c = "A".charCodeAt(0); c <= "L".charCodeAt(0); c++) {
         const colId = "col" + String.fromCharCode(c)
         let val = sheetData[colId] || ""
         val = val.replace(/\r?\n/g, " / ")
         rowData.push(val)
       }
-      // M column
+      // M 欄位
       rowData.push(sheetData.colM || "")
-      // N column (OneClub ID)
+      // N 欄 (OneClub ID)
       rowData.push(selectedOneClubId || "")
       const tsvLine = rowData.join("\t")
       navigator.clipboard
