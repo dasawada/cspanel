@@ -418,33 +418,46 @@
       return jsonData.data || []
     }
 
+    // 修正後的 quotation 資料整理：針對所有非贈品商品，使用通用機制提取數量，
+    // 依據已知類別加上前綴（例如：國中進度課、活動商品、配套/團課），
+    // 其他情況則僅輸出數量，考量商品名稱種類可能非常多
     function formatQuotationData(dataArray) {
       const parts = []
       dataArray.forEach(item => {
         // item 格式： [?, category, name, description, ?]
         const category = item[1] || ""
+        const productName = item[2] || ""
         const desc = item[3] || ""
         // 略過贈品
         if (category.includes("贈品")) return;
-        // 若為國中進度課，從 item[2] 抓取 x 後的數字
-        if (category.includes("OC+N國中進度課")) {
-          const match = (item[2] || "").match(/x\s*(\d+)/)
+
+        // 嘗試從商品名稱或描述中提取數量
+        const regex = /x\s*(\d+)/i;
+        let quantity = null;
+        let match = productName.match(regex);
+        if (match) {
+          quantity = match[1];
+        } else {
+          match = desc.match(regex);
           if (match) {
-            parts.push(`國中${match[1]}`)
+            quantity = match[1];
           }
         }
-        // 活動商品則抓取描述中的數量
-        else if (category.includes("活動商品")) {
-          const match = desc.match(/x\s*(\d+)/)
-          if (match) parts.push(match[1])
+        if (!quantity) return; // 若無法提取數量則略過
+
+        let prefix = "";
+        if (category.includes("OC+N國中進度課")) {
+          prefix = "國中";
+        } else if (category.includes("活動商品")) {
+          prefix = ""; // 活動商品僅輸出數量
+        } else if (category.includes("配套") || desc.includes("團課")) {
+          prefix = "團課堂";
         }
-        // 配套中的團課則特別處理
-        else if (category.includes("配套") || desc.includes("團課")) {
-          const match = desc.match(/團課堂數\s*[\D]*(\d+)/) || desc.match(/團課堂數(\d+)/)
-          if (match) parts.push(`團課堂${match[1]}`)
-        }
-      })
-      return `${parts.join("+")}`
+        // 若不屬於已知類別，可根據需求決定是否採用其他前綴或僅輸出數量
+
+        parts.push(prefix + quantity);
+      });
+      return parts.join("+");
     }
 
     function clearSheetFields() {
