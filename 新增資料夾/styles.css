@@ -202,7 +202,7 @@ html, body {
 .table-container {
   flex-shrink: 0;
   padding: 1rem;
-  max-height: 186px; 
+  max-height: 190px; 
   overflow: auto;
   margin-bottom: 1rem;
 }
@@ -259,7 +259,7 @@ html, body {
 
 /* 為部分欄位指定固定寬度 */
 .data-table th:nth-child(1),
-.data-table td:nth-child(1) { width: 80px; }
+.data-table td:nth-child(1) { width: 60px; }
 .data-table th:nth-child(2),
 .data-table td:nth-child(2) { width: 100px; }
 .data-table th:nth-child(3),
@@ -275,7 +275,7 @@ html, body {
 .data-table th:nth-child(8),
 .data-table td:nth-child(8) { width: 80px; }
 .data-table th:nth-child(9),
-.data-table td:nth-child(9) { width: 120px; }
+.data-table td:nth-child(9) { width: 250px; }
 .data-table th:nth-child(10),
 .data-table td:nth-child(10) { width: 80px; }
 .data-table th:nth-child(11),
@@ -285,7 +285,7 @@ html, body {
 .data-table th:nth-child(13),
 .data-table td:nth-child(13) { width: 100px; }
 .data-table th:nth-child(14),
-.data-table td:nth-child(14) { width: 120px; }
+.data-table td:nth-child(14) { width: 160px; }
 
 .cell-input {
   width: 100%;

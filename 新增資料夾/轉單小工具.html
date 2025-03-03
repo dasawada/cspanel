@@ -418,13 +418,16 @@
       return jsonData.data || []
     }
 
-    // 修正後的 quotation 資料整理：
+    // quotation 資料整理：
     // 1. 略過「贈品」
-    // 2. 使用正規表達式從商品名稱或描述中提取「x 數字」
-    // 3. 若商品名稱中包含「國小」、「國中」或「高中」，則記錄為全局學制，
-    //    當商品屬於進度課（例如 category 包含 "OC+N"）時，會以該學制作為前綴
-    // 4. 對於「配套」或描述包含「團課」的，前綴固定為「團課堂」
-    // 5. 其他商品（例如活動商品）僅輸出數量
+    // 2. 使用正規表達式提取商品數量
+    // 3. 先檢查商品名稱中的學制（國小、國中、高中）
+    // 4. 若 category 為進度課（含 "OC+N"），前綴為全局學制
+    // 5. 若 category 為配套：
+    //    - 如果學制為國中或高中，且描述中不含「團課」(或「團體課」)，則以格式「數量(分鐘數)」輸出
+    //      （分鐘數從商品名稱中以 /(\d+)\s*mins/i 提取）
+    //    - 否則若描述含「團課」則固定前綴「團課堂」
+    // 6. 其他商品僅輸出數量
     function formatQuotationData(dataArray) {
       let globalSchoolType = "";
       const parts = [];
@@ -436,21 +439,21 @@
         // 略過贈品
         if (category.includes("贈品")) return;
 
-        // 使用正規表達式提取數量
-        const regex = /x\s*(\d+)/i;
+        // 提取數量（例如 "x 12"）
+        const qtyRegex = /x\s*(\d+)/i;
         let quantity = "";
-        let match = productName.match(regex);
+        let match = productName.match(qtyRegex);
         if (match) {
           quantity = match[1];
         } else {
-          match = desc.match(regex);
+          match = desc.match(qtyRegex);
           if (match) {
             quantity = match[1];
           }
         }
         if (!quantity) return; // 若無法提取數量則略過
 
-        // 若全局學制尚未記錄，嘗試從 productName 中抓取學制
+        // 記錄全局學制（僅第一次出現）
         if (!globalSchoolType) {
           if (productName.includes("國小")) {
             globalSchoolType = "國小";
@@ -461,18 +464,36 @@
           }
         }
 
-        // 根據 category 與描述決定前綴
-        let prefix = "";
-        // 若是進度課則使用全局學制作前綴（若有）
+        let output = "";
+        // 進度課：使用全局學制作前綴
         if (category.includes("OC+N")) {
-          prefix = globalSchoolType;
+          output = globalSchoolType + quantity;
         }
-        // 若為配套或描述中含有團課，固定前綴為「團課堂」
-        else if (category.includes("配套") || desc.includes("團課")) {
-          prefix = "團課堂";
+        // 配套類商品
+        else if (category.includes("配套")) {
+          // 若描述中不含「團課」且學制為國中或高中，改為「數量(分鐘數)」格式
+          if ((globalSchoolType === "國中" || globalSchoolType === "高中") && !desc.includes("團課") && !desc.includes("團體課")) {
+            // 從商品名稱中提取分鐘數，例如 "50mins"
+            const minRegex = /(\d+)\s*mins/i;
+            let minMatch = productName.match(minRegex);
+            let minutes = minMatch ? minMatch[1] : "";
+            if (minutes) {
+              output = quantity + "(" + minutes + "mins)";
+            } else {
+              output = quantity; // 若無分鐘數則僅輸出數量
+            }
+          } else if (desc.includes("團課") || desc.includes("團體課")) {
+            output = "團課堂" + quantity;
+          } else {
+            // 其他配套狀況僅輸出數量
+            output = quantity;
+          }
         }
-        // 其他情況僅輸出數量（不加學制前綴）
-        parts.push(prefix + quantity);
+        // 其他類商品：僅輸出數量
+        else {
+          output = quantity;
+        }
+        parts.push(output);
       });
       return parts.join("+");
     }
