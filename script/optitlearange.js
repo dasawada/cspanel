@@ -231,7 +231,11 @@ function search() {
 
                     leaderSpan.addEventListener('click', function() {
                         const tempInput = document.createElement('input');
-                        tempInput.value = teamLeaderValue.slice(-2); // 複製第二個字起的組長名
+                        if (teamLeaderValue.length <= 2) {
+                            tempInput.value = teamLeaderValue.slice(-1); // 若顧問名為兩個字符或更少，複製最後一個字符
+                        } else {
+                            tempInput.value = teamLeaderValue.slice(-2); // 複製最後兩個字符
+                        }
                         document.body.appendChild(tempInput);
                         tempInput.select();
                         document.execCommand('copy');
