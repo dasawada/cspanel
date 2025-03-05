@@ -597,6 +597,67 @@
           alert("已複製 A~N 欄位到剪貼簿！")
         })
     }
+document.addEventListener("DOMContentLoaded", function() {
+  // 取得所有標頭 th
+  const headerCells = document.querySelectorAll('table.data-table thead th');
+  headerCells.forEach((th, index) => {
+    // 建立 overlay div
+    const overlay = document.createElement("div");
+    overlay.className = "copy-overlay";
+    // 加入 data-index 屬性，方便後續對應欄位
+    overlay.setAttribute("data-index", index);
+    // 確保 th 為 relative 定位（CSS 中也可設定）
+    th.style.position = "relative";
+    th.appendChild(overlay);
+
+    // 綁定點擊事件
+    overlay.addEventListener("click", function(e) {
+      const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+      // 假設資料列有 id="dataRow"，取得該列的所有儲存格
+      const dataRow = document.getElementById("dataRow");
+      if (!dataRow) return;
+      const cells = dataRow.children;
+      if (idx >= cells.length) return;
+      const targetCell = cells[idx];
+
+      // 嘗試取得內部的 input 或 select 元素
+      let value = "";
+      const inputElement = targetCell.querySelector("input, select");
+      if (inputElement) {
+        value = inputElement.value;
+      } else {
+        value = targetCell.textContent.trim();
+      }
+      
+      // 複製值到剪貼簿（支援 Chrome 與 Safari）
+      navigator.clipboard.writeText(value)
+        .then(() => {
+          // 複製成功後，加入變色效果
+          overlay.classList.add("copied");
+          // 1.5秒後移除效果
+          setTimeout(() => {
+            overlay.classList.remove("copied");
+          }, 520);
+        })
+        .catch((err) => {
+          console.error("複製失敗:", err);
+          // 備援方案：利用 textarea 複製
+          const temp = document.createElement("textarea");
+          temp.value = value;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand("copy");
+          document.body.removeChild(temp);
+          // 備援方案同樣套用視覺效果
+          overlay.classList.add("copied");
+          setTimeout(() => {
+            overlay.classList.remove("copied");
+          }, 520);
+        });
+    });
+  });
+});
+
   </script>
 </body>
 </html>
