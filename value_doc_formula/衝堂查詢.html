@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>技術開發文件 — 衝堂查詢</title>
+  <style>
+    /* 全域基本樣式 */
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #f7f8fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.8;
+    }
+    .container {
+      max-width: 900px; /* 調整為與範例相同的寬度 */
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3, h4, h5 {
+      color: #2d3e50;
+      margin-top: 1.2em;
+    }
+    h1 {
+      border-bottom: 2px solid #2d3e50;
+      padding-bottom: 10px;
+    }
+    p {
+      margin: 0.8em 0;
+    }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      background-color: #eef0f3;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .section-title {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .toc a {
+      display: block;
+      margin: 4px 0;
+    }
+    .code-block {
+      background-color: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.9em;
+    }
+    .sub-section {
+      margin-left: 20px;
+    }
+  </style>
+
+</head>
+<body>
+  <div class="container">
+    <!-- 文件封面 -->
+    <h1>技術開發文件 — 衝堂查詢</h1>
+    <p>作者：[簡明修] &nbsp;&nbsp; 文件製作日期：2025-02-15</p>
+
+    <!-- 目錄 -->
+    <h2 class="section-title">目錄</h2>
+    <ol class="toc">
+      <li><a href="#introduction">專案簡介與目的</a></li>
+      <li><a href="#architecture">系統架構與文件結構</a></li>
+      <li><a href="#functional-spec">功能模組與技術實作細節</a></li>
+      <li><a href="#technical-considerations">技術考量與設計決策</a></li>
+      <li><a href="#external-dependencies">外部依賴與參考資源</a></li>
+      <li><a href="#maintenance">維護、測試與擴充建議</a></li>
+      <li><a href="#appendix">附錄與參考資料</a></li>
+      <li><a href="#conclusion">結語</a></li>
+    </ol>
+
+    <!-- 1. 專案簡介與目的 -->
+    <h2 id="introduction" class="section-title">1. 專案簡介與目的</h2>
+    <p>
+      本系統是一套針對會議排程衝突檢查與管理的前端工具，主要透過讀取 Google Sheets 中的會議資料，
+      依據使用者輸入的日期、開始與結束時間以及會議類型，動態檢查並辨識衝突會議。系統同時支援：
+    </p>
+    <ul>
+      <li>動態表單驗證與即時回饋</li>
+      <li>多種時間格式的解析與標準化</li>
+      <li>針對長週期與短週期會議資料的分流與合併</li>
+      <li>詳細的衝突比對機制及結果展示（分組、展開/收合細節）</li>
+      <li>複製功能與使用者互動效果</li>
+    </ul>
+    <p>
+      文件旨在提供全面、細緻的技術說明，協助新進工程師及維護團隊快速了解系統設計理念、各模組間的交互關係，
+      以及所有實作細節與設計考量，並符合國際企業的高技術標準。
+    </p>
+
+    <!-- 2. 系統架構與文件結構 -->
+    <h2 id="architecture" class="section-title">2. 系統架構與文件結構</h2>
+    <h3>2.1 系統架構概述</h3>
+    <p>
+      系統以前端技術為核心，採用原生 JavaScript 與 HTML5/CSS3 實現，並整合以下模組：
+    </p>
+    <ul>
+      <li><strong>表單與事件處理模組：</strong>負責接收用戶輸入，攔截表單提交並觸發後續流程。</li>
+      <li><strong>時間解析模組：</strong>將多種格式的時間字串（如 "0000" 與 "00:00"）解析成標準 "HH:MM" 格式。</li>
+      <li><strong>資料查詢模組：</strong>透過 Fetch API 向 Google Sheets API 發送請求，取得會議資料。</li>
+      <li><strong>衝突檢查與比對模組：</strong>根據日期、時間範圍及重複週期等條件，比對會議資料以檢查衝突。</li>
+      <li><strong>結果展示與互動模組：</strong>動態生成分組結果，支援展開/收合、點擊複製及懸停提示等交互效果。</li>
+      <li><strong>定時檢查與狀態更新模組：</strong>以定時器定期檢查會議衝突狀態，並根據結果更新 UI。</li>
+    </ul>
+    <!-- 2.2 文件結構說明 (HTML 範例) -->
+    <section id="file-structure-overview">
+      <h2>2.2 文件結構說明</h2>
+      <p>
+        本區段並非僅重複「本文件主要分為八大部分」，而是聚焦在
+        <strong>本專案所使用的關鍵語法元素與自定義命名規範</strong>，讓開發與維護人員能快速瞭解本程式碼的組成與可讀性。
+      </p>
+
+      <!-- (1) 命名風格與前綴規範 -->
+      <h3>(1) 命名風格與前綴規範</h3>
+      <ul>
+        <li>
+          <code>meetingCheck*</code>：凡是以 <code>meetingCheck</code> 開頭的函式或變數，皆屬於「會議檢查」相關流程
+          或工具方法，常用於處理時間解析、日期驗證或使用者輸入等邏輯。
+        </li>
+        <li>
+          <code>allMeetingCompare*</code>：此命名前綴代表「進階衝突比對」的處理函式，通常用於多筆會議紀錄的
+          批次掃描與判斷。
+        </li>
+        <li>
+          動詞＋名詞：其他函式多遵循「動詞＋名詞」的命名慣例，例如
+          <code>checkMeeting(date, startTime, endTime, type)</code>，
+          直觀顯示其主要行為與邏輯目標。
+        </li>
+      </ul>
+
+      <!-- (2) 功能分區與主要函式說明 -->
+      <h3>(2) 功能分區與主要函式說明</h3>
+      <ul>
+        <li>
+          <strong>時間解析與驗證（Time Parsing &amp; Validation）</strong>：
+          以 <code>meetingCheckParseTime</code> 為主的函式群，用於解析多種時間格式，並在失敗時回傳
+          <code>null</code>，供後續流程進行錯誤處理。
+        </li>
+        <li>
+          <strong>衝突比對（Conflict Checking）</strong>：
+          例如 <code>allMeetingCompareCheckForConflicts</code> 負責整合多筆會議資料，並透過雙層迴圈比對
+          它們是否在同一天或同週期中重疊。
+        </li>
+        <li>
+          <strong>使用者操作流程（Form &amp; Event Handling）</strong>：
+          例如 <code>checkMeeting</code> 負責連結前端表單輸入與後端 Google Sheets 的互動，
+          亦搭配事件監聽器 <code>addEventListener('submit', ...)</code> 在提交時觸發。
+        </li>
+        <li>
+          <strong>視覺呈現與互動（UI Rendering &amp; Interaction）</strong>：
+          以 <code>display</code>、<code>show</code>、<code>create</code> 等字眼
+          進行命名的函式，負責生成查詢結果卡片、處理展開/收合、或產生可複製的帳號元素等。
+        </li>
+      </ul>
+
+      <!-- (3) 關鍵語法與簡易習慣 -->
+      <h3>(3) 關鍵語法與簡易習慣</h3>
+      <ul>
+        <li>
+          <strong>字串處理：</strong>使用正則表達式比對輸入格式，如
+          <code>timePattern1 = /(\\d{4})/;</code> 或
+          <code>timePattern2 = /(\\d{2}):(\\d{2})/;</code>
+          ，大幅簡化多種時間格式的處理。
+        </li>
+        <li>
+          <strong>事件攔截與同步控制：</strong>採用原生
+          <code>addEventListener</code> 監聽表單 <code>submit</code> 事件，
+          配合 <code>event.preventDefault()</code> 避免預設行為打斷流程。
+        </li>
+        <li>
+          <strong>回傳值設計：</strong>時常使用 <code>null</code> 或空陣列
+          表示運算失敗或無資料的情況，讓呼叫方能在後續流程依此做防呆與錯誤處理。
+        </li>
+      </ul>
+
+      <!-- (4) 文件與程式碼對照建議 -->
+      <h3>(4) 文件與程式碼對照建議</h3>
+      <p>
+        建議在閱讀本文件時，若遇到 <code>meetingCheck*</code>、<code>allMeetingCompare*</code> 或其他前綴命名的
+        函式呼叫，可對照本區段的解說，以快速掌握該函式的功能角色與撰寫風格。
+      </p>
+      <p>
+        此外，雖然本專案未必將所有功能拆分到多個檔案，仍可透過一致的命名慣例與清晰的註解，
+        維持程式碼的可讀性與可維護性。
+      </p>
+    </section>
+
+    <!-- 3. 功能模組與技術實作細節 -->
+    <h2 id="functional-spec" class="section-title">3. 功能模組與技術實作細節</h2>
+
+    <h3>3.1 表單處理與事件監聽</h3>
+    <p>
+      表單 (<code>meeting-check-form</code>) 為系統的主要輸入端，包含查詢日期、開始時間、結束時間及會議類型選項。
+      透過監聽 <code>submit</code> 事件，系統會攔截預設提交行為，並執行以下操作：
+    </p>
+    <ul class="sub-section">
+      <li>驗證日期與時間欄位是否有填寫；</li>
+      <li>調用 <code>meetingCheckParseTime</code> 函數進行時間格式解析；</li>
+      <li>根據會議類型決定使用哪一個 Google Sheets 工作表。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 表單提交事件監聽範例 --&gt;
+document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
+    event.preventDefault();  // 阻止預設提交
+    const dateInput = document.getElementById('meeting-check-date').value;
+    const startTimeInput = document.getElementById('meeting-check-start-time').value;
+    const endTimeInput = document.getElementById('meeting-check-end-time').value;
+    const meetingType = document.querySelector('input[name="meeting-type"]:checked').value;
+
+    if (!dateInput || !startTimeInput || !endTimeInput) {
+        document.getElementById('meeting-check-error').textContent = '請輸入有效的日期和時間範圍。';
+        return;
+    }
+    const date = new Date(dateInput);
+    const startTime = meetingCheckParseTime(startTimeInput);
+    const endTime = meetingCheckParseTime(endTimeInput);
+    if (!startTime || !endTime) {
+        document.getElementById('meeting-check-error').textContent = '請輸入有效的時間格式。';
+        return;
+    }
+    checkMeeting(date, startTime, endTime, meetingType);
+});
+      </code></pre>
+    </div>
+
+    <h3>3.2 時間解析模組</h3>
+    <p>
+      <code>meetingCheckParseTime</code> 函數負責解析不同格式的時間輸入。支援的格式包括：
+    </p>
+    <ul class="sub-section">
+      <li>四位數字格式（例如 "0930" 轉換為 "09:30"）；</li>
+      <li>冒號分隔格式（例如 "09:30" 直接返回）。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 時間解析函數範例 --&gt;
+function meetingCheckParseTime(input) {
+    if (!input) return null;
+    const timePattern1 = /(\d{4})/;
+    let match = input.match(timePattern1);
+    if (match) {
+        return match[1].slice(0, 2) + ':' + match[1].slice(2, 4);
+    }
+    const timePattern2 = /(\d{2}):(\d{2})/;
+    match = input.match(timePattern2);
+    if (match) {
+        return match[1] + ':' + match[2];
+    }
+    return null;
+}
+      </code></pre>
+    </div>
+
+    <h3>3.3 資料查詢與 Google Sheets API 整合</h3>
+    <p>
+      系統利用 Fetch API 向 Google Sheets API 發送請求，根據使用者所選會議類型構造正確的請求 URL（包含 API 金鑰與 Spreadsheet ID），
+      並處理回傳 JSON 資料。主要邏輯包括：
+    </p>
+    <ul class="sub-section">
+      <li>根據會議類型選擇適當的工作表範圍（如「騰訊會議(長週期)」與「騰訊會議(短週期)」）；</li>
+      <li>檢查回傳資料結構是否正確；</li>
+      <li>遍歷資料矩陣，過濾無效或不完整的資料列；</li>
+      <li>將資料整合至統一格式以供後續比對使用。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 資料查詢與處理範例 --&gt;
+async function checkMeeting(date, startTime, endTime, meetingType) {
+    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';
+    let sheetName = (meetingType === '長週期') ? '「騰訊會議(長週期)」' : '「騰訊會議(短週期)」';
+    const range = `${sheetName}!A:K`;
+
+    try {
+        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
+        const data = await response.json();
+        // 後續處理與比對會議資料...
+    } catch (error) {
+        document.getElementById('meeting-check-error').textContent = '請求失敗：' + error.message;
+    }
+}
+      </code></pre>
+    </div>
+
+    <h3>3.4 衝突檢查與比對邏輯</h3>
+    <p>
+      衝突比對模組主要任務是確認在指定日期與時間範圍內是否有會議重疊。核心邏輯包括：
+    </p>
+    <ul class="sub-section">
+      <li>依據會議開始與結束日期，確認查詢日期是否落在會議日期範圍內；</li>
+      <li>利用已標準化的時間格式，轉換為自午夜以來的分鐘數進行數值比對；</li>
+      <li>檢查會議重複週期，透過星期映射判斷是否符合當日查詢條件；</li>
+      <li>針對同一帳號，將重複名稱會議整合成分組展示。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 衝突檢查範例 --&gt;
+function allMeetingCompareCheckForConflicts(meetings) {
+    const conflicts = [];
+    for (let i = 0; i < meetings.length; i++) {
+        for (let j = i + 1; j < meetings.length; j++) {
+            const start1 = allMeetingCompareParseTime(meetings[i].timeRange.split('-')[0]);
+            const end1 = allMeetingCompareParseTime(meetings[i].timeRange.split('-')[1]);
+            const start2 = allMeetingCompareParseTime(meetings[j].timeRange.split('-')[0]);
+            const end2 = allMeetingCompareParseTime(meetings[j].timeRange.split('-')[1]);
+            if (timeStringToMinutes(end1) > timeStringToMinutes(start2) &&
+                timeStringToMinutes(start1) < timeStringToMinutes(end2)) {
+                conflicts.push({ meeting1: meetings[i], meeting2: meetings[j] });
+            }
+        }
+    }
+    return conflicts;
+}
+      </code></pre>
+    </div>
+
+    <h3>3.5 結果展示與使用者互動</h3>
+    <p>
+      查詢結果分為兩大組別：無衝突的帳號與存在衝突的帳號。展示模組會依據查詢結果動態生成以下內容：
+    </p>
+    <ul class="sub-section">
+      <li>建立結果分組，並將各帳號依照是否存在衝突歸類；</li>
+      <li>對於衝突會議，提供展開/收合功能以展示詳細資訊（包括重複模式、時間範圍、會議說明等）；</li>
+      <li>建立可點擊複製帳號元素，並透過事件委派實現懸停提示與複製反饋。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 生成結果 HTML 片段 --&gt;
+function displayResults(accountResults) {
+    const accountResultsDiv = document.getElementById('meeting-check-account-results');
+    accountResultsDiv.innerHTML = '';
+    // 分組展示無衝突與有衝突的帳號
+    // 對於每個帳號，依據衝突狀態動態生成 HTML 元素，並附上點擊複製的事件監聽
+}
+      </code></pre>
+    </div>
+
+    <h3>3.6 模態框與定時檢查</h3>
+    <p>
+      當系統檢測到存在會議衝突時，將透過模態框展示詳細衝突資訊。定時器（setInterval）每 60 秒自動檢查衝突狀態，
+      並根據結果更新設定按鈕的顯示狀態，以便使用者快速查看或管理衝突情形。
+    </p>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 定時檢查與模態框顯示範例 --&gt;
+function startConflictCheckInterval() {
+    setInterval(async function() {
+        await checkForConflictsAndToggleButton();
+    }, 60000);
+}
+
+document.getElementById('settings-button').addEventListener('click', async function() {
+    const modal = document.getElementById('results-modal');
+    modal.style.display = "block";
+    document.getElementById('modal-meeting-results').innerHTML = '';
+    await processMeetingsAndCheckConflicts();
+});
+      </code></pre>
+    </div>
+
+    <!-- 4. 技術考量與設計決策 -->
+    <h2 id="technical-considerations" class="section-title">4. 技術考量與設計決策</h2>
+    <h3>4.1 錯誤處理與例外管理</h3>
+    <p>
+      為確保系統穩定運行，所有與外部 API 的交互（如 Google Sheets API 請求）皆包含錯誤捕獲機制。主要策略包括：
+    </p>
+    <ul class="sub-section">
+      <li>在 API 請求中使用 try/catch 捕捉網路或資料解析錯誤；</li>
+      <li>對用戶輸入進行嚴格驗證，防止因錯誤格式導致後續計算異常；</li>
+      <li>在處理不完整或無效的資料列時，記錄警告並跳過該筆資料；</li>
+      <li>在 UI 上及時反饋錯誤訊息，指導使用者正確操作。</li>
+    </ul>
+
+    <h3>4.2 效能與資源優化</h3>
+    <p>
+      為降低重複計算與 DOM 操作開銷，系統採取以下優化策略：
+    </p>
+    <ul class="sub-section">
+      <li>對高頻事件（如輸入事件）加入防抖（debounce）機制；</li>
+      <li>將重複使用的 DOM 查詢結果緩存，避免多次查詢；</li>
+      <li>在資料比對中提前退出迴圈以節省計算資源；</li>
+      <li>採用非同步請求與 Promise 處理，確保主線程不被阻塞。</li>
+    </ul>
+
+    <h3>4.3 安全性與 API 金鑰管理</h3>
+    <p>
+      為防止 API 金鑰洩漏與未經授權的資料存取，建議：
+    </p>
+    <ul class="sub-section">
+      <li>將 API 金鑰存放於安全後端，前端透過代理伺服器取得資料；</li>
+      <li>對所有用戶輸入進行嚴格過濾與驗證，防止 XSS 與 SQL 注入等攻擊；</li>
+      <li>定期更新 API 金鑰並監控使用狀況。</li>
+    </ul>
+
+    <h3>4.4 模組化與可維護性設計</h3>
+    <p>
+      為方便後續維護與功能擴充，系統各功能模組採用高度模組化設計。建議：
+    </p>
+    <ul class="sub-section">
+      <li>將表單處理、時間解析、資料查詢、衝突比對與結果展示等功能拆分為獨立檔案；</li>
+      <li>使用現代 JavaScript 模組（ES6 Modules）進行功能封裝；</li>
+      <li>撰寫單元測試以確保每個模組運作正確。</li>
+    </ul>
+
+    <!-- 5. 外部依賴與參考資源 -->
+    <h2 id="external-dependencies" class="section-title">5. 外部依賴與參考資源</h2>
+    <ul>
+      <li>
+        <strong>Google Sheets API</strong>
+        <ul class="sub-section">
+          <li>用途：讀取及查詢會議資料。</li>
+          <li>官方文檔：<a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API Documentation</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>Fetch API</strong>
+        <ul class="sub-section">
+          <li>用途：非同步 HTTP 請求。</li>
+          <li>官方文檔：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" target="_blank">MDN Fetch API</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>Clipboard API</strong>
+        <ul class="sub-section">
+          <li>用途：實作複製功能。</li>
+          <li>官方文檔：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>FontAwesome</strong>
+        <ul class="sub-section">
+          <li>用途：提供圖示支持（例如複製圖示、垃圾桶圖示等）。</li>
+          <li>官方網站：<a href="https://fontawesome.com/" target="_blank">https://fontawesome.com/</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <!-- 6. 維護、測試與擴充建議 -->
+    <h2 id="maintenance" class="section-title">6. 維護、測試與擴充建議</h2>
+    <ul>
+      <li><strong>單元測試：</strong>針對每個模組（如時間解析、衝突比對等）編寫測試用例，確保核心邏輯正確。</li>
+      <li><strong>持續整合：</strong>採用 CI/CD 工具自動化測試與部署流程，確保更新版本品質。</li>
+      <li><strong>效能監控：</strong>引入前端效能監控工具，追蹤高頻事件及 API 請求效能，及時調整優化策略。</li>
+      <li><strong>文檔更新：</strong>隨著系統升級持續更新技術文檔，確保所有變更均有詳細記錄。</li>
+      <li><strong>模組化升級：</strong>考慮使用 ES6 模組與打包工具（如 Webpack）提升模組管理與載入效能。</li>
+    </ul>
+
+    <!-- 7. 附錄與參考資料 -->
+    <h2 id="appendix" class="section-title">7. 附錄與參考資料</h2>
+    <h3>7.1 原始程式碼摘錄</h3>
+    <p>
+      以下摘錄自本系統核心程式碼，展示表單事件攔截、時間解析、資料查詢、衝突比對與結果展示等主要邏輯：
+    </p>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 表單提交與時間解析 --&gt;
+document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+    const date = new Date(document.getElementById('meeting-check-date').value);
+    const startTime = meetingCheckParseTime(document.getElementById('meeting-check-start-time').value);
+    const endTime = meetingCheckParseTime(document.getElementById('meeting-check-end-time').value);
+    checkMeeting(date, startTime, endTime, document.querySelector('input[name="meeting-type"]:checked').value);
+});
+
+&lt;!-- 時間解析函數 --&gt;
+function meetingCheckParseTime(input) {
+    if (!input) return null;
+    const timePattern1 = /(\d{4})/;
+    let match = input.match(timePattern1);
+    if (match) {
+        return match[1].slice(0,2) + ':' + match[1].slice(2,4);
+    }
+    const timePattern2 = /(\d{2}):(\d{2})/;
+    match = input.match(timePattern2);
+    if (match) {
+        return match[1] + ':' + match[2];
+    }
+    return null;
+}
+      </code></pre>
+    </div>
+    <div class="code-block">
+      <pre><code>
+&lt;!-- 衝突比對邏輯 --&gt;
+function allMeetingCompareCheckForConflicts(meetings) {
+    const conflicts = [];
+    for (let i = 0; i &lt; meetings.length; i++) {
+        for (let j = i + 1; j &lt; meetings.length; j++) {
+            const start1 = allMeetingCompareParseTime(meetings[i].timeRange.split('-')[0]);
+            const end1 = allMeetingCompareParseTime(meetings[i].timeRange.split('-')[1]);
+            const start2 = allMeetingCompareParseTime(meetings[j].timeRange.split('-')[0]);
+            const end2 = allMeetingCompareParseTime(meetings[j].timeRange.split('-')[1]);
+            if (timeStringToMinutes(end1) &gt; timeStringToMinutes(start2) &&
+                timeStringToMinutes(start1) &lt; timeStringToMinutes(end2)) {
+                conflicts.push({ meeting1: meetings[i], meeting2: meetings[j] });
+            }
+        }
+    }
+    return conflicts;
+}
+      </code></pre>
+    </div>
+
+    <h3>7.2 參考資源與文獻</h3>
+    <ul>
+      <li><a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API Documentation</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API" target="_blank">MDN Fetch API</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+      <li><a href="https://fontawesome.com/" target="_blank">FontAwesome 官方網站</a></li>
+    </ul>
+
+    <!-- 8. 結語 -->
+    <h2 id="conclusion" class="section-title">8. 結語</h2>
+    <p>
+      本文件詳細闡述了會議排程衝突檢查與管理系統的整體設計、核心功能模組、技術實作細節以及未來擴充與維護建議，
+      旨在為開發與維護團隊提供一份全面且詳盡的技術參考。隨著業務需求變化與技術進步，建議定期檢討並更新系統設計，
+      以確保其持續符合高效能、高安全性與高可靠性的標準。
+    </p>
+    <p>
+      如有任何疑問或需要進一步技術支援，請參閱附錄中的參考資料或直接聯繫系統技術負責人。
+    </p>
+  </div>
+</body>
+</html>

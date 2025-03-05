@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>技術開發文件 — 今日會議查詢</title>
+  <style>
+    /* 全域基本樣式 */
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #f7f8fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.8;
+    }
+    .container {
+      max-width: 900px; /* 調整為與範例相同的寬度 */
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3, h4, h5 {
+      color: #2d3e50;
+      margin-top: 1.2em;
+    }
+    h1 {
+      border-bottom: 2px solid #2d3e50;
+      padding-bottom: 10px;
+    }
+    p {
+      margin: 0.8em 0;
+    }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      background-color: #eef0f3;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .section-title {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .toc a {
+      display: block;
+      margin: 4px 0;
+    }
+    .code-block {
+      background-color: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.9em;
+    }
+    .sub-section {
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 文件封面 -->
+    <h1>技術開發文件 — 今日會議查詢</h1>
+    <p>作者：[簡明修] &nbsp;&nbsp; 文件製作日期：2025-02-15</p>
+
+    <!-- 目錄 -->
+    <h2 class="section-title">目錄</h2>
+    <ol class="toc">
+      <li><a href="#introduction">專案簡介與目的</a></li>
+      <li><a href="#architecture">系統架構與文件結構</a></li>
+      <li><a href="#implementation">主要功能與技術實作細節</a></li>
+      <li><a href="#dependencies">外部依賴與參考資源</a></li>
+      <li><a href="#maintenance">維護與擴充建議</a></li>
+      <li><a href="#appendix">附錄與參考資料</a></li>
+      <li><a href="#conclusion">結語</a></li>
+    </ol>
+
+    <!-- 1. 專案簡介與目的 -->
+    <h2 id="introduction" class="section-title">1. 專案簡介與目的</h2>
+    <p>
+      本工具為一前端網頁組件，旨在提供一個直覺且高效的會議資訊管理介面。使用者可透過該工具查詢並分類當日各平台（如 ZOOM、騰訊）之會議，
+      包括進行中、即將開始、等待中及已結束等狀態。工具不僅支援資料撈取與即時更新，亦整合了格式化、複製及動畫回饋等互動功能，
+      以提升操作體驗與工作效率。
+    </p>
+    <p>
+      本文件依據國際領先企業標準編制，全面說明系統設計、核心功能、技術實作細節及相互作用關係，供技術團隊參考與後續維護。
+    </p>
+
+    <!-- 2. 系統架構與文件結構 -->
+    <h2 id="architecture" class="section-title">2. 系統架構與文件結構</h2>
+    <h3>2.1 系統架構</h3>
+    <p>
+      工具前端主要基於 HTML、CSS 與 JavaScript 實現，並利用第三方服務取得動態資料。系統分為三大層次：
+    </p>
+    <ul>
+      <li><strong>視覺層：</strong>利用 HTML 與 CSS 建構整體介面與互動元件，包含模態視窗、輸入欄位與結果展示區。</li>
+      <li><strong>邏輯層：</strong>採用原生 JavaScript 處理事件監聽、資料解析、會議狀態分類及互動效果；並適度運用 jQuery 以簡化 AJAX 請求。</li>
+      <li><strong>資料層：</strong>透過 Google Sheets API 撈取多個工作表中的會議資料，並依據預設條件進行分類與過濾。</li>
+    </ul>
+    <h3>2.2 文件結構</h3>
+    <p>
+      本文件採分層次說明方式，主要結構如下：
+    </p>
+    <ul>
+      <li><strong>前言：</strong>說明專案背景、設計目的與整體概覽。</li>
+      <li><strong>主體：</strong>詳細闡述系統架構、各模組功能、程式碼實作與功能互動關係。</li>
+      <li><strong>附錄：</strong>列出外部依賴、官方參考資源及後續維護建議，便於深入理解與擴充開發。</li>
+    </ul>
+
+    <!-- 3. 主要功能與技術實作細節 -->
+    <h2 id="implementation" class="section-title">3. 主要功能與技術實作細節</h2>
+    <h3>3.1 HTML 與介面元件</h3>
+    <p>
+      介面主要由會議查詢區與結果展示區構成，其中包含用於觸發模態視窗、篩選會議與顯示資料的各種 HTML 元素。下列為部分結構範例：
+    </p>
+    <div class="code-block">
+      <pre><code>&lt;!-- 今日會議查詢區 --&gt;
+&lt;div class="meeting-now-search"&gt;
+  &lt;b&gt;[ZOOM、騰訊] 今日會議&lt;/b&gt;
+  &lt;div id="meetingsearchnow-form-container"&gt;
+    &lt;!-- 名稱搜尋與查詢按鈕 --&gt;
+    &lt;div id="meetingsearch-filter-container"&gt;
+      &lt;input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議"&gt;
+      &lt;button id="meetingsearch-fetch-meetings" type="button"&gt;列出所有會議&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;div class="meeting-now-result-flow"&gt;
+      &lt;div id="meetingsearch-result"&gt;&lt;/div&gt;
+      &lt;div id="meetingsearch-error"&gt;&lt;/div&gt;
+      &lt;div id="meetingsearch-account-results"&gt;&lt;/div&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+      </code></pre>
+    </div>
+
+    <h3>3.2 模態視窗與資料格式化</h3>
+    <p>
+      模態視窗用於整理與顯示來自外部來源的會議資料。使用者可貼上原始資料，工具透過格式化函數解析出會議時間與名稱，並依照起始時間進行排序。下列展示關鍵實作：
+    </p>
+    <div class="code-block">
+      <pre><code>&lt;!-- Modal 結構 --&gt;
+&lt;div id="zv-metting-list-results-modal" style="display:none;"&gt;
+  &lt;div id="zv-metting-list-modal-content"&gt;
+    &lt;!-- 關閉按鈕 --&gt;
+    &lt;span id="zv-metting-list-close-btn" onclick="zvMettingListCloseModal()"&gt;&amp;times;&lt;/span&gt;
+    &lt;h2&gt;MMS會議整理&lt;/h2&gt;
+    &lt;textarea id="zv-metting-list-inputData" rows="5" cols="50" placeholder="此處貼上從MMS複製的課程"&gt;&lt;/textarea&gt;
+    &lt;div class="zv-metting-list-btn-group"&gt;
+      &lt;button id="zv-metting-list-format-btn" onclick="zvMettingListFormatData()"&gt;整理會議名單&lt;/button&gt;
+    &lt;/div&gt;
+    &lt;textarea id="zv-metting-list-output" rows="10" cols="50"&gt;&lt;/textarea&gt;
+    &lt;div class="zv-metting-list-btn-group"&gt;
+      &lt;button id="zv-metting-list-copy-btn" onclick="zvMettingListCopyToClipboard()"&gt;複製結果&lt;/button&gt;
+    &lt;/div&gt;
+  &lt;/div&gt;
+&lt;/div&gt;
+      </code></pre>
+    </div>
+    <p>
+      對應的 JavaScript 函數包含：
+    </p>
+    <ul>
+      <li><strong>zvMettingListCloseModal()</strong>：隱藏模態視窗。</li>
+      <li><strong>zvMettingListFormatData()</strong>：解析輸入資料，依照時間排序後生成格式化結果。</li>
+      <li><strong>zvMettingListCopyToClipboard()</strong>：將格式化結果複製至剪貼簿，並提供視覺回饋。</li>
+    </ul>
+
+    <h3>3.3 會議資料撈取與分類</h3>
+    <p>
+      利用 Google Sheets API 撈取多平台會議資料後，系統依據時間與重複模式將會議分類。核心函數
+      <code>meetingsearchFetchMeetings()</code> 負責：
+    </p>
+    <ul>
+      <li>調整當前時間至台灣時區。</li>
+      <li>透過 API 取得各工作表資料。</li>
+      <li>使用 <code>parseTime()</code> 解析時間字串，轉換成標準格式與 Date 物件。</li>
+      <li>依據會議開始與結束時間、重複模式判斷會議狀態，分別加入「進行中」、「即將開始」、「等待中」與「已結束」清單中。</li>
+    </ul>
+    <div class="code-block">
+      <pre><code>async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
+    const apiKey = 'YOUR_API_KEY';
+    const spreadsheetId = 'YOUR_SPREADSHEET_ID';
+    const ranges = ['&quot;US版Zoom學員名單(5/15)&quot;!A:K', '&quot;騰訊會議(長週期)&quot;!A:K', '&quot;騰訊會議(短週期)&quot;!A:K'];
+    try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        // 解析資料並依據條件分類會議
+        // 此處省略部分實作細節
+    } catch (error) {
+        document.getElementById('meetingsearch-error').textContent = '請求失敗：' + error.message;
+    }
+}
+      </code></pre>
+    </div>
+
+    <h3>3.4 互動事件與資料顯示</h3>
+    <p>
+      為簡化事件管理，系統採用事件委託模式處理點擊、懸停等操作。使用者可點擊會議項目展開詳細資訊，
+      或點擊帳號資訊以複製至剪貼簿。下列程式碼示範如何動態生成會議項目並處理互動：
+    </p>
+    <div class="code-block">
+      <pre><code>document.getElementById('meetingsearch-account-results').addEventListener('click', function(event) {
+    const targetMeetingItem = event.target.closest('.meetingsearch-meeting-item');
+    const targetAccountSpan = event.target.closest('.meeting-now-account-span');
+    if (targetAccountSpan) {
+        // 複製帳號資訊
+        const tempInput = document.createElement('input');
+        tempInput.value = targetAccountSpan.textContent;
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        targetAccountSpan.style.color = 'green';
+        setTimeout(function() {
+            targetAccountSpan.style.color = 'gray';
+        }, 1000);
+    } else if (targetMeetingItem && event.target.tagName.toLowerCase() === 'button') {
+        const infoDiv = targetMeetingItem.querySelector('.meetingsearch-info');
+        if (infoDiv) {
+            infoDiv.style.display = infoDiv.style.display === 'none' ? 'block' : 'none';
+        }
+    }
+});
+      </code></pre>
+    </div>
+
+    <!-- 4. 外部依賴與參考資源 -->
+    <h2 id="dependencies" class="section-title">4. 外部依賴與參考資源</h2>
+    <ul>
+      <li>
+        <strong>Google Sheets API</strong>
+        <ul>
+          <li>用途：撈取與更新會議資料。</li>
+          <li>官方文檔：<a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API Documentation</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>jQuery</strong>
+        <ul>
+          <li>用途：簡化 AJAX 請求與 DOM 操作。</li>
+          <li>官方網站：<a href="https://jquery.com/" target="_blank">jQuery</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>FontAwesome</strong>
+        <ul>
+          <li>用途：提供圖示支持（例如操作按鈕、垃圾桶圖示）。</li>
+          <li>官方網站：<a href="https://fontawesome.com/" target="_blank">FontAwesome</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>Clipboard API</strong>
+        <ul>
+          <li>用途：提升複製功能穩定性（作為 <code>document.execCommand("copy")</code> 的替代方案）。</li>
+          <li>官方文檔：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <!-- 5. 維護與擴充建議 -->
+    <h2 id="maintenance" class="section-title">5. 維護與擴充建議</h2>
+    <ul>
+      <li><strong>模組化設計：</strong>建議將各功能（如資料解析、分類、互動處理）拆分成獨立模組，便於單元測試與維護更新。</li>
+      <li><strong>錯誤處理：</strong>加強 API 請求、資料解析及 DOM 操作中的錯誤檢查，確保異常狀況下提供友善提示。</li>
+      <li><strong>效能優化：</strong>對頻繁觸發的事件加入防抖（debounce）機制，減少不必要的計算與重複請求。</li>
+      <li><strong>現代化改造：</strong>建議採用 ES6+ 語法及 Fetch API 替代部分 jQuery 實作，並考慮使用打包工具進行模組化管理。</li>
+      <li><strong>安全配置：</strong>統一管理外部 API 金鑰與第三方庫配置，並透過後端代理提升安全性。</li>
+    </ul>
+
+    <!-- 6. 附錄與參考資料 -->
+    <h2 id="appendix" class="section-title">6. 附錄與參考資料</h2>
+    <h3>6.1 核心程式碼摘錄</h3>
+    <p>
+      下列程式碼摘錄展示了本工具部分核心功能的實作，包括模態視窗控制、資料格式化、複製功能及事件委託處理：
+    </p>
+    <div class="code-block">
+      <pre><code>// 開啟與關閉模態視窗
+document.getElementById('zv-metting-list-modal-btn').onclick = function() {
+    document.getElementById('zv-metting-list-results-modal').style.display = 'block';
+}
+function zvMettingListCloseModal() {
+    document.getElementById('zv-metting-list-results-modal').style.display = 'none';
+}
+document.getElementById('zv-metting-list-results-modal').onclick = function(event) {
+    if (event.target === document.getElementById('zv-metting-list-results-modal')) {
+        zvMettingListCloseModal();
+    }
+}
+
+// 格式化會議資料並排序
+function zvMettingListFormatData() {
+    const input = document.getElementById('zv-metting-list-inputData').value;
+    const lines = input.split('\n');
+    let resultArray = [];
+    for (let i = 0; i < lines.length; i++) {
+        const timeMatch = lines[i].match(/(\d{2}:\d{2}-\d{2}:\d{2})/);
+        if (timeMatch && lines[i + 3]) {
+            const time = timeMatch[0];
+            const name = lines[i + 3].trim();
+            resultArray.push({ time, name });
+        }
+    }
+    resultArray.sort((a, b) => a.time.split('-')[0].localeCompare(b.time.split('-')[0]));
+    let result = '';
+    resultArray.forEach(item => {
+        result += `${item.time} ${item.name}\n`;
+    });
+    document.getElementById('zv-metting-list-output').value = result;
+}
+
+// 複製格式化結果到剪貼簿
+function zvMettingListCopyToClipboard() {
+    const outputTextarea = document.getElementById('zv-metting-list-output');
+    navigator.clipboard.writeText(outputTextarea.value).then(() => {
+        const copyButton = document.getElementById('zv-metting-list-copy-btn');
+        copyButton.style.backgroundColor = '#4CAF50';
+        copyButton.style.color = 'white';
+        copyButton.innerText = '已複製!';
+        setTimeout(() => {
+            copyButton.style.backgroundColor = '';
+            copyButton.style.color = '';
+            copyButton.innerText = '複製';
+        }, 2000);
+    }).catch(err => {
+        console.error('複製失敗:', err);
+    });
+}
+      </code></pre>
+    </div>
+    <h3>6.2 參考資源</h3>
+    <ul>
+      <li><a href="https://developer.mozilla.org/zh-TW/docs/Web/JavaScript" target="_blank">MDN JavaScript 參考</a></li>
+      <li><a href="https://developer.mozilla.org/zh-TW/docs/Web/API/Fetch_API" target="_blank">MDN Fetch API</a></li>
+      <li><a href="https://developer.mozilla.org/zh-TW/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+      <li><a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API 文檔</a></li>
+    </ul>
+
+    <!-- 7. 結語 -->
+    <h2 id="conclusion" class="section-title">7. 結語</h2>
+    <p>
+      本文件全面闡述了會議管理工具的設計理念、系統架構、核心功能與技術實作細節，並詳細說明各模組間的互動關係。
+      文件旨在為技術團隊提供明確且完整的參考依據，以利後續維護與功能擴充。持續優化錯誤處理、效能調整與安全配置將有助於保障系統穩定運作。
+    </p>
+    <p>
+      如有疑問或需進一步討論，請參考附錄中的參考資源或與技術負責人聯繫。
+    </p>
+  </div>
+</body>
+</html>
