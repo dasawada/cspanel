@@ -466,7 +466,7 @@
 
         let output = "";
         // 進度課：使用全局學制作前綴
-        if (category.includes("OC+N")) {
+        if (category.includes("OC+TN") || category.includes("OC+N")) {
           output = globalSchoolType + quantity;
         }
         // 配套類商品
@@ -628,7 +628,7 @@ document.addEventListener("DOMContentLoaded", function() {
       } else {
         value = targetCell.textContent.trim();
       }
-      
+
       // 複製值到剪貼簿（支援 Chrome 與 Safari）
       navigator.clipboard.writeText(value)
         .then(() => {
