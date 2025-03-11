@@ -418,11 +418,21 @@
       return jsonData.data || []
     }
 
-   function formatQuotationData(dataArray) {
+    // quotation 資料整理：
+    // 1. 略過「贈品」
+    // 2. 使用正規表達式提取商品數量
+    // 3. 先檢查商品名稱中的學制（國小、國中、高中）
+    // 4. 若 category 為進度課（含 "OC+N"），前綴為全局學制
+    // 5. 若 category 為配套：
+    //    - 如果學制為國中或高中，且描述中不含「團課」(或「團體課」)，則以格式「數量(分鐘數)」輸出
+    //      （分鐘數從商品名稱中以 /(\d+)\s*mins/i 提取）
+    //    - 否則若描述含「團課」則固定前綴「團課堂」
+    // 6. 其他商品僅輸出數量
+function formatQuotationData(dataArray) {
   let globalSchoolType = "";
-  const mainProducts = [];    // 商品名稱（非進度課、非配套）
-  const activityProducts = []; // 進度課/活動商品：包含 "OC+TN" 或 "OC+N"
-  const packageProducts = [];  // 配套
+  const productNames = []; // 商品名稱（包含進度課及其他一般商品）
+  const activityItems = []; // 活動商品
+  const packageItems = []; // 配套商品
 
   dataArray.forEach(item => {
     // item 格式： [?, category, productName, description, ?]
@@ -430,7 +440,7 @@
     const productName = item[2] || "";
     const desc = item[3] || "";
 
-    // 略過「贈品」
+    // 略過贈品
     if (category.includes("贈品")) return;
 
     // 提取數量（例如 "x 12"）
@@ -459,44 +469,44 @@
     }
 
     let output = "";
-    // 活動商品/進度課：檢查 category 是否含 "OC+TN" 或 "OC+N"
+    // 根據不同類別生成 output 並分類存放
     if (category.includes("OC+TN") || category.includes("OC+N")) {
+      // 進度課：使用全局學制作前綴，視為商品名稱
       output = globalSchoolType + quantity;
-      activityProducts.push(output);
-    }
-    // 配套類商品
-    else if (category.includes("配套")) {
-      // 若學制為國中或高中，且描述中不含「團課」或「團體課」
+      productNames.push(output);
+    } else if (category.includes("配套")) {
+      // 配套類商品
       if ((globalSchoolType === "國中" || globalSchoolType === "高中") &&
-          !(desc.includes("團課") || desc.includes("團體課"))) {
+          !desc.includes("團課") && !desc.includes("團體課")) {
+        // 從商品名稱中提取分鐘數，例如 "50mins"
         const minRegex = /(\d+)\s*mins/i;
         let minMatch = productName.match(minRegex);
         let minutes = minMatch ? minMatch[1] : "";
         if (minutes) {
           output = quantity + "(" + minutes + "mins)";
         } else {
-          output = quantity;
+          output = quantity; // 若無分鐘數則僅輸出數量
         }
-      } 
-      // 描述中含「團課」或「團體課」則固定前綴「團課堂」
-      else if (desc.includes("團課") || desc.includes("團體課")) {
+      } else if (desc.includes("團課") || desc.includes("團體課")) {
         output = "團課堂" + quantity;
-      } 
-      else {
+      } else {
         output = quantity;
       }
-      packageProducts.push(output);
-    }
-    // 其他商品（視為商品名稱）
-    else {
+      packageItems.push(output);
+    } else if (category.includes("活動商品")) {
+      // 活動商品
       output = quantity;
-      mainProducts.push(output);
+      activityItems.push(output);
+    } else {
+      // 其他類商品視為商品名稱
+      output = quantity;
+      productNames.push(output);
     }
   });
 
-  // 最終排列順序：【商品名稱 → 活動商品 → 配套】
-  const resultArray = [...mainProducts, ...activityProducts, ...packageProducts];
-  return resultArray.join("+");
+  // 最終排列順序：商品名稱 → 活動商品 → 配套
+  const finalParts = productNames.concat(activityItems, packageItems);
+  return finalParts.join("+");
 }
 
     function clearSheetFields() {
