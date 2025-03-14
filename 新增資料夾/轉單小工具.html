@@ -52,6 +52,10 @@
               </svg>
               複製
             </button>
+			<button class="button button-primary" id="generateButton">
+      <!-- 可複用圖示或僅顯示文字 -->
+      生成
+    </button>
           </div>
         </div>
 
@@ -669,6 +673,148 @@ document.addEventListener("DOMContentLoaded", function() {
   });
 });
 
+  // 取得【生成】按鈕參考
+  const generateButton = document.getElementById("generateButton");
+  
+  generateButton.addEventListener("click", () => {
+    // 檢查是否已存在成交大表版位，避免重複生成
+    if (document.getElementById("bigSheetContainer")) return;
+
+    // 建立新的版位容器，id 設為 bigSheetContainer
+    const bigSheetContainer = document.createElement("div");
+    bigSheetContainer.id = "bigSheetContainer";
+    bigSheetContainer.className = "panel table-container"; // 共用相同樣式，max-height已設定為100px
+
+    // 產生標題與按鈕區塊
+    bigSheetContainer.innerHTML = `
+      <div class="table-header">
+        <h2 class="table-title">成交大表資料</h2>
+        <div class="table-actions">
+          <button class="button button-outline" id="restoreButton2">
+            復原
+          </button>
+          <button class="button button-primary" id="copyButton2">
+            複製
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>輔導</th>
+              <th>學生一</th>
+              <th>學生二</th>
+              <th>學生三</th>
+              <th>立約人</th>
+              <th>電話</th>
+              <th>進行中交編</th>
+              <th>購買堂數</th>
+              <th>備註</th>
+              <th>續約合約</th>
+              <th>續約堂數</th>
+              <th>狀態</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="dataRow2">
+              <td><input type="text" class="cell-input" id="newCol1" placeholder="輔導"></td>
+              <td><input type="text" class="cell-input" id="newCol2" placeholder="學生一"></td>
+              <td><input type="text" class="cell-input" id="newCol3" placeholder="學生二"></td>
+              <td><input type="text" class="cell-input" id="newCol4" placeholder="學生三"></td>
+              <td><input type="text" class="cell-input" id="newCol5" placeholder="立約人"></td>
+              <td><input type="text" class="cell-input" id="newCol6" placeholder="電話"></td>
+              <td><input type="text" class="cell-input" id="newCol7" placeholder="進行中交編"></td>
+              <td><input type="text" class="cell-input" id="newCol8" placeholder="購買堂數"></td>
+              <td><input type="text" class="cell-input" id="newCol9" placeholder="備註"></td>
+              <td><input type="text" class="cell-input" id="newCol10" placeholder="續約合約"></td>
+              <td><input type="text" class="cell-input" id="newCol11" placeholder="續約堂數"></td>
+              <td><input type="text" class="cell-input" id="newCol12" placeholder="狀態"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    // 插入新版位到【訂單資料表】下方（假設原版在 panel-container 的第一個位置）
+    const panelContainer = document.querySelector(".panel-container");
+    panelContainer.insertAdjacentElement("beforeend", bigSheetContainer);
+
+    // 為新版位的表格標頭新增 overlay 複製功能（可複製單一欄位內容）
+    addCopyOverlay(bigSheetContainer);
+
+    // 新版位復原與複製按鈕處理
+    const restoreButton2 = document.getElementById("restoreButton2");
+    const copyButton2 = document.getElementById("copyButton2");
+
+    restoreButton2.addEventListener("click", () => {
+      // 簡單方式：清空所有 input 值
+      const inputs = bigSheetContainer.querySelectorAll("tbody input");
+      inputs.forEach(input => input.value = "");
+    });
+
+    copyButton2.addEventListener("click", () => {
+      // 從 dataRow2 取得每個 input 值並以制表符分隔
+      const dataRow = document.getElementById("dataRow2");
+      const inputs = dataRow.querySelectorAll("input");
+      const rowData = [];
+      inputs.forEach(input => {
+        rowData.push(input.value.trim());
+      });
+      const tsvLine = rowData.join("\t");
+      navigator.clipboard.writeText(tsvLine).then(() => {
+        alert("已複製成交大表資料的內容！");
+      });
+    });
+  });
+
+  // 依照原版邏輯，為指定容器中的每個表頭新增 overlay 複製功能
+  function addCopyOverlay(container) {
+    const headerCells = container.querySelectorAll("table.data-table thead th");
+    headerCells.forEach((th, index) => {
+      const overlay = document.createElement("div");
+      overlay.className = "copy-overlay";
+      overlay.setAttribute("data-index", index);
+      th.style.position = "relative";
+      th.appendChild(overlay);
+
+      overlay.addEventListener("click", function(e) {
+        const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+        // 取得對應 row 的所有儲存格
+        const dataRow = container.querySelector("tbody tr");
+        if (!dataRow) return;
+        const cells = dataRow.children;
+        if (idx >= cells.length) return;
+        const targetCell = cells[idx];
+        let value = "";
+        const inputElement = targetCell.querySelector("input, select");
+        if (inputElement) {
+          value = inputElement.value;
+        } else {
+          value = targetCell.textContent.trim();
+        }
+        navigator.clipboard.writeText(value)
+          .then(() => {
+            overlay.classList.add("copied");
+            setTimeout(() => {
+              overlay.classList.remove("copied");
+            }, 520);
+          })
+          .catch(() => {
+            const temp = document.createElement("textarea");
+            temp.value = value;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            overlay.classList.add("copied");
+            setTimeout(() => {
+              overlay.classList.remove("copied");
+            }, 520);
+          });
+      });
+    });
+  }
   </script>
 </body>
 </html>
