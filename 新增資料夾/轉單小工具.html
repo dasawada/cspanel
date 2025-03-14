@@ -36,7 +36,10 @@
       <!-- Table Container -->
       <div class="panel table-container">
         <div class="table-header">
+		<div class="title-group-left">
           <h2 class="table-title">訂單資料表</h2>
+		  <button id="helpButton" class="help-button" title="說明">?</button>
+		  </div>
           <div class="table-actions">
             <button class="button button-outline" id="restoreButton">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
@@ -815,6 +818,10 @@ document.addEventListener("DOMContentLoaded", function() {
       });
     });
   }
+  document.getElementById("helpButton").addEventListener("click", function() {
+  window.open("TESTwhosthere.html", "HelpPopup", "width=650,height=700");
+});
+
   </script>
 </body>
 </html>
