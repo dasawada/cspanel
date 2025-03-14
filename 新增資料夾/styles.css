@@ -446,3 +446,24 @@ html, body {
 .copy-overlay.copied {
   background-color: rgba(0, 255, 0, 0.2); /* 淺綠色提示 */
 }
+.help-button {
+  margin-left: 0.5rem; /* 與標題間距 */
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 50%;
+  background-color: var(--primary-color);
+  color: #fff;
+  font-size: 12px;
+  line-height: 18px;
+  text-align: center;
+  cursor: pointer;
+  padding: 0;
+}
+.help-button:hover {
+  background-color: var(--primary-hover);
+}
+.title-group-left {
+  display: inline-flex;
+  align-items: center;
+}
