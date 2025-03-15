@@ -87,5 +87,4 @@ window.addEventListener('DOMContentLoaded', (event) => {
     initToggle('.DT_panel', 'DT_toggleCheckbox');
     initToggle('.assist_googlesheet', 'assist_toggleCheckbox');
 	initToggle('.assist-issue', 'assist-issue-toggleCheckbox');
-	initToggle('.board', 'board-toggleCheckbox');
 });
