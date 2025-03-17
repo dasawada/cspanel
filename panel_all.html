@@ -297,6 +297,12 @@
     <div id="content" style="display: none;">
 	<div style="width:200px;height:18px;">
 <div class="assist_num_container">
+    <div class="assist_num_left">
+        <input type="text" id="assist_num_searchValue" placeholder="搜尋電話" style="width: 100%; height: 100%;">
+    </div>
+    <div class="assist_num_right" id="assist_num_result" onclick="assist_num_copyToClipboard(this)"></div>
+</div>
+</div>
         <iframe class="responsive-iframe" src="assist_list_scale.html"></iframe>
     </div>
 </div>
@@ -590,6 +596,7 @@
     <script src="script/DT_fuction_confirm.js"></script>
     <script src="script/IP_search_asn.js"></script>
 	<script src="script/assist_issue.js"></script>
+	<script src="script/as_num.js"></script>
 	<script src="script/meeting-all.js"></script>
 	<script src="script/meeting-search-panel.js"></script>
 	<script src="script/all-meeting-compare.js"></script>
