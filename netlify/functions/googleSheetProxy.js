@@ -14,14 +14,19 @@ exports.handler = async (event) => {
       };
     }
 
-    // 確保有傳送 body 資料
     if (!event.body || event.body.trim() === "") {
       throw new Error("請求中沒有提供 body 資料");
     }
-    
-    const { sheetId, range, method = "GET", payload } = JSON.parse(event.body);
-    if (!sheetId || !range) {
-      throw new Error("缺少必要的參數：sheetId 或 range");
+
+    const { range, method = "GET", payload } = JSON.parse(event.body);
+    if (!range) {
+      throw new Error("缺少必要的參數：range");
+    }
+
+    // 直接從環境變數中取得統一的 Spreadsheet ID
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+    if (!sheetId) {
+      throw new Error("缺少 GOOGLE_SHEET_ID 環境變數");
     }
 
     // 動態引入 node-fetch（ESM）

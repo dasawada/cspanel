@@ -3,34 +3,36 @@ const fetch = require("node-fetch");
 
 exports.handler = async (event) => {
   try {
-    // 從前端傳來的 JSON 取得 sheetId 與 ranges 陣列
-    const { sheetId, ranges } = JSON.parse(event.body);
-    
-    // 從環境變數中取得 API Key（這裡使用已設置好的 GSHEET_API_KEY）
+    const { ranges } = JSON.parse(event.body);
+    if (!ranges || !Array.isArray(ranges)) {
+      throw new Error("缺少 ranges 參數或格式不正確");
+    }
+
+    const sheetId = process.env.GOOGLE_SHEET_ID;
+    if (!sheetId) {
+      throw new Error("缺少 GOOGLE_SHEET_ID 環境變數");
+    }
+
     const apiKey = process.env.GSHEET_API_KEY;
     if (!apiKey) {
       throw new Error("缺少 GSHEET_API_KEY 環境變數");
     }
-    
-    // 組合多個範圍的查詢字串，格式例如：ranges=Sheet1!A:K&ranges=Sheet2!A:K
+
     const rangesQuery = ranges.map(range => `ranges=${encodeURIComponent(range)}`).join('&');
-    
-    // 建立 batchGet 請求的 URL
     const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchGet?${rangesQuery}&key=${apiKey}`;
-    
-    // 發送 GET 請求
+
     const response = await fetch(endpoint, {
       method: "GET",
       headers: { "Content-Type": "application/json" }
     });
-    
+
     const result = await response.json();
-    
+
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*" // 如有需要，可限制來源
+        "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify(result)
     };
