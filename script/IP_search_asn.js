@@ -4,13 +4,26 @@ const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
 const listRange = 'list!B1:E';
 const countryMappingRange = 'ipcountry!A:C';
 
+// 先記錄全域 Promise（供 IP_handleIpInput 使用）
+const sheetDataPromise = getSheetData();
+const countryMappingPromise = getCountryMapping();
+
+/**
+ * 讀取 Google Sheet 中服務商資料
+ */
 export async function getSheetData() {
   try {
+    console.log("[getSheetData] 開始呼叫 callGoogleSheetAPI，參數：", {
+      sheetId: spreadsheetId,
+      range: listRange,
+      method: "GET"
+    });
     const data = await callGoogleSheetAPI({
       sheetId: spreadsheetId,
       range: listRange,
       method: "GET"
     });
+    console.log("[getSheetData] callGoogleSheetAPI 回傳：", data);
     const sheetData = [];
     if (data.values) {
       data.values.forEach(row => {
@@ -22,23 +35,32 @@ export async function getSheetData() {
         }
       });
     } else {
-      console.error("No data found in the specified range.");
+      console.error("[getSheetData] No data found in the specified range.");
     }
-    console.log("Sheet Data:", sheetData);
+    console.log("[getSheetData] 最終資料：", sheetData);
     return sheetData;
   } catch (error) {
-    console.error(error);
+    console.error("[getSheetData] 發生錯誤：", error);
     return [];
   }
 }
 
+/**
+ * 讀取國家對照資料 (英文代碼 -> 中文名稱)
+ */
 export async function getCountryMapping() {
   try {
+    console.log("[getCountryMapping] 呼叫 callGoogleSheetAPI，參數：", {
+      sheetId: spreadsheetId,
+      range: countryMappingRange,
+      method: "GET"
+    });
     const data = await callGoogleSheetAPI({
       sheetId: spreadsheetId,
       range: countryMappingRange,
       method: "GET"
     });
+    console.log("[getCountryMapping] 回傳資料：", data);
     const mapping = {};
     if (data.values) {
       data.values.forEach(row => {
@@ -49,12 +71,12 @@ export async function getCountryMapping() {
         }
       });
     } else {
-      console.error("No country mapping data found.");
+      console.error("[getCountryMapping] No country mapping data found.");
     }
-    console.log("Country mapping:", mapping);
+    console.log("[getCountryMapping] 最終 mapping：", mapping);
     return mapping;
   } catch (error) {
-    console.error(error);
+    console.error("[getCountryMapping] 發生錯誤：", error);
     return {};
   }
 }
@@ -83,10 +105,15 @@ function isIpInCidr(ip, cidr) {
  * 處理 IP 輸入，讀取 ipinfo API 資料，並依據 Google Sheet 資料及國家對照表來顯示結果
  */
 async function IP_handleIpInput(ip) {
+  console.log("[IP_handleIpInput] 處理 IP：", ip);
+  // 用你的 ipinfo token（確保該變數有正確定義，否則請先定義 ipinfoToken）
+  const ipinfoToken = '5da0a6c614f15b';
   const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
   try {
+    console.log("[IP_handleIpInput] Fetch ipinfo URL：", url);
     const response = await fetch(url);
     const data = await response.json();
+    console.log("[IP_handleIpInput] ipinfo 回傳：", data);
 
     // 取得 ipinfo 中的國家代碼及 city
     const countryCode = data.country || 'N/A';
@@ -96,11 +123,13 @@ async function IP_handleIpInput(ip) {
 
     // 使用國家對照表將國家代碼轉換為中文
     const countryMapping = await countryMappingPromise;
+    console.log("[IP_handleIpInput] countryMapping：", countryMapping);
     const country = countryMapping[countryCode] || countryCode;
     const countryDisplay = city ? `${country}／${city}` : country;
 
     // 根據 Google Sheet 中服務商資料，比對輸入 IP 所屬網段
     const sheetData = await sheetDataPromise;
+    console.log("[IP_handleIpInput] sheetData：", sheetData);
     let matchedEntry = null;
     for (const entry of sheetData) {
       if (isIpInCidr(ip, entry.cidrRange)) {
@@ -108,6 +137,7 @@ async function IP_handleIpInput(ip) {
         break;
       }
     }
+    console.log("[IP_handleIpInput] matchedEntry：", matchedEntry);
 
     let ispDisplay = '';
     if (matchedEntry) {
@@ -120,22 +150,18 @@ async function IP_handleIpInput(ip) {
       ispDisplay = org;
     }
 
-    // 顯示國家、服務商與主機名，並用 <span class="label"> 包住標題
+    // 顯示結果到畫面上
     document.getElementById('ip_country').innerHTML = `<span class="label">國家：</span>${countryDisplay}`;
-
     const ispLines = ispDisplay.split('\n').map(line => `${line.trim()}`);
     document.getElementById('ip_org').innerHTML = `<span class="label">服務商：</span><br>${ispLines.join('<br>')}`;
-
     if (hostname) {
       document.getElementById('ip_hostname').innerHTML = `<span class="label">主機名：</span>${hostname}`;
     } else {
       document.getElementById('ip_hostname').innerHTML = '';
     }
-
-    // 當有資料時，加入 hasResult class 以啟用分隔線樣式
     document.getElementById('ip_result_container').classList.add('hasResult');
 
-    // 地圖處理：動態生成並插入顯示區塊
+    // 地圖處理
     const ipResultContainer = document.getElementById('ip_result_container');
     let ipMapContainer = document.getElementById('ip_map');
     if (!ipMapContainer) {
@@ -146,19 +172,28 @@ async function IP_handleIpInput(ip) {
       ipMapContainer.style.margin = '5px auto 5px';
       ipResultContainer.appendChild(ipMapContainer);
     }
-	if (data.loc) {
-		const [lat, lon] = data.loc.split(',');
-		const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
-		ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
-	} else {
-		ipMapContainer.innerHTML = "";
-	}
+    if (data.loc) {
+      const [lat, lon] = data.loc.split(',');
+      // 注意：這裡仍使用 googleApiKey 作為 Google Maps API 金鑰，請確認該金鑰正確且允許嵌入
+      const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+      const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
+      ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
+    } else {
+      ipMapContainer.innerHTML = "";
+    }
   } catch (error) {
-    console.error(error);
+    console.error("[IP_handleIpInput] 錯誤：", error);
     IP_clearOutput();
     document.getElementById('ip_country').textContent = `錯誤：`;
     document.getElementById('ip_org').textContent = `${error}`;
   }
+}
+
+function IP_clearOutput() {
+  document.getElementById('ip_country').textContent = '';
+  document.getElementById('ip_org').textContent = '';
+  document.getElementById('ip_hostname').textContent = '';
+  document.getElementById('ip_result_container').classList.remove('hasResult');
 }
 
 document.getElementById('ip_input').addEventListener('keydown', async function(event) {
@@ -169,6 +204,7 @@ document.getElementById('ip_input').addEventListener('keydown', async function(e
       IP_clearOutput();
       return;
     }
+    console.log("[Event] Enter pressed. Processing IP:", ip);
     await IP_handleIpInput(ip);
   }
 });
@@ -179,15 +215,9 @@ document.getElementById('ip_input').addEventListener('input', async function(eve
     IP_clearOutput();
     return;
   }
+  console.log("[Event] Input changed. Processing IP:", ip);
   await IP_handleIpInput(ip);
 });
-
-function IP_clearOutput() {
-  document.getElementById('ip_country').textContent = '';
-  document.getElementById('ip_org').textContent = '';
-  document.getElementById('ip_hostname').textContent = '';
-  document.getElementById('ip_result_container').classList.remove('hasResult');
-}
 
 // 調整介面高度的程式碼
 const container = document.querySelector('.IPsearch_in_panelALL');
@@ -199,7 +229,7 @@ const adjustHeight = () => {
     const newHeight = container.scrollHeight + 'px';
     container.style.transition = 'height 0.3s ease';
     container.style.height = ipInput.value === '' ? initialHeight : newHeight;
-    console.log("Container height adjusted to:", newHeight);
+    console.log("[adjustHeight] New container height:", newHeight);
   });
 };
 
@@ -225,31 +255,32 @@ ipInput.addEventListener('click', adjustHeight);
 */
 const newGoogleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
 const newSpreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-const newRange = 'update!A1:A1'; // 更新日期範圍
+const newRange = 'update!A1:A1';
 
 async function IP_fetchNewUpdateDate() {
   try {
-    console.log("Fetching update date...");
+    console.log("[IP_fetchNewUpdateDate] Fetching update date...");
     const url = `https://sheets.googleapis.com/v4/spreadsheets/${newSpreadsheetId}/values/${newRange}?key=${newGoogleApiKey}`;
+    console.log("[IP_fetchNewUpdateDate] URL:", url);
     const response = await fetch(url);
-    console.log("Response status:", response.status);
+    console.log("[IP_fetchNewUpdateDate] Response status:", response.status);
     if (!response.ok) {
       throw new Error(`Network response was not ok: ${response.statusText}`);
     }
     const data = await response.json();
-    console.log("Data received:", data);
+    console.log("[IP_fetchNewUpdateDate] Data received:", data);
     if (!data.values || !data.values.length) {
       throw new Error('No data found in the specified range.');
     }
     const dateUpdated = data.values[0][0];
     document.getElementById('ip_input').placeholder = '資料於 ' + dateUpdated + ' 更新';
   } catch (error) {
-    console.error('Error fetching update date:', error);
+    console.error("[IP_fetchNewUpdateDate] Error:", error);
     document.getElementById('ip_input').placeholder = '資料更新失敗';
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  IP_fetchNewUpdateDate(); // 確保獲取更新日期
-  adjustHeight();         // 初次載入時調整高度
+  IP_fetchNewUpdateDate();
+  adjustHeight();
 });
