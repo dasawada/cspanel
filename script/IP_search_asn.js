@@ -1,4 +1,4 @@
-import { callGoogleSheetAPI } from "./googleSheetAPI.js";
+import { callGoogleSheetAPI, callGoogleSheetBatchAPI } from "./googleSheetAPI.js";
 
 const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
 const listRange = 'list!B1:E';
