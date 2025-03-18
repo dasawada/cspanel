@@ -1,7 +1,18 @@
-// Google Sheets 設定
-const fudausearch_SHEET_ID = "15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU";
-const fudausearch_API_KEY = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
+
 const fudausearch_SHEET_RANGE = "OMGLIST!A:F";
+
+// 呼叫共用 API 代理（例如封裝成函式：getFudaSearchData()）
+import { callGoogleSheetAPI } from "./apiProxy.js";
+
+async function getFudaSearchData() {
+  const data = await callGoogleSheetAPI({
+    sheetId: fudausearch_SHEET_ID,
+    range: fudausearch_SHEET_RANGE,
+    method: "GET"
+  });
+  // 根據回傳結果進行處理
+  return data;
+}
 
 // 緩存全局資料變量
 let fudausearch_cachedData = [];
