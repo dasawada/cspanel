@@ -1,8 +1,8 @@
 import { callGoogleSheetAPI, callGoogleSheetBatchAPI } from "./googleSheetAPI.js";
 
-const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-const listRange = 'list!B1:E';
-const countryMappingRange = 'ipcountry!A:C';
+// 定義各個範圍，不再定義 spreadsheetId
+const listRange = 'ip-list!B1:E';
+const countryMappingRange = 'ip-dixt!A:C';
 
 // 先記錄全域 Promise（供 IP_handleIpInput 使用）
 const sheetDataPromise = getSheetData();
@@ -13,17 +13,15 @@ const countryMappingPromise = getCountryMapping();
  */
 export async function getSheetData() {
   try {
-    console.log("[getSheetData] 開始呼叫 callGoogleSheetAPI，參數：", {
-      sheetId: spreadsheetId,
+    console.log("[getSheetData] 呼叫 callGoogleSheetAPI，參數：", {
       range: listRange,
       method: "GET"
     });
     const data = await callGoogleSheetAPI({
-      sheetId: spreadsheetId,
       range: listRange,
       method: "GET"
     });
-    console.log("[getSheetData] callGoogleSheetAPI 回傳：", data);
+    console.log("[getSheetData] 回傳資料：", data);
     const sheetData = [];
     if (data.values) {
       data.values.forEach(row => {
@@ -35,7 +33,7 @@ export async function getSheetData() {
         }
       });
     } else {
-      console.error("[getSheetData] No data found in the specified range.");
+      console.error("[getSheetData] 沒有找到資料");
     }
     console.log("[getSheetData] 最終資料：", sheetData);
     return sheetData;
@@ -51,12 +49,10 @@ export async function getSheetData() {
 export async function getCountryMapping() {
   try {
     console.log("[getCountryMapping] 呼叫 callGoogleSheetAPI，參數：", {
-      sheetId: spreadsheetId,
       range: countryMappingRange,
       method: "GET"
     });
     const data = await callGoogleSheetAPI({
-      sheetId: spreadsheetId,
       range: countryMappingRange,
       method: "GET"
     });
@@ -71,7 +67,7 @@ export async function getCountryMapping() {
         }
       });
     } else {
-      console.error("[getCountryMapping] No country mapping data found.");
+      console.error("[getCountryMapping] 沒有找到國家對照資料");
     }
     console.log("[getCountryMapping] 最終 mapping：", mapping);
     return mapping;
@@ -106,7 +102,6 @@ function isIpInCidr(ip, cidr) {
  */
 async function IP_handleIpInput(ip) {
   console.log("[IP_handleIpInput] 處理 IP：", ip);
-  // 用你的 ipinfo token（確保該變數有正確定義，否則請先定義 ipinfoToken）
   const ipinfoToken = '5da0a6c614f15b';
   const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
   try {
@@ -121,13 +116,13 @@ async function IP_handleIpInput(ip) {
     const hostname = data.hostname || '';
     const org = data.org || 'N/A';
 
-    // 使用國家對照表將國家代碼轉換為中文
+    // 取得國家對照表
     const countryMapping = await countryMappingPromise;
     console.log("[IP_handleIpInput] countryMapping：", countryMapping);
     const country = countryMapping[countryCode] || countryCode;
     const countryDisplay = city ? `${country}／${city}` : country;
 
-    // 根據 Google Sheet 中服務商資料，比對輸入 IP 所屬網段
+    // 取得服務商資料
     const sheetData = await sheetDataPromise;
     console.log("[IP_handleIpInput] sheetData：", sheetData);
     let matchedEntry = null;
@@ -150,9 +145,8 @@ async function IP_handleIpInput(ip) {
       ispDisplay = org;
     }
 
-    // 顯示結果到畫面上
     document.getElementById('ip_country').innerHTML = `<span class="label">國家：</span>${countryDisplay}`;
-    const ispLines = ispDisplay.split('\n').map(line => `${line.trim()}`);
+    const ispLines = ispDisplay.split('\n').map(line => line.trim());
     document.getElementById('ip_org').innerHTML = `<span class="label">服務商：</span><br>${ispLines.join('<br>')}`;
     if (hostname) {
       document.getElementById('ip_hostname').innerHTML = `<span class="label">主機名：</span>${hostname}`;
@@ -174,7 +168,7 @@ async function IP_handleIpInput(ip) {
     }
     if (data.loc) {
       const [lat, lon] = data.loc.split(',');
-      // 注意：這裡仍使用 googleApiKey 作為 Google Maps API 金鑰，請確認該金鑰正確且允許嵌入
+      // 此處若需要，建議也將 Google Maps API 金鑰轉移到後端，但目前保留在前端
       const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
       const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
       ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
@@ -251,23 +245,15 @@ ipInput.addEventListener('click', adjustHeight);
 
 /* 
   獲取最近更新日期並設置 ip 搜尋框的 placeholder
-  (使用 update 工作表中的 A1 儲存格，該儲存格記錄最新更新日期)
+  使用共用 API 模組，從後端取得更新日期
 */
-const newGoogleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-const newSpreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
-const newRange = 'update!A1:A1';
-
 async function IP_fetchNewUpdateDate() {
   try {
     console.log("[IP_fetchNewUpdateDate] Fetching update date...");
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${newSpreadsheetId}/values/${newRange}?key=${newGoogleApiKey}`;
-    console.log("[IP_fetchNewUpdateDate] URL:", url);
-    const response = await fetch(url);
-    console.log("[IP_fetchNewUpdateDate] Response status:", response.status);
-    if (!response.ok) {
-      throw new Error(`Network response was not ok: ${response.statusText}`);
-    }
-    const data = await response.json();
+    const data = await callGoogleSheetAPI({
+      range: 'update!A1:A1',
+      method: "GET"
+    });
     console.log("[IP_fetchNewUpdateDate] Data received:", data);
     if (!data.values || !data.values.length) {
       throw new Error('No data found in the specified range.');
