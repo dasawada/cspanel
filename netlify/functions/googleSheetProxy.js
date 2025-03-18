@@ -1,28 +1,34 @@
 // netlify/functions/googleSheetProxy.js
-const fetch = require("node-fetch");
-
 exports.handler = async (event) => {
   try {
-    // 前端會傳來必要的參數（例如 sheetId、range 或其他）
+    // 動態引入 node-fetch，並取得預設匯出
+    const { default: fetch } = await import("node-fetch");
+    
     const { sheetId, range, method = "GET", payload } = JSON.parse(event.body);
-    const apiKey = process.env.GSHEET_API_KEY; // 從環境變數讀取
-
+    const apiKey = process.env.GSHEET_API_KEY;
+    if (!apiKey) {
+      throw new Error("缺少 GSHEET_API_KEY 環境變數");
+    }
+    
     const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
     const response = await fetch(endpoint, {
       method,
       headers: { "Content-Type": "application/json" },
       body: method === "POST" ? JSON.stringify(payload) : null
     });
+    
     const result = await response.json();
+    
     return {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*" // 根據需要限制來源
+        "Access-Control-Allow-Origin": "*"
       },
       body: JSON.stringify(result)
     };
   } catch (error) {
+    console.error("GoogleSheet Proxy Error:", error);
     return {
       statusCode: 500,
       headers: { "Content-Type": "application/json" },
