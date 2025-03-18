@@ -1,61 +1,63 @@
-const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-const ipinfoToken = '5da0a6c614f15b';
-const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+import { callGoogleSheetAPI } from "./googleSheetAPI.js";
 
-// 服務商資料：網段、ISP1、ISP2 (list!B1:E)
+const spreadsheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
 const listRange = 'list!B1:E';
-// 國家對照資料：英文代碼在 A 欄、中文名稱在 C 欄 (country!A:C)
 const countryMappingRange = 'ipcountry!A:C';
 
-/**
- * 讀取 Google Sheet 中服務商資料
- */
-async function getSheetData() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${listRange}?key=${googleApiKey}`;
-  const response = await fetch(url);
-  const data = await response.json();
-  const sheetData = [];
-  if (data.values) {
-    data.values.forEach(row => {
-      const cidrRange = row[0] ? row[0].trim() : '';
-      const isp1 = row[1] ? row[1].trim() : '';
-      const isp2 = row[3] ? row[3].trim() : ''; // 使用 E 欄
-      if (cidrRange && (isp1 || isp2)) {
-        sheetData.push({ cidrRange, isp1, isp2 });
-      }
+export async function getSheetData() {
+  try {
+    const data = await callGoogleSheetAPI({
+      sheetId: spreadsheetId,
+      range: listRange,
+      method: "GET"
     });
-  } else {
-    console.error("No data found in the specified range.");
+    const sheetData = [];
+    if (data.values) {
+      data.values.forEach(row => {
+        const cidrRange = row[0] ? row[0].trim() : '';
+        const isp1 = row[1] ? row[1].trim() : '';
+        const isp2 = row[3] ? row[3].trim() : '';
+        if (cidrRange && (isp1 || isp2)) {
+          sheetData.push({ cidrRange, isp1, isp2 });
+        }
+      });
+    } else {
+      console.error("No data found in the specified range.");
+    }
+    console.log("Sheet Data:", sheetData);
+    return sheetData;
+  } catch (error) {
+    console.error(error);
+    return [];
   }
-  console.log("Sheet Data:", sheetData);
-  return sheetData;
 }
-const sheetDataPromise = getSheetData();
 
-/**
- * 讀取國家對照資料 (英文代碼 -> 中文名稱)
- */
-async function getCountryMapping() {
-  const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${countryMappingRange}?key=${googleApiKey}`;
-  const response = await fetch(url);
-  const data = await response.json();
-  const mapping = {};
-  if (data.values) {
-    // 每列：row[0] 為英文代碼，row[2] 為中文名稱
-    data.values.forEach(row => {
-      const eng = row[0] ? row[0].trim() : '';
-      const chi = row[2] ? row[2].trim() : '';
-      if (eng && chi) {
-        mapping[eng] = chi;
-      }
+export async function getCountryMapping() {
+  try {
+    const data = await callGoogleSheetAPI({
+      sheetId: spreadsheetId,
+      range: countryMappingRange,
+      method: "GET"
     });
-  } else {
-    console.error("No country mapping data found in the specified range.");
+    const mapping = {};
+    if (data.values) {
+      data.values.forEach(row => {
+        const eng = row[0] ? row[0].trim() : '';
+        const chi = row[2] ? row[2].trim() : '';
+        if (eng && chi) {
+          mapping[eng] = chi;
+        }
+      });
+    } else {
+      console.error("No country mapping data found.");
+    }
+    console.log("Country mapping:", mapping);
+    return mapping;
+  } catch (error) {
+    console.error(error);
+    return {};
   }
-  console.log("Country mapping:", mapping);
-  return mapping;
 }
-const countryMappingPromise = getCountryMapping();
 
 /**
  * 判斷輸入 IP 是否落在指定 CIDR 範圍內
