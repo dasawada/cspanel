@@ -39,7 +39,7 @@ function ShrtURL_shortenIsGd(longUrl) {
 
 // 呼叫 reurl.cc 短網址 API
 function ShrtURL_shortenReurl(longUrl) {
-    const apiUrl = '/.netlify/functions/shorten';
+    const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/shorten';
 
     fetch(apiUrl, {
         method: 'POST',
