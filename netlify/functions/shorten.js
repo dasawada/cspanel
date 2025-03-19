@@ -1,7 +1,7 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
-  // 處理 preflight
+  // 1️⃣ 處理 preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -10,10 +10,11 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: ''
+      body: '',
     };
   }
 
+  // 2️⃣ 處理 POST
   try {
     const { url } = JSON.parse(event.body);
     const resp = await fetch('https://api.reurl.cc/shorten', {
@@ -25,7 +26,6 @@ exports.handler = async (event) => {
       body: JSON.stringify({ url }),
     });
     const data = await resp.json();
-
     return {
       statusCode: data.res === 'success' ? 200 : 500,
       headers: {
@@ -35,7 +35,7 @@ exports.handler = async (event) => {
       },
       body: JSON.stringify(data),
     };
-  } catch (error) {
+  } catch (err) {
     return {
       statusCode: 500,
       headers: {
@@ -43,7 +43,7 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Methods': 'POST, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
       },
-      body: JSON.stringify({ res: 'error', message: error.message }),
+      body: JSON.stringify({ res: 'error', message: err.message }),
     };
   }
 };
