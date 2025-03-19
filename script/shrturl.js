@@ -15,20 +15,13 @@ function ShrtURL_generateShortUrls() {
 
 // 呼叫 is.gd 短網址 API
 function ShrtURL_shortenIsGd(longUrl) {
-    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+    const apiUrl = '/.netlify/functions/shorten';
 
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            const outputField = document.getElementById('ShrtURL_isGdOutput');
-            if (data.shorturl) {
-                outputField.value = data.shorturl;
-                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', true);
-            } else {
-                outputField.value = 'is.gd 短網址生成失敗';
-                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
-            }
-        })
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: longUrl }),
+    })
         .catch(error => {
             console.error('Error:', error);
             const outputField = document.getElementById('ShrtURL_isGdOutput');
