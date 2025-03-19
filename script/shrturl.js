@@ -15,13 +15,20 @@ function ShrtURL_generateShortUrls() {
 
 // 呼叫 is.gd 短網址 API
 function ShrtURL_shortenIsGd(longUrl) {
-    const apiUrl = '/.netlify/functions/shorten';
+    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
 
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: longUrl }),
-    })
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            const outputField = document.getElementById('ShrtURL_isGdOutput');
+            if (data.shorturl) {
+                outputField.value = data.shorturl;
+                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', true);
+            } else {
+                outputField.value = 'is.gd 短網址生成失敗';
+                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
+            }
+        })
         .catch(error => {
             console.error('Error:', error);
             const outputField = document.getElementById('ShrtURL_isGdOutput');
@@ -32,17 +39,12 @@ function ShrtURL_shortenIsGd(longUrl) {
 
 // 呼叫 reurl.cc 短網址 API
 function ShrtURL_shortenReurl(longUrl) {
-    const apiUrl = 'https://api.reurl.cc/shorten';
-    const apiKey = '4070ff49d794e73712553b663c974755ecd6b035959b04df8a38b58d65165567c4f5d6';
-    const body = JSON.stringify({ url: longUrl });
+    const apiUrl = '/.netlify/functions/shorten';
 
     fetch(apiUrl, {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'reurl-api-key': apiKey,
-        },
-        body: body,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: longUrl }),
     })
         .then(response => response.json())
         .then(data => {
