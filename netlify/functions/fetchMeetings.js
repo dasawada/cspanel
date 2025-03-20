@@ -1,3 +1,16 @@
+// 允許 OPTIONS 預檢請求
+exports.handler = async (event) => {
+    if (event.httpMethod === "OPTIONS") {
+        return {
+            statusCode: 200,
+            headers: {
+                "Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Methods": "GET, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type"
+            },
+            body: "",
+        };
+    }
 const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
