@@ -23,7 +23,7 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
 });
 
 async function fetchAllMeetings(query) {
-    const url = `https://your-netlify-site.netlify.app/.netlify/functions/fetchMeetings?query=${encodeURIComponent(query)}`;
+    const url = `https://stirring-pothos-28253d.netlify.app/.netlify/functions/fetchMeetings?query=${encodeURIComponent(query)}`;
 
     try {
         const response = await fetch(url);
