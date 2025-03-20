@@ -202,7 +202,19 @@ function fudausearch_getGroup(columnA, rows, currentRow) {
   }
   return "未知組別";
 }
+document.addEventListener("DOMContentLoaded", () => {
+    // 初始化時加載資料
+    fudausearch_loadData();
 
-// 初始化時加載資料
-document.addEventListener("DOMContentLoaded", fudausearch_loadData);
-document.getElementById("fudausearch-input").addEventListener("input", fudausearch_updateSuggestions);
+    // 綁定輸入框 input 事件
+    const inputField = document.getElementById("fudausearch-input");
+    if (inputField) {
+        inputField.addEventListener("input", fudausearch_updateSuggestions);
+    }
+
+    // 綁定清除按鈕點擊事件
+    const clearButton = document.getElementById("fudausearch-clear-btn");
+    if (clearButton) {
+        clearButton.addEventListener("click", fudausearch_clearInput);
+    }
+});
