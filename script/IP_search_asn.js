@@ -96,7 +96,21 @@ function isIpInCidr(ip, cidr) {
   const [low, high] = cidrToRange(cidr);
   return ipLong >= low && ipLong <= high;
 }
+async function getGoogleMapUrl(lat, lon) {
+  try {
+    const response = await fetch("/.netlify/functions/googleSheetProxy", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ mapRequest: true, lat, lon })
+    });
 
+    const data = await response.json();
+    return data.embedUrl;
+  } catch (error) {
+    console.error("[getGoogleMapUrl] 無法取得地圖連結：", error);
+    return "";
+  }
+}
 /**
  * 處理 IP 輸入，讀取 ipinfo API 資料，並依據 Google Sheet 資料及國家對照表來顯示結果
  */
@@ -168,12 +182,13 @@ async function IP_handleIpInput(ip) {
     }
     if (data.loc) {
       const [lat, lon] = data.loc.split(',');
-      // 此處若需要，建議也將 Google Maps API 金鑰轉移到後端，但目前保留在前端
-      const googleApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-      const embedUrl = `https://www.google.com/maps/embed/v1/view?key=${googleApiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
-      ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
-    } else {
-      ipMapContainer.innerHTML = "";
+      getGoogleMapUrl(lat, lon).then((embedUrl) => {
+        if (embedUrl) {
+          ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
+        } else {
+          ipMapContainer.innerHTML = "";
+        }
+      });
     }
   } catch (error) {
     console.error("[IP_handleIpInput] 錯誤：", error);
