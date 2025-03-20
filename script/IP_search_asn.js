@@ -1,5 +1,4 @@
 import { callGoogleSheetAPI, callGoogleSheetBatchAPI } from "./googleSheetAPI.js";
-
 // 定義各個範圍，不再定義 spreadsheetId
 const listRange = 'ip-list!B1:E';
 const countryMappingRange = 'ip-dixt!A:C';
@@ -9,9 +8,25 @@ const sheetDataPromise = getSheetData();
 const countryMappingPromise = getCountryMapping();
 
 /**
+ * 呼叫 Netlify 後端代理 Google Sheets 與 Google Maps API
+ * 傳入物件 { range, method, payload, mapRequest, lat, lon }
+ */
+async function callGoogleSheetAPI({ range, method = "GET", payload, mapRequest, lat, lon }) {
+  const requestBody = mapRequest
+    ? { mapRequest: true, lat, lon }
+    : { range, method, payload };
+  const response = await fetch("/.netlify/functions/googleSheetProxy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(requestBody)
+  });
+  return response.json();
+}
+
+/**
  * 讀取 Google Sheet 中服務商資料
  */
-export async function getSheetData() {
+async function getSheetData() {
   try {
     console.log("[getSheetData] 呼叫 callGoogleSheetAPI，參數：", {
       range: listRange,
@@ -46,7 +61,7 @@ export async function getSheetData() {
 /**
  * 讀取國家對照資料 (英文代碼 -> 中文名稱)
  */
-export async function getCountryMapping() {
+async function getCountryMapping() {
   try {
     console.log("[getCountryMapping] 呼叫 callGoogleSheetAPI，參數：", {
       range: countryMappingRange,
@@ -96,21 +111,20 @@ function isIpInCidr(ip, cidr) {
   const [low, high] = cidrToRange(cidr);
   return ipLong >= low && ipLong <= high;
 }
+
+/**
+ * 取得 Google Maps 嵌入 URL，透過 Netlify 後端代理
+ */
 async function getGoogleMapUrl(lat, lon) {
   try {
-    const response = await fetch("/.netlify/functions/googleSheetProxy", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ mapRequest: true, lat, lon })
-    });
-
-    const data = await response.json();
+    const data = await callGoogleSheetAPI({ mapRequest: true, lat, lon });
     return data.embedUrl;
   } catch (error) {
     console.error("[getGoogleMapUrl] 無法取得地圖連結：", error);
     return "";
   }
 }
+
 /**
  * 處理 IP 輸入，讀取 ipinfo API 資料，並依據 Google Sheet 資料及國家對照表來顯示結果
  */
@@ -182,13 +196,14 @@ async function IP_handleIpInput(ip) {
     }
     if (data.loc) {
       const [lat, lon] = data.loc.split(',');
-      getGoogleMapUrl(lat, lon).then((embedUrl) => {
-        if (embedUrl) {
-          ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
-        } else {
-          ipMapContainer.innerHTML = "";
-        }
-      });
+      const embedUrl = await getGoogleMapUrl(lat, lon);
+      if (embedUrl) {
+        ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
+      } else {
+        ipMapContainer.innerHTML = "";
+      }
+    } else {
+      ipMapContainer.innerHTML = "";
     }
   } catch (error) {
     console.error("[IP_handleIpInput] 錯誤：", error);
@@ -205,6 +220,7 @@ function IP_clearOutput() {
   document.getElementById('ip_result_container').classList.remove('hasResult');
 }
 
+// 監聽 ip 輸入框的 keydown 與 input 事件
 document.getElementById('ip_input').addEventListener('keydown', async function(event) {
   if (event.key === 'Enter') {
     event.preventDefault();
