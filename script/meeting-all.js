@@ -22,30 +22,15 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
     }
 });
 
-// Fetch 會議資料
 async function fetchAllMeetings(query) {
-    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';  // 替換為你的 API Key
-    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';  // 替換為你的 Spreadsheet ID
-    const ranges = [
-        '「US版Zoom學員名單(5/15)」!A:K',
-        '「騰訊會議(長週期)」!A:K',
-        '「騰訊會議(短週期)」!A:K'
-    ];
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
+    const url = `https://your-netlify-site.netlify.app/.netlify/functions/fetchMeetings?query=${encodeURIComponent(query)}`;
 
     try {
         const response = await fetch(url);
+        if (!response.ok) throw new Error(`HTTP error! Status: ${response.status}`);
         const data = await response.json();
 
-        let filteredMeetings = [];
-        data.valueRanges.forEach(sheetData => {
-            const rows = sheetData.values;
-            const matchingMeetings = rows.filter(row => row[0] && row[0].toLowerCase().includes(query.toLowerCase()));
-            filteredMeetings = filteredMeetings.concat(matchingMeetings);
-        });
-
-        displayMeetings(filteredMeetings);
+        displayMeetings(data);
     } catch (error) {
         document.getElementById('all-meeting-error').textContent = '請求失敗：' + error.message;
     }
