@@ -47,60 +47,61 @@ async function fudausearch_search() {
   // 如果 input 為空，直接退出搜尋
   if (!input) return;
 
-  // 初始化結果
-  let fudausearch_results = [
-    { text: "無資料", fullName: "無資料", type: "職代一" },
-    { text: "無資料", fullName: "無資料", type: "職代二" },
-    { text: "無資料", fullName: "無資料", type: "公帳號" },
-    { text: "無資料", fullName: "無資料", type: "B-2" },
-    { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
-    { text: "排", fullName: "課組", type: "排課組" },
-    { text: "無資料", fullName: "無資料", type: "數字組" } // 新增按鈕，修正為 "數字組"
-  ];
+// 初始化結果
+let fudausearch_results = [
+  { text: "無資料", fullName: "無資料", type: "職代一" },
+  { text: "無資料", fullName: "無資料", type: "職代二" },
+  { text: "無資料", fullName: "無資料", type: "公帳號" },
+  { text: "無資料", fullName: "無資料", type: "B-2" },
+  { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
+  { text: "排", fullName: "課組", type: "排課組" },
+  { text: "無資料", fullName: "無資料", type: "數字組" } // 新增按鈕，修正為 "數字組"
+];
 
-  // 確保 B-2 的值從 Column B-row2 提取
-  if (fudausearch_cachedData[1] && fudausearch_cachedData[1][1]) {
-    const fullName = fudausearch_cachedData[1][1].trim();
-    fudausearch_results[3].text = fullName;
-    fudausearch_results[3].fullName = fullName.slice(1);
-  }
+// 確保 B-2 的值從 Column B-row2 提取
+if (fudausearch_cachedData[1] && fudausearch_cachedData[1][1]) {
+  const fullName = fudausearch_cachedData[1][1].trim();
+  fudausearch_results[3].text = fullName;
+  fudausearch_results[3].fullName = fullName.slice(1);
+}
 
-  // 使用緩存資料進行匹配
-  let hasMatch = false;
-  fudausearch_cachedData.forEach((row, rowIndex) => {
-    const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex); // 檢索組別
-    if (row[1] === input) {
-      hasMatch = true;
+// 使用緩存資料進行匹配
+let hasMatch = false;
+fudausearch_cachedData.forEach((row, rowIndex) => {
+  const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex); // 檢索組別
+  if (row[1] === input) {
+    hasMatch = true;
 
-      // 更新職代一
-      if (row[3]) {
-        fudausearch_results[0].text = row[3];
-        fudausearch_results[0].fullName = row[3].slice(1);
-      }
-
-      // 更新職代二
-      if (row[5]) {
-        fudausearch_results[1].text = row[5];
-        fudausearch_results[1].fullName = row[5].slice(1);
-      }
-
-      // 更新公帳號
-      if (group === "學務部") {
-        fudausearch_results[2].text = group;
-        fudausearch_results[2].fullName = "學務";
-      } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-        fudausearch_results[2].text = `輔導${group.replace("學務", "")}`;
-        fudausearch_results[2].fullName = `輔導${group.replace("學務", "")}`;
-      }
-
-      // 更新群組
-      if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-        const number = group.replace(/學務|組/g, ""); // 同時移除「學務」和「組」
-        fudausearch_results[6].text = number; // 按鈕顯示為數字，例如「二」
-        fudausearch_results[6].fullName = `第${number}組`; // 點擊複製的內容，例如「第二組」
-      }
+    // 更新職代一
+    if (row[3]) {
+      fudausearch_results[0].text = row[3];
+      fudausearch_results[0].fullName = row[3].slice(1);
     }
-  });
+
+    // 更新職代二
+    if (row[5]) {
+      fudausearch_results[1].text = row[5];
+      fudausearch_results[1].fullName = row[5].slice(1);
+    }
+
+    // 更新公帳號
+    if (group === "學務部") {
+      fudausearch_results[2].text = group;
+      fudausearch_results[2].fullName = "學務";
+    } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+      fudausearch_results[2].text = `輔導${group.replace("學務", "")}`;
+      fudausearch_results[2].fullName = `輔導${group.replace("學務", "")}`;
+    }
+
+    // 更新群組
+if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+  const number = group.replace(/學務|組/g, ""); // 同時移除「學務」和「組」
+  fudausearch_results[6].text = number; // 按鈕顯示為數字，例如「二」
+  fudausearch_results[6].fullName = `第${number}組`; // 點擊複製的內容，例如「第二組」
+}
+
+  }
+});
 
   if (hasMatch) {
     fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
@@ -149,10 +150,12 @@ function fudausearch_updateSuggestions() {
 // 渲染按鈕
 function fudausearch_renderButtons(fudausearch_results) {
   const resultsContainer = document.getElementById("fudausearch-results");
-  resultsContainer.innerHTML = ""; // 清空容器
+  resultsContainer.innerHTML = ""; // 確保每次渲染時清空容器
 
   fudausearch_results.forEach((result) => {
     const button = document.createElement("button");
+    
+    // 預設樣式
     button.className = "fudausearch-button";
 
     // 根據類型應用特殊樣式
@@ -166,8 +169,8 @@ function fudausearch_renderButtons(fudausearch_results) {
       button.classList.add("fudausearch-button-groupnumber");
     }
 
-    button.textContent = result.text;
-    button.dataset.type = result.type;
+    button.textContent = result.text; // 按鈕只顯示結果
+    button.dataset.type = result.type; // 保存類型
     button.onclick = () => fudausearch_copyToClipboard(result.fullName || result.text, button);
 
     resultsContainer.appendChild(button);
@@ -203,61 +206,3 @@ function fudausearch_getGroup(columnA, rows, currentRow) {
 // 初始化時加載資料
 document.addEventListener("DOMContentLoaded", fudausearch_loadData);
 document.getElementById("fudausearch-input").addEventListener("input", fudausearch_updateSuggestions);
-
-/* 
-  獲取最近更新日期並設置 ip 搜尋框的 placeholder
-  使用後端代理讀取 update!A1:A1 範圍
-*/
-async function IP_fetchNewUpdateDate() {
-  try {
-    console.log("[IP_fetchNewUpdateDate] Fetching update date...");
-    const data = await callGoogleSheetAPI({
-      range: 'update!A1:A1',
-      method: "GET"
-    });
-    console.log("[IP_fetchNewUpdateDate] Data received:", data);
-    if (!data.values || !data.values.length) {
-      throw new Error('No data found in the specified range.');
-    }
-    const dateUpdated = data.values[0][0];
-    document.getElementById('ip_input').placeholder = '資料於 ' + dateUpdated + ' 更新';
-  } catch (error) {
-    console.error("[IP_fetchNewUpdateDate] Error:", error);
-    document.getElementById('ip_input').placeholder = '資料更新失敗';
-  }
-}
-
-document.addEventListener('DOMContentLoaded', () => {
-  IP_fetchNewUpdateDate();
-  adjustHeight();
-});
-
-// 調整介面高度的程式碼
-const container = document.querySelector('.IPsearch_in_panelALL');
-const initialHeight = '36px';
-const ipInput = document.getElementById('ip_input');
-
-const adjustHeight = () => {
-  requestAnimationFrame(() => {
-    const newHeight = container.scrollHeight + 'px';
-    container.style.transition = 'height 0.3s ease';
-    container.style.height = ipInput.value === '' ? initialHeight : newHeight;
-    console.log("[adjustHeight] New container height:", newHeight);
-  });
-};
-
-const observer = new MutationObserver(() => {
-  adjustHeight();
-});
-
-observer.observe(container, { childList: true, subtree: true });
-
-ipInput.addEventListener('input', () => {
-  setTimeout(adjustHeight, 0);
-});
-
-ipInput.addEventListener('paste', () => {
-  setTimeout(adjustHeight, 50);
-});
-
-ipInput.addEventListener('click', adjustHeight);
