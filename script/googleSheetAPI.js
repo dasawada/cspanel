@@ -1,5 +1,3 @@
-// js/googleSheetAPI.js
-
 /**
  * 單一範圍讀取 Google Sheets 的資料（透過 Netlify Function 代理）
  * @param {Object} options
@@ -15,6 +13,35 @@ export async function callGoogleSheetAPI({ range, method = "GET", payload = null
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ range, method, payload })
   });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
+  return response.json();
+}
+
+/**
+ * 讀取 Google Maps 嵌入 URL（透過 Netlify Function 代理）
+ * @param {Object} options
+ *   - lat: 緯度
+ *   - lon: 經度
+ * @returns {Promise} 回傳解析後的 JSON 資料，內容包含 embedUrl 屬性
+ */
+export async function callGoogleMapsAPI({ lat, lon }) {
+  const proxyUrl = "https://stirring-pothos-28253d.netlify.app/.netlify/functions/googleSheetProxy";
+  const response = await fetch(proxyUrl, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ mapRequest: true, lat, lon })
+  });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
   return response.json();
 }
 
@@ -31,5 +58,11 @@ export async function callGoogleSheetBatchAPI({ ranges }) {
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ ranges })
   });
+  
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
+  }
+  
   return response.json();
 }

@@ -1,4 +1,5 @@
-import { callGoogleSheetAPI, callGoogleSheetBatchAPI } from "./googleSheetAPI.js";
+import { callGoogleSheetAPI, callGoogleSheetBatchAPI, callGoogleMapsAPI } from "./googleSheetAPI.js";
+
 // 定義各個範圍，不再定義 spreadsheetId
 const listRange = 'ip-list!B1:E';
 const countryMappingRange = 'ip-dixt!A:C';
@@ -6,22 +7,6 @@ const countryMappingRange = 'ip-dixt!A:C';
 // 先記錄全域 Promise（供 IP_handleIpInput 使用）
 const sheetDataPromise = getSheetData();
 const countryMappingPromise = getCountryMapping();
-
-/**
- * 呼叫 Netlify 後端代理 Google Sheets 與 Google Maps API
- * 傳入物件 { range, method, payload, mapRequest, lat, lon }
- */
-async function callGoogleSheetAPI({ range, method = "GET", payload, mapRequest, lat, lon }) {
-  const requestBody = mapRequest
-    ? { mapRequest: true, lat, lon }
-    : { range, method, payload };
-  const response = await fetch("/.netlify/functions/googleSheetProxy", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(requestBody)
-  });
-  return response.json();
-}
 
 /**
  * 讀取 Google Sheet 中服務商資料
@@ -113,11 +98,11 @@ function isIpInCidr(ip, cidr) {
 }
 
 /**
- * 取得 Google Maps 嵌入 URL，透過 Netlify 後端代理
+ * 取得 Google Maps 嵌入 URL，透過 Netlify 後端代理（使用獨立的 callGoogleMapsAPI 函數）
  */
 async function getGoogleMapUrl(lat, lon) {
   try {
-    const data = await callGoogleSheetAPI({ mapRequest: true, lat, lon });
+    const data = await callGoogleMapsAPI({ lat, lon });
     return data.embedUrl;
   } catch (error) {
     console.error("[getGoogleMapUrl] 無法取得地圖連結：", error);
