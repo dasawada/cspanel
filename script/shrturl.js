@@ -102,6 +102,39 @@ function ShrtURL_copyUrl(outputId) {
     }, 2000);
 }
 
+// 綁定 input 事件，當輸入框內容變動時觸發檢查
+document.addEventListener("DOMContentLoaded", () => {
+    // 綁定輸入框 input 事件
+    const inputField = document.getElementById("ShrtURL_longUrl");
+    if (inputField) {
+        inputField.addEventListener("input", ShrtURL_checkInputValue);
+    }
+
+    // 綁定短網址按鈕點擊事件
+    const shortenButton = document.getElementById("ShrtURL_shortenButton");
+    if (shortenButton) {
+        shortenButton.addEventListener("click", ShrtURL_generateShortUrls);
+    }
+
+    // 綁定複製按鈕點擊事件
+    const isGdCopyButton = document.getElementById("ShrtURL_isGdCopyButton");
+    if (isGdCopyButton) {
+        isGdCopyButton.addEventListener("click", () => ShrtURL_copyUrl("ShrtURL_isGdOutput"));
+    }
+
+    const reurlCopyButton = document.getElementById("ShrtURL_reurlCopyButton");
+    if (reurlCopyButton) {
+        reurlCopyButton.addEventListener("click", () => ShrtURL_copyUrl("ShrtURL_reurlOutput"));
+    }
+
+    // 綁定清除按鈕點擊事件
+    const clearButton = document.getElementById("ShrtURL_clearButton");
+    if (clearButton) {
+        clearButton.addEventListener("click", ShrtURL_clearInputs);
+    }
+});
+
+
 // 清除所有輸入和輸出欄位
 function ShrtURL_clearInputs() {
     // 清空輸入框和輸出框
