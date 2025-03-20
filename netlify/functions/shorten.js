@@ -1,7 +1,8 @@
-const fetch = require('node-fetch');
-
 exports.handler = async (event) => {
-  // 1️⃣ 處理 preflight
+  // 先用動態 import 載入 fetch
+  const { default: fetch } = await import('node-fetch');
+
+  // 處理 preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
@@ -14,7 +15,6 @@ exports.handler = async (event) => {
     };
   }
 
-  // 2️⃣ 處理 POST
   try {
     const { url } = JSON.parse(event.body);
     const resp = await fetch('https://api.reurl.cc/shorten', {
@@ -26,6 +26,7 @@ exports.handler = async (event) => {
       body: JSON.stringify({ url }),
     });
     const data = await resp.json();
+
     return {
       statusCode: data.res === 'success' ? 200 : 500,
       headers: {
