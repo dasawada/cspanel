@@ -1,4 +1,4 @@
-// netlify/functions/googleSheetProxy.js
+// googleSheetProxy.js
 exports.handler = async (event) => {
   try {
     // 處理 CORS 預檢請求
@@ -14,6 +14,7 @@ exports.handler = async (event) => {
       };
     }
 
+    // 確保請求有提供 body 資料
     if (!event.body || event.body.trim() === "") {
       throw new Error("請求中沒有提供 body 資料");
     }
@@ -31,11 +32,13 @@ exports.handler = async (event) => {
       if (!lat || !lon) {
         throw new Error("缺少必要的參數：lat 和 lon");
       }
+      // 從環境變數中取得 API 金鑰
       const apiKey = process.env.GSHEET_API_KEY;
       if (!apiKey) {
         throw new Error("缺少 GSHEET_API_KEY 環境變數");
       }
-      const googleMapsUrl = `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
+      // 組合 Google Maps 嵌入連結
+      const googleMapsUrl = https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap;
       return {
         statusCode: 200,
         headers: {
@@ -52,21 +55,25 @@ exports.handler = async (event) => {
       throw new Error("缺少必要的參數：range");
     }
 
-    // 優先使用 GOOGLE_SHEET_VVZM_ID，若不存在則使用 GOOGLE_SHEET_ID
-    const sheetId = process.env.GOOGLE_SHEET_VVZM_ID || process.env.GOOGLE_SHEET_ID;
+    // 從環境變數中取得 Spreadsheet ID 與 API 金鑰
+    const sheetId = process.env.GOOGLE_SHEET_ID;
     if (!sheetId) {
-      throw new Error("缺少有效的 Spreadsheet ID 環境變數");
+      throw new Error("缺少 GOOGLE_SHEET_ID 環境變數");
     }
     const apiKey = process.env.GSHEET_API_KEY;
     if (!apiKey) {
       throw new Error("缺少 GSHEET_API_KEY 環境變數");
     }
 
+    // 動態引入 node-fetch (ESM)
     const { default: fetch } = await import("node-fetch");
-    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
+
+    // 組合 Google Sheets API 的 endpoint
+    const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey};
     const options = {
       method: method.toUpperCase(),
       headers: { "Content-Type": "application/json" },
+      // 僅在 POST 請求時傳送 payload
       body: method.toUpperCase() === "POST" ? JSON.stringify(payload) : null
     };
 
@@ -74,7 +81,7 @@ exports.handler = async (event) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(`Google API 回應錯誤: ${response.status} - ${errorText}`);
+      throw new Error(Google API 回應錯誤: ${response.status} - ${errorText});
     }
 
     const result = await response.json();
