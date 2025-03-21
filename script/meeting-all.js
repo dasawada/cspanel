@@ -21,8 +21,8 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
     }
   });
   
-  // 使用 Netlify 代理的 batch API 讀取多個範圍
-  async function fetchAllMeetings(query) {
+// 使用 Netlify 代理的 batch API 讀取多個範圍
+async function fetchAllMeetings(query) {
     const ranges = [
       '「US版Zoom學員名單(5/15)」!A:K',
       '「騰訊會議(長週期)」!A:K',
@@ -45,7 +45,7 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
     } catch (error) {
       document.getElementById('all-meeting-error').textContent = '請求失敗：' + error.message;
     }
-  }  
+}  
 
 // 顯示會議名稱和相關資訊，並將邏輯修改為四層結構
 function displayMeetings(meetings) {
@@ -130,36 +130,36 @@ function displayMeetings(meetings) {
             timeDiv.className = 'all-time-background-div';
             timeDiv.style.display = 'none';
 
-Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
-    // 對每個標籤中的會議時間進行排序
-    meetingMap[meetingName][repeatPattern][tag].sort((a, b) => {
-        const timeA = a.meetingTimeRange ? parseInt(a.meetingTimeRange[0].replace(':', ''), 10) : 0;
-        const timeB = b.meetingTimeRange ? parseInt(b.meetingTimeRange[0].replace(':', ''), 10) : 0;
-        return timeA - timeB;
-    });
+            Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
+                // 對每個標籤中的會議時間進行排序
+                meetingMap[meetingName][repeatPattern][tag].sort((a, b) => {
+                    const timeA = a.meetingTimeRange ? parseInt(a.meetingTimeRange[0].replace(':', ''), 10) : 0;
+                    const timeB = b.meetingTimeRange ? parseInt(b.meetingTimeRange[0].replace(':', ''), 10) : 0;
+                    return timeA - timeB;
+                });
 
-    const tagGroupDiv = document.createElement('div');
-    tagGroupDiv.className = 'tag-group';
-    tagGroupDiv.style.borderTop = '1px solid #ddd';
+                const tagGroupDiv = document.createElement('div');
+                tagGroupDiv.className = 'tag-group';
+                tagGroupDiv.style.borderTop = '1px solid #ddd';
 
-				// 根據 tag 名稱添加相應的類別
-				if (tag === '無標籤') {
-					tagGroupDiv.classList.add('no-tag');
-				} else if (tag === '短週期') {
-					tagGroupDiv.classList.add('short-cycle');
-				} else if (tag === '一次性') {
-					tagGroupDiv.classList.add('one-time');
-				} else if (tag === '長週期') {
-					tagGroupDiv.classList.add('long-cycle'); // 為長週期添加類別
-				}
+                // 根據 tag 名稱添加相應的類別
+                if (tag === '無標籤') {
+                    tagGroupDiv.classList.add('no-tag');
+                } else if (tag === '短週期') {
+                    tagGroupDiv.classList.add('short-cycle');
+                } else if (tag === '一次性') {
+                    tagGroupDiv.classList.add('one-time');
+                } else if (tag === '長週期') {
+                    tagGroupDiv.classList.add('long-cycle'); // 為長週期添加類別
+                }
 
-				// 如果 tag 不是 "無標籤"，則顯示標籤標題
-				if (tag !== '無標籤') {
-					const tagHeader = document.createElement('div');
-					tagHeader.className = 'tag-header';
-					tagHeader.textContent = tag;
-					tagGroupDiv.appendChild(tagHeader);
-				}
+                // 如果 tag 不是 "無標籤"，則顯示標籤標題
+                if (tag !== '無標籤') {
+                    const tagHeader = document.createElement('div');
+                    tagHeader.className = 'tag-header';
+                    tagHeader.textContent = tag;
+                    tagGroupDiv.appendChild(tagHeader);
+                }
 
                 meetingMap[meetingName][repeatPattern][tag].forEach(details => {
                     const meetingWrapper = document.createElement('div');
@@ -180,28 +180,28 @@ Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
                     iconLink.appendChild(iconImg);
                     iconDiv.appendChild(iconLink);
 
-					const meetingTimeRange = document.createElement('div');
-					meetingTimeRange.className = 'all-meeting-time-range';
-					meetingTimeRange.textContent = details.meetingTimeRange 
-						? `${details.meetingTimeRange[0]} - ${details.meetingTimeRange[1]}` 
-						: '無時間範圍';
+                    const meetingTimeRange = document.createElement('div');
+                    meetingTimeRange.className = 'all-meeting-time-range';
+                    meetingTimeRange.textContent = details.meetingTimeRange 
+                        ? `${details.meetingTimeRange[0]} - ${details.meetingTimeRange[1]}` 
+                        : '無時間範圍';
 
-					const timeToggleButton = document.createElement('span');
-					timeToggleButton.className = 'all-meeting-time-toggle-btn fa fa-angle-down';
+                    const timeToggleButton = document.createElement('span');
+                    timeToggleButton.className = 'all-meeting-time-toggle-btn fa fa-angle-down';
 
-					// 直接在 meetingTimeRange 元素上綁定點擊事件
-					meetingTimeRange.addEventListener('click', function() {
-						const isDetailVisible = detailDiv.style.display === 'block';
-						detailDiv.style.display = isDetailVisible ? 'none' : 'block';
+                    // 直接在 meetingTimeRange 元素上綁定點擊事件
+                    meetingTimeRange.addEventListener('click', function() {
+                        const isDetailVisible = detailDiv.style.display === 'block';
+                        detailDiv.style.display = isDetailVisible ? 'none' : 'block';
 
-						// 切換摺疊按鈕圖示
-						timeToggleButton.classList.toggle('fa-angle-down');
-						timeToggleButton.classList.toggle('fa-angle-up');
-					});
+                        // 切換摺疊按鈕圖示
+                        timeToggleButton.classList.toggle('fa-angle-down');
+                        timeToggleButton.classList.toggle('fa-angle-up');
+                    });
 
-					meetingTimeRange.appendChild(timeToggleButton);
-					meetingWrapper.appendChild(iconDiv);
-					meetingWrapper.appendChild(meetingTimeRange);
+                    meetingTimeRange.appendChild(timeToggleButton);
+                    meetingWrapper.appendChild(iconDiv);
+                    meetingWrapper.appendChild(meetingTimeRange);
 
                     const detailDiv = document.createElement('div');
                     detailDiv.className = 'all-details-background-div';
@@ -257,9 +257,9 @@ document.getElementById('all-meeting-result-container').addEventListener('click'
         repeatToggleBtn.classList.toggle('fa-angle-down');
         repeatToggleBtn.classList.toggle('fa-angle-up');
     }
-	
-// 綁定事件在整個 .all-meeting-time-range 上，而不只是 .all-meeting-time-toggle-btn
-if (event.target.closest('.all-meeting-time-range')) {
+    
+    // 綁定事件在整個 .all-meeting-time-range 上，而不只是 .all-meeting-time-toggle-btn
+    if (event.target.closest('.all-meeting-time-range')) {
         const timeRangeDiv = event.target.closest('.all-meeting-time-range');
         const timeToggleBtn = timeRangeDiv.querySelector('.all-meeting-time-toggle-btn');
         
