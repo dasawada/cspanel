@@ -565,14 +565,18 @@
     </div>
 </div>
 <script>
-    document.addEventListener('DOMContentLoaded', function() {
-        flatpickr("#meeting-check-date", {
-            dateFormat: "Y-m-d", // 設置日期格式
-            altInput: true,
-            altFormat: "F j, Y", // 替代顯示格式
-            allowInput: true
-        });
-    });
+document.addEventListener('DOMContentLoaded', function () {
+    setTimeout(function () {
+flatpickr("#meeting-check-date", {
+    dateFormat: "Y-m-d",
+    altInput: true,
+    altFormat: "F j, Y",
+    allowInput: true,
+    appendTo: document.querySelector("#meeting-check-form-container") // 🔧 插入日曆的容器
+});
+
+    }, 100); // 延後100毫秒初始化
+});
 </script>
 	<script src="script/meeting-match-check.js"></script>
 	<script src="script/meeting-now.js"></script>
