@@ -8,11 +8,11 @@ exports.handler = async (event) => {
       throw new Error("缺少 ranges 參數或格式不正確");
     }
 
-    const sheetId = process.env.GOOGLE_SHEET_ID;
+    // 優先使用 GOOGLE_SHEET_VVZM_ID，若不存在則使用 GOOGLE_SHEET_ID
+    const sheetId = process.env.GOOGLE_SHEET_VVZM_ID || process.env.GOOGLE_SHEET_ID;
     if (!sheetId) {
-      throw new Error("缺少 GOOGLE_SHEET_ID 環境變數");
+      throw new Error("缺少有效的 Spreadsheet ID 環境變數");
     }
-
     const apiKey = process.env.GSHEET_API_KEY;
     if (!apiKey) {
       throw new Error("缺少 GSHEET_API_KEY 環境變數");

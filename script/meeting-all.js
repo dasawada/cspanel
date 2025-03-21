@@ -14,42 +14,38 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
     const query = this.value.trim();
     
     if (query !== '') {
-        // 呼叫函數從 Google Sheets 中搜尋會議
-        fetchAllMeetings(query);
+      fetchAllMeetings(query);
     } else {
-        document.getElementById('all-meeting-result-container').innerHTML = '';
-        document.getElementById('all-meeting-result-container').style.display = 'none'; // 隱藏結果區域
+      document.getElementById('all-meeting-result-container').innerHTML = '';
+      document.getElementById('all-meeting-result-container').style.display = 'none';
     }
-});
-
-// Fetch 會議資料
-async function fetchAllMeetings(query) {
-    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';  // 替換為你的 API Key
-    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';  // 替換為你的 Spreadsheet ID
+  });
+  
+  // 使用 Netlify 代理的 batch API 讀取多個範圍
+  async function fetchAllMeetings(query) {
     const ranges = [
-        '「US版Zoom學員名單(5/15)」!A:K',
-        '「騰訊會議(長週期)」!A:K',
-        '「騰訊會議(短週期)」!A:K'
+      '「US版Zoom學員名單(5/15)」!A:K',
+      '「騰訊會議(長週期)」!A:K',
+      '「騰訊會議(短週期)」!A:K'
     ];
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
-
+  
     try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        let filteredMeetings = [];
-        data.valueRanges.forEach(sheetData => {
-            const rows = sheetData.values;
-            const matchingMeetings = rows.filter(row => row[0] && row[0].toLowerCase().includes(query.toLowerCase()));
-            filteredMeetings = filteredMeetings.concat(matchingMeetings);
-        });
-
-        displayMeetings(filteredMeetings);
+      // 使用封裝好的 callGoogleSheetBatchAPI 發送請求
+      const data = await callGoogleSheetBatchAPI({ ranges });
+      let filteredMeetings = [];
+  
+      // 遍歷每個讀取到的 sheet 資料，篩選符合查詢的會議
+      data.valueRanges.forEach(sheetData => {
+        const rows = sheetData.values || [];
+        const matchingMeetings = rows.filter(row => row[0] && row[0].toLowerCase().includes(query.toLowerCase()));
+        filteredMeetings = filteredMeetings.concat(matchingMeetings);
+      });
+  
+      displayMeetings(filteredMeetings);
     } catch (error) {
-        document.getElementById('all-meeting-error').textContent = '請求失敗：' + error.message;
+      document.getElementById('all-meeting-error').textContent = '請求失敗：' + error.message;
     }
-}
+  }  
 
 // 顯示會議名稱和相關資訊，並將邏輯修改為四層結構
 function displayMeetings(meetings) {
