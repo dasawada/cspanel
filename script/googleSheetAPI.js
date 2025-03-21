@@ -16,7 +16,7 @@ export async function callGoogleSheetAPI({ range, method = "GET", payload = null
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(HTTP ${response.status}: ${errorText});
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
   
   return response.json();
@@ -39,7 +39,7 @@ export async function callGoogleMapsAPI({ lat, lon }) {
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(HTTP ${response.status}: ${errorText});
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
   
   return response.json();
@@ -61,7 +61,7 @@ export async function callGoogleSheetBatchAPI({ ranges }) {
   
   if (!response.ok) {
     const errorText = await response.text();
-    throw new Error(HTTP ${response.status}: ${errorText});
+    throw new Error(`HTTP ${response.status}: ${errorText}`);
   }
   
   return response.json();

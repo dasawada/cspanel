@@ -38,7 +38,7 @@ exports.handler = async (event) => {
         throw new Error("缺少 GSHEET_API_KEY 環境變數");
       }
       // 組合 Google Maps 嵌入連結
-      const googleMapsUrl = https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap;
+      const googleMapsUrl = `https://www.google.com/maps/embed/v1/view?key=${apiKey}&center=${lat},${lon}&zoom=11&maptype=roadmap`;
       return {
         statusCode: 200,
         headers: {
@@ -69,7 +69,7 @@ exports.handler = async (event) => {
     const { default: fetch } = await import("node-fetch");
 
     // 組合 Google Sheets API 的 endpoint
-    const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey};
+    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${range}?key=${apiKey}`;
     const options = {
       method: method.toUpperCase(),
       headers: { "Content-Type": "application/json" },
@@ -81,7 +81,7 @@ exports.handler = async (event) => {
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(Google API 回應錯誤: ${response.status} - ${errorText});
+      throw new Error(`Google API 回應錯誤: ${response.status} - ${errorText}`);
     }
 
     const result = await response.json();

@@ -18,8 +18,8 @@ exports.handler = async (event) => {
       throw new Error("缺少 GSHEET_API_KEY 環境變數");
     }
 
-    const rangesQuery = ranges.map(range => ranges=${encodeURIComponent(range)}).join('&');
-    const endpoint = https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchGet?${rangesQuery}&key=${apiKey};
+    const rangesQuery = ranges.map(range => `ranges=${encodeURIComponent(range)}`).join('&');
+    const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values:batchGet?${rangesQuery}&key=${apiKey}`;
 
     const response = await fetch(endpoint, {
       method: "GET",
