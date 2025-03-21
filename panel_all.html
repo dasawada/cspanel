@@ -11,8 +11,6 @@
 </script>
 
 <script src="https://apis.google.com/js/api.js"></script>
-<link rel="stylesheet" type="text/css" href="https://npmcdn.com/flatpickr/dist/themes/dark.css">
-<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>★客服小工具ALL★</title>
@@ -512,7 +510,7 @@
 			<form id="meeting-check-form" style="display: grid; grid-template-columns: repeat(4, 1fr); align-items: center;">
 				<!-- 第一行 -->
 				<div class="meeting-check-form-group">
-					<input type="text" id="meeting-check-date" name="date" placeholder="查詢日期" required style="width: 100%;">
+					<input type="date" id="meeting-check-date" name="date" required style="width: 100%;">
 				</div>
 				<div class="meeting-check-form-group">
 					<input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
@@ -564,20 +562,6 @@
 		</div>
     </div>
 </div>
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    setTimeout(function () {
-flatpickr("#meeting-check-date", {
-    dateFormat: "Y-m-d",
-    altInput: true,
-    altFormat: "F j, Y",
-    allowInput: true,
-    appendTo: document.querySelector("#meeting-check-form-container") // 🔧 插入日曆的容器
-});
-
-    }, 100); // 延後100毫秒初始化
-});
-</script>
 	<script src="script/meeting-match-check.js"></script>
 	<script src="script/meeting-now.js"></script>
     <script src="script/imgcp2bx.js"></script>
