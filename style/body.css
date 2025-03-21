@@ -1,12 +1,15 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap');
+
 body, button, textarea {
-    font-family: 'PingFangHK', 'SanFrancisco', 'SF Pro TC', 'SF Pro Text', 'SF Pro Icons', 'Helvetica Neue', 'Helvetica', 'Arial', 'Microsoft JhengHei', 'Microsoft YaHei', 'sans-serif';
-    position: relative; /* 確保 body 的內容在 header 之上 */
-    z-index: 1; /* 確保 body 的內容在 header 之上 */
-	font-size:13px;
+    font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    font-size: 13px;
+    position: relative;
+    z-index: 1;
 }
-        b, h1, h2, h3, h4, h5, h6 {
-            font-family: 'PingFangHK', 'SanFrancisco', 'Microsoft JhengHei', 'Microsoft YaHei', 'Segoe UI', 'Arial', 'Helvetica Neue', 'Helvetica', 'sans-serif';
-        }
+
+b, h1, h2, h3, h4, h5, h6 {
+    font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Segoe UI', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+}
 .update-header {
     position: fixed;
     top: 0;
