@@ -4,6 +4,8 @@ body, button, textarea {
     font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
     font-size: 13px;
     position: relative;
+    line-height: 1.4;          /* 或具體設為 18px */
+    letter-spacing: 0.01em;
     z-index: 1;
 }
 
