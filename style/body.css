@@ -7,6 +7,7 @@ body, button, textarea {
     line-height: 1.4;          /* 或具體設為 18px */
     letter-spacing: 0.01em;
     z-index: 1;
+    font-weight: 500;
 }
 
 b, h1, h2, h3, h4, h5, h6 {
