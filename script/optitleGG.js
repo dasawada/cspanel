@@ -34,6 +34,7 @@ function checkInputs() {
     clearOutput();
   } else {
     generateText();
+    search(); // added so that search gets triggered on input change
   }
 }
 
@@ -136,84 +137,122 @@ function OPtitle_copyText(e) {
   }, 3000);
 }
 
-// 修改搜尋顧問功能，使用 callGoogleSheetAPI 代理並解析返回數據
+// 新增全域變數，用來存放結構化的 "wtf" 表資料
+let structuredWtfRecords = [];
+
+// 新增：從 "wtf" 表載入資料並轉置為結構化記錄 (每個記錄代表一個欄位)
+function loadWtfData() {
+  return callGoogleSheetAPI({ range: 'wtf!A:Z' })
+    .then(response => {
+      if (!response.values || !response.values.length) {
+        console.error("loadWtfData: 沒有取得資料");
+        return;
+      }
+      // 轉置：假設每個記錄存在同一欄
+      const rows = response.values;
+      const numCols = Math.max(...rows.map(r => r.length));
+      structuredWtfRecords = [];
+      for (let j = 0; j < numCols; j++) {
+        const record = [];
+        for (let i = 0; i < rows.length; i++) {
+          record.push(rows[i][j] ? rows[i][j] : '');
+        }
+        structuredWtfRecords.push(record);
+      }
+      console.log("loadWtfData: 結構化資料", structuredWtfRecords);
+    })
+    .catch(error => console.error("loadWtfData: 錯誤", error));
+}
+
+// 修改搜尋函數，先確保已從 Google Sheets 取得並結構化資料，再在本地搜尋
 function search() {
   const consultantInput = document.getElementById('consultantName');
-  const searchTerm = consultantInput.value.trim().toLowerCase();
+  // 修改：移除所有空白字元以避免空格干擾搜尋
+  const searchTerm = consultantInput.value.replace(/\s/g, '').toLowerCase();
   if (!searchTerm) {
     document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
     document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
     clearOutput();
     return;
   }
+  
   generateText();
-  callGoogleSheetAPI({ range: 'wtf' })
-    .then(response => {
-      let foundRecord = null;
-      response.values.some((row, rowIndex) => {
-        return row.some((cell, colIndex) => {
-          if (cell && cell.trim().toLowerCase() === searchTerm) {
-            foundRecord = {
-              consultant: cell,
-              teamLeader: (response.values[3] && response.values[3][colIndex]) || '',
-              team: (response.values[2] && response.values[2][colIndex]) || ''
-            };
-            return true;
-          }
-          return false;
-        });
+  
+  const proceedSearch = () => {
+    let foundRecord = null;
+    // 遍歷結構化資料，每個 record 為一欄資料陣列
+    structuredWtfRecords.some(record => {
+      return record.some(cell => {
+        // 將 cell 中的空白也全數移除再比較
+        if (cell && cell.replace(/\s/g, '').toLowerCase() === searchTerm) {
+          foundRecord = {
+            consultant: cell,
+            team: record[2] || '',
+            teamLeader: record[3] || ''
+          };
+          return true;
+        }
+        return false;
       });
-      // 清空舊結果
-      document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
-      document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
-      if (foundRecord) {
-        const p = document.createElement('p');
-        const consultantSpan = document.createElement('span');
-        consultantSpan.textContent = foundRecord.consultant;
-        consultantSpan.className = 'green-gradient-text copyable-text';
-        consultantSpan.style.cursor = 'pointer';
-        consultantSpan.title = '點我一下複製名字';
-        consultantSpan.addEventListener('click', () => {
-          const tempInput = document.createElement('input');
-          tempInput.value = foundRecord.consultant.length <= 2 ? foundRecord.consultant.slice(-1) : foundRecord.consultant.slice(-2);
-          document.body.appendChild(tempInput);
-          tempInput.select();
-          document.execCommand('copy');
-          document.body.removeChild(tempInput);
-          consultantSpan.title = '已複製！';
-          setTimeout(() => { consultantSpan.title = '點我一下複製名字'; }, 1000);
-        });
-        const leaderSpan = document.createElement('span');
-        leaderSpan.textContent = foundRecord.teamLeader;
-        leaderSpan.className = 'yellow-gradient-text copyable-text';
-        leaderSpan.style.cursor = 'pointer';
-        leaderSpan.title = '點我一下複製名字';
-        leaderSpan.addEventListener('click', () => {
-          const tempInput = document.createElement('input');
-          tempInput.value = foundRecord.teamLeader.length <= 2 ? foundRecord.teamLeader.slice(-1) : foundRecord.teamLeader.slice(-2);
-          document.body.appendChild(tempInput);
-          tempInput.select();
-          document.execCommand('copy');
-          document.body.removeChild(tempInput);
-          leaderSpan.title = '已複製！';
-          setTimeout(() => { leaderSpan.title = '點我一下複製名字'; }, 1000);
-        });
-        p.appendChild(document.createTextNode('顧問'));
-        p.appendChild(consultantSpan);
-        p.appendChild(document.createTextNode(' 的組長是：'));
-        p.appendChild(leaderSpan);
-        p.appendChild(document.createTextNode(` (team: ${foundRecord.team})`));
-        document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
-      } else {
-        const p = document.createElement('p');
-        p.textContent = `【${searchTerm}】咦？這顧問找不到組長唷ఠ_ఠ`;
-        document.getElementById('search_SAWHO_ResultsDiv').appendChild(p);
-      }
-    })
-    .catch(error => console.error("搜尋錯誤:", error));
+    });
+    // 清空舊結果
+    document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
+    document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
+    if (foundRecord) {
+      const p = document.createElement('p');
+      const consultantSpan = document.createElement('span');
+      consultantSpan.textContent = foundRecord.consultant;
+      consultantSpan.className = 'green-gradient-text copyable-text';
+      consultantSpan.style.cursor = 'pointer';
+      consultantSpan.title = '點我一下複製名字';
+      consultantSpan.addEventListener('click', () => {
+        const tempInput = document.createElement('input');
+        tempInput.value = foundRecord.consultant.length <= 2 ? foundRecord.consultant.slice(-1) : foundRecord.consultant.slice(-2);
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        consultantSpan.title = '已複製！';
+        setTimeout(() => { consultantSpan.title = '點我一下複製名字'; }, 1000);
+      });
+      const leaderSpan = document.createElement('span');
+      leaderSpan.textContent = foundRecord.teamLeader;
+      leaderSpan.className = 'yellow-gradient-text copyable-text';
+      leaderSpan.style.cursor = 'pointer';
+      leaderSpan.title = '點我一下複製名字';
+      leaderSpan.addEventListener('click', () => {
+        const tempInput = document.createElement('input');
+        tempInput.value = foundRecord.teamLeader.length <= 2 ? foundRecord.teamLeader.slice(-1) : foundRecord.teamLeader.slice(-2);
+        document.body.appendChild(tempInput);
+        tempInput.select();
+        document.execCommand('copy');
+        document.body.removeChild(tempInput);
+        leaderSpan.title = '已複製！';
+        setTimeout(() => { leaderSpan.title = '點我一下複製名字'; }, 1000);
+      });
+      p.appendChild(document.createTextNode('顧問'));
+      p.appendChild(consultantSpan);
+      p.appendChild(document.createTextNode(' 的組長是：'));
+      p.appendChild(leaderSpan);
+      p.appendChild(document.createTextNode(` (team: ${foundRecord.team})`));
+      document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
+    } else {
+      const p = document.createElement('p');
+      p.textContent = `【${searchTerm}】咦？這顧問找不到組長唷ఠ_ఠ`;
+      document.getElementById('search_SAWHO_ResultsDiv').appendChild(p);
+    }
+  };
+
+  if(structuredWtfRecords.length === 0) {
+    loadWtfData().then(proceedSearch);
+  } else {
+    proceedSearch();
+  }
 }
 
+// 在 DOMContentLoaded 時先載入結構化資料
 document.addEventListener('DOMContentLoaded', function() {
+  loadWtfData();
   document.getElementById('consultantName').addEventListener('input', checkInputs);
   document.getElementById('studentName').addEventListener('input', checkInputs);
   document.getElementById('parentName').addEventListener('input', checkInputs);
