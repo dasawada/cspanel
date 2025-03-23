@@ -50,9 +50,6 @@ function meetingCheckParseTime(input) {
 }
 
 async function checkMeeting(date, startTime, endTime, meetingType) {
-    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
-    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';
-    
     // 根據選擇的類型設定搜尋的 Sheet 名稱
     let sheetName = '';
     if (meetingType === '長週期') {
@@ -64,9 +61,10 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
     const range = `${sheetName}!A:K`;
 
     try {
-        const response = await fetch(`https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`);
-        const data = await response.json();
-        const rows = data.values;
+        const data = await callGoogleSheetBatchAPI({
+            ranges: [range]
+        });
+        const rows = data.valueRanges[0].values;
 
         const accountResults = {};
         const checkDay = date.getDay();
@@ -81,50 +79,50 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
             6: '六'
         };
 
-for (let i = 1; i < rows.length; i++) {
-    const row = rows[i];
-    if (!row || row.length < 11) continue; // 確保行數據存在並且有足夠的列數 (A 到 K)
-    
-    // 這裡僅處理前 11 個列
-    const relevantData = row.slice(0, 11); // 只獲取 A 到 K 列的數據
+        for (let i = 1; i < rows.length; i++) {
+            const row = rows[i];
+            if (!row || row.length < 11) continue; // 確保行數據存在並且有足夠的列數 (A 到 K)
+            
+            // 這裡僅處理前 11 個列
+            const relevantData = row.slice(0, 11); // 只獲取 A 到 K 列的數據
 
-const meetingName = row[0] || ''; 
-const startDate = row[1] ? new Date(row[1]) : null;
-const endDate = row[7] ? new Date(row[7]) : null;
+            const meetingName = row[0] || ''; 
+            const startDate = row[1] ? new Date(row[1]) : null;
+            const endDate = row[7] ? new Date(row[7]) : null;
 
-if (endDate) {
-    // 設置結束日期為當天的 23:59:59
-    endDate.setHours(23, 59, 59, 999);
-}
+            if (endDate) {
+                // 設置結束日期為當天的 23:59:59
+                endDate.setHours(23, 59, 59, 999);
+            }
 
-// 日誌：記錄撈取到的開始日期和結束日期
-console.log(`第 ${i + 1} 行撈取到的開始日期: ${startDate}, 結束日期: ${endDate}`);
+            // 日誌：記錄撈取到的開始日期和結束日期
+            console.log(`第 ${i + 1} 行撈取到的開始日期: ${startDate}, 結束日期: ${endDate}`);
 
-if (!startDate || !endDate) {
-    console.warn(`第 ${i + 1} 行的日期無效，跳過該行`);
-    continue;
-}
-const meetingTimeRange = row[4] ? row[4].split('-') : null;
-const accountid = row[5] || '';
-const meetingInfo = row[6] || '';
-const repeatPattern = row[2] ? row[2].split(',') : [];
-const label = (row.length > 3 && row[3]) ? row[3] : '';
+            if (!startDate || !endDate) {
+                console.warn(`第 ${i + 1} 行的日期無效，跳過該行`);
+                continue;
+            }
+            const meetingTimeRange = row[4] ? row[4].split('-') : null;
+            const accountid = row[5] || '';
+            const meetingInfo = row[6] || '';
+            const repeatPattern = row[2] ? row[2].split(',') : [];
+            const label = (row.length > 3 && row[3]) ? row[3] : '';
 
-if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
-    console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
-    continue;
-}
+            if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) {
+                console.warn(`第 ${i + 1} 行資料不完整，跳過該行`);
+                continue;
+            }
 
-const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
-const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
+            const meetingStartTime = meetingCheckParseTime(meetingTimeRange[0]);
+            const meetingEndTime = meetingCheckParseTime(meetingTimeRange[1]);
 
-// 日誌：記錄撈取到的會議開始時間和結束時間
-console.log(`會議開始時間: ${meetingStartTime}, 會議結束時間: ${meetingEndTime}`);
+            // 日誌：記錄撈取到的會議開始時間和結束時間
+            console.log(`會議開始時間: ${meetingStartTime}, 會議結束時間: ${meetingEndTime}`);
 
-if (!meetingStartTime || !meetingEndTime) {
-    console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
-    continue;
-}
+            if (!meetingStartTime || !meetingEndTime) {
+                console.warn(`第 ${i + 1} 行的時間範圍無效，跳過該行`);
+                continue;
+            }
 
             const labelTag = label ? `${label}` : '';
 
@@ -157,6 +155,7 @@ if (!meetingStartTime || !meetingEndTime) {
         document.getElementById('meeting-check-error').textContent = '請求失敗：' + error.message;
     }
 }
+
 function formatDateToLocal(date) {
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0'); // 月份从 0 开始

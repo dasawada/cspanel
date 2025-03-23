@@ -8,9 +8,9 @@ exports.handler = async (event) => {
       throw new Error("缺少 ranges 參數或格式不正確");
     }
 
-    const sheetId = process.env.GOOGLE_SHEET_ID;
+    const sheetId = process.env.GOOGLE_SHEET_VVZM_ID;
     if (!sheetId) {
-      throw new Error("缺少 GOOGLE_SHEET_ID 環境變數");
+      throw new Error("缺少 GOOGLE_SHEET_VVZM_ID 環境變數");
     }
 
     const apiKey = process.env.GSHEET_API_KEY;
@@ -32,7 +32,9 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers: {
         "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*"
+        "Access-Control-Allow-Origin": "*", // Add CORS header
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
       },
       body: JSON.stringify(result)
     };
@@ -40,7 +42,12 @@ exports.handler = async (event) => {
     console.error("批次讀取失敗:", error);
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        "Access-Control-Allow-Origin": "*", // Add CORS header
+        "Access-Control-Allow-Headers": "Content-Type",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+      },
       body: JSON.stringify({ error: error.message })
     };
   }
