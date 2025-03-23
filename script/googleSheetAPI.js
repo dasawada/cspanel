@@ -57,10 +57,11 @@ export async function callGoogleSheetBatchAPI({ ranges }) {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
-      "Accept": "application/json"
+      "Accept": "application/json",
+      "Origin": window.location.origin
     },
     mode: 'cors',
-    credentials: 'omit',
+    credentials: 'include',
     body: JSON.stringify({ ranges })
   });
   
