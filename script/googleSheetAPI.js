@@ -56,12 +56,9 @@ export async function callGoogleSheetBatchAPI({ ranges }) {
   const response = await fetch(proxyUrl, {
     method: "POST",
     headers: { 
-      "Content-Type": "application/json",
-      "Accept": "application/json",
-      "Origin": window.location.origin
+      "Content-Type": "application/json"
     },
     mode: 'cors',
-    credentials: 'include',
     body: JSON.stringify({ ranges })
   });
   
