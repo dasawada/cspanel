@@ -1,18 +1,36 @@
 // netlify/functions/googleSheetProxyBatch.js
 const fetch = require("node-fetch");
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "Content-Type, Authorization",
-  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
-};
+const allowedOrigins = [
+  'https://dasawada.github.io',
+  'http://127.0.0.1:5500',
+  'http://localhost:5500'
+];
+
+const corsHeaders = origin => ({
+  'Access-Control-Allow-Origin': origin,
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+  'Access-Control-Allow-Credentials': 'true',
+  'Access-Control-Max-Age': '86400'
+});
 
 exports.handler = async (event) => {
-  // Handle preflight requests
+  const origin = event.headers.origin || event.headers.Origin;
+  
+  // Validate origin
+  if (!allowedOrigins.includes(origin)) {
+    return {
+      statusCode: 403,
+      body: JSON.stringify({ error: 'Origin not allowed' })
+    };
+  }
+
+  // Handle preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 204,
-      headers: corsHeaders,
+      headers: corsHeaders(origin),
       body: ''
     };
   }
@@ -46,7 +64,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        ...corsHeaders,
+        ...corsHeaders(origin),
         "Content-Type": "application/json"
       },
       body: JSON.stringify(result)
@@ -56,7 +74,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: {
-        ...corsHeaders,
+        ...corsHeaders(origin),
         "Content-Type": "application/json"
       },
       body: JSON.stringify({ error: error.message })
