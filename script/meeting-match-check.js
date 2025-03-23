@@ -1,3 +1,5 @@
+import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+
 document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
     event.preventDefault();  // 阻止表單提交
     console.log('表單提交被攔截');
