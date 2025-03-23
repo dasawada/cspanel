@@ -1,7 +1,22 @@
 // netlify/functions/googleSheetProxyBatch.js
 const fetch = require("node-fetch");
 
+const corsHeaders = {
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+};
+
 exports.handler = async (event) => {
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers: corsHeaders,
+      body: ''
+    };
+  }
+
   try {
     const { ranges } = JSON.parse(event.body);
     if (!ranges || !Array.isArray(ranges)) {
@@ -31,10 +46,8 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*", // Add CORS header
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+        ...corsHeaders,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify(result)
     };
@@ -43,10 +56,8 @@ exports.handler = async (event) => {
     return {
       statusCode: 500,
       headers: {
-        "Content-Type": "application/json",
-        "Access-Control-Allow-Origin": "*", // Add CORS header
-        "Access-Control-Allow-Headers": "Content-Type",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS"
+        ...corsHeaders,
+        "Content-Type": "application/json"
       },
       body: JSON.stringify({ error: error.message })
     };

@@ -55,7 +55,12 @@ export async function callGoogleSheetBatchAPI({ ranges }) {
   const proxyUrl = "https://stirring-pothos-28253d.netlify.app/.netlify/functions/googleSheetProxyBatch";
   const response = await fetch(proxyUrl, {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { 
+      "Content-Type": "application/json",
+      "Accept": "application/json"
+    },
+    mode: 'cors',
+    credentials: 'omit',
     body: JSON.stringify({ ranges })
   });
   
