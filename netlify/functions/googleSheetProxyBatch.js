@@ -1,5 +1,4 @@
 // netlify/functions/googleSheetProxyBatch.js
-const fetch = require("node-fetch");
 
 const allowedOrigins = [
   'https://dasawada.github.io',
@@ -14,6 +13,8 @@ const corsHeaders = origin => ({
   'Access-Control-Allow-Credentials': 'true',
   'Access-Control-Max-Age': '86400'
 });
+
+let fetchModule;
 
 exports.handler = async (event) => {
   const origin = event.headers.origin || event.headers.Origin;
@@ -36,6 +37,12 @@ exports.handler = async (event) => {
   }
 
   try {
+    // Dynamically import node-fetch if not already imported
+    if (!fetchModule) {
+      fetchModule = await import('node-fetch');
+    }
+    const fetch = fetchModule.default;
+
     const { ranges } = JSON.parse(event.body);
     if (!ranges || !Array.isArray(ranges)) {
       throw new Error("缺少 ranges 參數或格式不正確");
@@ -77,7 +84,10 @@ exports.handler = async (event) => {
         ...corsHeaders(origin),
         "Content-Type": "application/json"
       },
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({ 
+        error: error.message,
+        details: error.code === 'ERR_REQUIRE_ESM' ? 'Node-fetch import error' : 'Request failed'
+      })
     };
   }
 };
