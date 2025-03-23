@@ -1,5 +1,11 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 
+// 初始化會議分類數組
+let ongoingMeetings = [];
+let upcomingMeetings = [];
+let waitingMeetings = [];
+let endedMeetings = [];
+
 // 點擊 "搜尋今日所有會議" 按鈕時觸發的事件
 document.getElementById('meetingsearch-fetch-meetings').addEventListener('click', async function() {
     const now = new Date();
@@ -32,11 +38,17 @@ document.getElementById('meetingsearch-filter-input').addEventListener('input', 
     meetingsearchFetchMeetings(currentDate, currentTime, localTime, filterText);
 });
 
-// 解析時間字串並返回物件
+// 更新時間解析函數，加入更嚴格的驗證
 function parseTime(input, currentDate) {
-    // 確保輸入是字串
-    input = String(input).trim();
+    // 檢查輸入是否為空或非字串
+    if (!input || typeof input !== 'string') {
+        return null;
+    }
 
+    // 移除所有空白
+    input = input.replace(/\s+/g, '');
+
+    // 檢查是否為有效的時間格式
     const timePattern1 = /^(\d{2})(\d{2})$/; // 0000
     const timePattern2 = /^(\d{2}):(\d{2})$/; // 00:00
     
@@ -44,26 +56,39 @@ function parseTime(input, currentDate) {
     let hours, minutes;
     
     if (match) {
-        // 將時間解析為 hh:mm 格式
         hours = match[1];
         minutes = match[2];
     } else {
         match = input.match(timePattern2);
         if (match) {
-            // 如果已經是 00:00 格式，解析出小時和分鐘
             hours = match[1];
             minutes = match[2];
         } else {
-            // 如果解析失敗，返回 null
             return null;
         }
     }
 
-    // 創建完整的 Date 物件（以 currentDate 為基礎，並應用解析出的時間）
-    const dateTimeString = `${currentDate}T${hours}:${minutes}:00`; // 完整日期時間字串
+    // 驗證時間值的有效性
+    const hoursNum = parseInt(hours, 10);
+    const minutesNum = parseInt(minutes, 10);
+    
+    if (hoursNum < 0 || hoursNum > 23 || minutesNum < 0 || minutesNum > 59) {
+        return null;
+    }
+
+    // 格式化時間，確保是兩位數
+    hours = hours.padStart(2, '0');
+    minutes = minutes.padStart(2, '0');
+
+    // 創建日期對象
+    const dateTimeString = `${currentDate}T${hours}:${minutes}:00`;
     const dateObj = new Date(dateTimeString);
 
-    // 返回包含時間字串、格式化的時間字串以及 Date 物件
+    // 檢查日期對象是否有效
+    if (isNaN(dateObj.getTime())) {
+        return null;
+    }
+
     return {
         original: input,
         formatted: `${hours}:${minutes}`,
@@ -79,19 +104,40 @@ function handleMeetingData(row) {
 
     console.log(parsedTime); // 檢查解析後的時間
 }
+
 // 擴大撈取範圍，包括 zoom、長、短工作表
 async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterText = '') {
     try {
+        // 重置會議數組
+        ongoingMeetings = [];
+        upcomingMeetings = [];
+        waitingMeetings = [];
+        endedMeetings = [];
+
         const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
         const data = await callGoogleSheetBatchAPI({ ranges });
         
         // Process meeting data
-        let allMeetings = [];
         data.valueRanges.forEach((sheet, index) => {
-            const sheetType = index === 0 ? '長週期' : '短週期';
             const rows = sheet.values;
             for (let i = 1; i < rows.length; i++) {
-                const row = rows[i]; // 每一行資料
+                const row = rows[i];
+                
+                // 跳過標題行或空行
+                if (!row || row.length === 0) continue;
+
+                // 檢查並處理時間範圍
+                const meetingTimeRangeString = row[4] || '';
+                if (!meetingTimeRangeString) {
+                    console.warn(`第 ${i + 1} 行時間範圍為空`);
+                    continue;
+                }
+
+                const meetingTimeRange = meetingTimeRangeString.split('-');
+                if (meetingTimeRange.length !== 2 || !meetingTimeRange[0] || !meetingTimeRange[1]) {
+                    console.warn(`第 ${i + 1} 行時間範圍格式無效: ${meetingTimeRangeString}`);
+                    continue;
+                }
 
                 // 根據 F 列前四碼判斷會議類型
                 const accountIdPrefix = row[5]?.slice(0, 4).toLowerCase(); // 取前四個字符，轉為小寫
@@ -110,17 +156,14 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                 const repeatPatternString = row[2] || ''; // 確保有空字串作為默認值
                 const repeatPattern = repeatPatternString ? repeatPatternString.split(',') : []; // 檢查並拆分重複模式
 
-                const meetingTimeRangeString = row[4] || ''; // 確保有一個空字串作為默認值
-                const meetingTimeRange = meetingTimeRangeString ? meetingTimeRangeString.split('-') : []; // 檢查並拆分時間範圍
-
                 // 使用 parseTime 函數來解析時間
-                const meetingStartTimeObj = meetingTimeRange[0] ? parseTime(meetingTimeRange[0], currentDate) : null;
-                const meetingEndTimeObj = meetingTimeRange[1] ? parseTime(meetingTimeRange[1], currentDate) : null;
+                const meetingStartTimeObj = parseTime(meetingTimeRange[0], currentDate);
+                const meetingEndTimeObj = parseTime(meetingTimeRange[1], currentDate);
 
-                // 確認解析是否成功
+                // 如果時間解析失敗，記錄警告並跳過
                 if (!meetingStartTimeObj || !meetingEndTimeObj) {
-                    console.warn(`第 ${i + 1} 行會議時間解析失敗: ${meetingName}`);
-                    continue; // 跳過該行
+                    console.warn(`第 ${i + 1} 行時間解析失敗: ${row[0] || '未命名會議'}`);
+                    continue;
                 }
 
                 // 使用 Date 物件進行比較
@@ -259,7 +302,23 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         }
 
     } catch (error) {
-        document.getElementById('meetingsearch-error').textContent = '請求失敗：' + error.message;
+        console.error('處理會議資料時發生錯誤:', error);
+        const errorDiv = document.getElementById('meetingsearch-error');
+        if (errorDiv) {
+            errorDiv.textContent = `請求失敗：${error.message}`;
+        }
+        
+        // 清空所有會議列表
+        ongoingMeetings = [];
+        upcomingMeetings = [];
+        waitingMeetings = [];
+        endedMeetings = [];
+        
+        // 清空顯示區域
+        const resultDiv = document.getElementById('meetingsearch-account-results');
+        if (resultDiv) {
+            resultDiv.innerHTML = '載入會議資料時發生錯誤';
+        }
     }
 }
 
