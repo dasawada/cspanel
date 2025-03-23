@@ -1,3 +1,5 @@
+import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+
 // 從 Google Sheets 中讀取數據
 async function getSheetData(sheetName) {
     const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw'; // 使用你的 API 密鑰
@@ -367,3 +369,21 @@ window.addEventListener('DOMContentLoaded', async function() {
     await checkForConflictsAndToggleButton(); // 初始檢查
     startConflictCheckInterval(); // 開始定時檢查
 });
+
+async function fetchMeetingsToCompare() {
+    try {
+        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
+        const data = await callGoogleSheetBatchAPI({ ranges });
+        
+        // Process both sheets
+        const allMeetings = [];
+        data.valueRanges.forEach((sheet, index) => {
+            // ...existing code for processing sheet data...
+        });
+        
+        return allMeetings;
+    } catch (error) {
+        console.error('Error fetching meetings for comparison:', error);
+        throw error;
+    }
+}
