@@ -1,3 +1,5 @@
+import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+
 // 定義 dayMapping 在頂部
 const dayMapping = {
     '一': 1,
@@ -24,20 +26,10 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
 
 // Fetch 會議資料
 async function fetchAllMeetings(query) {
-    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';  // 替換為你的 API Key
-    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8';  // 替換為你的 Spreadsheet ID
-    const ranges = [
-        '「US版Zoom學員名單(5/15)」!A:K',
-        '「騰訊會議(長週期)」!A:K',
-        '「騰訊會議(短週期)」!A:K'
-    ];
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values:batchGet?ranges=${ranges.join('&ranges=')}&key=${apiKey}`;
-
     try {
-        const response = await fetch(url);
-        const data = await response.json();
-
+        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
+        const data = await callGoogleSheetBatchAPI({ ranges });
+        
         let filteredMeetings = [];
         data.valueRanges.forEach(sheetData => {
             const rows = sheetData.values;
