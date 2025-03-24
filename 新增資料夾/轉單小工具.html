@@ -151,7 +151,7 @@
     // Constants
     const TEAM_SHEET_ENDPOINT =
       "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
-    const ONE_CLUB_SEARCH_API = "/.netlify/functions/oneclub-customers"
+    const ONE_CLUB_SEARCH_API = "https://api.oneclass.co/oneclub/open/customers/search"
     // Remove ONE_CLUB_JWT constant
     const EDUCATION_MAP = {
       'K': '幼稚園',
@@ -264,15 +264,31 @@
     async function searchOneClubCustomers(name) {
       if (!name) return []
 
-      const url = `${ONE_CLUB_SEARCH_API}?name=${encodeURIComponent(name.trim())}`
-      const res = await fetch(url)
+      try {
+        const url = `${ONE_CLUB_SEARCH_API}?keyword=${encodeURIComponent(name.trim())}`
+        const res = await fetch(url, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json'
+          }
+        })
 
-      if (!res.ok) {
-        throw new Error(`OneClub搜尋API錯誤: ${res.status}`)
+        if (!res.ok) {
+          throw new Error(`OneClub搜尋API錯誤: ${res.status}`)
+        }
+
+        const jsonData = await res.json()
+        if (jsonData.status === 'success' && Array.isArray(jsonData.data)) {
+          return jsonData.data.map(customer => ({
+            oneClubId: customer.id,
+            name: customer.name
+          }))
+        }
+        return []
+      } catch (err) {
+        console.error('OneClub搜尋失敗:', err)
+        return []
       }
-
-      const jsonData = await res.json()
-      return jsonData.data && jsonData.data.customers ? jsonData.data.customers : []
     }
 
     async function fetchDealInfo() {
