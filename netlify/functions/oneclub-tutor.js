@@ -10,18 +10,48 @@ exports.handler = async (event) => {
 
   try {
     const ONE_CLUB_JWT = process.env.ONE_CLUB_JWT;
-    const response = await fetch(
-      `https://api.oneclass.co/staff/customers/${oneClubId}`,
-      {
-        headers: {
-          'Authorization': `Bearer ${ONE_CLUB_JWT}`,
-          'Accept': 'application/json'
-        }
-      }
-    );
+    
+    // 檢查 JWT 是否存在
+    if (!ONE_CLUB_JWT) {
+      console.error('ONE_CLUB_JWT environment variable is not set');
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: 'JWT Configuration Error',
+          details: 'Missing ONE_CLUB_JWT environment variable'
+        })
+      };
+    }
 
+    const apiUrl = `https://api.oneclass.co/staff/customers/${oneClubId}`;
+    console.log('Requesting OneClub API:', apiUrl);
+
+    const response = await fetch(apiUrl, {
+      headers: {
+        'Authorization': `Bearer ${ONE_CLUB_JWT}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    // 詳細的錯誤處理
     if (!response.ok) {
-      throw new Error(`OneClub API error: ${response.status}`);
+      const errorText = await response.text();
+      console.error('OneClub API Error:', {
+        status: response.status,
+        statusText: response.statusText,
+        response: errorText,
+        headers: Object.fromEntries(response.headers)
+      });
+
+      return {
+        statusCode: response.status,
+        body: JSON.stringify({
+          error: 'OneClub API Error',
+          status: response.status,
+          message: response.statusText,
+          details: errorText
+        })
+      };
     }
 
     const data = await response.json();
@@ -33,9 +63,14 @@ exports.handler = async (event) => {
       body: JSON.stringify(data)
     };
   } catch (error) {
+    console.error('OneClub API Request Failed:', error);
     return {
       statusCode: 500,
-      body: JSON.stringify({ error: error.message })
+      body: JSON.stringify({
+        error: 'Internal Server Error',
+        message: error.message,
+        stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
+      })
     };
   }
 };
