@@ -151,8 +151,10 @@
     // Constants
     const TEAM_SHEET_ENDPOINT =
       "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
-    // Update API endpoint to use Netlify function directly
-    const ONE_CLUB_SEARCH_API = "/.netlify/functions/oneclub-customers"
+    
+    // Update these constants to use your Netlify site URL
+    const NETLIFY_SITE_URL = "stirring-pothos-28253d.netlify.app"
+    const ONE_CLUB_SEARCH_API = `${NETLIFY_SITE_URL}/.netlify/functions/oneclub-customers`
     const EDUCATION_MAP = {
       'K': '幼稚園',
       'E': '國小',
@@ -270,7 +272,8 @@
           method: 'GET',
           headers: {
             'Accept': 'application/json'
-          }
+          },
+          mode: 'cors'  // Explicitly set CORS mode
         })
 
         if (!res.ok) {

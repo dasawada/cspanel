@@ -1,6 +1,26 @@
 exports.handler = async (event) => {
+  // Add CORS headers
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, OPTIONS'
+  };
+
+  // Handle preflight requests
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers,
+      body: ''
+    };
+  }
+
   if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { 
+      statusCode: 405, 
+      headers,
+      body: 'Method Not Allowed' 
+    };
   }
 
   const { name } = event.queryStringParameters;
@@ -16,6 +36,7 @@ exports.handler = async (event) => {
       console.error('ONE_CLUB_JWT environment variable is not set');
       return {
         statusCode: 500,
+        headers,
         body: JSON.stringify({
           error: 'JWT Configuration Error',
           details: 'Missing ONE_CLUB_JWT environment variable'
@@ -45,6 +66,7 @@ exports.handler = async (event) => {
 
       return {
         statusCode: response.status,
+        headers,
         body: JSON.stringify({
           error: 'OneClub API Error',
           status: response.status,
@@ -58,6 +80,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
+        ...headers,
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -66,6 +89,7 @@ exports.handler = async (event) => {
     console.error('OneClub API Request Failed:', error);
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({
         error: 'Internal Server Error',
         message: error.message,
