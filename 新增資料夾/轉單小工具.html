@@ -313,7 +313,7 @@
           throw new Error(`Bitrix查詢失敗: ${bitrixRes.status}`)
         }
 
-        const bitrixJson = await res.json()
+        const bitrixJson = await bitrixRes.json()  // Fixed: using bitrixRes instead of res
         if (bitrixJson.error) {
           throw new Error(`Bitrix API錯誤: ${bitrixJson.error_description}`)
         }
