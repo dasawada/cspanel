@@ -151,9 +151,8 @@
     // Constants
     const TEAM_SHEET_ENDPOINT =
       "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
-    const ONE_CLUB_SEARCH_API = "https://api.oneclass.co/staff/customers?skip=0&limit=50&name="
-    const ONE_CLUB_JWT =
-      "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiI0ZTdlNTM0Yy1mMzgyLTQ1ZGUtOGFhYS1lODE2OTE0YWY1Y2YiLCJpYXQiOjE3MzkxNjM5NjksImV4cCI6MTc0NDM0Nzk2OX0.uNm_yUQfEA5Q3BUgmas7bfomOP3-n5kE0xWRoAVhSPI"
+    const ONE_CLUB_SEARCH_API = "/.netlify/functions/oneclub-customers"
+    // Remove ONE_CLUB_JWT constant
     const EDUCATION_MAP = {
       'K': '幼稚園',
       'E': '國小',
@@ -265,14 +264,8 @@
     async function searchOneClubCustomers(name) {
       if (!name) return []
 
-      const url = ONE_CLUB_SEARCH_API + encodeURIComponent(name.trim())
-      const res = await fetch(url, {
-        method: "GET",
-        headers: {
-          Authorization: `Bearer ${ONE_CLUB_JWT}`,
-          Accept: "application/json, text/plain, */*",
-        },
-      })
+      const url = `${ONE_CLUB_SEARCH_API}?name=${encodeURIComponent(name.trim())}`
+      const res = await fetch(url)
 
       if (!res.ok) {
         throw new Error(`OneClub搜尋API錯誤: ${res.status}`)
@@ -494,12 +487,7 @@
         // 如果有 OCID，嘗試獲取 tutor 資料
         if (selectedOneClubId) {
           try {
-            const tutorRes = await fetch(`https://api.oneclass.co/staff/customers/${selectedOneClubId}`, {
-              headers: {
-                Authorization: `Bearer ${ONE_CLUB_JWT}`,
-                Accept: "application/json"
-              }
-            });
+            const tutorRes = await fetch(`/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
             
             if (tutorRes.ok) {
               const tutorData = await tutorRes.json();
