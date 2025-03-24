@@ -151,8 +151,8 @@
     // Constants
     const TEAM_SHEET_ENDPOINT =
       "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
-    // Update API endpoint to use direct OneClass API with proxy
-    const ONE_CLUB_SEARCH_API = "https://api.oneclass.co/oneclub/customers/search"
+    // Update API endpoint to use Netlify function directly
+    const ONE_CLUB_SEARCH_API = "/.netlify/functions/oneclub-customers"
     const EDUCATION_MAP = {
       'K': '幼稚園',
       'E': '國小',
@@ -265,15 +265,11 @@
       if (!name) return []
 
       try {
-        // Use proxy server or CORS anywhere service
-        const proxyUrl = 'https://stirring-pothos-28253d.netlify.app/'
-        const url = `${proxyUrl}${ONE_CLUB_SEARCH_API}?keyword=${encodeURIComponent(name.trim())}`
-        
+        const url = `${ONE_CLUB_SEARCH_API}?name=${encodeURIComponent(name.trim())}`
         const res = await fetch(url, {
           method: 'GET',
           headers: {
-            'Accept': 'application/json',
-            'Origin': window.location.origin
+            'Accept': 'application/json'
           }
         })
 
@@ -282,8 +278,8 @@
         }
 
         const jsonData = await res.json()
-        if (jsonData.status === 'success' && Array.isArray(jsonData.data)) {
-          return jsonData.data.map(customer => ({
+        if (jsonData.data?.customers) {
+          return jsonData.data.customers.map(customer => ({
             oneClubId: customer.id,
             name: customer.name
           }))
@@ -291,7 +287,6 @@
         return []
       } catch (err) {
         console.error('OneClub搜尋失敗:', err)
-        // Return empty array on error to prevent further issues
         return []
       }
     }
@@ -952,7 +947,7 @@ document.addEventListener("DOMContentLoaded", function() {
             }, 520);
           });
       });
-    });
+    }
   }
   document.getElementById("helpButton").addEventListener("click", function() {
   window.open("TESTwhosthere.html", "HelpPopup", "width=650,height=700");
