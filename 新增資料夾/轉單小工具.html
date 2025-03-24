@@ -491,6 +491,27 @@
           selectedOneClubId,
         }
     
+        // 如果有 OCID，嘗試獲取 tutor 資料
+        if (selectedOneClubId) {
+          try {
+            const tutorRes = await fetch(`https://api.oneclass.co/staff/customers/${selectedOneClubId}`, {
+              headers: {
+                Authorization: `Bearer ${ONE_CLUB_JWT}`,
+                Accept: "application/json"
+              }
+            });
+            
+            if (tutorRes.ok) {
+              const tutorData = await tutorRes.json();
+              if (tutorData.status === "success" && tutorData.data?.tutor?.name) {
+                newSheetData.colK = tutorData.data.tutor.name;
+              }
+            }
+          } catch (tutorErr) {
+            console.warn("獲取 tutor 資料失敗:", tutorErr);
+          }
+        }
+    
       } catch (err) {
         resultPre.textContent += "\n錯誤：" + err.message
       }
@@ -858,6 +879,23 @@ document.addEventListener("DOMContentLoaded", function() {
         alert("已複製成交大表資料的內容！");
       });
     });
+
+    // 在生成表格後添加 newCol1 的值變化監聽
+    const newCol1 = bigSheetContainer.querySelector("#newCol1");
+    const colK = document.getElementById("colK");
+    
+    if (newCol1 && colK) {
+      // 監聽 input 事件以即時捕獲變化
+      newCol1.addEventListener("input", function(e) {
+        const newValue = e.target.value;
+        // 如果新值不為空且與 colK 當前值不同，則更新 colK
+        if (newValue && newValue !== colK.value) {
+          colK.value = newValue;
+          // 同時更新 sheetData
+          sheetData.colK = newValue;
+        }
+      });
+    }
   });
 
   // 依照原版邏輯，為指定容器中的每個表頭新增 overlay 複製功能
