@@ -506,7 +506,7 @@
         // 如果有 OCID，嘗試獲取 tutor 資料
         if (selectedOneClubId) {
           try {
-            const tutorRes = await fetch(`/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
+            const tutorRes = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
             
             if (tutorRes.ok) {
               const tutorData = await tutorRes.json();
