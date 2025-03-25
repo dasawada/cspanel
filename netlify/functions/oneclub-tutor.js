@@ -42,8 +42,9 @@ exports.handler = async (event) => {
       };
     }
 
+    // 使用正確的 API 端點獲取輔導資訊
     const apiUrl = `https://api.oneclass.co/staff/customers/${oneClubId}`;
-    console.log('Requesting OneClub API:', apiUrl);
+    console.log('Requesting OneClub Customer Detail API:', apiUrl);
 
     const response = await fetch(apiUrl, {
       headers: {
@@ -78,13 +79,24 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
+    // 確保回傳正確的輔導資訊
+    const formattedData = {
+      status: "success",
+      data: {
+        tutor: {
+          name: data.tutor?.name || data.data?.tutor?.name || '',
+          id: data.tutor?.id || data.data?.tutor?.id || ''
+        }
+      }
+    };
+
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(formattedData)
     };
   } catch (error) {
     console.error('OneClub API Request Failed:', error);
