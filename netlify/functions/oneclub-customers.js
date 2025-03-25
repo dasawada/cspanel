@@ -51,13 +51,14 @@ exports.handler = async (event) => {
       };
     }
 
-    const apiUrl = `https://api.oneclass.co/staff/customers?skip=0&limit=50&name=${encodeURIComponent(name)}`;
-    console.log('Requesting OneClub API:', apiUrl);
 
+    // 使用正確的 API 端點搜尋顧客，使用 name 參數
+    const apiUrl = `https://api.oneclass.co/staff/customers?skip=0&limit=50&name=${encodeURIComponent(name)}`;
+    console.log('Requesting OneClub Customer Search API:', apiUrl);
     const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${ONE_CLUB_JWT}`,
-        'Accept': 'application/json, text/plain, */*'
+        'Accept': 'application/json'
       }
     });
 
@@ -84,13 +85,24 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
+    // 修正資料格式化，確保使用正確的 oneClubId
+    const formattedData = {
+      status: "success",
+      data: {
+        customers: data.data?.map(customer => ({
+          id: customer.oneclubId || '',  // 注意：API 回傳的欄位名稱是 oneclubId
+          name: customer.name || ''
+        })).filter(customer => customer.id) || [] // 過濾掉沒有 id 的資料
+      }
+    };
+
     return {
       statusCode: 200,
       headers: {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(data)
+      body: JSON.stringify(formattedData)
     };
   } catch (error) {
     console.error('OneClub API Request Failed:', error);
