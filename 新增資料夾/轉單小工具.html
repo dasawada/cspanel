@@ -161,6 +161,30 @@
       'J': '國中',
       'H': '高中'
     };
+    
+    async function updateTutorData() {
+      if (selectedOneClubId) {
+        try {
+          const tutorRes = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
+          if (tutorRes.ok) {
+            const tutorData = await tutorRes.json();
+            if (tutorData.status === "success" && tutorData.data?.tutor?.name) {
+              sheetData.colK = tutorData.data.tutor.name;
+              // Update the big sheet's tutor field if available
+              const bigSheetContainer = document.getElementById("bigSheetContainer");
+              if (bigSheetContainer) {
+                const newCol1 = bigSheetContainer.querySelector("#newCol1");
+                if (newCol1) {
+                  newCol1.value = sheetData.colK;
+                }
+              }
+            }
+          }
+        } catch (error) {
+          console.warn("更新 tutor 資料失敗:", error);
+        }
+      }
+    }
 
     const GRADE_MAP = {
       'K': {
@@ -222,7 +246,7 @@
     ocidSelect.addEventListener("change", (e) => {
       selectedOneClubId = e.target.value;
       
-      // 如果成交大表存在，同步更新其 OCID
+      // If the big sheet exists, synchronize its OCID
       const bigSheetContainer = document.getElementById("bigSheetContainer");
       if (bigSheetContainer) {
         const newCol2 = bigSheetContainer.querySelector("#newCol2");
@@ -230,7 +254,10 @@
           newCol2.value = e.target.value;
         }
       }
-    })
+      
+      // Update tutor data (輔導) based on the new OCID
+      updateTutorData();
+    });
 
     // Functions
     async function fetchTeamSheetData() {
