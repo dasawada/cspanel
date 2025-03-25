@@ -1,11 +1,26 @@
 exports.handler = async (event) => {
+  // 處理非 GET 方法
   if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, body: 'Method Not Allowed' };
+    return { 
+      statusCode: 405, 
+      headers: { 
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'text/plain'
+      },
+      body: 'Method Not Allowed' 
+    };
   }
 
   const { oneClubId } = event.queryStringParameters;
   if (!oneClubId) {
-    return { statusCode: 400, body: 'OneClub ID is required' };
+    return { 
+      statusCode: 400, 
+      headers: { 
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: 'OneClub ID is required' }) 
+    };
   }
 
   try {
@@ -16,6 +31,10 @@ exports.handler = async (event) => {
       console.error('ONE_CLUB_JWT environment variable is not set');
       return {
         statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           error: 'JWT Configuration Error',
           details: 'Missing ONE_CLUB_JWT environment variable'
@@ -45,6 +64,10 @@ exports.handler = async (event) => {
 
       return {
         statusCode: response.status,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
         body: JSON.stringify({
           error: 'OneClub API Error',
           status: response.status,
@@ -58,6 +81,7 @@ exports.handler = async (event) => {
     return {
       statusCode: 200,
       headers: {
+        'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
       body: JSON.stringify(data)
@@ -66,6 +90,10 @@ exports.handler = async (event) => {
     console.error('OneClub API Request Failed:', error);
     return {
       statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({
         error: 'Internal Server Error',
         message: error.message,
