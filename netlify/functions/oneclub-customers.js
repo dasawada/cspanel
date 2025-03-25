@@ -85,14 +85,32 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
-    // 修正資料格式化，確保使用正確的 oneClubId
+    console.log('API Response:', JSON.stringify(data)); // 新增日誌以檢查回傳資料結構
+    
+    // 檢查並處理資料結構
+    let customers = [];
+    if (data && Array.isArray(data)) {
+      // 如果直接是陣列
+      customers = data;
+    } else if (data && Array.isArray(data.data)) {
+      // 如果是包在 data 屬性內的陣列
+      customers = data.data;
+    } else if (data && data.data && typeof data.data === 'object') {
+      // 如果是單一物件
+      customers = [data.data];
+    } else {
+      console.error('Unexpected data structure:', data);
+      customers = [];
+    }
+
+    // 重新格式化資料
     const formattedData = {
       status: "success",
       data: {
-        customers: data.data?.map(customer => ({
-          id: customer.oneclubId || '',  // 注意：API 回傳的欄位名稱是 oneclubId
+        customers: customers.map(customer => ({
+          id: customer.oneclubId || '',
           name: customer.name || ''
-        })).filter(customer => customer.id) || [] // 過濾掉沒有 id 的資料
+        })).filter(customer => customer.id)
       }
     };
 

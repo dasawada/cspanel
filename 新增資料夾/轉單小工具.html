@@ -237,7 +237,7 @@
       if (teamSheetDataCache) return teamSheetDataCache
 
       const res = await fetch(TEAM_SHEET_ENDPOINT)
-      if (!res.ok) {f
+      if (!res.ok) {
         throw new Error(`顧問組別 GoogleSheet API 錯誤: ${res.status}`)
       }
 
