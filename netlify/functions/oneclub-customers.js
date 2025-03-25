@@ -51,10 +51,10 @@ exports.handler = async (event) => {
       };
     }
 
-
-    // 使用正確的 API 端點搜尋顧客，使用 name 參數
+    // 還原原始 API 端點
     const apiUrl = `https://api.oneclass.co/staff/customers?skip=0&limit=50&name=${encodeURIComponent(name)}`;
-    console.log('Requesting OneClub Customer Search API:', apiUrl);
+    console.log('Requesting OneClub API:', apiUrl);
+
     const response = await fetch(apiUrl, {
       headers: {
         'Authorization': `Bearer ${ONE_CLUB_JWT}`,
@@ -85,42 +85,13 @@ exports.handler = async (event) => {
     }
 
     const data = await response.json();
-    console.log('API Response:', JSON.stringify(data)); // 新增日誌以檢查回傳資料結構
-    
-    // 檢查並處理資料結構
-    let customers = [];
-    if (data && Array.isArray(data)) {
-      // 如果直接是陣列
-      customers = data;
-    } else if (data && Array.isArray(data.data)) {
-      // 如果是包在 data 屬性內的陣列
-      customers = data.data;
-    } else if (data && data.data && typeof data.data === 'object') {
-      // 如果是單一物件
-      customers = [data.data];
-    } else {
-      console.error('Unexpected data structure:', data);
-      customers = [];
-    }
-
-    // 重新格式化資料
-    const formattedData = {
-      status: "success",
-      data: {
-        customers: customers.map(customer => ({
-          id: customer.oneclubId || '',
-          name: customer.name || ''
-        })).filter(customer => customer.id)
-      }
-    };
-
     return {
       statusCode: 200,
       headers: {
         ...headers,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(formattedData)
+      body: JSON.stringify(data)
     };
   } catch (error) {
     console.error('OneClub API Request Failed:', error);
