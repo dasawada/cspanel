@@ -25,7 +25,14 @@ exports.handler = async (event) => {
 
   const { name } = event.queryStringParameters;
   if (!name) {
-    return { statusCode: 400, body: 'Name parameter is required' };
+    return { 
+      statusCode: 400, 
+      headers: {
+        ...headers,
+        'Content-Type': 'text/plain'
+      },
+      body: 'Name parameter is required' 
+    };
   }
 
   try {
