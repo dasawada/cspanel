@@ -283,7 +283,7 @@
         const jsonData = await res.json()
         if (jsonData.data?.customers) {
           return jsonData.data.customers.map(customer => ({
-            oneClubId: customer.id,
+            oneClubId: customer.oneClubId,
             name: customer.name
           }))
         }
