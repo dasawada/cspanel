@@ -1,7 +1,5 @@
 function formatDateTime(datetime) {
-    if (!datetime) {
-        return '';
-    }
+    if (!datetime) return '';
     const date = new Date(datetime);
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -12,84 +10,19 @@ function formatDateTime(datetime) {
     return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
-        document.getElementById('DT_form').addEventListener('submit', function (e) {
-            e.preventDefault(); // 阻止表单的默认提交行为
-            generateOutput(); // 直接生成输出
-
-    // 清除舊的錯誤訊息
-    document.querySelectorAll('.error').forEach(function (el) {
-        el.style.display = 'none';
-    });
-
-    document.querySelectorAll('.device-group').forEach(function (el, index) {
-        const deviceIndex = index + 1;
-        const osId = `DT_os_${deviceIndex}`;
-        const osVersionId = `DT_os_version_${deviceIndex}`;
-        const videoSpecName = `video_spec_${deviceIndex}`;
-        const videoQualityName = `video_quality_${deviceIndex}`;
-        const audioSpecName = `audio_spec_${deviceIndex}`;
-        const audioQualityName = `audio_quality_${deviceIndex}`;
-
-        if (!document.getElementById(osVersionId).value || document.getElementById(`DT_device_${deviceIndex}`).value === '-') {
-            document.getElementById(`error_device_os_${deviceIndex}`).style.display = 'block';
-            errors = true;
-        }
-
-        if (!document.querySelector(`input[name="${videoSpecName}"]:checked`) || !document.querySelector(`input[name="${videoQualityName}"]:checked`)) {
-            document.getElementById(`error_video_${deviceIndex}`).style.display = 'block';
-            errors = true;
-        }
-
-        if (!document.querySelector(`input[name="${audioSpecName}"]:checked`) || !document.querySelector(`input[name="${audioQualityName}"]:checked`)) {
-            document.getElementById(`error_audio_${deviceIndex}`).style.display = 'block';
-            errors = true;
-        }
-    });
-
-    document.querySelectorAll('.connection-group').forEach(function (el, index) {
-        const connectionIndex = index + 1;
-        const providerId = `DT_provider_${connectionIndex}`;
-        const connectionId = `DT_connection_${connectionIndex}`;
-
-        if (!document.getElementById(providerId).value || document.getElementById(connectionId).value === '-') {
-            document.getElementById(`error_connection_${connectionIndex}`).style.display = 'block';
-            errors = true;
-        }
-    });
-
-    if (!document.querySelector('input[name="suitable"]:checked')) {
-        document.getElementById('error_suitable').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_issues').value) {
-        document.getElementById('error_issues').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_process').value) {
-        document.getElementById('error_process').style.display = 'block';
-        errors = true;
-    }
-    if (!document.getElementById('DT_boldbrief').value) {
-        document.getElementById('error_boldbrief').style.display = 'block';
-        errors = true;
+// Move event listener inside DOMContentLoaded
+document.addEventListener('DOMContentLoaded', function() {
+    const DT_form = document.querySelector('.form_container');
+    if (!DT_form) {
+        console.warn('Device testing form not found');
+        return;
     }
 
-    if (!errors) {
+    DT_form.addEventListener('submit', function(e) {
+        e.preventDefault();
         generateOutput();
-    }
-});
+    });
 
-// 多行內容斷行判斷
-function escapeHtml(text) {
-    return text
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
-}
-
-document.addEventListener('DOMContentLoaded', (event) => {
     function setupToggle(containerClass, checkboxId) {
         const container = document.querySelector(containerClass);
         const checkbox = document.getElementById(checkboxId);
@@ -118,121 +51,51 @@ document.addEventListener('DOMContentLoaded', (event) => {
         }
     }
 
-    setupToggle('.consultantlistgooglesheet', 'toggleCheckbox');
-    setupToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
-    setupToggle('.ClassLogpanel', 'logToggleCheckbox');
-});
+    // 初始化所有面板
+    const panels = [
+        {class: '.consultantlistgooglesheet', id: 'toggleCheckbox'},
+        {class: '.idsearchpanel', id: 'NaniClub_toggleCheckbox'},
+        {class: '.ClassLogpanel', id: 'logToggleCheckbox'},
+        {class: '.DT_panel', id: 'DT_toggleCheckbox'},
+        {class: '.assist_googlesheet', id: 'assist_toggleCheckbox'},
+        {class: '.assist-issue', id: 'assist-issue-toggleCheckbox'}
+    ];
 
-//error alart
-function validateForm() {
-    let errors = false;
+    panels.forEach(panel => {
+        setupToggle(panel.class, panel.id);
+    });
 
-    // 檢查日期時間、姓名、電話和測試工程師字段
-    if (!document.getElementById('DT_datetime').value || 
-        !document.getElementById('DT_name').value || 
-        !document.getElementById('DT_phone').value || 
-        !document.getElementById('DT_project').value) {
+    // Form validation setup
+    const form = document.querySelector('.form_container');
+    if (form) {
+        const requiredFields = form.querySelectorAll('[required]');
         
-        if (!document.getElementById('DT_datetime').value) {
-            document.getElementById('error_datetime').style.display = 'block';
-        }
-        if (!document.getElementById('DT_name').value || !document.getElementById('DT_phone').value) {
-            document.getElementById('error_name_phone').style.display = 'block';
-        }
-        if (!document.getElementById('DT_project').value) {
-            document.getElementById('error_project').style.display = 'block';
-        }
-        errors = true;
-    }
+        form.addEventListener('submit', function(e) {
+            let isValid = true;
 
-    // 檢查每個設備組
-    document.querySelectorAll('.device-group').forEach(function (el, index) {
-        const deviceIndex = index + 1;
-        const device = document.getElementById(`DT_device_${deviceIndex}`).value;
-        const os = document.getElementById(`DT_os_${deviceIndex}`).value;
-        const errorElement = document.getElementById(`error_device_os_${deviceIndex}`);
+            requiredFields.forEach(field => {
+                if (!field.value.trim()) {
+                    isValid = false;
+                    field.classList.add('error');
+                } else {
+                    field.classList.remove('error');
+                }
+            });
 
-        if (!device || device === "-" || !os || os === "-") {
-            errorElement.style.display = 'block';
-            errors = true;
-        } else {
-            errorElement.style.display = 'none';
-        }
+            if (!isValid) {
+                e.preventDefault();
+                alert('請填寫所有必填欄位');
+            }
+        });
 
-        const videoSpec = document.querySelector(`input[name="video_spec_${deviceIndex}"]:checked`);
-        const videoQuality = document.querySelector(`input[name="video_quality_${deviceIndex}"]:checked`);
-        const videoErrorElement = document.getElementById(`error_video_${deviceIndex}`);
-
-        if (!videoSpec || !videoQuality) {
-            videoErrorElement.style.display = 'block';
-            errors = true;
-        } else {
-            videoErrorElement.style.display = 'none';
-        }
-
-        const audioSpec = document.querySelector(`input[name="audio_spec_${deviceIndex}"]:checked`);
-        const audioQuality = document.querySelector(`input[name="audio_quality_${deviceIndex}"]:checked`);
-        const audioErrorElement = document.getElementById(`error_audio_${deviceIndex}`);
-
-        if (!audioSpec || !audioQuality) {
-            audioErrorElement.style.display = 'block';
-            errors = true;
-        } else {
-            audioErrorElement.style.display = 'none';
-        }
-    });
-
-    // 檢查每個連線組
-    document.querySelectorAll('.connection-group').forEach(function (el, index) {
-        const connectionIndex = index + 1;
-        const provider = document.getElementById(`DT_provider_${connectionIndex}`).value;
-        const connection = document.getElementById(`DT_connection_${connectionIndex}`).value;
-        const errorElement = document.getElementById(`error_connection_${connectionIndex}`);
-
-        if (!provider || provider.trim() === "" || !connection || connection === "-") {
-            errorElement.style.display = 'block';
-            errors = true;
-        } else {
-            errorElement.style.display = 'none';
-        }
-    });
-
-    // 檢查適合上課的選擇
-    const suitable = document.querySelector('input[name="suitable"]:checked');
-    if (!suitable) {
-        document.getElementById('error_suitable').style.display = 'block';
-        errors = true;
-    } else {
-        document.getElementById('error_suitable').style.display = 'none';
-    }
-
-    // 檢查測試問題和處理過程字段
-    if (!document.getElementById('DT_issues').value) {
-        document.getElementById('error_issues').style.display = 'block';
-        errors = true;
-    } else {
-        document.getElementById('error_issues').style.display = 'none';
-    }
-    if (!document.getElementById('DT_process').value) {
-        document.getElementById('error_process').style.display = 'block';
-        errors = true;
-    } else {
-        document.getElementById('error_process').style.display = 'none';
-    }
-
-    if (!document.getElementById('DT_boldbrief').value) {
-        document.getElementById('error_boldbrief').style.display = 'block';
-        errors = true;
-    } else {
-        document.getElementById('error_boldbrief').style.display = 'none';
-    }
-
-    return !errors;
-}
-
-document.getElementById('DT_form').addEventListener('submit', function (e) {
-    e.preventDefault();
-    if (validateForm()) {
-        generateOutput();
+        requiredFields.forEach(field => {
+            field.addEventListener('input', function() {
+                if (this.value.trim()) {
+                    this.classList.remove('error');
+                } else {
+                    this.classList.add('error');
+                }
+            });
+        });
     }
 });

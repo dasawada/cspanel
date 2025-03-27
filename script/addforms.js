@@ -1,4 +1,3 @@
-
 let deviceCount = 1;
 let connectionCount = 1;
 
@@ -16,7 +15,7 @@ function addDevice() {
             <div><label for="DT_device_${deviceCount}">設備<span class="red-asterisk">*</span></label></div>
             <div><label for="DT_brand_${deviceCount}">品牌<span class="red-asterisk">*</span></label></div>
             <div><label for="DT_os_${deviceCount}">作業系統<span class="red-asterisk">*</span></label></div>
-            <div><label for="DT_os_version_${deviceCount}">版本/硬體條件<span class="red-asterisk">*</span></label></div>
+            <div><label for="DT_os_version_${deviceCount}">版本/硬體<span class="red-asterisk">*</span></label></div>
             <div><label for="DT_browser_${deviceCount}">瀏覽器<span class="red-asterisk">*</span></label></div>
         </div>
         <div class="row">
@@ -51,27 +50,26 @@ function addDevice() {
         </div>
         <div class="DTDV_grid-container">
             <div class="DTDV_grid-item">
-                <label>視訊規格：<span class="red-asterisk">*</span></label>
-                <input type="radio" id="DT_video_spec_internal_${deviceCount}" name="video_spec_${deviceCount}" value="內建" ><label for="DT_video_spec_internal_${deviceCount}">內建</label>
-                <input type="radio" id="DT_video_spec_external_${deviceCount}" name="video_spec_${deviceCount}" value="外接" ><label for="DT_video_spec_external_${deviceCount}">外接</label>
+                <label><i class="fa-solid fa-camera"></i> ：</label>
+                <input type="radio" id="DT_video_spec_internal_${deviceCount}" name="video_spec_${deviceCount}" value="內建"><label for="DT_video_spec_internal_${deviceCount}">內建</label>
+                <input type="radio" id="DT_video_spec_external_${deviceCount}" name="video_spec_${deviceCount}" value="外接"><label for="DT_video_spec_external_${deviceCount}">外接</label>
             </div>
             <div class="DTDV_grid-item">
-                <label>視訊品質：<span class="red-asterisk">*</span></label>
-                <input type="radio" id="DT_video_quality_clear_${deviceCount}" name="video_quality_${deviceCount}" value="清晰" ><label for="DT_video_quality_clear_${deviceCount}">清晰</label>
-                <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳" ><label for="DT_video_quality_poor_${deviceCount}">不佳</label>
-                <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試" ><label for="DT_video_quality_untested_${deviceCount}">未測試</label>
-            </div>
-			
-            <div class="DTDV_grid-item">
-                <label>耳麥規格：<span class="red-asterisk">*</span></label>
-                <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建" ><label for="DT_audio_spec_internal_${deviceCount}">內建</label>
-                <input type="radio" id="DT_audio_spec_external_${deviceCount}" name="audio_spec_${deviceCount}" value="外接" ><label for="DT_audio_spec_external_${deviceCount}">外接</label>
+                <label>品質：</label>
+                <input type="radio" id="DT_video_quality_clear_${deviceCount}" name="video_quality_${deviceCount}" value="清晰"><label for="DT_video_quality_clear_${deviceCount}">清晰</label>
+                <input type="radio" id="DT_video_quality_poor_${deviceCount}" name="video_quality_${deviceCount}" value="不佳"><label for="DT_video_quality_poor_${deviceCount}">不佳</label>
+                <input type="radio" id="DT_video_quality_untested_${deviceCount}" name="video_quality_${deviceCount}" value="未測試"><label for="DT_video_quality_untested_${deviceCount}">未測試</label>
             </div>
             <div class="DTDV_grid-item">
-                <label>聲音品質：<span class="red-asterisk">*</span></label>
-                <input type="radio" id="DT_audio_quality_clear_${deviceCount}" name="audio_quality_${deviceCount}" value="清晰" ><label for="DT_audio_quality_clear_${deviceCount}">清晰</label>
-                <input type="radio" id="DT_audio_quality_poor_${deviceCount}" name="audio_quality_${deviceCount}" value="不佳" ><label for="DT_audio_quality_poor_${deviceCount}">不佳</label>
-                <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試" ><label for="DT_audio_quality_untested_${deviceCount}">未測試</label>
+                <label><i class="fa-solid fa-headphones"></i> ：</label>
+                <input type="radio" id="DT_audio_spec_internal_${deviceCount}" name="audio_spec_${deviceCount}" value="內建"><label for="DT_audio_spec_internal_${deviceCount}">內建</label>
+                <input type="radio" id="DT_audio_spec_external_${deviceCount}" name="audio_spec_${deviceCount}" value="外接"><label for="DT_audio_spec_external_${deviceCount}">外接</label>
+            </div>
+            <div class="DTDV_grid-item">
+                <label>品質：</label>
+                <input type="radio" id="DT_audio_quality_clear_${deviceCount}" name="audio_quality_${deviceCount}" value="清晰"><label for="DT_audio_quality_clear_${deviceCount}">清晰</label>
+                <input type="radio" id="DT_audio_quality_poor_${deviceCount}" name="audio_quality_${deviceCount}" value="不佳"><label for="DT_audio_quality_poor_${deviceCount}">不佳</label>
+                <input type="radio" id="DT_audio_quality_untested_${deviceCount}" name="audio_quality_${deviceCount}" value="未測試"><label for="DT_audio_quality_untested_${deviceCount}">未測試</label>
             </div>
         </div>
     `;
@@ -82,7 +80,7 @@ function removeDevice(button) {
     const deviceGroup = button.closest('.device-group');
     deviceGroup.remove();
 }
-	
+    
 function addConnection() {
     connectionCount++;
     const connectionContainer = document.getElementById('DT_connections');

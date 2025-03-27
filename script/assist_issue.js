@@ -1,4 +1,4 @@
-        function assistIssueEscapeHtml(text) {
+function assistIssueEscapeHtml(text) {
             return text
                 .replace(/&/g, "&amp;")
                 .replace(/</g, "&lt;")
@@ -64,46 +64,61 @@
             document.getElementById('assist-issue-outputContainer').innerHTML = '';
         }
 
-        document.getElementById('assist-issue-classInfo').addEventListener('input', assistIssueGenerateOutput);
-        document.getElementById('assist-issue-issueDescription').addEventListener('input', assistIssueGenerateOutput);
-        document.getElementById('assist-issue-clearButton').addEventListener('click', assistIssueClearFields);
+        function assistIssueCopyContent() {
+            const outputContainer = document.getElementById('assist-issue-outputContainer');
+            const copyButton = document.getElementById('assist-issue-copyButton');
+            const range = document.createRange();
+            range.selectNode(outputContainer);
+            window.getSelection().removeAllRanges(); // Clear any existing selections
+            window.getSelection().addRange(range);
 
-        document.getElementById('assist-issue-toggleCheckbox').addEventListener('change', function() {
+            try {
+                document.execCommand('copy');
+                copyButton.textContent = '已複製';
+                copyButton.classList.add('copied');
+                setTimeout(() => {
+                    copyButton.textContent = '複製內容';
+                    copyButton.classList.remove('copied');
+                }, 2000); // 2秒後恢復按鈕文字和樣式
+            } catch (err) {
+                copyButton.textContent = '複製失敗';
+                setTimeout(() => {
+                    copyButton.textContent = '複製內容';
+                }, 2000); // 2秒後恢復按鈕文字
+            }
+
+            window.getSelection().removeAllRanges(); // Clear the selection
+        }
+
+        document.addEventListener('DOMContentLoaded', function() {
+            const toggleCheckbox = document.getElementById('assist-issue-toggleCheckbox');
             const content = document.getElementById('assist-issue-content');
-            if (this.checked) {
-                content.style.display = 'block';
-            } else {
-                content.style.display = 'none';
+            
+            if (toggleCheckbox && content) {
+                toggleCheckbox.addEventListener('change', function() {
+                    content.style.display = this.checked ? 'block' : 'none';
+                });
+            }
+
+            // 其他事件監聽器
+            const classInfo = document.getElementById('assist-issue-classInfo');
+            const issueDescription = document.getElementById('assist-issue-issueDescription');
+            const clearButton = document.getElementById('assist-issue-clearButton');
+            const copyButton = document.getElementById('assist-issue-copyButton');
+
+            if (classInfo) {
+                classInfo.addEventListener('input', assistIssueGenerateOutput);
+            }
+            if (issueDescription) {
+                issueDescription.addEventListener('input', assistIssueGenerateOutput);
+            }
+            if (clearButton) {
+                clearButton.addEventListener('click', assistIssueClearFields);
+            }
+            if (copyButton) {
+                copyButton.addEventListener('click', assistIssueCopyContent);
             }
         });
-		
-function assistIssueCopyContent() {
-    const outputContainer = document.getElementById('assist-issue-outputContainer');
-    const copyButton = document.getElementById('assist-issue-copyButton');
-    const range = document.createRange();
-    range.selectNode(outputContainer);
-    window.getSelection().removeAllRanges(); // Clear any existing selections
-    window.getSelection().addRange(range);
-
-    try {
-        document.execCommand('copy');
-        copyButton.textContent = '已複製';
-        copyButton.classList.add('copied');
-        setTimeout(() => {
-            copyButton.textContent = '複製內容';
-            copyButton.classList.remove('copied');
-        }, 2000); // 2秒後恢復按鈕文字和樣式
-    } catch (err) {
-        copyButton.textContent = '複製失敗';
-        setTimeout(() => {
-            copyButton.textContent = '複製內容';
-        }, 2000); // 2秒後恢復按鈕文字
-    }
-
-    window.getSelection().removeAllRanges(); // Clear the selection
-}
-
-document.getElementById('assist-issue-copyButton').addEventListener('click', assistIssueCopyContent);
 
 
 

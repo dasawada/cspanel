@@ -1,90 +1,100 @@
-document.getElementById('toggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.consultantlistgooglesheet #content');
-    const container = document.querySelector('.consultantlistgooglesheet');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+// 定義面板配置
+const PANEL_CONFIG = {
+    'toggleCheckbox': {
+        containerClass: '.consultantlistgooglesheet',
+        contentId: 'content'
+    },
+    'NaniClub_toggleCheckbox': {
+        containerClass: '.idsearchpanel',
+        contentId: 'content'
+    },
+    'logToggleCheckbox': {
+        containerClass: '.ClassLogpanel',
+        contentId: 'content'
+    },
+    'DT_toggleCheckbox': {
+        containerClass: '.DT_panel',
+        contentId: 'content'
+    },
+    'assist_toggleCheckbox': {
+        containerClass: '.assist_googlesheet',
+        contentId: 'content'
+    },
+    'assist-issue-toggleCheckbox': {
+        containerClass: '.assist-issue',
+        contentId: 'assist-issue-content'
     }
-});
+};
 
-document.getElementById('NaniClub_toggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.idsearchpanel #content');
-    const container = document.querySelector('.idsearchpanel');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+// 統一的面板處理器
+class PanelHandler {
+    constructor(configs) {
+        this.configs = configs;
+        this.init();
     }
-});
 
-document.getElementById('logToggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.ClassLogpanel #content');
-    const container = document.querySelector('.ClassLogpanel');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+    init() {
+        window.addEventListener('DOMContentLoaded', () => {
+            this.initializePanels();
+            this.setupEventListeners();
+        });
     }
-});
 
-document.getElementById('DT_toggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.DT_panel #content');
-    const container = document.querySelector('.DT_panel');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+    initializePanels() {
+        Object.keys(this.configs).forEach(checkboxId => {
+            try {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.checked = false;
+                    const container = document.querySelector(this.configs[checkboxId].containerClass);
+                    if (container) {
+                        container.classList.add('small-size');
+                        const content = container.querySelector(`#${this.configs[checkboxId].contentId}`);
+                        if (content) {
+                            content.style.display = 'none';
+                        }
+                    }
+                }
+            } catch (error) {
+                console.warn(`初始化面板失敗: ${checkboxId}`, error);
+            }
+        });
     }
-});
 
-document.getElementById('assist_toggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.assist_googlesheet #content');
-    const container = document.querySelector('.assist_googlesheet');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+    setupEventListeners() {
+        Object.keys(this.configs).forEach(checkboxId => {
+            try {
+                const checkbox = document.getElementById(checkboxId);
+                if (checkbox) {
+                    checkbox.addEventListener('change', (event) => this.handlePanelToggle(event));
+                }
+            } catch (error) {
+                console.warn(`設置事件監聽器失敗: ${checkboxId}`, error);
+            }
+        });
     }
-});
 
-document.getElementById('assist-issue-toggleCheckbox').addEventListener('change', function() {
-    const content = document.querySelector('.assist-issue #content');
-    const container = document.querySelector('.assist-issue');
-    if (this.checked) {
-        container.classList.remove('small-size');
-        content.style.display = 'block';
-    } else {
-        container.classList.add('small-size');
-        content.style.display = 'none';
+    handlePanelToggle(event) {
+        const checkboxId = event.target.id;
+        const config = this.configs[checkboxId];
+        if (!config) return;
+
+        try {
+            const container = document.querySelector(config.containerClass);
+            const content = container.querySelector(`#${config.contentId}`);
+            
+            if (event.target.checked) {
+                container.classList.remove('small-size');
+                content.style.display = 'block';
+            } else {
+                container.classList.add('small-size');
+                content.style.display = 'none';
+            }
+        } catch (error) {
+            console.warn(`切換面板失敗: ${checkboxId}`, error);
+        }
     }
-});
+}
 
-window.addEventListener('DOMContentLoaded', (event) => {
-    const initToggle = (containerSelector, checkboxId) => {
-        const container = document.querySelector(containerSelector);
-        const content = container.querySelector('#content');
-        const checkbox = document.getElementById(checkboxId);
-        checkbox.checked = false;
-        container.classList.add('small-size');
-        content.style.display = 'none';
-    };
-	
-
-    initToggle('.consultantlistgooglesheet', 'toggleCheckbox');
-    initToggle('.idsearchpanel', 'NaniClub_toggleCheckbox');
-    initToggle('.ClassLogpanel', 'logToggleCheckbox');
-    initToggle('.DT_panel', 'DT_toggleCheckbox');
-    initToggle('.assist_googlesheet', 'assist_toggleCheckbox');
-	initToggle('.assist-issue', 'assist-issue-toggleCheckbox');
-});
+// 創建面板處理器實例
+new PanelHandler(PANEL_CONFIG);

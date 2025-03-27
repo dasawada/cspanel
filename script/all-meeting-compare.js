@@ -2,18 +2,13 @@ import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 
 // 從 Google Sheets 中讀取數據
 async function getSheetData(sheetName) {
-    const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw'; // 使用你的 API 密鑰
-    const spreadsheetId = '1zL2qD_CXmtXc24uIgUNsHmWEoieiLQQFvMOqKQ6HI_8'; // 使用你的 Spreadsheet ID
-    const range = `${sheetName}!A:K`; // 設定要讀取的範圍 (從 A 到 K 列)
-
-    const url = `https://sheets.googleapis.com/v4/spreadsheets/${spreadsheetId}/values/${range}?key=${apiKey}`;
-
+    const range = `${sheetName}!A:K`;
     try {
-        const response = await fetch(url);
-        const data = await response.json();
-
-        if (data && data.values) {
-            return data.values; // 返回工作表中的數據
+        const data = await callGoogleSheetBatchAPI({
+            ranges: [range]
+        });
+        if (data && data.valueRanges && data.valueRanges[0].values) {
+            return data.valueRanges[0].values;
         } else {
             console.error('未能獲取到數據或數據結構不正確', data);
             return [];
@@ -378,7 +373,10 @@ async function fetchMeetingsToCompare() {
         // Process both sheets
         const allMeetings = [];
         data.valueRanges.forEach((sheet, index) => {
-            // ...existing code for processing sheet data...
+            if (sheet.values) {
+                const sheetMeetings = processMeetingData(sheet.values);
+                allMeetings.push(...sheetMeetings);
+            }
         });
         
         return allMeetings;
