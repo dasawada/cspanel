@@ -1,0 +1,18 @@
+/* Test Report Specific Styles */
+.device-group,
+.connection-group {
+    font-size: 13px;
+}
+
+.device-group input,
+.device-group select,
+.device-group textarea,
+.connection-group input,
+.connection-group select,
+.connection-group textarea {
+    font-size: 13px;
+}
+
+.DTDV_grid-container {
+    font-size: 13px;
+}

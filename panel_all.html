@@ -26,6 +26,7 @@
 <link rel="stylesheet" href="style/meeting-match-check.css">
 <link rel="stylesheet" href="style/all-meeting.css">
 <link rel="stylesheet" href="style/shrturl.css">
+<link rel="stylesheet" href="style/report.css">
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -120,15 +121,15 @@
 </div>
 
 <!-- 測試模板 -->
-<div class="DT_panel small-size">
+<div class="DT_panel small-size" style="z-index: 0;">
     <div class="toggle-container">
         <input type="checkbox" id="DT_toggleCheckbox">
         <label for="DT_toggleCheckbox">🛠️測試模板</label>
     </div>
-<div id="content" style="display: none;">
+<div id="content" style="display: none; max-height: 80vh; overflow-y: auto;">
 <div class="form_container">
-<div class="DT_top_panel">
-    <form id="DT_form">
+    <div class="DT_left_panel">
+        <!-- 移動基本資訊部分到左側 -->
         <div class="form-group">
             <label for="DT_datetime">日期時間：<span class="red-asterisk">*</span></label>
             <input type="text" id="DT_datetime" name="datetime" placeholder="YYYY/MM/DD hh:mm">
@@ -187,7 +188,7 @@
                     </div>
                     <div class="DTDV_grid-container">
                         <div class="DTDV_grid-item">
-                            <label><i class="fa-solid fa-camera"></i> 規格：</label>
+                            <label><i class="fa-solid fa-camera"></i> ：</label>
                             <input type="radio" id="DT_video_spec_internal_1" name="video_spec_1" value="內建"><label for="DT_video_spec_internal_1">內建</label>
                             <input type="radio" id="DT_video_spec_external_1" name="video_spec_1" value="外接"><label for="DT_video_spec_external_1">外接</label>
                         </div>
@@ -200,7 +201,7 @@
                         </div>
 						
                         <div class="DTDV_grid-item">
-                            <label><i class="fa-solid fa-headphones"></i> 規格：</label>
+                            <label><i class="fa-solid fa-headphones"></i> ：</label>
                             <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建"><label for="DT_audio_spec_internal_1">內建</label>
                             <input type="radio" id="DT_audio_spec_external_1" name="audio_spec_1" value="外接"><label for="DT_audio_spec_external_1">外接</label>
                         </div>
@@ -243,13 +244,16 @@
 	<div class="spacer"></div>
             <button type="button" onclick="addConnection()">新增網路連線</button>
         </div>
-        <!-- 檢測結果部分 -->
+    </div>
+    
+    <div class="DT_right_panel">
+        <!-- 移動檢測結果部分到右側 -->
         <div class="form-group">
-		<div class="DV_sutable">
-            <label for="DT_suitable">是否適合上課：<span class="red-asterisk">*</span></label>
-            <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" >適合
-            <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" >不適合
-			</div>
+            <div class="DV_sutable">
+                <label for="DT_suitable">是否適合上課：<span class="red-asterisk">*</span></label>
+                <input type="radio" id="DT_suitable_yes" name="suitable" value="適合">適合
+                <input type="radio" id="DT_suitable_no" name="suitable" value="不適合">不適合
+            </div>
         </div>
         <div class="form-group">
             <label for="DT_issues">測試問題：<span class="red-asterisk">*</span></label>
@@ -257,25 +261,21 @@
         </div>
         <div class="form-group">
             <label for="DT_process">處理過程：<span class="red-asterisk">*</span></label>
-            <textarea id="DT_process" name="process" style="height:200px"></textarea>
+            <textarea id="DT_process" name="process"></textarea>
         </div>
         <div class="form-group">
             <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
-            <textarea id="DT_boldbrief" name="boldbrief" ></textarea>
-            
+            <textarea id="DT_boldbrief" name="boldbrief"></textarea>
         </div>
-        <button type="submit">生成</button>
-	<button type="button" id="copyReportButton">複製報告</button>
-    </form>
-    <div class="output" id="DT_output">
-        <div id="output_content">填寫表單後顯示此處A_A<br></div>
-        <div class="copy-feedback" id="copy_feedback">已複製!</div>
+        <button type="submit" id="generateReportButton" style="position: relative; z-index: 1000;">生成</button>
     </div>
 </div>
-</div>
-</div>
-</div>
+    
+<!-- Instead, add a hidden output container if needed -->
+<div id="output_content" style="display:none;"></div>
 
+</div>
+</div>
 <!-- 顧問名單googlesheet -->
 <div class="consultantlistgooglesheet small-size" style="top:0px">
     <div class="toggle-container">
@@ -399,20 +399,19 @@
         <input type="checkbox" id="assist-issue-toggleCheckbox">
         <label for="assist-issue-toggleCheckbox">📝輔導單</label>
     </div>
-    <div id="content" style="display: none;">
-    <div class="assist-issue-form-container">
-        <label for="assist-issue-classInfo">課程資訊：</label><br>
-        <textarea id="assist-issue-classInfo" placeholder="請貼上課程資訊" rows="3" cols="50"></textarea><br>
-        <label for="assist-issue-issueDescription">問題說明：</label><br>
-        <textarea id="assist-issue-issueDescription" placeholder="請輸入問題說明" rows="5" cols="50"></textarea>
-		<button class="assist-issue-clear-button" id="assist-issue-clearButton" style="float: right">清除內容</button>
+    <div id="assist-issue-content" style="display: none;">
+        <div class="assist-issue-form-container">
+            <label for="assist-issue-classInfo">課程資訊：</label><br>
+            <textarea id="assist-issue-classInfo" placeholder="請貼上課程資訊" rows="3" cols="50"></textarea><br>
+            <label for="assist-issue-issueDescription">問題說明：</label><br>
+            <textarea id="assist-issue-issueDescription" placeholder="請輸入問題說明" rows="5" cols="50"></textarea>
+            <button class="assist-issue-clear-button" id="assist-issue-clearButton" style="float: right">清除內容</button>
+        </div>
+        <br>
+        <div class="assist-issue-output" id="assist-issue-outputContainer">
+        </div>
     </div>
-    <br>
-    <div class="assist-issue-output" id="assist-issue-outputContainer">
-
-    </div>
-</div>
-<button class="assist-issue-copy-button" id="assist-issue-copyButton">複製內容</button>
+    <button class="assist-issue-copy-button" id="assist-issue-copyButton">複製內容</button>
 </div>
 <!--會議面板-->
 <div class="meeting-search-panel-menu">
@@ -438,7 +437,7 @@
 				<div id="meetingsearch-filter-container">
 				
 <!-- 會議名單排列 -->
-<div class="zv-metting-list">
+<div class="zv-metting-list"></div>
     <span id="zv-metting-list-modal-btn"><i class="fa-solid fa-rectangle-list"></i></span>
 </div>
 
@@ -570,9 +569,9 @@
     <script type="module" src="script/optitleGG.js"></script>
     <script src="script/togglelayer.js"></script>
     <script src="script/addforms.js"></script>
+    <script src="script/DT_fuction_confirm.js"></script>
     <script src="script/DT_form_output.js"></script>
     <script src="script/DT_test_copybutton_script.js"></script>
-    <script src="script/DT_fuction_confirm.js"></script>
     <script src="script/assist_issue.js"></script>
     <script type="module" src="script/meeting-all.js"></script>
     <script src="script/meeting-search-panel.js"></script>
