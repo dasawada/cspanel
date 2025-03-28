@@ -59,8 +59,8 @@ b, h1, h2, h3, h4, h5, h6 {
     top: 205px;
     gap: 10px;
     display: flex;
-    flex-wrap: wrap;
-    
+    flex-wrap: nowrap;
+    flex-direction: column;
 }
 .tool_zip_dl {
     width: 400px;
@@ -210,7 +210,7 @@ b, h1, h2, h3, h4, h5, h6 {
 
 .IPsearch_in_panelALL {
     top: 205px;
-    left: 120px;
+    left: 115px;
     display: flex;                 /* 使用 Flexbox */
     flex-direction: column;        /* 垂直排列 */
     justify-content: space-between;/* 子元素在垂直方向上均匀分布 */
@@ -218,7 +218,7 @@ b, h1, h2, h3, h4, h5, h6 {
     padding: 6px 6px 6px 6px;      /* 内边距 */
     z-index: 996;
     min-height: 36px;              /* 设置初始最小高度 */
-    width: 280px;                  /* 固定宽度 */
+    width: 285px;                  /* 固定宽度 */
     overflow: hidden;              /* 控制内容溢出 */
     transition: height 0.1s ease;  /* 统一过渡时间 */
     position: absolute;
