@@ -56,7 +56,7 @@ b, h1, h2, h3, h4, h5, h6 {
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 確保容器為相對定位 */
     left: 0px;
-    top: 205px;
+    top: 230px;
     gap: 10px;
     display: flex;
     flex-wrap: nowrap;
@@ -84,7 +84,7 @@ b, h1, h2, h3, h4, h5, h6 {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 400px;
-    height: 110px;
+    height: 135px;
     box-sizing: border-box;
     position: absolute;
     top: 0px;
@@ -209,7 +209,7 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 
 .IPsearch_in_panelALL {
-    top: 205px;
+    top: 230px;
     left: 115px;
     display: flex;                 /* 使用 Flexbox */
     flex-direction: column;        /* 垂直排列 */
@@ -855,7 +855,7 @@ textarea {
     box-sizing: border-box;
     position: absolute;
     left: 0px;
-    top: 120px;
+    top: 145px;
 }
 
 /* 建議選單樣式 */
@@ -894,7 +894,7 @@ textarea {
 .panel-tabs-container {
     position: absolute;
     left: 410px;
-    top: 150px;
+    top: 145px;
     width: 500px;
     height: 600px;
     background-color: transparent;
@@ -928,7 +928,7 @@ textarea {
 }
 
 .panel-tabs label {
-    padding: 5px 10px;
+    padding: 3px 10px;
     color: #bcbcbc;
     background-color: #f5f5f5;
     border: 1px solid #ccc;
