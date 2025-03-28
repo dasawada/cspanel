@@ -321,7 +321,7 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 #optitleoutput {
     overflow: hidden;
-    font-size: 15px;
+    font-size: 13px;
     color: #737373;
     transition: transform 0.1s ease, opacity 0.1s ease;
 }
@@ -856,6 +856,7 @@ textarea {
     position: absolute;
     left: 0px;
     top: 145px;
+    gap: 10px;
 }
 
 /* 建議選單樣式 */

@@ -59,7 +59,7 @@ function generateText() {
   optitleOutput.style.transform = "scale(1.1)";
   optitleOutput.style.opacity = "0.5";
   optitleOutput.innerHTML = outputText + 
-    '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText(event)" style="border: none; margin-left: 6px;" title="複製到剪貼簿">' +
+    '<button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText(event)" style="border: none;padding: 3px;margin-left:3px;" title="複製到剪貼簿">' +
     '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
     '</button>';
   
@@ -166,16 +166,12 @@ function loadWtfData() {
 // 修改搜尋函數，先確保已從 Google Sheets 取得並結構化資料，再在本地搜尋
 function search() {
   const consultantInput = document.getElementById('consultantName');
-  // 修改：移除所有空白字元以避免空格干擾搜尋
   const searchTerm = consultantInput.value.replace(/\s/g, '').toLowerCase();
   if (!searchTerm) {
     document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
     document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
-    clearOutput();
     return;
   }
-  
-  generateText();
   
   const proceedSearch = () => {
     let foundRecord = null;
