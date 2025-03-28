@@ -1,6 +1,5 @@
 import { callGoogleSheetAPI } from './googleSheetAPI.js';
 
-// 以下為原 optitlearange.js 的內容（浮水印、輸入框檢查、標題生成等）
 document.querySelectorAll('.optitle-input').forEach(input => {
   const placeholder = input.nextElementSibling;
   if (input.value) {
@@ -39,7 +38,6 @@ function checkInputs() {
 }
 
 function generateText() {
-  // 生成標題文本，並同時透過 Netlify proxy 間接讀取 Google Sheets 資料（例如範圍"wtf"，避免前端暴露 API key）
   const consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
   const studentName = document.getElementById("studentName").value.replace(/\s/g, '');
   const parentName = document.getElementById("parentName").value.replace(/\s/g, '');
@@ -54,6 +52,7 @@ function generateText() {
   if (invoiceNumber !== '') {
     outputText += " #" + invoiceNumber;
   }
+  outputText += " - OneClass體驗接待大廳";
   
   // 更新顯示區
   const optitleOutput = document.getElementById("optitleoutput");
