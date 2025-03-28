@@ -105,28 +105,32 @@ function generateOutput() {
     const boldbrief = document.getElementById('DT_boldbrief').value || '';
 
     let outputContent = `
-日期時間：【${formattedDatetime}】\n
-學生姓名：【${name}】 ${phone}\n
-測試工程師：【${project}】\n
---------\n
-使用設備：\n${deviceOutput}\n
---------\n
-網路連線：\n${connectionOutput}\n
---------\n
-是否適合上課：【${suitable}】\n
---------\n
-測試問題：\n${issues}\n\n
-處理過程：\n${process}\n\n
-${boldbrief ? `<b>${boldbrief}</b>` : ''}
-`.split('\n').filter(line => line.trim()).join('\n');
+日期時間：【${formattedDatetime}】
+學生姓名：【${name}】 ${phone}
+測試工程師：【${project}】
+--------
+使用設備：
+${deviceOutput}
+--------
+網路連線：
+${connectionOutput}
+--------
+是否適合上課：【${suitable}】
+--------
+測試問題：
+${issues}
 
-    // 將生成的內容填入 output_content 元素
+處理過程：
+${process}
+
+${boldbrief ? `<b>${boldbrief}</b>` : ''}`;
+
+    // 將生成的內容填入 output_content 元素，保留原始換行
     document.getElementById('output_content').innerHTML = outputContent
         .replace(/\n/g, '<br>')
         .replace(/【\s+/g, '【')
-        .replace(/\s+】/g, '】')
-        .replace(/(<br>)+/g, '<br>');
-    
+        .replace(/\s+】/g, '】');
+
     // 檢查現有視窗是否已關閉
     if (!reportWindow || reportWindow.closed) {
         reportWindow = window.open('', 'TestReport', 'width=800,height=600,resizable=yes,scrollbars=yes');
@@ -148,14 +152,13 @@ ${boldbrief ? `<b>${boldbrief}</b>` : ''}
                     max-width: 800px;
                     margin: 0 auto;
                     background-color: #fff;
-                
                 }
                 .report-content {
-                    white-space: pre-line;
+                    white-space: pre-wrap; /* 改用 pre-wrap 來保留所有換行 */
                     padding: 20px;
                     border: 1px solid #ddd;
                     border-radius: 5px;
-                    FONT-SIZE: 14px;
+                    font-size: 14px;
                 }
                 .copy-button {
                     position: fixed;
