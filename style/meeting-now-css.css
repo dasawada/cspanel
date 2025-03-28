@@ -3,6 +3,9 @@
             justify-content: space-between;
             align-items: center;
             width: 100%;
+            position: absolute;
+            top: 10px;
+            right: 10px;
         }
 		#meetingsearchnow-form-container{
 			margin-top: 6px;
