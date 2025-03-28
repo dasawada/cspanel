@@ -114,7 +114,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         waitingMeetings = [];
         endedMeetings = [];
 
-        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
+        const ranges = ['「US版Zoom學員名單(5/15)」', '「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
         const data = await callGoogleSheetBatchAPI({ ranges });
         
         // Process meeting data
