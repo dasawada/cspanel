@@ -52,7 +52,7 @@ function generateText() {
   if (invoiceNumber !== '') {
     outputText += " #" + invoiceNumber;
   }
-  outputText += " - OneClass體驗接待大廳";
+  outputText += "";
   
   // 更新顯示區
   const optitleOutput = document.getElementById("optitleoutput");
