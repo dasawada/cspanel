@@ -719,8 +719,8 @@
       }
       // M 欄位
       rowData.push(sheetData.colM || "")
-      // N 欄 (OneClub ID)
-      rowData.push(selectedOneClubId || "")
+      // N 欄 (OneClub ID) - 加上單引號確保數字格式
+      rowData.push(selectedOneClubId ? `'${selectedOneClubId}` : "")
       const tsvLine = rowData.join("\t")
       navigator.clipboard
         .writeText(tsvLine)
@@ -738,6 +738,7 @@
           alert("已複製 A~N 欄位到剪貼簿！")
         })
     }
+
 document.addEventListener("DOMContentLoaded", function() {
   // 取得所有標頭 th
   const headerCells = document.querySelectorAll('table.data-table thead th');
@@ -766,6 +767,10 @@ document.addEventListener("DOMContentLoaded", function() {
       const inputElement = targetCell.querySelector("input, select");
       if (inputElement) {
         value = inputElement.value;
+        // 檢查是否為 OCID 欄位
+        if (targetCell.querySelector("#newCol2")) {
+          value = value ? `'${value}` : "";
+        }
       } else {
         value = targetCell.textContent.trim();
       }
@@ -901,12 +906,16 @@ document.addEventListener("DOMContentLoaded", function() {
     });
 
     copyButton2.addEventListener("click", () => {
-      // 從 dataRow2 取得每個 input 值並以制表符分隔
       const dataRow = document.getElementById("dataRow2");
-      const inputs = dataRow.querySelectorAll("input");
+      const inputs = dataRow.querySelectorAll("input, select");
       const rowData = [];
-      inputs.forEach(input => {
-        rowData.push(input.value.trim());
+      inputs.forEach((input, index) => {
+        let value = input.value.trim();
+        // 檢查是否為 OCID 欄位（index === 1）
+        if (index === 1 && value) {
+          value = `'${value}`; // 加上單引號
+        }
+        rowData.push(value);
       });
       const tsvLine = rowData.join("\t");
       navigator.clipboard.writeText(tsvLine).then(() => {
@@ -954,6 +963,10 @@ document.addEventListener("DOMContentLoaded", function() {
         const inputElement = targetCell.querySelector("input, select");
         if (inputElement) {
           value = inputElement.value;
+          // 檢查是否為 OCID 欄位
+          if (targetCell.querySelector("#newCol2")) {
+            value = value ? `'${value}` : "";
+          }
         } else {
           value = targetCell.textContent.trim();
         }
