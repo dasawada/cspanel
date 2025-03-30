@@ -327,42 +327,114 @@ async function getAccountResultsFromSheet() {
     return accountResults;
 }
 
-// 檢查是否有會議衝突，並決定是否顯示 "settings-button"
-async function checkForConflictsAndToggleButton() {
-    const accountResults = await getAccountResultsFromSheet(); // 獲取會議數據
-    let hasConflicts = false;
+// 添加緩存與智能輪詢邏輯
+class ConflictChecker {
+    constructor() {
+        this.minInterval = 60000; // 最小間隔 1 分鐘
+        this.maxInterval = 300000; // 最大間隔 5 分鐘
+        this.currentInterval = this.minInterval;
+        this.lastChangeTime = Date.now();
+        this.cacheKey = 'meetingConflictCache';
+    }
 
-    // 遍歷所有帳號，檢查是否有衝突會議
-    for (const account in accountResults) {
-        const accountData = accountResults[account];
-        const conflicts = allMeetingCompareCheckForConflicts(accountData.meetings);
+    async start() {
+        // 初始化檢查
+        await this.checkWithCache();
+        
+        // 註冊頁面可見性事件
+        document.addEventListener('visibilitychange', () => {
+            if (!document.hidden) {
+                this.checkWithCache();
+            }
+        });
 
-        if (conflicts.length > 0) {
-            hasConflicts = true; // 發現有衝突
-            break; // 一旦發現衝突會議，提前退出循環
+        // 開始智能輪詢
+        this.scheduleNextCheck();
+    }
+
+    async checkWithCache() {
+        try {
+            const cachedData = localStorage.getItem(this.cacheKey);
+            const cache = cachedData ? JSON.parse(cachedData) : null;
+            
+            const newData = await getAccountResultsFromSheet();
+            const hasChanges = !this.isEqual(cache, newData);
+            
+            if (hasChanges) {
+                localStorage.setItem(this.cacheKey, JSON.stringify(newData));
+                await this.updateUI(newData);
+                this.lastChangeTime = Date.now();
+                this.currentInterval = this.minInterval;
+            } else {
+                this.adjustInterval();
+            }
+            
+            return hasChanges;
+        } catch (error) {
+            console.error('Conflict check failed:', error);
+            return false;
         }
     }
 
-    // 根據是否有衝突來顯示或隱藏 "settings-button"
-    const settingsButton = document.getElementById('settings-button');
-    if (hasConflicts) {
-        settingsButton.style.display = 'inline'; // 顯示按鈕
-    } else {
-        settingsButton.style.display = 'none'; // 隱藏按鈕
+    adjustInterval() {
+        const timeSinceLastChange = Date.now() - this.lastChangeTime;
+        if (timeSinceLastChange > 1800000) { // 30分鐘無變化
+            this.currentInterval = this.maxInterval;
+        }
     }
-}
 
-// 定義一個定時器來定期檢查會議衝突
-function startConflictCheckInterval() {
-    setInterval(async function() {
-        await checkForConflictsAndToggleButton();
-    }, 60000); // 每5秒檢查一次，可以根據需要調整間隔
+    scheduleNextCheck() {
+        setTimeout(() => {
+            this.checkWithCache().finally(() => {
+                this.scheduleNextCheck();
+            });
+        }, this.currentInterval);
+    }
+
+    isEqual(obj1, obj2) {
+        return JSON.stringify(obj1) === JSON.stringify(obj2);
+    }
+
+    async updateUI(data) {
+        const hasConflicts = this.checkForConflicts(data);
+        const settingsButton = document.getElementById('settings-button');
+        settingsButton.style.display = hasConflicts ? 'inline' : 'none';
+        
+        // 如果有衝突且用戶允許通知，發送通知
+        if (hasConflicts && Notification.permission === 'granted') {
+            this.sendNotification();
+        }
+    }
+
+    checkForConflicts(data) {
+        for (const account in data) {
+            const accountData = data[account];
+            const conflicts = allMeetingCompareCheckForConflicts(accountData.meetings);
+
+            if (conflicts.length > 0) {
+                return true; // 發現有衝突
+            }
+        }
+        return false; // 沒有衝突
+    }
+
+    async sendNotification() {
+        const notification = new Notification('會議衝突提醒', {
+            body: '檢測到新的會議時間衝突',
+            icon: '/path/to/icon.png'
+        });
+        
+        notification.onclick = () => {
+            window.focus();
+            document.getElementById('settings-button').click();
+        };
+    }
 }
 
 // 當頁面載入時，自動檢查會議衝突，並開始定時檢查
 window.addEventListener('DOMContentLoaded', async function() {
-    await checkForConflictsAndToggleButton(); // 初始檢查
-    startConflictCheckInterval(); // 開始定時檢查
+    const conflictChecker = new ConflictChecker();
+    await conflictChecker.start();
 });
 
 async function fetchMeetingsToCompare() {
