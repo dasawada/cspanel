@@ -1,3 +1,5 @@
+import { ConflictChecker } from './ConflictChecker.js';
+
 // 請求通知權限
 async function requestNotificationPermission() {
   if (!('Notification' in window)) {
