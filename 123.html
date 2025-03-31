@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Google Sheets Data Chart</title>
+<style>
+    #class-count-chart-normal-container {
+        width: 100vw; /* Full viewport width */
+        height: 100vh; /* Full viewport height */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0; /* Remove margin */
+        padding: 0;
+    }
+    #class-count-chart-normal-timeChart {
+        width: 100%; /* Full width within container */
+        height: 100%; /* Full height within container */
+    }
+</style>
+
+</head>
+<body>
+    <div id="class-count-chart-normal-container">
+        <canvas id="class-count-chart-normal-timeChart"></canvas>
+    </div>
+
+    <!-- 引入 Chart.js 和 Zoom 插件 -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chartjs-plugin-zoom"></script>
+
+    <!-- Google Sheets API 讀取資料的 JavaScript -->
+    <script>
+        const classCountChartNormalSheetId = '1Trnuwo7rxpNHN6IpOcjrPEdFutxmr1KIJYmgbKwoL9E';
+        const classCountChartNormalSheetName = '工作表17';
+        const classCountChartNormalApiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+
+        async function classCountChartNormalFetchSheetData() {
+            const url = `https://sheets.googleapis.com/v4/spreadsheets/${classCountChartNormalSheetId}/values/${classCountChartNormalSheetName}?key=${classCountChartNormalApiKey}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.values;
+        }
+
+        // 生成圖表
+        async function classCountChartNormalGenerateChart() {
+            const data = await classCountChartNormalFetchSheetData();
+            
+            const labels = [];
+            const quantities = [];
+            data.slice(1).forEach(row => {
+                labels.push(row[0]);
+                quantities.push(Number(row[1]));
+            });
+
+            const currentLabel = classCountChartNormalGetCurrentIntervalLabel();
+
+            // 設定圖表高度
+            document.getElementById('class-count-chart-normal-timeChart').height = 300;
+
+            const ctx = document.getElementById('class-count-chart-normal-timeChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: '數量',
+                        data: quantities,
+                        backgroundColor: labels.map(label => label === currentLabel ? '#FFA500' : '#4285F4'),
+                        borderColor: '#1c7ed6',
+                        borderWidth: 1
+                    }]
+                },
+                options: {
+                    scales: {
+                        x: {
+                            title: { display: true, text: '時間' }
+                        },
+                        y: {
+                            title: { display: true, text: '數量' },
+                            beginAtZero: true
+                        }
+                    },
+                    responsive: true,
+                    plugins: {
+                        title: {
+                            display: true,
+                            text: '一般課程 本日數量概覽',
+                            font: { size: 18 },
+                            padding: { top: 10, bottom: 20 }
+                        },
+                        zoom: {
+                            pan: { enabled: true, mode: 'x' },
+                            zoom: {
+                                wheel: { enabled: true },
+                                pinch: { enabled: true },
+                                mode: 'x'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 獲取當前時段的標籤
+        function classCountChartNormalGetCurrentIntervalLabel() {
+            const currentTime = new Date();
+            return `${currentTime.getHours().toString().padStart(2, '0')}:${currentTime.getMinutes() < 30 ? '00' : '30'}`;
+        }
+
+        // 初始化圖表
+        classCountChartNormalGenerateChart();
+    </script>
+</body>
+</html>
