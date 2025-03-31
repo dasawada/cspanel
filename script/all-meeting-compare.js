@@ -321,10 +321,9 @@ window.onclick = function(event) {
 };
 
 // 從 Google Sheets 中讀取數據
-async function getAccountResultsFromSheet() {
-    const combinedMeetingData = await getCombinedMeetingData(); // 讀取會議數據
-    const accountResults = await allMeetingCompareProcessMeetingData(combinedMeetingData); // 解析會議數據
-    return accountResults;
+export async function getAccountResultsFromSheet() {
+    const meetingData = await getCombinedMeetingData();
+    return allMeetingCompareProcessMeetingData(meetingData);
 }
 
 // 添加緩存與智能輪詢邏輯
