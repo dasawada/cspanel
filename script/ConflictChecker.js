@@ -1,4 +1,4 @@
-import { getAccountResultsFromSheet } from './all-meeting-compare.js';
+import { getAccountResultsFromSheet, allMeetingCompareCheckForConflicts } from './all-meeting-compare.js';
 
 export class ConflictChecker {
     constructor() {
@@ -82,9 +82,11 @@ export class ConflictChecker {
     checkForConflicts(data) {
         for (const account in data) {
             const accountData = data[account];
-            if (accountData.meetings && accountData.meetings.length > 1) {
-                // 使用 meetings 陣列中的資料進行衝突檢查邏輯
-                return true; // 如果發現衝突就返回 true
+            if (accountData.meetings) {
+                const conflicts = allMeetingCompareCheckForConflicts(accountData.meetings);
+                if (conflicts.length > 0) {
+                    return true;
+                }
             }
         }
         return false;
