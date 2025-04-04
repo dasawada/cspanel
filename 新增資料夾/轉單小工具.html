@@ -720,7 +720,7 @@
       // M 欄位
       rowData.push(sheetData.colM || "")
       // N 欄 (OneClub ID) - 加上單引號確保數字格式
-      rowData.push(selectedOneClubId ? `'${selectedOneClubId}` : "")
+      rowData.push(selectedOneClubId ? `${selectedOneClubId}` : "")
       const tsvLine = rowData.join("\t")
       navigator.clipboard
         .writeText(tsvLine)
@@ -769,7 +769,7 @@ document.addEventListener("DOMContentLoaded", function() {
         value = inputElement.value;
         // 檢查是否為 OCID 欄位
         if (targetCell.querySelector("#newCol2")) {
-          value = value ? `'${value}` : "";
+          value = value ? `${value}` : "";
         }
       } else {
         value = targetCell.textContent.trim();
@@ -913,7 +913,7 @@ document.addEventListener("DOMContentLoaded", function() {
         let value = input.value.trim();
         // 檢查是否為 OCID 欄位（index === 1）
         if (index === 1 && value) {
-          value = `'${value}`; // 加上單引號
+          value = `${value}`; // 加上單引號
         }
         rowData.push(value);
       });
@@ -965,7 +965,7 @@ document.addEventListener("DOMContentLoaded", function() {
           value = inputElement.value;
           // 檢查是否為 OCID 欄位
           if (targetCell.querySelector("#newCol2")) {
-            value = value ? `'${value}` : "";
+            value = value ? `${value}` : "";
           }
         } else {
           value = targetCell.textContent.trim();
