@@ -78,11 +78,16 @@ fudausearch_cachedData.forEach((row, rowIndex) => {
       fudausearch_results[0].fullName = `輔導${group.replace("學務", "")}`;
     }
 
-    // 更新群組
+// 更新群組
 if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-  const number = group.replace(/學務|組/g, ""); // 同時移除「學務」和「組」
-  fudausearch_results[3].text = number; // 按鈕顯示為數字，例如「二」
-  fudausearch_results[3].fullName = `第${number}組`; // 點擊複製的內容，例如「第二組」
+  if (group === "學務二組") {
+    fudausearch_results[3].text = "輔導二組2C";         // 按鈕顯示為【輔導二組2C】
+    fudausearch_results[3].fullName = "輔導二組2C";     // 點擊複製的內容
+  } else {
+    const number = group.replace(/學務|組/g, "");       // 例如「三」
+    fudausearch_results[3].text = number;               // 按鈕顯示為數字，例如「三」
+    fudausearch_results[3].fullName = `第${number}組`;  // 點擊複製的內容，例如「第三組」
+  }
 }
 
   }
