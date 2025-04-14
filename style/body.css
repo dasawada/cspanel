@@ -111,7 +111,7 @@ b, h1, h2, h3, h4, h5, h6 {
 
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover,.optitlepanel:hover,
-.fudausearch-container:hover,.roofbutton:hover,.meeting-now-search:hover,.meeting-check-search:hover,
+.fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
 .tool_zip_dl:hover{
     background:#f7f7f7;
 }
@@ -380,6 +380,8 @@ b, h1, h2, h3, h4, h5, h6 {
     background: linear-gradient(90deg, #FFEB3B, #FFC107, #FF9800, #FFEB3B);
     background-size: 200% 200%;
     -webkit-background-clip: text;
+    background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: gradient-animation 1s infinite;
     transition: background 0.1s;
@@ -390,6 +392,7 @@ b, h1, h2, h3, h4, h5, h6 {
     background: linear-gradient(90deg, #00FF00, #32CD32, #008000, #00FF00);
     background-size: 200% 200%;
     -webkit-background-clip: text;
+    background-clip: text;
     -webkit-text-fill-color: transparent;
     animation: gradient-animation 1s infinite;
     transition: background 0.1s;

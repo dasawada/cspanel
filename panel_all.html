@@ -437,34 +437,28 @@
 			<div id="meetingsearchnow-form-container">
 				<!-- 名稱搜尋今日會議 -->
 				<div id="meetingsearch-filter-container">
-				
-<!-- 會議名單排列 -->
-<div class="zv-metting-list"></div>
-    <span id="zv-metting-list-modal-btn"><i class="fa-solid fa-rectangle-list"></i></span>
-</div>
+				    <!-- 保留搜尋輸入框 -->
+				    <input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議">
+				    
+				    <!-- 會議名單排列按鈕 -->
+				    <div class="zv-metting-list">
+				        <span id="zv-metting-list-modal-btn"><i class="fa-solid fa-rectangle-list"></i></span>
+				    </div>
+				</div>
 
-<!-- Modal -->
-<div id="zv-metting-list-results-modal" style="display:none;">
-    <div id="zv-metting-list-modal-content">
-        <!-- 關閉按鈕 -->
-        <span id="zv-metting-list-close-btn" onclick="zvMettingListCloseModal()">&times;</span>
+				<!-- Modal 結構保持不變 -->
+				<div id="zv-metting-list-results-modal" style="display:none;">
+				    <div id="zv-metting-list-modal-content">
+				        <!-- 關閉按鈕 -->
+				        <span id="zv-metting-list-close-btn" onclick="zvMettingListCloseModal()">&times;</span>
 
-        <h2>MMS會議整理</h2>
-
-        <textarea id="zv-metting-list-inputData" rows="5" cols="50" placeholder="此處貼上從MMS複製的課程"></textarea>
-        
-        <div class="zv-metting-list-btn-group">
-            <button id="zv-metting-list-format-btn" onclick="zvMettingListFormatData()">整理會議名單</button>
-        </div>
-        <textarea id="zv-metting-list-output" rows="10" cols="50"></textarea>
-        
-        <div class="zv-metting-list-btn-group">
-            <button id="zv-metting-list-copy-btn" onclick="zvMettingListCopyToClipboard()">複製結果</button>
-        </div>
-    </div>
-</div>
-					<input type="text" id="meetingsearch-filter-input" placeholder="僅搜尋個別會議">
-					<button id="meetingsearch-fetch-meetings" type="button">列出所有會議</button>
+				        <h2>MMS會議整理</h2>
+				        <textarea id="zv-metting-list-output" rows="10" cols="50"></textarea>
+				        
+				        <div class="zv-metting-list-btn-group">
+				            <button id="zv-metting-list-copy-btn" onclick="zvMettingListCopyToClipboard()">複製結果</button>
+				        </div>
+				    </div>
 				</div>
 				<div class="meeting-now-result-flow">
 				<!-- 搜尋所有今日會議 -->
