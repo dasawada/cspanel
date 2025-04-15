@@ -203,7 +203,7 @@ function search() {
       crownSpan.title = '點擊複製【公帳號_客服用】';
       crownSpan.addEventListener('click', () => {
         const tempInput = document.createElement('input');
-        tempInput.value = '公帳號_客服用';
+        tempInput.value = '公帳號_';
         document.body.appendChild(tempInput);
         tempInput.select();
         document.execCommand('copy');
