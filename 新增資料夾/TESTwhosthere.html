@@ -44,10 +44,18 @@
             <option value="">全部</option>
           </select>
         </div>
-        <div class="col-md-2 d-flex align-items-center">
+        <div class="col-md-4 d-flex align-items-center">
+          <div class="form-check me-3 mt-4">
+            <input type="radio" id="bothDays" name="shiftFilter" class="form-check-input" value="both">
+            <label for="bothDays" class="form-check-label">兩天都在</label>
+          </div>
+          <div class="form-check me-3 mt-4">
+            <input type="radio" id="todayOnly" name="shiftFilter" class="form-check-input" value="today">
+            <label for="todayOnly" class="form-check-label">今🆗明❌</label>
+          </div>
           <div class="form-check mt-4">
-            <input type="checkbox" id="nextDay" class="form-check-input">
-            <label for="nextDay" class="form-check-label">隔日有班</label>
+            <input type="radio" id="tomorrowOnly" name="shiftFilter" class="form-check-input" value="tomorrow">
+            <label for="tomorrowOnly" class="form-check-label">今❌明🆗</label>
           </div>
         </div>
         <div class="col-md-2 d-flex align-items-end">
@@ -123,7 +131,7 @@
     async function searchSchedule() {
       const dateInput = document.getElementById("date").value.trim();
       const labelFilter = document.getElementById("labelSelect").value.trim();
-      const nextDayCheck = document.getElementById("nextDay").checked;
+      const shiftFilter = document.querySelector('input[name="shiftFilter"]:checked')?.value;
       const resultDiv = document.getElementById("result");
       const debugDiv = document.getElementById("debug");
       
@@ -136,7 +144,7 @@
       }
       
       const date = dateInput; // input type="date" 輸出 ISO 格式
-      const nextDate = nextDayCheck ? getNextDay(date) : null;
+      const nextDate = shiftFilter === "both" || shiftFilter === "tomorrow" ? getNextDay(date) : null;
 
       const data = await fetchScheduleData();
       if (!data || data.length < 2) {
@@ -156,7 +164,7 @@
       }
       
       let nextDateColumnIndex = -1;
-      if (nextDayCheck) {
+      if (nextDate) {
         nextDateColumnIndex = headers.indexOf(nextDate);
         if (nextDateColumnIndex === -1) {
           resultDiv.innerHTML = `<div class="alert alert-danger">❌ 查無隔日 ${nextDate} 的對應日期</div>`;
@@ -177,14 +185,10 @@
         // 排除標籤為 "不可派" 的成員
         if (rowLabel === "不可派") continue;
         
-        // 若未勾選隔日有班，僅篩選今日上班 (早/晚)
-        if (!nextDayCheck) {
-          if (!isOnDuty(shift)) continue;
-        } else {
-          // 若勾選隔日有班，今日班別不強制要求，僅檢查隔日上班
-          const nextShift = row[nextDateColumnIndex];
-          if (!isOnDuty(nextShift)) continue;
-        }
+        // 根據 shiftFilter 篩選
+        if (shiftFilter === "today" && !isOnDuty(shift)) continue;
+        if (shiftFilter === "tomorrow" && (!nextDate || !isOnDuty(row[nextDateColumnIndex]))) continue;
+        if (shiftFilter === "both" && (!isOnDuty(shift) || !isOnDuty(row[nextDateColumnIndex]))) continue;
         
         // 若有標籤篩選，則僅保留符合條件的記錄
         if (labelFilter && rowLabel !== labelFilter) continue;
@@ -194,7 +198,7 @@
           label: rowLabel,
           name,
           shift,
-          ...(nextDayCheck && { nextShift: row[nextDateColumnIndex] })
+          ...(nextDate && { nextShift: row[nextDateColumnIndex] })
         });
       }
       
@@ -210,7 +214,7 @@
                         <th>標籤</th>
                         <th>姓名</th>
                         <th>${date} 班別</th>`;
-        if (nextDayCheck) {
+        if (nextDate) {
           html += `<th>隔日 (${nextDate}) 班別</th>`;
         }
         html += `  </tr>
@@ -222,7 +226,7 @@
                      <td>${rec.label}</td>
                      <td>${rec.name}</td>
                      <td>${rec.shift}</td>`;
-          if (nextDayCheck) {
+          if (nextDate) {
             html += `<td>${rec.nextShift}</td>`;
           }
           html += `</tr>`;
@@ -240,3 +244,4 @@
   </script>
 </body>
 </html>
+`
