@@ -144,7 +144,8 @@
       }
       
       const date = dateInput; // input type="date" 輸出 ISO 格式
-      const nextDate = shiftFilter === "both" || shiftFilter === "tomorrow" ? getNextDay(date) : null;
+      // 修改這行，讓所有情況都顯示明天的日期
+      const nextDate = getNextDay(date);
 
       const data = await fetchScheduleData();
       if (!data || data.length < 2) {
@@ -176,19 +177,30 @@
       let results = [];
       for (let i = 1; i < data.length; i++) {
         const row = data[i];
-        // 資料排列：A: team, B: 標籤, C: name, D 以後：班表
         const team = row[0];
         const rowLabel = row[1] ? row[1].trim() : "";
         const name = row[2];
-        const shift = row[dateColumnIndex]; // 指定日期班別
+        const shift = row[dateColumnIndex];
+        const nextShift = row[nextDateColumnIndex];
 
         // 排除標籤為 "不可派" 的成員
         if (rowLabel === "不可派") continue;
         
         // 根據 shiftFilter 篩選
-        if (shiftFilter === "today" && !isOnDuty(shift)) continue;
-        if (shiftFilter === "tomorrow" && (!nextDate || !isOnDuty(row[nextDateColumnIndex]))) continue;
-        if (shiftFilter === "both" && (!isOnDuty(shift) || !isOnDuty(row[nextDateColumnIndex]))) continue;
+        switch(shiftFilter) {
+          case "both":
+            // 兩天都要在
+            if (!isOnDuty(shift) || !isOnDuty(nextShift)) continue;
+            break;
+          case "today":
+            // 今日要上班，明日要休假
+            if (!isOnDuty(shift) || isOnDuty(nextShift)) continue;
+            break;
+          case "tomorrow":
+            // 今日休假，明日要上班
+            if (isOnDuty(shift) || !isOnDuty(nextShift)) continue;
+            break;
+        }
         
         // 若有標籤篩選，則僅保留符合條件的記錄
         if (labelFilter && rowLabel !== labelFilter) continue;
@@ -198,7 +210,7 @@
           label: rowLabel,
           name,
           shift,
-          ...(nextDate && { nextShift: row[nextDateColumnIndex] })
+          nextShift
         });
       }
       
@@ -244,4 +256,3 @@
   </script>
 </body>
 </html>
-`
