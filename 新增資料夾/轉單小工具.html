@@ -5,6 +5,12 @@
   <meta name="viewport" content="width=device=1.0">
   <title>訂單處理工具</title>
   <link rel="stylesheet" href="styles.css">
+  <style>
+    .active-link {
+      background-color: #4a90e2;
+      color: white;
+    }
+  </style>
 </head>
 <body>
   <div class="container">
@@ -343,25 +349,98 @@
           throw new Error(`Bitrix查詢失敗: ${bitrixRes.status}`)
         }
 
-        const bitrixJson = await bitrixRes.json()  // Fixed: using bitrixRes instead of res
+        const bitrixJson = await bitrixRes.json()
         if (bitrixJson.error) {
           throw new Error(`Bitrix API錯誤: ${bitrixJson.error_description}`)
         }
 
         const dealData = bitrixJson.result || {}
         const notes = dealData.UF_CRM_1646312993 ? dealData.UF_CRM_1646312993.replace(/\r\n/g, "\n") : "無備註"
-        const orderLink = dealData.UF_CRM_1646313465 || "無可用連結"
+
+        // 获取两个可能的订单链接
+        const orderLink1 = dealData.UF_CRM_1646313465 || "";
+        const orderLink2 = dealData.UF_CRM_1646313701 || "";
+
+        // 初始化基本变量和UI选择器
+        let orderLink = "無可用連結";
+        let activeOrderLink = null;
+
+        // 处理订单链接逻辑
+        if (orderLink1 && !orderLink2) {
+          // 只有第一个链接可用
+          orderLink = orderLink1;
+          activeOrderLink = orderLink1;
+        } else if (!orderLink1 && orderLink2) {
+          // 只有第二个链接可用
+          orderLink = orderLink2;
+          activeOrderLink = orderLink2;
+        } else if (orderLink1 && orderLink2) {
+          // 两个链接都可用，默认使用第一个
+          orderLink = orderLink1;
+          activeOrderLink = orderLink1;
+          
+          // 创建链接选择器UI
+          const linkSelectorDiv = document.createElement("div");
+          linkSelectorDiv.className = "link-selector";
+          linkSelectorDiv.style.marginBottom = "10px";
+          
+          const link1Button = document.createElement("button");
+          link1Button.textContent = "訂單一";
+          link1Button.className = "button button-small active-link";
+          link1Button.style.marginRight = "5px";
+          
+          const link2Button = document.createElement("button");
+          link2Button.textContent = "訂單二";
+          link2Button.className = "button button-small";
+          
+          // 设置点击事件
+          link1Button.onclick = async function() {
+            orderFrame.src = orderLink1;
+            updateOrderLink(orderLink1);
+            activeOrderLink = orderLink1;
+            link1Button.className = "button button-small active-link";
+            link2Button.className = "button button-small";
+            
+            const match = orderLink1.match(/order\/(\w+)/);
+            const orderId = match ? match[1] : "";
+            if (orderId) {
+              await fetchOrderData(orderId, cleanDealId, contactLink);
+            }
+          };
+          
+          link2Button.onclick = async function() {
+            orderFrame.src = orderLink2;
+            updateOrderLink(orderLink2);
+            activeOrderLink = orderLink2;
+            link2Button.className = "button button-small active-link";
+            link1Button.className = "button button-small";
+            
+            const match = orderLink2.match(/order\/(\w+)/);
+            const orderId = match ? match[1] : "";
+            if (orderId) {
+              await fetchOrderData(orderId, cleanDealId, contactLink);
+            }
+          };
+          
+          linkSelectorDiv.appendChild(link1Button);
+          linkSelectorDiv.appendChild(link2Button);
+          
+          // 插入到iframe-footer前面
+          document.querySelector(".iframe-footer").insertAdjacentElement("beforebegin", linkSelectorDiv);
+        }
+
         const contactId = dealData.CONTACT_ID || ""
         const contactLink = contactId ? `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/` : ""
         const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${cleanDealId}/`
 
-        orderFrame.src = orderLink === "無可用連結" ? "about:blank" : orderLink
-        updateOrderLink(orderLink)
+        // 设置iframe源
+        orderFrame.src = orderLink === "無可用連結" ? "about:blank" : orderLink;
+        updateOrderLink(orderLink);
 
-        // 將備註顯示在 result-container
-        resultPre.textContent = `【備註】\n${notes}`
+        // 将备注显示在result-container
+        resultPre.textContent = `【備註】\n${notes}`;
 
-        // 於左側連結區塊產生按鈕
+        // 于左侧链接区块产生按钮
         linksContainer.innerHTML = ""
         // 交易連結按鈕
         const tradeButton = document.createElement("button")
@@ -380,11 +459,12 @@
           linksContainer.appendChild(contactButton)
         }
 
-        if (orderLink !== "無可用連結") {
-          const match = orderLink.match(/order\/(\w+)/)
-          const orderId = match ? match[1] : ""
+        // 处理初始选择的链接
+        if (activeOrderLink !== "無可用連結") {
+          const match = activeOrderLink.match(/order\/(\w+)/);
+          const orderId = match ? match[1] : "";
           if (orderId) {
-            await fetchOrderData(orderId, cleanDealId, contactLink)
+            await fetchOrderData(orderId, cleanDealId, contactLink);
           }
         }
       } catch (err) {
