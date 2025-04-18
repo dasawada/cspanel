@@ -165,12 +165,18 @@ function getTodayUTCTimeRange() {
     return { startAt, endAt };
 }
 
+// Function to normalize date string
+function normalizeDateString(dateStr) {
+    // 將 2025/04/18 轉成 2025-04-18
+    return dateStr.replace(/\//g, '-');
+}
+
 // Function to check if a date falls within a range
 function isDateInRange(targetDate, startDateStr, endDateStr) {
     if (!startDateStr || !endDateStr) return false;
-    const start = new Date(startDateStr);
-    const end = new Date(endDateStr);
-    const target = new Date(targetDate);
+    const start = new Date(normalizeDateString(startDateStr));
+    const end = new Date(normalizeDateString(endDateStr));
+    const target = new Date(normalizeDateString(targetDate));
     return target >= start && target <= end;
 }
 
