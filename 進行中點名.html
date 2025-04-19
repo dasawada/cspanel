@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <title>查無上線時間列表</title>
+  <style>
+    body{font-family:sans-serif;font-size:13px;padding:8px;}
+    table{border-collapse:collapse;width:100%;margin-top:8px;}
+    th,td{border:1px solid #ccc;padding:4px;text-align:left;}
+    button{padding:6px 12px;margin-bottom:8px;}
+  </style>
+</head>
+<body>
+
+  <h1>進行中 – 查無上線時間老師</h1>
+  <button id="genBtn">一鍵產生清單</button>
+  <div id="progress" style="margin:4px 0;color:#555;"></div>
+  <div id="output"></div>
+
+  <script>
+    const jwt = 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiIzNTZhYTFhOC01OTRmLTRkN2ItOGQzZi1kNmVhMzAyODIzYWUiLCJpYXQiOjE3NDQzNDc5OTAsImV4cCI6MTc0OTUzMTk5MH0.YJ7cIHdcT-FRCUj8cNr8mgXSF04gbGb6jffiwTAufuI';
+    const baseUrl = 'https://api-new.oneclass.co/mms/course/findAllUseAggregate';
+    const recordUrl = 'https://4ic5gz9bzk.execute-api.ap-northeast-1.amazonaws.com/Prod/oneboard/course/multiUserRecord';
+
+    // 轉 ISO → 台灣時
+    function toTW(iso) {
+      return new Date(iso)
+        .toLocaleString('zh-TW',{timeZone:'Asia/Taipei',year:'numeric',month:'2-digit',day:'2-digit',hour12:false,hour:'2-digit',minute:'2-digit'});
+    }
+
+    // 新增：從課程名稱提取後綴標籤
+    function extractTags(name) {
+      const tags = ['解題','試聽','測試','檢核','待命'];
+      const matched = tags.filter(t => name.includes(t));
+      return matched.length ? ' (' + matched.join(',') + ')' : '';
+    }
+
+    // 加一個把內部錯誤訊息轉成使用者能懂的提示
+    function formatError(msg) {
+      if (msg === '查無上線時間')         return '老師尚未上線';
+      if (msg.includes('details 為空'))    return '無法取得老師上線紀錄';
+      if (msg.startsWith('API '))         return '伺服器錯誤，請稍後再試';
+      if (msg.includes('Failed to fetch'))return '網路異常，請檢查連線';
+      return '發生未知錯誤，請查看 console';
+    }
+
+    // 新增：取得 hh:mm 的 mm
+    function getMinute(iso) {
+      const d = new Date(iso);
+      return d.getMinutes();
+    }
+
+    async function fetchFirst(courseId) {
+      const resp = await fetch(recordUrl, {
+        method: 'POST',
+        cache: 'no-store',               // 保留
+        headers: {
+          'Content-Type': 'application/json'  // 不要再放 Cache-Control
+        },
+        body: JSON.stringify({ courseId })
+      });
+      if(!resp.ok) throw new Error(`API ${resp.status}`);
+      const js = await resp.json();
+      const teachers = (js.data||[]).filter(u=>u.role==='teacher');
+      if(!teachers.length) throw new Error('查無上線時間');
+      const det = teachers[0].details;
+      if(!Array.isArray(det)||!det.length) throw new Error('teacher.details 為空');
+      const firstTs = new Date(Math.min(...det.map(d=>new Date(d.timestamp).getTime())));
+      return firstTs;
+    }
+
+    async function genList(){
+      const out = document.getElementById('output');
+      const prog = document.getElementById('progress');
+      out.innerHTML = '';
+      // 新增：加上時間戳
+      const now = new Date();
+      const ts = now.toLocaleString('zh-TW', { hour12: false });
+      prog.innerText = `開始載入中… (${ts})`;
+
+      // 1. 分頁拿所有 processing 課程
+      const limit = 100;
+      let skip = 0;
+      let courses = [];
+      while(true){
+        prog.innerText = `載入第 ${skip/limit + 1} 頁… (${ts})`;
+        const url = `${baseUrl}?courseStatus=processing&skip=${skip}&limit=${limit}&transferCourseType[]=individualLiveCourse&isBelong=false&isAudition=false`;
+        const res = await fetch(url, {
+          method: 'GET',
+          cache: 'no-store',              // 保留
+          headers: {
+            'Authorization': 'Bearer ' + jwt
+          }
+        });
+        if(!res.ok) throw new Error(`第${skip/limit+1}頁抓取失敗：${res.status}`);
+        const jd = await res.json();
+        const page = jd.data.courses || [];
+        courses = courses.concat(page);
+        prog.innerText = `已載入 ${courses.length} 筆 (第 ${skip/limit + 1} 頁) (${ts})`;
+        if(page.length < limit) break;
+        skip += limit;
+      }
+
+      // 若無課程，顯示「目前無課程」
+      if(courses.length === 0){
+        prog.innerText = '';
+        out.innerHTML = '<p>目前無課程</p>';
+        return;
+      }
+
+      prog.innerText = `資料載入完成，共 ${courses.length} 筆，開始檢查上線時間… (${ts})`;
+
+      // 2. 並發檢查上線
+      const total = courses.length;
+      let done = 0;
+      prog.innerText = `檢查上線時間：0 / ${total} (${ts})`;
+      const promises = courses.map(c =>
+        fetchFirst(c.id)
+          .then(_ => null)
+          .catch(e => ({
+            id:      c.id,
+            name:    c.name,                                  
+            teacher: c.teacher?.fullName||c.teacher?.nickName||'',
+            start:   toTW(c.startAt),
+            end:     toTW(c.endAt),
+            startAt: c.startAt, // 新增原始開始時間
+            err:     formatError(e.message)   
+          }))
+          .finally(()=>{
+            done++;
+            prog.innerText = `檢查上線時間：${done} / ${total} (${ts})`;
+            if(done === total) prog.innerText = '';
+          })
+      );
+      const settled = await Promise.allSettled(promises);
+      const noneOnline = settled
+        .filter(r=>r.status==='fulfilled' && r.value)
+        .map(r=>r.value);
+
+      // 3. 顯示結果
+      if(!noneOnline.length){
+        out.innerHTML = '<p>全部都有上線</p>';
+        return;
+      }
+      let html = `<table><thead><tr>
+        <th>開始時間</th><th>結束時間</th><th>老師姓名</th><th>上線時間</th>
+      </tr></thead><tbody>`;
+      noneOnline.forEach(item=>{
+        // 新增：判斷 mm 是否為 00/30
+        const mm = getMinute(item.startAt);
+        const highlight = (mm !== 0 && mm !== 30) ? ' style="background:#eee"' : '';
+        html += `<tr${highlight}>
+          <td>${item.start}</td>
+          <td>${item.end}</td>
+          <td>${item.teacher}${extractTags(item.name)}</td>
+          <td style="color:red">${item.err}</td>
+        </tr>`;
+      });
+      html += `</tbody></table>`;
+      out.innerHTML = html;
+    }
+
+    document.getElementById('genBtn').addEventListener('click', genList);
+  </script>
+
+</body>
+</html>
