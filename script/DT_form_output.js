@@ -104,8 +104,8 @@ function generateOutput() {
     const suitable = document.querySelector('input[name="suitable"]:checked')?.value || '';
     const boldbrief = document.getElementById('DT_boldbrief').value || '';
 
-    let outputContent = `
-日期時間：【${formattedDatetime}】
+    let outputContent = 
+`日期時間：【${formattedDatetime}】
 學生姓名：【${name}】 ${phone}
 測試工程師：【${project}】
 --------
