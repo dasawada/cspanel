@@ -183,10 +183,13 @@ ${process}${boldbrief ? `\n<b>${boldbrief}</b>` : ''}`;
                         .then(() => alert('報告已複製到剪貼簿'))
                         .catch(err => console.error('複製失敗:', err));
                 }
+                // 僅當沒有選取文字時才自動複製，否則保留原生 Ctrl+C 行為
                 document.addEventListener('keydown', function(e) {
                     if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
-                        e.preventDefault();
-                        copyReport();
+                        if (!window.getSelection().toString()) {
+                            e.preventDefault();
+                            copyReport();
+                        }
                     }
                 });
             </script>
