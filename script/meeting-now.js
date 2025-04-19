@@ -579,11 +579,14 @@ function createMeetingItem(meeting, className, index, accountid) {
             <div style="font-size: 12px; color: #333; margin-top: 4px; line-height: 1.4;">
                 ${meeting.info.replace(/\n/g, '<br>')}
             </div>
-            <div style="margin-top: 8px; font-size: 12px;">
-                <span class="meeting-now-account-span">${accountid}</span>
+            <div style="margin-top: 8px; font-size: 12px;" id="account-span-container-${uniqueId}">
+                <!-- 帳號複製按鈕會插入這裡 -->
             </div>
         </div>
     `;
+    // 插入可複製帳號元素
+    const accountContainer = infoDiv.querySelector(`#account-span-container-${uniqueId}`);
+    accountContainer.appendChild(createCopyableAccountElement(accountid));
 
     // 將 infoDiv 添加到 meetingDiv
     meetingDiv.appendChild(infoDiv);
@@ -595,16 +598,36 @@ function createMeetingItem(meeting, className, index, accountid) {
 function createCopyableAccountElement(accountid) {
     const accountSpan = document.createElement('span');
     accountSpan.textContent = accountid;
-    accountSpan.className = 'meeting-now-account-span'; // 添加 CSS 類
+    accountSpan.className = 'meeting-now-account-span';
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray'; // 初始顏色設定為灰色
+    accountSpan.style.color = 'gray';
 
     // 懸停變色效果
     accountSpan.addEventListener('mouseover', function() {
         accountSpan.style.color = 'blue';
     });
     accountSpan.addEventListener('mouseout', function() {
-        accountSpan.style.color = 'gray'; // 懸停離開時恢復為灰色
+        accountSpan.style.color = 'gray';
+    });
+
+    // 點擊複製功能
+    accountSpan.addEventListener('click', async function() {
+        try {
+            await navigator.clipboard.writeText(accountid);
+            accountSpan.style.color = 'green';
+            accountSpan.textContent = accountid + ' (已複製)';
+            setTimeout(() => {
+                accountSpan.style.color = 'gray';
+                accountSpan.textContent = accountid;
+            }, 1000);
+        } catch (err) {
+            accountSpan.textContent = accountid + ' (複製失敗)';
+            accountSpan.style.color = 'red';
+            setTimeout(() => {
+                accountSpan.style.color = 'gray';
+                accountSpan.textContent = accountid;
+            }, 1000);
+        }
     });
 
     return accountSpan;
