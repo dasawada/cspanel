@@ -104,8 +104,7 @@ function generateOutput() {
     const suitable = document.querySelector('input[name="suitable"]:checked')?.value || '';
     const boldbrief = document.getElementById('DT_boldbrief').value || '';
 
-    let outputContent = 
-`日期時間：【${formattedDatetime}】
+    let outputContent = `日期時間：【${formattedDatetime}】
 學生姓名：【${name}】 ${phone}
 測試工程師：【${project}】
 --------
@@ -121,12 +120,10 @@ ${connectionOutput}
 ${issues}
 
 處理過程：
-${process}
+${process}${boldbrief ? `\n<b>${boldbrief}</b>` : ''}`;
 
-${boldbrief ? `<b>${boldbrief}</b>` : ''}`;
-
-    // 將生成的內容填入 output_content 元素，保留原始換行
     document.getElementById('output_content').innerHTML = outputContent
+        .trim()
         .replace(/\n/g, '<br>')
         .replace(/【\s+/g, '【')
         .replace(/\s+】/g, '】');
@@ -154,7 +151,7 @@ ${boldbrief ? `<b>${boldbrief}</b>` : ''}`;
                     background-color: #fff;
                 }
                 .report-content {
-                    white-space: pre-wrap; /* 改用 pre-wrap 來保留所有換行 */
+                    white-space: pre-wrap;
                     padding: 20px;
                     border: 1px solid #ddd;
                     border-radius: 5px;
@@ -177,18 +174,15 @@ ${boldbrief ? `<b>${boldbrief}</b>` : ''}`;
             </style>
         </head>
         <body>
-            <div class="report-content">
-                ${document.getElementById('output_content').innerHTML}
-            </div>
+            <div class="report-content">${document.getElementById('output_content').innerHTML}</div>
             <button class="copy-button" onclick="copyReport()">複製報告</button>
             <script>
                 function copyReport() {
-                    const content = document.querySelector('.report-content').innerText;
+                    const content = document.querySelector('.report-content').innerText.trim();
                     navigator.clipboard.writeText(content)
                         .then(() => alert('報告已複製到剪貼簿'))
                         .catch(err => console.error('複製失敗:', err));
                 }
-                
                 document.addEventListener('keydown', function(e) {
                     if ((e.ctrlKey || e.metaKey) && e.key === 'c') {
                         e.preventDefault();
