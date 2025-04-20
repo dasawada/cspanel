@@ -73,9 +73,11 @@
       const out = document.getElementById('output');
       const prog = document.getElementById('progress');
       out.innerHTML = '';
-      // 新增：加上時間戳
+      // 全程計時
+      const globalStart = performance.now();
+      // 新增：開始載入中… 精確到秒
       const now = new Date();
-      const ts = now.toLocaleString('zh-TW', { hour12: false });
+      const ts = now.toLocaleString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
       prog.innerText = `開始載入中… (${ts})`;
 
       // 1. 分頁拿所有 processing 課程
@@ -83,23 +85,28 @@
       let skip = 0;
       let courses = [];
       while(true){
-        prog.innerText = `載入第 ${skip/limit + 1} 頁… (${ts})`;
+        // 單頁計時
+        const pageStart = performance.now();
+        const pageTs = new Date().toLocaleString('zh-TW', { hour12:false, hour:'2-digit', minute:'2-digit', second:'2-digit' });
+        const pageNo = skip/limit + 1;
+        prog.innerText = `載入第 ${pageNo} 頁… (${pageTs})`;
         const url = `${baseUrl}?courseStatus=processing&skip=${skip}&limit=${limit}&transferCourseType[]=individualLiveCourse&isBelong=false&isAudition=false`;
         const res = await fetch(url, {
           method: 'GET',
-          cache: 'no-store',              // 保留
-          headers: {
-            'Authorization': 'Bearer ' + jwt
-          }
+          cache: 'no-store',
+          headers: { 'Authorization': 'Bearer ' + jwt }
         });
-        if(!res.ok) throw new Error(`第${skip/limit+1}頁抓取失敗：${res.status}`);
+        if(!res.ok) throw new Error(`第${pageNo}頁抓取失敗：${res.status}`);
         const jd = await res.json();
         const page = jd.data.courses || [];
         courses = courses.concat(page);
-        prog.innerText = `已載入 ${courses.length} 筆 (第 ${skip/limit + 1} 頁) (${ts})`;
+        const pageDur = ((performance.now() - pageStart) / 1000).toFixed(1);
+        prog.innerText = `已載入 ${courses.length} 筆 (第 ${pageNo} 頁) (${pageTs})，耗時 ${pageDur}s`;
         if(page.length < limit) break;
         skip += limit;
       }
+      // 全程載入耗時
+      const loadDur = ((performance.now() - globalStart) / 1000).toFixed(1);
 
       // 若無課程，顯示「目前無課程」
       if(courses.length === 0){
@@ -108,31 +115,42 @@
         return;
       }
 
-      prog.innerText = `資料載入完成，共 ${courses.length} 筆，開始檢查上線時間… (${ts})`;
+      prog.innerText = `資料載入完成，共 ${courses.length} 筆，載入總耗時 ${loadDur}s，開始檢查上線時間…`;
 
-      // 2. 並發檢查上線
+      // 2. 並發檢查上線時間
       const total = courses.length;
       let done = 0;
-      prog.innerText = `檢查上線時間：0 / ${total} (${ts})`;
+      const checkStart = performance.now();                                         // 新增：檢查開始時間點
+      const startTs = new Date().toLocaleString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      prog.innerText = `檢查上線時間開始… (${startTs})`;                            // 新增：檢查開始訊息
+
       const promises = courses.map(c =>
         fetchFirst(c.id)
-          .then(_ => null)
-          .catch(e => ({
-            id:      c.id,
-            name:    c.name,                                  
-            teacher: c.teacher?.fullName||c.teacher?.nickName||'',
-            start:   toTW(c.startAt),
-            end:     toTW(c.endAt),
-            startAt: c.startAt, // 新增原始開始時間
-            err:     formatError(e.message)   
+          .then(_=>null)
+          .catch(e=>({
+            id:       c.id,
+            name:     c.name,
+            teacher:  c.teacher?.fullName||c.teacher?.nickName||'',
+            start:    toTW(c.startAt),
+            end:      toTW(c.endAt),
+            startAt:  c.startAt,
+            hasZoom:  c.students?.some(s=>s.isUseZoom)||false,
+            err:      formatError(e.message),
+            confirmTime: new Date()                                                   // 新增：捕捉錯誤時的確認時間
           }))
           .finally(()=>{
             done++;
-            prog.innerText = `檢查上線時間：${done} / ${total} (${ts})`;
-            if(done === total) prog.innerText = '';
+            const currTs = new Date().toLocaleString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+            prog.innerText = `檢查上線時間：${done} / ${total} (${currTs})`;           // 新增：即時進度打點
           })
       );
       const settled = await Promise.allSettled(promises);
+
+      const checkEnd = performance.now();                                            // 新增：檢查結束時間點
+      const checkDur = ((checkEnd - checkStart)/1000).toFixed(1);
+      const endTs = new Date().toLocaleString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      prog.innerText = `檢查上線時間完成… (${endTs})，總耗時 ${checkDur}s`;          // 新增：檢查完成訊息
+
       const noneOnline = settled
         .filter(r=>r.status==='fulfilled' && r.value)
         .map(r=>r.value);
@@ -143,21 +161,28 @@
         return;
       }
       let html = `<table><thead><tr>
-        <th>開始時間</th><th>結束時間</th><th>老師姓名</th><th>上線時間</th>
+        <th>開始時間</th><th>結束時間</th><th>老師姓名</th><th>上線時間</th><th>確認時間</th>
       </tr></thead><tbody>`;
       noneOnline.forEach(item=>{
         // 新增：判斷 mm 是否為 00/30
         const mm = getMinute(item.startAt);
         const highlight = (mm !== 0 && mm !== 30) ? ' style="background:#eee"' : '';
+        const zoomIcon = item.hasZoom
+          ? '<img src="zoom-icon.png" alt="Zoom" style="width:16px;height:16px;vertical-align:middle;margin-left:4px">'
+          : '';
         html += `<tr${highlight}>
-          <td>${item.start}</td>
-          <td>${item.end}</td>
-          <td>${item.teacher}${extractTags(item.name)}</td>
+          <td>${item.start}</td><td>${item.end}</td>
+          <td>${item.teacher}${extractTags(item.name)}${zoomIcon}</td>
           <td style="color:red">${item.err}</td>
+          <td>${toTW(item.confirmTime.toISOString())}</td>                           <!-- 新增：確認時間欄位內容 -->
         </tr>`;
       });
       html += `</tbody></table>`;
       out.innerHTML = html;
+
+      // 新增：列表渲染完成時間戳
+      const finTs = new Date().toLocaleString('zh-TW',{hour12:false,hour:'2-digit',minute:'2-digit',second:'2-digit'});
+      prog.innerText = `全部渲染完成：${finTs}`;
     }
 
     document.getElementById('genBtn').addEventListener('click', genList);

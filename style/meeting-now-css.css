@@ -225,13 +225,13 @@
 }
 
 /* 即將開始 - 使用橙色系 */
-.meetingsearch-即將開始-半小時內- strong {
+.meetingsearch-即將開始-半小時內 strong {
     background-color: rgba(243, 156, 18, 0.1);
     color: #f39c12;
     border-left: 3px solid #f39c12;
 }
 
-.meetingsearch-即將開始-半小時內- strong::before {
+.meetingsearch-即將開始-半小時內 strong::before {
     content: '⚡';
     position: absolute;
     left: 12px;
