@@ -226,7 +226,7 @@ function formatTaiwanTime(utcTimeString) {
 function isTimeOverlap(courseStart, courseEnd, sheetTimeRange, utcStartTime) {
     if (!sheetTimeRange || !sheetTimeRange.includes('-')) return false;
 
-    // 解析 Google Sheet 的時間範圍 (格式如 "1500-1530")
+    // 解析 Google Sheet 的時間範圍 (格式如 "1000-1100")
     const [sheetStart, sheetEnd] = sheetTimeRange.split('-').map(t => t.trim());
 
     // 轉換為數字以便比較時間
@@ -235,18 +235,27 @@ function isTimeOverlap(courseStart, courseEnd, sheetTimeRange, utcStartTime) {
     const sheetStartNum = parseInt(sheetStart);
     const sheetEndNum = parseInt(sheetEnd);
 
-    // 紀錄比對過程
-    console.log('Time comparison:', {
-        courseTime: `${courseStartNum}-${courseEndNum}`,
-        sheetTime: `${sheetStartNum}-${sheetEndNum}`,
-        utcStartTime: utcStartTime,
-        taiwanStartTime: courseStart.time,
-        isOverlap: 
-            courseStartNum >= sheetStartNum && 
-            courseStartNum <= sheetEndNum
+    // 添加詳細的比對日誌
+    console.log('Detailed time comparison:', {
+        courseTime: {
+            start: courseStartNum,
+            end: courseEndNum,
+            raw: `${courseStart.time}-${courseEnd.time}`
+        },
+        sheetTime: {
+            start: sheetStartNum,
+            end: sheetEndNum,
+            raw: sheetTimeRange
+        },
+        strictComparison: {
+            startMatch: courseStartNum === sheetStartNum,
+            endWithinRange: courseEndNum <= sheetEndNum,
+            isValid: courseStartNum === sheetStartNum && courseEndNum <= sheetEndNum
+        }
     });
 
-    return courseStartNum >= sheetStartNum && courseStartNum <= sheetEndNum;
+    // 嚴格比對：課程開始時間必須完全匹配，結束時間必須在範圍內
+    return courseStartNum === sheetStartNum && courseEndNum <= sheetEndNum;
 }
 
 // 在 findMatchingSheetData 函數中添加時區檢查日誌
