@@ -4,9 +4,11 @@ export class ConflictChecker {
     constructor() {
         this.minInterval = 60000; // 1 分鐘
         this.maxInterval = 300000; // 5 分鐘
+        this.extendedInterval = 600000; // 10 分鐘
         this.currentInterval = this.minInterval;
         this.lastChangeTime = Date.now();
         this.cacheKey = 'meetingConflictCache';
+        this.checkTimer = null;
     }
 
     async start() {
@@ -16,8 +18,16 @@ export class ConflictChecker {
             
             // 註冊頁面可見性事件
             document.addEventListener('visibilitychange', () => {
-                if (!document.hidden) {
+                if (document.hidden) {
+                    // 清除定時器
+                    if (this.checkTimer) {
+                        clearTimeout(this.checkTimer);
+                        this.checkTimer = null;
+                    }
+                } else {
+                    // 頁面可見時立即檢查並重新啟動定時器
                     this.checkWithCache();
+                    this.scheduleNextCheck();
                 }
             });
 
@@ -54,13 +64,20 @@ export class ConflictChecker {
 
     adjustInterval() {
         const timeSinceLastChange = Date.now() - this.lastChangeTime;
-        if (timeSinceLastChange > 1800000) { // 30分鐘無變化
+        
+        if (timeSinceLastChange > 3600000) { // 1小時無變化
+            this.currentInterval = this.extendedInterval;
+        } else if (timeSinceLastChange > 1800000) { // 30分鐘無變化
             this.currentInterval = this.maxInterval;
         }
     }
 
     scheduleNextCheck() {
-        setTimeout(() => {
+        if (document.hidden) {
+            return; // 如果頁面不可見，不進行排程
+        }
+
+        this.checkTimer = setTimeout(() => {
             this.checkWithCache().finally(() => {
                 this.scheduleNextCheck();
             });
