@@ -148,6 +148,11 @@
       box-sizing: border-box;
       resize: vertical;
     }
+    textarea:disabled {
+      background-color: #f5f5f5;
+      color: #666;
+      cursor: not-allowed;
+    }
     .btn-group {
       margin-top: 10px;
     }
@@ -156,6 +161,11 @@
       margin-right: 10px;
       font-size: 16px;
       cursor: pointer;
+      transition: all 0.3s ease;
+    }
+    .btn-group button.copied {
+      background-color: #4CAF50;
+      color: white;
     }
     /* 顯示紅色警示文字 */
     .warning {
@@ -326,11 +336,6 @@
       <p>依據家長備註，選擇適用通知範本（參考上方罐頭訊息）：</p>
     </section>
     <section id="step8">
-      <h2>8. 通知輔導老師</h2>
-      <p>當代課老師接單後，請至 Slack 頻道「#推播_代課搶課成功」發送通知，內容如下：</p>
-      <pre>
-老師請假，請於授課提醒內完成學生狀況交接
-
 1、學員姓名： (請填入)
 2、課程時間： (請填入)
 3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/ (請附上課程ID)
@@ -372,9 +377,25 @@
     // ========= 2. 罐頭訊息複製功能 =========
     function copyText(id) {
       const textarea = document.getElementById(id);
-      textarea.select();
-      document.execCommand('copy');
-      alert('已複製到剪貼簿');
+      const button = textarea.parentElement.querySelector('button');
+      
+      // 複製前先移除 disabled
+      textarea.removeAttribute('disabled');
+      
+      // 使用 Clipboard API 替代 select() + execCommand
+      navigator.clipboard.writeText(textarea.value).then(() => {
+        // 複製成功後加上 disabled 並變更按鈕樣式
+        textarea.setAttribute('disabled', '');
+        button.classList.add('copied');
+        button.textContent = '已複製';
+        
+        // 1.5秒後恢復原狀
+        setTimeout(() => {
+          textarea.removeAttribute('disabled');
+          button.classList.remove('copied');
+          button.textContent = '複製';
+        }, 1500);
+      });
     }
 
     // ========= 3. 預設文本 & API 文本儲存 =========
@@ -455,7 +476,7 @@
       const inputVal = courseInput.value.trim();
       const courseId = extractCourseId(inputVal);
       if (!courseId) {
-        alert('無法解析出正確的課程ID，請確認貼上的網址格式');
+        courseResultDiv.innerHTML = '<p style="color:red;">無法解析出正確的課程ID，請確認貼上的網址格式</p>';
         return;
       }
 
