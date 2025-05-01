@@ -54,7 +54,7 @@ function generateOutput() {
     const project = document.getElementById('DT_project').value || '';
 
     let deviceOutput = '';
-    document.querySelectorAll('.device-group').forEach(function (el, index) {
+    document.querySelectorAll('.device-group').forEach(function (el, index, array) {
         const deviceIndex = index + 1;
         const device = document.getElementById(`DT_device_${deviceIndex}`).value || '';
         const brand = document.getElementById(`DT_brand_${deviceIndex}`).value || '';
@@ -76,7 +76,8 @@ function generateOutput() {
         if (videoSpec) deviceDetails += `視訊規格：【${videoSpec}】 `;
         if (videoQuality) deviceDetails += `視訊品質：【${videoQuality}】<br>`;
         if (audioSpec) deviceDetails += `耳麥規格：【${audioSpec}】 `;
-        if (audioQuality) deviceDetails += `聲音品質：【${audioQuality}】<br>`;
+        // 最後一個設備的最後一個欄位不添加換行
+        if (audioQuality) deviceDetails += `聲音品質：【${audioQuality}】${index < array.length - 1 ? '<br>' : ''}`;
 
         if (deviceDetails) {
             deviceOutput += `設備（${deviceIndex}）：<br>${deviceDetails}`;
@@ -84,7 +85,7 @@ function generateOutput() {
     });
 
     let connectionOutput = '';
-    document.querySelectorAll('.connection-group').forEach(function (el, index) {
+    document.querySelectorAll('.connection-group').forEach(function (el, index, array) {
         const connectionIndex = index + 1;
         const provider = document.getElementById(`DT_provider_${connectionIndex}`).value || '';
         const connection = document.getElementById(`DT_connection_${connectionIndex}`).value || '';
@@ -94,7 +95,10 @@ function generateOutput() {
         let connectionDetails = '';
         if (provider) connectionDetails += `電信業者：【${provider}】 `;
         if (connection && connection !== '-') connectionDetails += `連線方式：【${connection}】<br>`;
-        if (speed) connectionDetails += `當前網速：【${speed}】<br>`;
+        // 判斷是否為最後一條記錄，如果是最後一條則不添加換行符
+        if (speed) {
+            connectionDetails += `當前網速：【${speed}】${index < array.length - 1 ? '<br>' : ''}`;
+        }
 
         if (connectionDetails) {
             connectionOutput += `連線（${connectionIndex}）：<br>${connectionDetails}`;
