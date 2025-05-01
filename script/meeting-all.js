@@ -27,7 +27,7 @@ document.getElementById('all-meeting-search-input').addEventListener('input', fu
 // Fetch 會議資料
 async function fetchAllMeetings(query) {
     try {
-        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
+        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K', '「US版Zoom學員名單(5/15)」!A:K'];
         const data = await callGoogleSheetBatchAPI({ ranges });
         
         let filteredMeetings = [];
