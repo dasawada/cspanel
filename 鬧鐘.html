@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>簡易鬧鐘</title>
+</head>
+<body>
+  <h1>簡易鬧鐘</h1>
+  <label for="alarmTime">請輸入鬧鐘時間 (HH:MM)：</label>
+  <input type="time" id="alarmTime" required>
+  <button id="setAlarm">設定鬧鐘</button>
+  <p id="status"></p>
+  <audio id="alarmSound" src="https://actions.google.com/sounds/v1/alarms/alarm_clock.ogg" preload="auto"></audio>
+  <script>
+    function getTimeInMs(timeStr) {
+      const [hour, minute] = timeStr.split(':').map(Number);
+      const now = new Date();
+      const alarm = new Date();
+      alarm.setHours(hour, minute, 0, 0);
+      if (alarm < now) alarm.setDate(alarm.getDate() + 1); // 若已過，設為明天
+      return alarm - now;
+    }
+
+    document.getElementById('setAlarm').onclick = function() {
+      const time = document.getElementById('alarmTime').value;
+      const status = document.getElementById('status');
+      if (!time) {
+        status.textContent = '請輸入正確的時間！';
+        return;
+      }
+      const ms = getTimeInMs(time);
+      if (isNaN(ms) || ms < 0) {
+        status.textContent = '時間格式錯誤！';
+        return;
+      }
+      status.textContent = `鬧鐘設定於 ${time}，等待中...`;
+      setTimeout(() => {
+        document.getElementById('alarmSound').play();
+        status.textContent = '時間到！';
+        alert('時間到！');
+      }, ms);
+    };
+  </script>
+</body>
+</html>
