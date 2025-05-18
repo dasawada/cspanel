@@ -392,3 +392,6 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
 .fudausearch-clear-btn:hover {
   color: #000;
 }
+#meetingsearch-refresh-btn:hover {
+    color: #bdbdbd;
+  }
