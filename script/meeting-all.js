@@ -83,7 +83,9 @@ function displayMeetings(meetings) {
                 meetingInfo: meeting[6] || '無會議資訊',
                 accountid: accountId,
                 link: meetingLink,
-                type: meetingType
+                type: meetingType,
+                startDate: meeting[1], // column B
+                endDate: meeting[7]    // column H
             });
         });
     });
@@ -212,8 +214,20 @@ Object.keys(meetingMap[meetingName][repeatPattern]).forEach(tag => {
                     const accountElement = document.createElement('p');
                     accountElement.textContent = `開立帳號: ${details.accountid}`;
 
+                    // 新增：顯示起迄日期
+                    const dateRangeElement = document.createElement('p');
+                    const startDate = details.startDate ? details.startDate.replace(/-/g, '/') : '';
+                    const endDate = details.endDate ? details.endDate.replace(/-/g, '/') : '';
+                    if (startDate && endDate) {
+                        dateRangeElement.textContent = `起訖期間: ${startDate} ~ ${endDate}`;
+                    } else {
+                        dateRangeElement.textContent = '起訖期間: -';
+                    }
+
                     meetingDetails.appendChild(meetingInfoElement);
                     meetingDetails.appendChild(accountElement);
+                    meetingDetails.appendChild(dateRangeElement);
+
                     detailDiv.appendChild(meetingDetails);
 
                     tagGroupDiv.appendChild(meetingWrapper);

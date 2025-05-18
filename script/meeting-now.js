@@ -59,6 +59,22 @@ document.getElementById('zv-metting-list-modal-btn').addEventListener('click', a
     }
 });
 
+// 綁定刷新按鈕事件
+document.getElementById('meetingsearch-refresh-btn').addEventListener('click', async function() {
+    const now = new Date();
+    const taiwanOffset = 8 * 60;
+    const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
+    const currentDate = localTime.toISOString().split('T')[0];
+    const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
+
+    // 清空搜尋框
+    const filterInput = document.getElementById('meetingsearch-filter-input');
+    if (filterInput) filterInput.value = '';
+
+    // 重新撈取會議
+    await meetingsearchFetchMeetings(currentDate, currentTime, localTime);
+});
+
 // 自動監聽輸入框的值，並根據輸入的值篩選會議
 document.getElementById('meetingsearch-filter-input').addEventListener('input', function() {
     const filterText = document.getElementById('meetingsearch-filter-input').value.toLowerCase();
