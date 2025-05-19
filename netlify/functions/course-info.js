@@ -1,12 +1,28 @@
 const fetch = require('node-fetch');
 
 exports.handler = async (event) => {
+  // CORS 處理（如需跨網域呼叫）
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type',
+      },
+      body: '',
+    };
+  }
+
   try {
     const { courseId } = JSON.parse(event.body || '{}');
     if (!courseId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing courseId' }) };
     }
     const jwt = process.env.ONE_CLUB_JWT;
+    if (!jwt) {
+      return { statusCode: 500, body: JSON.stringify({ error: 'Missing ONE_CLUB_JWT' }) };
+    }
     // 查課程
     const courseResp = await fetch(`https://api-new.oneclass.co/mms/course/UseAggregate/${courseId}`, {
       headers: {
@@ -32,6 +48,10 @@ exports.handler = async (event) => {
     }
     return {
       statusCode: 200,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
       body: JSON.stringify({ course: courseJson, parent: parentJson })
     };
   } catch (err) {
