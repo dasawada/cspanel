@@ -57,7 +57,12 @@ exports.handler = async (event) => {
           headers: { 'Accept': 'application/json, text/plain, */*' }
         });
         if (parentResp.ok) {
-          parentJson = await parentResp.json();
+          const text = await parentResp.text();
+          try {
+            parentJson = text ? JSON.parse(text) : null;
+          } catch (e) {
+            parentJson = { error: 'Parent API returned invalid JSON', detail: text };
+          }
         } else {
           parentJson = { error: 'Parent API failed', detail: await parentResp.text() };
         }
