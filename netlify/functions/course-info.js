@@ -39,6 +39,10 @@ exports.handler = async (event) => {
         'Authorization': jwt
       }
     });
+    if (!courseResp.ok) {
+      const text = await courseResp.text();
+      return { statusCode: courseResp.status, headers, body: JSON.stringify({ error: 'Course API failed', detail: text }) };
+    }
     const courseJson = await courseResp.json();
     if (courseJson.status !== 'success') {
       return { statusCode: 500, headers, body: JSON.stringify({ error: 'Course API failed', detail: courseJson }) };
@@ -52,7 +56,11 @@ exports.handler = async (event) => {
         const parentResp = await fetch(`https://api.oneclass.co/staff/customers/${parentOneClubId}`, {
           headers: { 'Accept': 'application/json, text/plain, */*' }
         });
-        parentJson = await parentResp.json();
+        if (parentResp.ok) {
+          parentJson = await parentResp.json();
+        } else {
+          parentJson = { error: 'Parent API failed', detail: await parentResp.text() };
+        }
       }
     }
     return {
