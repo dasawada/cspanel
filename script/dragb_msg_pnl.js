@@ -330,44 +330,23 @@
         courseResultDiv.innerHTML = '<p style="color:red;">無法解析出正確的課程ID，請確認貼上的網址格式</p>';
         return;
       }
-      const courseApiUrl = 'https://api-new.oneclass.co/mms/course/UseAggregate';
-      let courseData, studentNames = '', tagNames = '', courseTime = '';
-      fetch(`${courseApiUrl}/${courseId}`, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiIzNTZhYTFhOC01OTRmLTRkN2ItOGQzZi1kNmVhMzAyODIzYWUiLCJpYXQiOjE3NDQzNDc5OTAsImV4cCI6MTc0OTUzMTk5MH0.YJ7cIHdcT-FRCUj8cNr8mgXSF04gbGb6jffiwTAufuI'
-        }
+      fetch('/.netlify/functions/course-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId })
       })
-      .then(response => {
-        if (!response.ok) throw new Error('網路請求錯誤，狀態碼：' + response.status);
-        return response.json();
-      })
-      .then(json => {
-        if (json.status !== 'success') throw new Error('API 回傳非 success: ' + JSON.stringify(json));
-        courseData = json.data;
-        studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
-        tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
-        courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
-        let parentOneClubId = '';
-        if (courseData.students && courseData.students.length > 0) {
-          parentOneClubId = courseData.students[0].parentOneClubId || '';
-        }
-        if (!parentOneClubId) throw new Error('無法取得學生的 parentOneClubId');
-        const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
-        return fetch(parentApiUrl, { method: 'GET', headers: { 'Accept': 'application/json, text/plain, */*' } });
-      })
-      .then(response => {
-        if (!response.ok) throw new Error('家長 API 請求錯誤，狀態碼：' + response.status);
-        return response.json();
-      })
-      .then(parentJson => {
-        if (parentJson.status !== 'success') throw new Error('家長 API 回傳非 success: ' + JSON.stringify(parentJson));
-        const parentData = parentJson.data;
-        const contactId = parentData.contactId;
-        if (!contactId) throw new Error('無法取得家長的 contactId');
-        const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
-        const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
+        .then(res => res.json())
+        .then(({ course, parent }) => {
+          if (!course || course.status !== 'success') throw new Error('API 回傳非 success: ' + JSON.stringify(course));
+          const courseData = course.data;
+          let studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
+          let tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
+          let courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
+          let parentData = parent && parent.status === 'success' ? parent.data : null;
+          let contactId = parentData ? parentData.contactId : '';
+          if (!contactId) throw new Error('無法取得家長的 contactId');
+          const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
+          const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
         // 更新 tab2
         apiTexts["tab2"] = `親愛的家長您好：
 
