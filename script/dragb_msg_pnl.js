@@ -330,14 +330,15 @@
         courseResultDiv.innerHTML = '<p style="color:red;">無法解析出正確的課程ID，請確認貼上的網址格式</p>';
         return;
       }
-      const courseApiUrl = 'https://api-new.oneclass.co/mms/course/UseAggregate';
+      const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
+      const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
       let courseData, studentNames = '', tagNames = '', courseTime = '';
-      fetch(`${courseApiUrl}/${courseId}`, {
-        method: 'GET',
+      fetch(courseApiUrl, {
+        method: 'POST',
         headers: {
-          'Accept': 'application/json, text/plain, */*',
-          'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiIzNTZhYTFhOC01OTRmLTRkN2ItOGQzZi1kNmVhMzAyODIzYWUiLCJpYXQiOjE3NDQzNDc5OTAsImV4cCI6MTc0OTUzMTk5MH0.YJ7cIHdcT-FRCUj8cNr8mgXSF04gbGb6jffiwTAufuI'
-        }
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ courseId })
       })
       .then(response => {
         if (!response.ok) throw new Error('網路請求錯誤，狀態碼：' + response.status);
