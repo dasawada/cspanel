@@ -1,6 +1,7 @@
 (function(global) {
-  // ===== 密碼鎖機制（純前端版，建議改 server 驗證） =====
-  const SIMPLE_PASSWORD = 'GIVE_ME_MONEY'; // 建議改 serverless function 驗證
+  // ===== 密碼鎖機制（Netlify server 驗證版） =====
+  const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
+  const LOGIN_API = `${NETLIFY_SITE_URL}/.netlify/functions/simple-login`;
 
   function showPasswordPrompt(callback) {
     if (window.localStorage.getItem('canned_panel_unlocked') === '1') {
@@ -23,16 +24,30 @@
     const input = mask.querySelector('#pw-input');
     const btn = mask.querySelector('#pw-btn');
     const err = mask.querySelector('#pw-err');
-    function tryLogin() {
-      if (input.value === SIMPLE_PASSWORD) {
-        window.localStorage.setItem('canned_panel_unlocked', '1');
-        document.body.removeChild(mask);
-        callback();
-      } else {
-        err.textContent = '密碼錯誤';
-        input.value = '';
-        input.focus();
+    async function tryLogin() {
+      err.textContent = '';
+      btn.disabled = true;
+      try {
+        const res = await fetch(LOGIN_API, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ password: input.value })
+        });
+        const data = await res.json();
+        if (res.ok && data.token) {
+          window.localStorage.setItem('canned_panel_token', data.token);
+          window.localStorage.setItem('canned_panel_unlocked', '1');
+          document.body.removeChild(mask);
+          callback();
+        } else {
+          err.textContent = data.message || '密碼錯誤';
+          input.value = '';
+          input.focus();
+        }
+      } catch (e) {
+        err.textContent = '連線失敗';
       }
+      btn.disabled = false;
     }
     btn.onclick = tryLogin;
     input.onkeydown = e => { if (e.key === 'Enter') tryLogin(); };
