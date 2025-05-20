@@ -62,7 +62,7 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ course: courseJson, parent: parentJson })
+      body: JSON.stringify({ status: 'success', data: courseData, parent: parentJson })
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
