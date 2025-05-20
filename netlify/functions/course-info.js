@@ -13,6 +13,16 @@ exports.handler = async (event) => {
       body: '',
     };
   }
+  if (event.httpMethod !== 'POST') {
+    return {
+      statusCode: 405,
+      headers: {
+        'Allow': 'POST, OPTIONS',
+        'Access-Control-Allow-Origin': '*'
+      },
+      body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
 
   try {
     const { courseId } = JSON.parse(event.body || '{}');
