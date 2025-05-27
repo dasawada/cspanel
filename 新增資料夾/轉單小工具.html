@@ -37,6 +37,7 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     z-index: 9999;
     display: none;
+    pointer-events: none;
 }
 
 .fudausearch-suggestion-item {
@@ -133,7 +134,7 @@
   </style>
 </head>
 <body>
-  <div class="fudausearch-container" id="fudausearch-container" style="z-index: 999;">
+  <div class="fudausearch-container" id="fudausearch-container" style="z-index: 9998;">
     <div class="fudausearch-drag-handle" id="fudausearch-drag-handle">
         輔導職代搜尋
     </div>
@@ -189,13 +190,6 @@ makeDraggable(panel, handle, { left: 300, top: 185, width: 1900, height: 0 });
 		  <button id="helpButton" class="help-button" title="說明">?</button>
 		  </div>
           <div class="table-actions">
-            <button class="button button-outline" id="restoreButton">
-              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M3 12a9 9 0 019-9 9.75 9.75 0 016.74 2.74L21 8"/>
-                <path d="M21 3v5h-5"/>
-              </svg>
-              復原
-            </button>
             <button class="button button-primary" id="copyButton">
               <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
@@ -365,7 +359,6 @@ makeDraggable(panel, handle, { left: 300, top: 185, width: 1900, height: 0 });
     const searchButton = document.getElementById("searchButton")
     const resultPre = document.getElementById("result")
     const linksContainer = document.getElementById("linksContainer")
-    const restoreButton = document.getElementById("restoreButton")
     const copyButton = document.getElementById("copyButton")
     const orderFrame = document.getElementById("orderFrame")
     const orderLinkSpan = document.getElementById("orderLink")
@@ -389,7 +382,6 @@ makeDraggable(panel, handle, { left: 300, top: 185, width: 1900, height: 0 });
     })
 
     searchButton.addEventListener("click", fetchDealInfo)
-    restoreButton.addEventListener("click", restoreSheetData)
     copyButton.addEventListener("click", copySheetData)
     ocidSelect.addEventListener("change", (e) => {
       selectedOneClubId = e.target.value;
@@ -923,13 +915,6 @@ makeDraggable(panel, handle, { left: 300, top: 185, width: 1900, height: 0 });
       }
     }
 
-    function restoreSheetData() {
-      if (!previousData) return
-      updateSheetData(previousData.sheetData)
-      updateOneClubCustomers(previousData.oneClubCustomers)
-      selectedOneClubId = previousData.selectedOneClubId
-    }
-
     function copySheetData() {
       const rowData = []
       // A 到 L 欄位
@@ -1046,9 +1031,6 @@ document.addEventListener("DOMContentLoaded", function() {
       <div class="table-header">
         <h2 class="table-title">成交大表資料</h2>
         <div class="table-actions">
-          <button class="button button-outline" id="restoreButton2">
-            復原
-          </button>
           <button class="button button-primary" id="copyButton2">
             複製
           </button>
@@ -1117,15 +1099,8 @@ document.addEventListener("DOMContentLoaded", function() {
     // 為新版位的表格標頭新增 overlay 複製功能（可複製單一欄位內容）
     addCopyOverlay(bigSheetContainer);
 
-    // 新版位復原與複製按鈕處理
-    const restoreButton2 = document.getElementById("restoreButton2");
+    // 新版位複製按鈕處理
     const copyButton2 = document.getElementById("copyButton2");
-
-    restoreButton2.addEventListener("click", () => {
-      // 簡單方式：清空所有 input 值
-      const inputs = bigSheetContainer.querySelectorAll("tbody input");
-      inputs.forEach(input => input.value = "");
-    });
 
     copyButton2.addEventListener("click", () => {
       const dataRow = document.getElementById("dataRow2");
