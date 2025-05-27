@@ -12,7 +12,7 @@
   margin-bottom: 20px;
   z-index: 1005;
   will-change: transform;
-  width: 500px;
+  width: 400px;
   min-width: 350px;
   font-family: Arial, sans-serif;
   color: #333;
@@ -82,7 +82,7 @@
   margin-top: 10px;
 }
 .canned-panel-tab-menu {
-  width: 150px;
+  width: 80px;
   border-right: 1px solid #ddd;
   background: #f9f9f9;
   border-radius: 10px 0 0 10px;
@@ -111,7 +111,7 @@
 .canned-panel-tab-item.active { display: block; }
 .canned-panel-tab-item textarea {
   width: 100%;
-  height: 220px;
+  height: 180px;
   font-size: 13px;
   padding: 10px;
   box-sizing: border-box;
@@ -218,7 +218,7 @@
             <div class="canned-panel-tab-menu">
             <ul>
                 <li data-tab="tab1" class="active">確認搶課</li>
-                <li data-tab="tab2">不排搶課（順延）</li>
+                <li data-tab="tab2">（順延）</li>
                 <li data-tab="tab3">搶課失敗</li>
                 <li data-tab="tab4">輔導通知</li>
             </ul>
