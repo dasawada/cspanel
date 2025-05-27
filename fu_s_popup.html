@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>輔導職代搜尋</title>
+    <link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+</head>
+<body>
+    <div class="fudausearch-container" id="fudausearch-container">
+        <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
+        <div class="fudausearch-input-wrapper">
+            <input type="text" id="fudausearch-input" placeholder="輔導職代搜尋" autocomplete="off" />
+            <button class="fudausearch-clear-btn" id="fudausearch-clear-btn">x</button>
+            <div id="fudausearch-suggestions" class="fudausearch-suggestions"></div>
+        </div>
+        <div id="fudausearch-results"></div>
+    </div>
+    <script type="module" src="script/fusearch.js"></script>
+</body>
+</html>
