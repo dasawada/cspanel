@@ -857,8 +857,6 @@ textarea {
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
     position: absolute;
-    left: 0px;
-    top: 145px;
     gap: 10px;
 }
 
