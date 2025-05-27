@@ -64,7 +64,11 @@ export function makeDraggable(panel, handle, options = {}) {
     if (dragState.isDragging) return;
     dragState.isDragging = true;
     const pageX = (e.touches ? e.touches[0].pageX : e.pageX !== undefined ? e.pageX : e.clientX + window.scrollX);
-    const pageY = (e.touches ? e.touches[0].pageY : e.pageY !== undefined ? e.pageY : e.clientY + window.scrollX);
+    const pageY = (e.touches
+      ? e.touches[0].pageY
+      : e.pageY !== undefined
+        ? e.pageY
+        : e.clientY + window.scrollY);
     dragState.startX = pageX;
     dragState.startY = pageY;
     dragState.elementX = panel.style.left
@@ -158,15 +162,49 @@ export function makeDraggable(panel, handle, options = {}) {
       dragState.translateX = 0;
       dragState.translateY = 0;
     }
+    const panelId = panel.id || panel.dataset.draggableId;
+    if (panelId) {
+      const storageKey = 'draggable:' + location.pathname + ':' + panelId;
+      localStorage.setItem(storageKey, JSON.stringify({ left: finalX, top: finalY }));
+    }
   }
   handle.addEventListener('pointerdown', handleDragStart);
   handle.addEventListener('mousedown', handleDragStart);
   handle.addEventListener('touchstart', handleDragStart, { passive: false });
   handle.addEventListener('dragstart', e => e.preventDefault());
-  // 初始定位
+  window.addEventListener('blur', handleDragEnd);
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) handleDragEnd();
+  });
+  // 初始定位（支援跨頁面唯一 key）
   setTimeout(() => {
-    panel.style.left = (options.left !== undefined ? options.left : 100) + 'px';
-    panel.style.top = (options.top !== undefined ? options.top : 100) + 'px';
+    const panelId = panel.id || panel.dataset.draggableId;
+    let saved = null;
+    if (panelId) {
+      const storageKey = 'draggable:' + location.pathname + ':' + panelId;
+      try {
+        saved = JSON.parse(localStorage.getItem(storageKey));
+      } catch {}
+    }
+    panel.style.left = (saved?.left !== undefined ? saved.left : (options.left !== undefined ? options.left : 100)) + 'px';
+    panel.style.top = (saved?.top !== undefined ? saved.top : (options.top !== undefined ? options.top : 100)) + 'px';
     panel.style.position = 'absolute';
   }, 0);
 }
+
+/*
+  === 使用範例 ===
+
+  import { makeDraggable } from './script/draggable.js';
+
+  // 讓多個不同區塊都能各自拖曳，互不干擾
+  const panelA = document.getElementById('panelA');
+  const handleA = panelA.querySelector('.handleA');
+  makeDraggable(panelA, handleA, { left: 100, top: 100 });
+
+  const panelB = document.getElementById('panelB');
+  const handleB = panelB.querySelector('.handleB');
+  makeDraggable(panelB, handleB, { left: 400, top: 200 });
+
+  // 只要呼叫 makeDraggable(你的div, 你的把手)，每個都能獨立拖曳
+*/
