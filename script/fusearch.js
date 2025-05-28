@@ -1,15 +1,8 @@
 import { callGoogleSheetAPI, callGoogleSheetBatchAPI } from "./googleSheetAPI.js";
-
-// 不再定義 fudausearch_SHEET_ID 與 API Key，只保留讀取範圍設定
 const fudausearch_SHEET_RANGE = "OMGLIST!A:I";
 
-// 緩存全局資料變量
 let fudausearch_cachedData = [];
 
-/**
- * 頁面載入時下載資料
- * 透過後端代理，後端會自動使用環境變數取得統一的 Spreadsheet ID 與 API Key
- */
 async function fudausearch_loadData() {
   try {
     // 調用共用 API 代理，只傳入讀取範圍與方法
@@ -35,104 +28,128 @@ function fudausearch_sortButtons(results) {
   return results.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
 }
 
+// 模式處理函數
+function handleXuewuMode(row, group, input) {
+  let fudausearch_results = [
+    { text: "無資料", fullName: "無資料", type: "職代一" },
+    { text: "無資料", fullName: "無資料", type: "職代二" },
+    { text: "無資料", fullName: "無資料", type: "公帳號" },
+    { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
+    { text: "排", fullName: "課組", type: "排課組" },
+    { text: "無資料", fullName: "無資料", type: "數字組" }
+  ];
+
+  // 更新職代一
+  if (row[3]) {
+    fudausearch_results[0].text = row[3];
+    fudausearch_results[0].fullName = row[3].slice(1);
+  }
+  // 更新職代二
+  if (row[5]) {
+    fudausearch_results[1].text = row[5];
+    fudausearch_results[1].fullName = row[5].slice(1);
+  }
+  // 更新公帳號
+  if (group === "學務部") {
+    fudausearch_results[2].text = group;
+    fudausearch_results[2].fullName = "學務";
+  } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+    const groupNum = group.replace(/學務|組/g, "");
+    fudausearch_results[2].text = `公 輔${groupNum}`;
+    fudausearch_results[2].fullName = `輔導${groupNum}組`;
+  }
+  // 更新群組
+  if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
+    if (group === "學務二組") {
+      fudausearch_results[5].text = "二2C";
+      fudausearch_results[5].fullName = "輔導二組2C";
+    } else {
+      const number = group.replace(/學務|組/g, "");
+      fudausearch_results[5].text = number;
+      fudausearch_results[5].fullName = `第${number}組`;
+    }
+  }
+  // 組長
+  if (row[8]) {
+    const nameNoSurname = row[8].slice(1);
+    fudausearch_results.push({
+      text: "組長",
+      fullName: nameNoSurname,
+      type: "組長"
+    });
+  }
+  // 本人與學務部
+  fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
+  fudausearch_results.unshift({ text: input, fullName: input.slice(1), type: "輔導本人" });
+
+  // 過濾掉空的職代二按鈕
+  fudausearch_results = fudausearch_results.filter(result =>
+    !(result.type === "職代二" && (result.text === "無資料" || !result.text))
+  );
+  return fudausearch_results;
+}
+
+function handleIndependentMode(row, group, input) {
+  let fudausearch_results = [];
+  
+  // 如果有組長且組長不是本人，則顯示兩者
+  if (row[8] && row[1] !== row[8]) {
+    fudausearch_results = [
+      { text: row[1], fullName: row[1].slice(1), type: "顧問本人" },
+      {
+        text: `組長：${row[8]}`,
+        fullName: row[8].slice(1),
+        type: "組長"
+      }
+    ];
+  }
+  // 如果組長就是本人，只顯示組長身份
+  else if (row[8] && row[1] === row[8]) {
+    fudausearch_results = [{
+      text: `組長：${row[8]}`,
+      fullName: row[8].slice(1),
+      type: "組長"
+    }];
+  }
+  // 如果沒有組長，只顯示本人
+  else {
+    fudausearch_results = [
+      { text: row[1], fullName: row[1].slice(1), type: "顧問本人" }
+    ];
+  }
+  
+  return fudausearch_results;
+}
+
+// 模式映射
+const fudausearch_modes = {
+  xuewu: handleXuewuMode,
+  independent: handleIndependentMode
+};
+
 // 搜尋函數
 async function fudausearch_search() {
   const inputField = document.getElementById("fudausearch-input");
-  const input = inputField.value.trim().replace(/\s+/g, ""); // 移除空白鍵並清除多餘空格
+  const input = inputField.value.trim().replace(/\s+/g, "");
   const resultsContainer = document.getElementById("fudausearch-results");
-
-  // 清空按鈕容器內容，避免重複按鈕
   resultsContainer.innerHTML = "";
-
-  // 如果 input 為空，直接退出搜尋
   if (!input) return;
 
-// 初始化結果
-let fudausearch_results = [
-  { text: "無資料", fullName: "無資料", type: "職代一" },
-  { text: "無資料", fullName: "無資料", type: "職代二" },
-  { text: "無資料", fullName: "無資料", type: "公帳號" },
-  { text: "客", fullName: "公帳號_客服用", type: "客服工程師" },
-  { text: "排", fullName: "課組", type: "排課組" },
-  { text: "無資料", fullName: "無資料", type: "數字組" }
-];
+  let fudausearch_results = [];
+  let hasMatch = false;
 
-
-// 使用緩存資料進行匹配
-let hasMatch = false;
-fudausearch_cachedData.forEach((row, rowIndex) => {
-  const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex); // 檢索組別
-  if (row[1] === input) {
-    hasMatch = true;
-
-    // 更新職代一
-    if (row[3]) {
-      fudausearch_results[0].text = row[3];
-      fudausearch_results[0].fullName = row[3].slice(1);
+  fudausearch_cachedData.forEach((row, rowIndex) => {
+    const group = fudausearch_getGroup(row[0], fudausearch_cachedData, rowIndex);
+    if (row[1] === input) {
+      hasMatch = true;
+      const mode = group.startsWith("學務") ? "xuewu" : "independent";
+      fudausearch_results = fudausearch_modes[mode](row, group, input);
     }
+  });
 
-    // 更新職代二
-    if (row[5]) {
-      fudausearch_results[1].text = row[5];
-      fudausearch_results[1].fullName = row[5].slice(1);
-    }
+  if (!hasMatch) fudausearch_results = [];
 
-    // 更新公帳號
-    if (group === "學務部") {
-      fudausearch_results[2].text = group;
-      fudausearch_results[2].fullName = "學務";
-    } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-      // 提取組別數字
-      const groupNum = group.replace(/學務|組/g, "");
-      
-      // 設定按鈕顯示文字為「公 輔導X組」
-      fudausearch_results[2].text = `公 輔${groupNum}`;
-      
-      // 設定複製內容為「輔導X組」
-      fudausearch_results[2].fullName = `輔導${groupNum}組`;
-    }
-
-// 更新群組
-if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
-  if (group === "學務二組") {
-    // 只有學務二組才特殊處理
-    fudausearch_results[5].text = "二2C";          // 按鈕顯示為【輔導二組2C】
-    fudausearch_results[5].fullName = "輔導二組2C";      // 點擊複製的內容
-  } else {
-    // 其他組別正常處理
-    const number = group.replace(/學務|組/g, "");       // 例如「三」
-    fudausearch_results[5].text = number;               // 按鈕顯示為數字，例如「三」
-    fudausearch_results[5].fullName = `第${number}組`;  // 點擊複製的內容，例如「第三組」
-  }
-}
-    // 新增：如果 column I 有組長名（row[8]），就加入一個「組長」結果
-    if (row[8]) {
-      const nameNoSurname = row[8].slice(1);   // 去掉姓氏
-      fudausearch_results.push({
-        text: "組長",
-        fullName: nameNoSurname,
-        type: "組長"
-      });
-    }
-  }
-});
-
-  if (hasMatch) {
-    fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
-    fudausearch_results.unshift({ text: input, fullName: input.slice(1), type: "輔導本人" });
-    
-    // 過濾掉空的職代二按鈕
-    fudausearch_results = fudausearch_results.filter(result => 
-      !(result.type === "職代二" && (result.text === "無資料" || !result.text))
-    );
-  } else {
-    fudausearch_results = []; // 無匹配時清空結果
-  }
-
-  // 排序按鈕
   fudausearch_results = fudausearch_sortButtons(fudausearch_results);
-
-  // 渲染按鈕
   fudausearch_renderButtons(fudausearch_results);
 }
 
