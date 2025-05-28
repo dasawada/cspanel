@@ -2,7 +2,7 @@
  * 讓指定元素可拖曳，彼此互不影響，並自動套用拖曳樣式
  * @param {HTMLElement} panel  要拖曳的主體元素
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
- * @param {Object} options     { left, top, width, height }
+ * @param {Object} options     { left, top, width, height, color }
  */
 export function makeDraggable(panel, handle, options = {}) {
   handle = handle || panel;
@@ -17,7 +17,6 @@ export function makeDraggable(panel, handle, options = {}) {
   text-align: left;
   font-weight: bold;
   cursor: grab;
-  height: 19px;
   user-select: none;
 }
 .draggable-handle:active { cursor: grabbing; }
@@ -41,6 +40,25 @@ export function makeDraggable(panel, handle, options = {}) {
     window.__draggableStyleInjected = true;
   }
 
+  // === 根據 options.color 動態產生主題色 ===
+  if (options.color) {
+    const colorCode = options.color.replace('#', '').toLowerCase();
+    const themeClass = `draggable-handle-theme-${colorCode}`;
+    if (!document.querySelector(`style[data-draggable-theme="${themeClass}"]`)) {
+      const style = document.createElement('style');
+      style.setAttribute('data-draggable-theme', themeClass);
+      style.textContent = `
+.draggable-dragging .${themeClass} {
+  background: linear-gradient(180deg, ${options.color} 0%, ${options.color}22 100%) !important;
+  color: #fff !important;
+}
+`;
+      document.head.appendChild(style);
+    }
+    handle.classList.add(themeClass);
+  }
+  // ===
+
   // 自動加上通用 handle 樣式 class
   if (!handle.classList.contains('draggable-handle')) {
     handle.classList.add('draggable-handle');
@@ -59,10 +77,28 @@ export function makeDraggable(panel, handle, options = {}) {
   const viewportWidth = options.width || window.innerWidth;
   const viewportHeight = options.height || window.innerHeight;
 
+  let dragOverlay = null; // 新增遮罩變數
+
   function handleDragStart(e) {
     e.preventDefault(); e.stopPropagation();
     if (dragState.isDragging) return;
     dragState.isDragging = true;
+
+    // === 新增：拖曳時加全螢幕透明遮罩，避免 iframe 吃掉事件 ===
+    if (!dragOverlay) {
+      dragOverlay = document.createElement('div');
+      dragOverlay.style.position = 'fixed';
+      dragOverlay.style.left = '0';
+      dragOverlay.style.top = '0';
+      dragOverlay.style.width = '100vw';
+      dragOverlay.style.height = '100vh';
+      dragOverlay.style.zIndex = '2147483647'; // 保證最高
+      dragOverlay.style.pointerEvents = 'auto';
+      dragOverlay.style.background = 'rgba(0,0,0,0)';
+      document.body.appendChild(dragOverlay);
+    }
+    // ===
+
     const pageX = (e.touches ? e.touches[0].pageX : e.pageX !== undefined ? e.pageX : e.clientX + window.scrollX);
     const pageY = (e.touches
       ? e.touches[0].pageY
@@ -128,6 +164,14 @@ export function makeDraggable(panel, handle, options = {}) {
     document.removeEventListener('touchmove', handleDragMove);
     document.removeEventListener('touchend', handleDragEnd);
     document.removeEventListener('touchcancel', handleDragEnd);
+
+    // === 新增：拖曳結束移除遮罩 ===
+    if (dragOverlay) {
+      dragOverlay.remove();
+      dragOverlay = null;
+    }
+    // ===
+
     if (dragState.animationFrameId) {
       cancelAnimationFrame(dragState.animationFrameId);
       dragState.animationFrameId = null;
@@ -200,11 +244,11 @@ export function makeDraggable(panel, handle, options = {}) {
   // 讓多個不同區塊都能各自拖曳，互不干擾
   const panelA = document.getElementById('panelA');
   const handleA = panelA.querySelector('.handleA');
-  makeDraggable(panelA, handleA, { left: 100, top: 100 });
+  makeDraggable(panelA, handleA, { left: 100, top: 100, color: '#ff0000' });
 
   const panelB = document.getElementById('panelB');
   const handleB = panelB.querySelector('.handleB');
-  makeDraggable(panelB, handleB, { left: 400, top: 200 });
+  makeDraggable(panelB, handleB, { left: 400, top: 200, color: '#00ff00' });
 
   // 只要呼叫 makeDraggable(你的div, 你的把手)，每個都能獨立拖曳
 */
