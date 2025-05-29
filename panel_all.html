@@ -576,9 +576,9 @@
 		</div>
     </div>
 </div>
-    <script src="script/dragb_msg_pnl.js"></script>
-    <script>
-    createCannedMessagesPanel();
+    <script type="module">
+    import { createCannedMessagesPanel } from './script/dragb_msg_pnl.js';
+    createCannedMessagesPanel({ id: 'canned-panel-main', left: 1300, top: 75 });
     </script>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
