@@ -38,7 +38,7 @@ const PANEL_CSS = `
   width: 100%;
   border: 1px solid #ccc;
   border-radius: 9999px;
-  padding: 5px 15px 5px 15px;
+  padding: 5px 30px 5px 15px;
   font-size: 13px;
   box-sizing: border-box;
   background: #fff;
