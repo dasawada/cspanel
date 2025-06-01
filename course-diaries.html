@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Diaries</title>
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
+    <style>
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 20px;
+        }
+        .diary-item {
+            border: 1px solid #ddd;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .diary-grid {
+            display: grid;
+            grid-template-columns: 2fr 2fr 1fr 1fr;
+            gap: 10px;
+            align-items: start;
+        }
+        .diary-grid > div {
+            padding: 5px;
+        }
+        .diary-track {
+            grid-column: 1 / -1;
+            margin-top: 10px;
+            border-top: 1px solid #eee;
+            padding-top: 10px;
+        }
+        .diary-meta {
+            grid-column: 1 / -1;
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid #eee;
+        }
+        #searchForm {
+            margin-bottom: 20px;
+        }
+        .diary-item p {
+            white-space: pre-line;
+            margin: 10px 0;
+        }
+        .diary-item div {
+            margin: 5px 0;
+        }
+        .diary-item small {
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>課程日誌查詢</h1>
+        <form id="searchForm">
+            <input type="text" id="courseId" placeholder="輸入包含教室ID的網址" required>
+            <button type="submit">搜尋</button>
+        </form>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const form = document.getElementById('searchForm');
+        const resultsDiv = document.getElementById('results');
+
+        function extractCourseId(input) {
+            const match = input.match(/([0-9a-fA-F]{24})/);
+            return match ? match[1] : null;
+        }
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const input = document.getElementById('courseId').value.trim();
+            const courseId = extractCourseId(input);
+            
+            if (!courseId) {
+                resultsDiv.innerHTML = '<p style="color: red;">Error: Invalid course ID or URL format</p>';
+                return;
+            }
+            
+            try {
+                // Show loading state
+                resultsDiv.innerHTML = '<p>Loading...</p>';
+                
+                // Use hardcoded token
+                const token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiIzNTZhYTFhOC01OTRmLTRkN2ItOGQzZi1kNmVhMzAyODIzYWUiLCJpYXQiOjE3NDQzNDc5OTAsImV4cCI6MTc0OTUzMTk5MH0.YJ7cIHdcT-FRCUj8cNr8mgXSF04gbGb6jffiwTAufuI";
+
+                const response = await fetch(`https://api-new.oneclass.co/mms/course/${courseId}/diaries`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to fetch data');
+                }
+
+                const response_data = await response.json();
+                
+                if (response_data.status !== 'success') {
+                    throw new Error('API response error');
+                }
+
+                const data = response_data.data;
+                
+                // Check if there are no results
+                if (!data || data.length === 0) {
+                    resultsDiv.innerHTML = '<p>No diary entries found for this course.</p>';
+                    return;
+                }
+                
+                // Display results
+                resultsDiv.innerHTML = data.map(diary => `
+                    <div class="diary-item">
+                        <div class="diary-grid">
+                            <div><strong>問題類型：</strong><br>${categoryMap[diary.category] || diary.category} - ${typeMap[diary.type] || diary.type}</div>
+                            <div><strong>問題描述：</strong><br>${diary.description}</div>
+                            <div><strong>紀錄時間：</strong><br>${new Date(diary.createdAt).toLocaleString()}</div>
+                            <div><strong>最後編輯人員：</strong><br>${diary.editorIds.map(editor => `${editor.name}(${editor.staffNumber})`).join(', ')}</div>
+                            <div class="diary-track">
+                                <strong>處理追蹤：</strong><br>${diary.track}
+                            </div>
+                            <div class="diary-meta">
+                                <small>更新時間: ${new Date(diary.updatedAt).toLocaleString()} | 紀錄ID: ${diary.id}</small>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+            } catch (error) {
+                resultsDiv.innerHTML = `<p style="color: red;">Error: ${error.message}</p>`;
+            }
+        });
+
+        // Add translation mappings
+        const categoryMap = {
+            'system': '系統與其他',
+            'student': '學生端',
+            'teacher': '教師端'
+        };
+
+        const typeMap = {
+            'C1': '師生進入教室無法看見對方',
+            'C2': '人為行政缺失',
+            'C3': '系統問題導致音視訊異常',
+            'C4': '系統問題導致課程延誤',
+            'C5': 'Zoom 使用問題',
+            'C6': '其他',
+            'S1': '學生 NOshow',
+            'S2': '課堂中臨問告知課堂取消',
+            'S3': '學生從登入端無法順利進教室',
+            'S4': '學生端視訊音訊、設備與環境問題',
+            'S5': '學生端網路不良',
+            'S6': '學生遲到',
+            'S7': '學生使用功能操作不當',
+            'S8': '學生因前課 delay，未準時進入教室',
+            'S9': '學生 24HR 請假',
+            'S10': '其他',
+            'T1': '老師曠課／請假未先告知',
+            'T2': '老師端網路問題導致課程取消',
+            'T3': '教師從登入端無法順利進教室',
+            'T4': '老師遲到',
+            'T5': '老師端網路不良',
+            'T6': '老師端視訊音訊、設備與環境問題',
+            'T7': '老師端使用功能操作不當',
+            'T8': '老師因前課 delay，未準時進入教室',
+            'T9': '老師 24HR 請假',
+            'T10': '其他'
+        };
+    </script>
+</body>
+</html>
