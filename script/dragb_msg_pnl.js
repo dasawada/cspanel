@@ -422,7 +422,6 @@ export function createCannedMessagesPanel(options = {}) {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            courseId,
             checkPreparing: {
               startAt,
               endAt: endAt.replace('.000Z', '.999Z'),
