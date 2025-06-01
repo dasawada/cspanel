@@ -424,14 +424,31 @@ export function createCannedMessagesPanel(options = {}) {
           body: JSON.stringify({
             checkPreparing: {
               startAt,
-              endAt: endAt.replace('.000Z', '.999Z'),
-              studentName
+              endAt,
+              studentName,
+              courseStatus: 'preparing',
+              isBelong: 'false',
+              isAudition: 'false',
+              haveLeaveOrder: false,
+              isUseZoom: false,
+              skip: 0,
+              limit: 50,
+              orderBy: 'desc',
+              'transferCourseType[]': [
+                'individualLiveCourse',
+                'groupLiveCourse',
+                'individualCambridge',
+                'publicLiveStreamingCourse',
+                'publicReplayStreamingCourse'
+              ]
             }
           })
         })
         .then(r => r.json())
         .then(json => {
-          const preparingCourses = json.preparingCourses && json.preparingCourses.data ? json.preparingCourses.data : [];
+          const preparingCourses = json.preparingCourses && json.preparingCourses.data && json.preparingCourses.data.courses
+            ? json.preparingCourses.data.courses
+            : [];
           // 清除原本警示
           const w1 = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
           if (w1) w1.remove();
