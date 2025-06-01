@@ -38,7 +38,7 @@ const PANEL_CSS = `
   width: 100%;
   border: 1px solid #ccc;
   border-radius: 9999px;
-  padding: 5px 30px 5px 15px;
+  padding: 5px 30px 5px 10px;
   font-size: 13px;
   box-sizing: border-box;
   background: #fff;
@@ -316,13 +316,13 @@ export function createCannedMessagesPanel(options = {}) {
     }
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
     const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
+
+    // 先預設查詢參數
     let courseData, studentNames = '', tagNames = '', courseTime = '';
     fetch(courseApiUrl, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ courseId })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ courseId }) // 先只查課程
     })
     .then(response => {
       if (!response.ok) throw new Error('網路請求錯誤，狀態碼：' + response.status);
@@ -381,6 +381,7 @@ export function createCannedMessagesPanel(options = {}) {
         apiTexts["tab1"] = defaultTexts["tab1"];
         apiTexts["tab3"] = defaultTexts["tab3"];
         apiTexts["tab4"] = defaultTexts["tab4"];
+        return;
       } else {
         apiTexts["tab1"] = `親愛的家長您好：
 
@@ -407,19 +408,70 @@ export function createCannedMessagesPanel(options = {}) {
         panel.querySelector(`#${panelId}-tab3 textarea`).value = apiTexts["tab3"];
         panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts["tab4"];
       }
+
       // leaveOrders 處理
-      if (courseData.leaveOrders && courseData.leaveOrders.length > 0) {
-        apiTexts["tab1"] = defaultTexts["tab1"];
-        apiTexts["tab4"] = defaultTexts["tab4"];
-        panel.querySelector(`#${panelId}-tab1 textarea`).value = defaultTexts["tab1"];
-        panel.querySelector(`#${panelId}-tab4 textarea`).value = defaultTexts["tab4"];
-        if (!panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`)) {
-          panel.querySelector(`#${panelId}-tab1`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
-        }
-        if (!panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`)) {
-          panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
-        }
+      const teacherLeave = Array.isArray(courseData.leaveOrders) &&
+        courseData.leaveOrders.some(lo => lo.role === 'teacher');
+      if (teacherLeave) {
+        // ===== 新增：查詢準備中課程（用 course-info.js） =====
+        // 直接呼叫 Netlify function，帶入 checkPreparing 參數
+        const startAt = courseData.startAt;
+        const endAt = courseData.endAt;
+        const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
+        fetch(courseApiUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            courseId,
+            checkPreparing: {
+              startAt,
+              endAt: endAt.replace('.000Z', '.999Z'),
+              studentName
+            }
+          })
+        })
+        .then(r => r.json())
+        .then(json => {
+          const preparingCourses = json.preparingCourses && json.preparingCourses.data ? json.preparingCourses.data : [];
+          // 清除原本警示
+          const w1 = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
+          if (w1) w1.remove();
+          const w4 = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
+          if (w4) w4.remove();
+          if (preparingCourses.length === 0) {
+            // 查無準備中課程，顯示阻擋文案與複製按鈕
+            [1, 4].forEach(tabIdx => {
+              const tabDiv = panel.querySelector(`#${panelId}-tab${tabIdx}`);
+              if (tabDiv && !tabDiv.querySelector('.canned-panel-warning')) {
+                const warn = document.createElement('div');
+                warn.className = 'canned-panel-warning';
+                warn.innerHTML = `老師已請假，且查無相同時段的準備中課程。<button id="copy-claim-url-btn-tab${tabIdx}" style="margin-left:10px;">點我複製搶課網址</button>`;
+                tabDiv.insertBefore(warn, tabDiv.firstChild);
+                const btn = warn.querySelector('button');
+                btn.addEventListener('click', () => {
+                  navigator.clipboard.writeText(`https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseId}`).then(() => {
+                    btn.textContent = '已複製';
+                    setTimeout(() => { btn.textContent = '點我複製搶課網址'; }, 1200);
+                  });
+                });
+              }
+            });
+          } else {
+            // 有準備中課程，維持原本請假警示
+            apiTexts["tab1"] = defaultTexts["tab1"];
+            apiTexts["tab4"] = defaultTexts["tab4"];
+            panel.querySelector(`#${panelId}-tab1 textarea`).value = defaultTexts["tab1"];
+            panel.querySelector(`#${panelId}-tab4 textarea`).value = defaultTexts["tab4"];
+            if (!panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`)) {
+              panel.querySelector(`#${panelId}-tab1`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
+            }
+            if (!panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`)) {
+              panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
+            }
+          }
+        });
       } else {
+        // 老師未請假，移除警示
         const w1 = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
         if (w1) w1.remove();
         const w4 = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
@@ -448,7 +500,7 @@ export function createCannedMessagesPanel(options = {}) {
     }
     if (endAt) {
       const date = new Date(endAt);
-      formattedEnd = date.toLocaleTimeString('zh-TW', {
+      formattedEnd = date.toLocaleTimeString('zh-Taipei', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
