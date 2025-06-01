@@ -359,9 +359,24 @@ export function createCannedMessagesPanel(options = {}) {
       const contactId = parentData.contactId;
       if (!contactId) throw new Error('無法取得家長的 contactId');
       const bitrixUrl = `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/`;
-      const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
-      // 更新 tab2
-      apiTexts["tab2"] = `親愛的家長您好：
+      const isNongXiao = tagNames.indexOf("國小自然所探究") !== -1;
+
+      // 組合 Bitrix 連結與警示訊息
+      let bitrixHtml = `
+        <div class="canned-panel-info"><strong>家長 Bitrix 連結：</strong>
+          <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
+        </div>
+      `;
+      let warningHtml = '';
+
+      // === 依條件一次性生成所有 tab ===
+      if (isNongXiao) {
+        warningHtml = `<p class="canned-panel-warning">【國小自然實作探究】不找代課，直接順延！</p>`;
+        courseResultDiv.innerHTML = bitrixHtml + warningHtml;
+
+        // 只更新 tab2，其他tab還原預設
+        apiTexts["tab1"] = defaultTexts["tab1"];
+        apiTexts["tab2"] = `親愛的家長您好：
 
     以下課程老師因故無法授課，課程將取消，
     如需安排代課，請您聯繫輔導老師為您服務，
@@ -370,22 +385,56 @@ export function createCannedMessagesPanel(options = {}) {
     學員姓名：${studentNames}
     課程時間：${courseTime}
     課程標籤：${tagNames}`;
-      panel.querySelector(`#${panelId}-tab2 textarea`).value = apiTexts["tab2"];
-      // 組合 Bitrix 連結與警示訊息，一次顯示（確保同時出現）
-      let bitrixHtml = `
-        <div class="canned-panel-info"><strong>家長 Bitrix 連結：</strong>
-          <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
-        </div>
-      `;
-      let warningHtml = '';
-
-      if (isNongXiao) {
-        warningHtml = `<p class="canned-panel-warning">【國小自然實作探究】不找代課，直接順延！</p>`;
-        courseResultDiv.innerHTML = bitrixHtml + warningHtml;
-        // ...tab2, tab1, tab3, tab4 處理...
+        apiTexts["tab3"] = defaultTexts["tab3"];
+        apiTexts["tab4"] = defaultTexts["tab4"];
+        panel.querySelector(`#${panelId}-tab1 textarea`).value = apiTexts["tab1"];
+        panel.querySelector(`#${panelId}-tab2 textarea`).value = apiTexts["tab2"];
+        panel.querySelector(`#${panelId}-tab3 textarea`).value = apiTexts["tab3"];
+        panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts["tab4"];
         return;
       }
 
+      // 一般狀況，全部tab都根據查詢結果生成
+      apiTexts["tab1"] = `親愛的家長您好：
+
+學員姓名：${studentNames}
+課程時間：${courseTime}
+課程標籤：${tagNames}
+
+老師因故無法出席，為讓孩子的學習不間斷，
+我們已安排代課老師，感謝您的理解與支持！`;
+
+      apiTexts["tab2"] = `親愛的家長您好：
+
+以下課程老師因故無法授課，課程將取消，
+如需安排代課，請您聯繫輔導老師為您服務，
+謝謝您的理解與配合。
+
+學員姓名：${studentNames}
+課程時間：${courseTime}
+課程標籤：${tagNames}`;
+
+      apiTexts["tab3"] = `親愛的家長您好：
+
+學員姓名：${studentNames}
+課程時間：${courseTime}
+課程標籤：${tagNames}
+
+因老師們正忙碌中，尚無師資接任課程，
+故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
+
+      apiTexts["tab4"] = `老師請假，請於授課提醒內完成學生狀況交接
+
+1、學員姓名：${studentNames}
+2、課程時間：${courseTime}
+3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+
+      panel.querySelector(`#${panelId}-tab1 textarea`).value = apiTexts["tab1"];
+      panel.querySelector(`#${panelId}-tab2 textarea`).value = apiTexts["tab2"];
+      panel.querySelector(`#${panelId}-tab3 textarea`).value = apiTexts["tab3"];
+      panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts["tab4"];
+
+      // 老師請假處理
       const teacherLeave = Array.isArray(courseData.leaveOrders) &&
         courseData.leaveOrders.some(lo => lo.role === 'teacher');
       if (teacherLeave) {
@@ -424,13 +473,18 @@ export function createCannedMessagesPanel(options = {}) {
           const preparingCourses = json.preparingCourses && json.preparingCourses.data && json.preparingCourses.data.courses
             ? json.preparingCourses.data.courses
             : [];
+          let warningHtml = '';
           if (preparingCourses.length === 0) {
             warningHtml = `<div class="canned-panel-warning">※ 老師已請假，且查無同時段新課程。<button id="copy-claim-url-btn-tab1" style="margin-left:10px;">複製搶課網址</button></div>`;
           } else {
             warningHtml = `<p class="canned-panel-warning">※ 老師已請假，請輸入最新教室ID</p>`;
           }
-          // 一次性顯示
           courseResultDiv.innerHTML = bitrixHtml + warningHtml;
+          // ===== 修正：tab1/tab4 textarea 內容直接還原預設，不帶入 API 結果 =====
+          apiTexts["tab1"] = defaultTexts["tab1"];
+          apiTexts["tab4"] = defaultTexts["tab4"];
+          panel.querySelector(`#${panelId}-tab1 textarea`).value = apiTexts["tab1"];
+          panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts["tab4"];
           // 複製按鈕事件
           if (preparingCourses.length === 0) {
             const btn = document.getElementById('copy-claim-url-btn-tab1');
@@ -443,7 +497,6 @@ export function createCannedMessagesPanel(options = {}) {
               });
             }
           }
-          // ...tab1, tab4 處理...
         });
       } else {
         // 老師未請假
