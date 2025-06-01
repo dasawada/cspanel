@@ -66,23 +66,15 @@ exports.handler = async (event) => {
 
     // 查準備中課程
     let preparingCourses = null;
-    if (checkPreparing && checkPreparing.startAt && checkPreparing.endAt && checkPreparing.studentName) {
-      const params = new URLSearchParams({
-        courseStatus: 'preparing',
-        startAt: checkPreparing.startAt,
-        endAt: checkPreparing.endAt,
-        isBelong: 'false',
-        isAudition: 'false',
-        skip: '0',
-        limit: '100'
+    if (checkPreparing) {
+      const params = new URLSearchParams();
+      Object.entries(checkPreparing).forEach(([key, value]) => {
+        if (Array.isArray(value)) {
+          value.forEach(v => params.append(key, v));
+        } else {
+          params.append(key, value);
+        }
       });
-      [
-        'individualLiveCourse',
-        'groupLiveCourse',
-        'individualCambridge',
-        'publicLiveStreamingCourse',
-        'publicReplayStreamingCourse'
-      ].forEach(type => params.append('transferCourseType[]', type));
       const preparingJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/findAllUseAggregate?${params.toString()}`, jwt);
       preparingCourses = preparingJson;
     }
