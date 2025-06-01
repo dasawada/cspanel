@@ -1,5 +1,15 @@
 const fetch = require('node-fetch');
 
+const fetchWithJwt = async (url, jwt) => {
+  const resp = await fetch(url, {
+    headers: {
+      'Accept': 'application/json, text/plain, */*',
+      'Authorization': jwt
+    }
+  });
+  return resp.json();
+};
+
 exports.handler = async (event) => {
   // CORS 處理（如需跨網域呼叫）
   if (event.httpMethod === 'OPTIONS') {
@@ -25,7 +35,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    const { courseId } = JSON.parse(event.body || '{}');
+    const body = JSON.parse(event.body || '{}');
+    const { courseId, checkPreparing } = body;
     if (!courseId) {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing courseId' }) };
     }
@@ -33,18 +44,14 @@ exports.handler = async (event) => {
     if (!jwt) {
       return { statusCode: 500, body: JSON.stringify({ error: 'Missing ONE_CLUB_JWT' }) };
     }
+
     // 查課程
-    const courseResp = await fetch(`https://api-new.oneclass.co/mms/course/UseAggregate/${courseId}`, {
-      headers: {
-        'Accept': 'application/json, text/plain, */*',
-        'Authorization': jwt
-      }
-    });
-    const courseJson = await courseResp.json();
+    const courseJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/UseAggregate/${courseId}`, jwt);
     if (courseJson.status !== 'success') {
       return { statusCode: 500, body: JSON.stringify({ error: 'Course API failed', detail: courseJson }) };
     }
     const courseData = courseJson.data;
+
     // 查家長
     let parentJson = null;
     if (courseData.students && courseData.students.length > 0) {
@@ -56,13 +63,37 @@ exports.handler = async (event) => {
         parentJson = await parentResp.json();
       }
     }
+
+    // 查準備中課程
+    let preparingCourses = null;
+    if (checkPreparing && checkPreparing.startAt && checkPreparing.endAt && checkPreparing.studentName) {
+      const params = new URLSearchParams({
+        courseStatus: 'preparing',
+        startAt: checkPreparing.startAt,
+        endAt: checkPreparing.endAt,
+        isBelong: 'false',
+        isAudition: 'false',
+        skip: '0',
+        limit: '100'
+      });
+      [
+        'individualLiveCourse',
+        'groupLiveCourse',
+        'individualCambridge',
+        'publicLiveStreamingCourse',
+        'publicReplayStreamingCourse'
+      ].forEach(type => params.append('transferCourseType[]', type));
+      const preparingJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/findAllUseAggregate?${params.toString()}`, jwt);
+      preparingCourses = preparingJson;
+    }
+
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ status: 'success', data: courseData, parent: parentJson })
+      body: JSON.stringify({ status: 'success', data: courseData, parent: parentJson, preparingCourses })
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
