@@ -32,10 +32,11 @@ const PANEL_CSS = `
 .canned-panel-search-bar {
   position: relative;
   width: 100%;
-  max-width: 480px;
+  display: flex;
+  align-items: center;
 }
 .canned-panel-search-bar .canned-panel-search-input {
-  width: 100%;
+  width: 90%;
   border: 1px solid #ccc;
   border-radius: 9999px;
   padding: 5px 30px 5px 10px;
@@ -43,10 +44,11 @@ const PANEL_CSS = `
   box-sizing: border-box;
   background: #fff;
   color: #333;
+  transition: width 0.2s;
 }
 .canned-panel-clear-btn {
   position: absolute;
-  right: 5px;
+  right: 42px;
   top: 50%;
   transform: translateY(-50%);
   cursor: pointer;
@@ -136,6 +138,20 @@ const PANEL_CSS = `
 .canned-panel-tab-menu li:last-child {
   border-bottom-left-radius: 10px;
 }
+.canned-panel-search-spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #f3f3f3;
+  border-top: 2px solid #b1cbdb;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 8px;
+  vertical-align: middle;
+}
+@keyframes spin {
+  0% { transform: rotate(0deg);}
+  100% { transform: rotate(360deg);}
 `;
 
 function injectStyle() {
@@ -195,6 +211,7 @@ export function createCannedMessagesPanel(options = {}) {
     <div style="padding:0px 10px 10px 10px">
       <div class="canned-panel-search-bar">
           <input type="text" class="canned-panel-search-input" placeholder="輸入課程ID" />
+          <span class="canned-panel-search-spinner" id="canned-panel-search-spinner" style="display:none"></span>
           <span class="canned-panel-clear-btn"></span>
       </div>
       <div class="canned-panel-course-result"></div>
@@ -289,6 +306,7 @@ export function createCannedMessagesPanel(options = {}) {
   const searchInput = panel.querySelector('.canned-panel-search-input');
   const clearBtn = panel.querySelector('.canned-panel-clear-btn');
   const courseResultDiv = panel.querySelector('.canned-panel-course-result');
+  const searchBar = panel.querySelector('.canned-panel-search-bar');
 
   searchInput.addEventListener('input', () => {
     clearBtn.style.display = searchInput.value ? 'block' : 'none';
@@ -302,9 +320,23 @@ export function createCannedMessagesPanel(options = {}) {
     apiTexts = Object.assign({}, defaultTexts);
     courseResultDiv.innerHTML = '';
   });
+  
+  // 新增：搜尋時顯示 spinner
   searchInput.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') doIdentifyCourse();
+    if (e.key === 'Enter') {
+      showSearchSpinner();
+      doIdentifyCourse();
+    }
   });
+
+  function showSearchSpinner() {
+    const spinner = panel.querySelector('#canned-panel-search-spinner');
+    if (spinner) spinner.style.display = 'inline-block';
+  }
+  function removeSearchSpinner() {
+    const spinner = panel.querySelector('#canned-panel-search-spinner');
+    if (spinner) spinner.style.display = 'none';
+  }
 
   // ===== 3.6. 查詢課程 & 家長資訊 =====
   function doIdentifyCourse() {
@@ -613,6 +645,9 @@ export function createCannedMessagesPanel(options = {}) {
     })
     .catch(error => {
       courseResultDiv.innerHTML = `<p style="color:red;">辨識失敗：${error.message}</p>`;
+    })
+    .finally(() => {
+      removeSearchSpinner();
     });
   }
 
