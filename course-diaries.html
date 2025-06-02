@@ -106,14 +106,15 @@
     </div>
 
     <script>
+    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
     const form = document.getElementById('searchForm');
     const resultsDiv = document.getElementById('results');
 
     // Token handling functions
-    function getToken() {
-        // 直接回傳硬編 JWT
-        return 'YOUR_HARDCODED_JWT_TOKEN_HERE';
-    }
+    // function getToken() {
+    //     // 直接回傳硬編 JWT
+    //     return 'YOUR_HARDCODED_JWT_TOKEN_HERE';
+    // }
 
     function extractCourseId(input) {
         const match = input.match(/([0-9a-fA-F]{24})/);
@@ -122,8 +123,7 @@
 
     form.addEventListener('submit', async (e) => {
         e.preventDefault();
-        const token = getToken();
-        // 不再檢查 token 是否存在
+        // const token = getToken(); // 不再需要 token
 
         const input = document.getElementById('courseId').value.trim();
         const courseId = extractCourseId(input);
@@ -146,8 +146,13 @@
                 setTimeout(() => reject(new Error('TimeoutError')), 30000);
             });
 
+            // 只傳 courseId，token 由 Netlify function 處理
             const response = await Promise.race([
-                fetch(`/.netlify/functions/course-diaries?courseId=${courseId}`),
+                fetch(`${NETLIFY_SITE_URL}/.netlify/functions/course-diaries`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ courseId })
+                }),
                 timeoutPromise
             ]);
 
