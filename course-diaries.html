@@ -84,7 +84,7 @@
             width: 40px;
             height: 40px;
             border: 3px solid #f3f3f3;
-            border-top: 3px solid #3498db;
+            border-top: 3px solid #b1cbdb;
             border-radius: 50%;
             animation: spin 1s linear infinite;
         }
@@ -178,7 +178,7 @@
                     <div class="diary-grid">
                         <div><strong>問題類型：</strong><br>${categoryMap[diary.category] || diary.category} - ${typeMap[diary.type] || diary.type}</div>
                         <div class="diary-info">
-                            <div><strong>紀錄時間：</strong><br>${formatDateTime(diary.createdAt)}</div>
+                            <div><strong>紀錄時間：</strong><br>${formatDateTime(diary.createdAt, true)}</div>
                             <div><strong>問題描述：</strong><br>${diary.description}</div>
                             <div><strong>最後編輯人員：</strong><br>${
                                 Array.isArray(diary.editorIds) && diary.editorIds.length > 0
@@ -187,10 +187,10 @@
                             }</div>
                         </div>
                         <div class="diary-track">
-                            <strong>處理追蹤：</strong><br>${diary.track}
+                            <strong>處理追蹤：</strong><br>${diary.track || '尚無處理紀錄'}
                         </div>
                         <div class="diary-meta">
-                            <small>更新時間: ${formatDateTime(diary.updatedAt)} | 紀錄ID: ${diary.id}</small>
+                            <small>更新時間: ${formatDateTime(diary.updatedAt, false)} | 紀錄ID: ${diary.id}</small>
                         </div>
                     </div>
                 </div>
@@ -209,7 +209,7 @@
         }
     });
 
-    function formatDateTime(dateString) {
+    function formatDateTime(dateString, useBr = true) {
         const date = new Date(dateString);
         const year = date.getFullYear();
         const month = String(date.getMonth() + 1).padStart(2, '0');
@@ -217,7 +217,11 @@
         const hours = String(date.getHours()).padStart(2, '0');
         const minutes = String(date.getMinutes()).padStart(2, '0');
         const seconds = String(date.getSeconds()).padStart(2, '0');
-        return `${year}/${month}/${day}<br>${hours}:${minutes}:${seconds}`;
+        if (useBr) {
+            return `${year}/${month}/${day}<br>${hours}:${minutes}:${seconds}`;
+        } else {
+            return `${year}/${month}/${day} ${hours}:${minutes}:${seconds}`;
+        }
     }
 
     // Add translation mappings
