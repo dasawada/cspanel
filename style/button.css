@@ -7,7 +7,7 @@ button {
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
     transition: background-color 0.1s ease;
-	line-height: 1.3; /* 統一行高 */
+	line-height: 1.5; /* 統一行高 */
 }
 
 /* 按鈕懸停時的效果 */
