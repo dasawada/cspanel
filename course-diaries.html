@@ -7,7 +7,6 @@
 <link rel="stylesheet" href="style/font.css">
 <link rel="stylesheet" href="style/body.css">
 <link rel="stylesheet" href="style/button.css">
-<link rel="stylesheet" href="style/font.css">
     <style>
         .container {
             max-width: 800px;
@@ -61,17 +60,16 @@
         .diary-item small {
             color: #666;
         }
-        h1 {
-            margin: 0;
-            font-size: 1.5em;
-            white-space: nowrap;
-        }
         
         #courseId {
             flex: 1;
-            padding: 5px 10px;
+            height: 35px;
         }
         
+        #search {
+            height: 35px;
+        }
+
         .loading {
             display: flex;
             flex-direction: column;
@@ -98,9 +96,34 @@
 <body>
     <div class="container">
         <form id="searchForm">
-            <h1>課程日誌查詢</h1>
-            <input type="text" id="courseId" placeholder="輸入包含教室ID的網址" required>
-            <button type="submit">搜尋</button>
+            <input type="text" id="courseId" placeholder="課程日誌查詢，輸入含教室ID的網址" required />
+            <script type="module">
+              import { enhanceInput } from './script/capsuleinput.js';
+            
+              enhanceInput('#courseId', {
+                onEnter: (val) => console.log('Enter value:', val),
+                theme: {
+                  focusBorder: '#28a745',
+                }
+              });
+            </script>            
+            <button type="submit" id="search">搜尋</button>
+            <script type="module">
+                import { enhanceButton } from './script/buttonstylepack.js';
+            
+                enhanceButton('#search', {
+                theme: {
+                    borderRadius: '20px',
+                    padding: '6px 12px',
+                    backgroundColor: '#e0e0e0',
+                    hoverBackgroundColor: '#b0b0b0',
+                    activeBackgroundColor: '#808080',
+                    color: '#333333',
+                    color: '#fff',
+                    transition: 'background-color 0.25s ease',
+                }
+                });
+            </script>
         </form>
         <div id="results"></div>
     </div>
