@@ -1,4 +1,5 @@
 const admin = require('firebase-admin');
+const fetch = require('node-fetch');
 
 // 初始化 Firebase Admin
 if (!admin.apps.length) {
