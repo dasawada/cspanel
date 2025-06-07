@@ -26,22 +26,45 @@ exports.handler = async (event, context) => {
         return {
             statusCode: 405,
             headers,
-            body: JSON.stringify({ error: 'Method not allowed' })
+            body: JSON.stringify({ success: false, error: 'Method not allowed' })
         };
     }
 
+    let parsedBody;
     try {
-        const { token, action, data } = JSON.parse(event.body);
+        if (!event.body) {
+            return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Request body is missing.' }) };
+        }
+        parsedBody = JSON.parse(event.body);
+    } catch (e) {
+        console.error("JSON Parsing Error:", e.message);
+        return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Malformed JSON in request body.' }) };
+    }
 
-        // 驗證 Firebase token
-        const decodedToken = await admin.auth().verifyIdToken(token);
-        if (!decodedToken) {
+    try {
+        const { token, action, data } = parsedBody;
+
+        if (!token) {
             return {
-                statusCode: 401,
+                statusCode: 401, // Unauthorized
                 headers,
-                body: JSON.stringify({ error: 'Unauthorized' })
+                body: JSON.stringify({ success: false, error: 'Firebase token is missing in request.' })
             };
         }
+        if (!action) {
+            return {
+                statusCode: 400, // Bad Request
+                headers,
+                body: JSON.stringify({ success: false, error: 'Action is missing in request.' })
+            };
+        }
+
+        // 驗證 Firebase token
+        // admin.auth().verifyIdToken(token) will throw an error if the token is invalid.
+        // This error will be caught by the catch block below.
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        // The 'if (!decodedToken)' block that was here is removed as verifyIdToken throws on failure,
+        // and auth errors are specifically handled in the catch block.
 
         let result;
         switch (action) {
@@ -73,22 +96,33 @@ exports.handler = async (event, context) => {
                 return {
                     statusCode: 400,
                     headers,
-                    body: JSON.stringify({ error: 'Invalid action' })
+                    body: JSON.stringify({ success: false, error: 'Invalid action provided.' })
                 };
         }
 
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify(result)
+            body: JSON.stringify(result) // Assumes 'result' from action handlers includes success status
         };
 
     } catch (error) {
-        console.error('Error:', error);
+        // Log the original error for server-side debugging
+        console.error('Handler Execution Error:', error.message, error.stack ? error.stack : error);
+
+        if (error.code && error.code.startsWith('auth/')) {
+            // Firebase authentication specific errors
+            return {
+                statusCode: 401, // Unauthorized
+                headers,
+                body: JSON.stringify({ success: false, error: `Authentication error: ${error.message}` })
+            };
+        }
+        // Generic error handler for other types of errors
         return {
             statusCode: 500,
             headers,
-            body: JSON.stringify({ error: 'Internal server error' })
+            body: JSON.stringify({ success: false, error: 'Internal server error. Please check server logs for more details.' })
         };
     }
 };
@@ -98,16 +132,43 @@ async function getJwtToken() {
     try {
         // 直接使用環境變數 ONE_CLUB_JWT，或呼叫 coffeeshoplist function
         if (process.env.ONE_CLUB_JWT) {
-            return { success: true, data: { token: process.env.ONE_CLUB_JWT } };
-        } else {
-            // 呼叫 coffeeshoplist function
-            const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist');
-            const result = await response.json();
-            return { success: true, data: { token: result.token } };
+            if (process.env.ONE_CLUB_JWT.trim() === '') {
+                console.warn('ONE_CLUB_JWT environment variable is set but empty. Proceeding to fetch from remote function.');
+                // Fall through to fetch from coffeeshoplist if env var is empty
+            } else {
+                return { success: true, data: { token: process.env.ONE_CLUB_JWT } };
+            }
         }
+        
+        // CRITICAL: The URL below is hardcoded.
+        // If 'stirring-pothos-28253d.netlify.app' is incorrect or the 'coffeeshoplist' function
+        // is not available at this path, this call will fail.
+        // Strongly consider using an environment variable for this URL:
+        // const coffeeshopListUrl = process.env.COFFEESHOP_LIST_FUNCTION_URL || 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
+        const coffeeshopListUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
+        
+        console.log(`Fetching JWT from remote function: ${coffeeshopListUrl}`);
+
+        const response = await fetch(coffeeshopListUrl);
+        
+        if (!response.ok) {
+            const errorBody = await response.text().catch(() => "Could not retrieve error body"); // Gracefully attempt to get error body
+            console.error(`Fetch from coffeeshoplist failed with status: ${response.status}. Response: ${errorBody}`);
+            throw new Error(`Failed to fetch token from coffeeshoplist. Status: ${response.status}.`);
+        }
+        
+        const result = await response.json();
+        
+        if (!result || typeof result.token !== 'string' || result.token.trim() === '') {
+            console.error('Invalid token structure or empty token received from coffeeshoplist:', result);
+            throw new Error('Invalid or empty token received from coffeeshoplist.');
+        }
+        return { success: true, data: { token: result.token } };
+        
     } catch (error) {
-        console.error('JWT token error:', error);
-        return { success: false, error: 'JWT token fetch failed' };
+        console.error('getJwtToken error:', error.message, error.stack ? error.stack : error);
+        // Ensure the returned error message is helpful for the client and includes success status
+        return { success: false, error: `JWT token fetch failed: ${error.message}` };
     }
 }
 
