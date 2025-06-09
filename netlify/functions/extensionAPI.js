@@ -369,7 +369,8 @@ async function fetchCompleteClassInfo(data) {
         };
 
         const typeLabel = courseData.isAudition ? "（試聽）" : (typeLabels[courseData.type] || "（不明）");
-        const dateRange = formatCustomDateRange(courseData.startAt, courseData.endAt) + typeLabel;
+        const dateRange = formatCustomDateRange(courseData.startAt, courseData.endAt) + typeLabel +
+           `<div style="color:#888;font-size:12px;">教室ID：${courseId}</div>`;
 
         let studentInfo = "(無資料)";
         let tutorName = "(無資料)";
@@ -382,9 +383,7 @@ async function fetchCompleteClassInfo(data) {
             if (parentResult.success && parentResult.data.data) {
                 contactId = parentResult.data.data.contactId || "#";
                 const bxButton = `<a href="https://oneclass.bitrix24.com/crm/contact/details/${contactId}/" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#0078D7; color:white; padding:1px 5px; border-radius:15px; cursor:pointer; font-size: 10px; text-decoration:none;">Bitix24</a>`;
-                studentInfo =
-                    `<div style="color:#888;font-size:8px;">${courseId}</div>` + // 教室ID在前
-                    `<strong>${student.name}</strong> (${student.parentOneClubId}) ${bxButton}`;
+                studentInfo = `<strong>${student.name}</strong> (${student.parentOneClubId}) ${bxButton}`;
                 tutorName = parentResult.data.data.tutor?.name || "(無資料)";
             }
         }
