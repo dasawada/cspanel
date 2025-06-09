@@ -382,7 +382,9 @@ async function fetchCompleteClassInfo(data) {
             if (parentResult.success && parentResult.data.data) {
                 contactId = parentResult.data.data.contactId || "#";
                 const bxButton = `<a href="https://oneclass.bitrix24.com/crm/contact/details/${contactId}/" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#0078D7; color:white; padding:1px 5px; border-radius:15px; cursor:pointer; font-size: 10px; text-decoration:none;">Bitix24</a>`;
-                studentInfo = `<strong>${student.name}</strong> (${student.parentOneClubId}) ${bxButton}`;
+                studentInfo =
+                    `<div style="color:#888;font-size:8px;">${courseId}</div>` + // 教室ID在前
+                    `<strong>${student.name}</strong> (${student.parentOneClubId}) ${bxButton}`;
                 tutorName = parentResult.data.data.tutor?.name || "(無資料)";
             }
         }
@@ -393,7 +395,7 @@ async function fetchCompleteClassInfo(data) {
                 teacher: {
                     fullName: teacher.fullName,
                     oneClubId: teacher.oneClubId,
-                    mobile: teacher.mobile + `<div style="margin-top:4px;color:#888;font-size:12px;">教室ID：${courseId}</div>`
+                    mobile: teacher.mobile
                 },
                 // 在輔導欄位下方新增顯示教室ID
                 tutorName: tutorName,
