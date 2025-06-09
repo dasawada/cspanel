@@ -427,23 +427,19 @@ async function checkAndProcessCourseInfo(data) {
                 data: {
                     type: 'no_course_id',
                     redirectUrl: `https://oneclub.backstage.oneclass.com.tw/customer/customerlist/${content}`,
-                    message: '非課程ID/教室ID，將改為搜尋客戶列表',
-                    htmlContent: `<p style="color:red;">非課程ID/教室ID，將改為搜尋客戶列表</p>`
+                    message: '非課程ID/教室ID，將改為搜尋客戶列表'
                 }
             };
         }
 
         if (courseIds.length === 1) {
             const result = await fetchCompleteClassInfo({ courseId: courseIds[0] });
-            // 在這裡生成HTML
-            const htmlContent = generateCourseInfoHTML(result.data);
             return {
                 success: true,
                 data: {
                     type: 'single_course',
                     courseInfo: result.data,
-                    courseId: courseIds[0],
-                    htmlContent: htmlContent
+                    courseId: courseIds[0]
                 }
             };
         } else {
@@ -455,16 +451,13 @@ async function checkAndProcessCourseInfo(data) {
             const validResult = verificationResult.data.find(r => r.valid);
             if (validResult) {
                 const courseInfo = await fetchCompleteClassInfo({ courseId: validResult.id });
-                // 在這裡生成HTML
-                const htmlContent = generateCourseInfoHTML(courseInfo.data);
                 return {
                     success: true,
                     data: {
                         type: 'multiple_course_found',
                         courseInfo: courseInfo.data,
                         courseId: validResult.id,
-                        allResults: verificationResult.data,
-                        htmlContent: htmlContent
+                        allResults: verificationResult.data
                     }
                 };
             } else {
@@ -473,8 +466,7 @@ async function checkAndProcessCourseInfo(data) {
                     data: {
                         type: 'no_valid_course',
                         message: '查詢失敗，無有效的課程資料',
-                        allResults: verificationResult.data,
-                        htmlContent: `<p style="color:red;">查詢失敗，無有效的課程資料</p>`
+                        allResults: verificationResult.data
                     }
                 };
             }
@@ -482,35 +474,8 @@ async function checkAndProcessCourseInfo(data) {
         
     } catch (error) {
         console.error('Check and process course info failed:', error);
-        return { 
-            success: false, 
-            error: error.message || 'Check and process failed',
-            htmlContent: `<p style="color:red;">查詢發生錯誤: ${error.message || '未知錯誤'}</p>`
-        };
+        return { success: false, error: error.message || 'Check and process failed' };
     }
-}
-
-// 新增 HTML 生成函數
-function generateCourseInfoHTML(info) {
-    if (!info) {
-        return `<p style="color:red;">課程資訊無效。</p>`;
-    }
-    
-    return `
-        <div class="class-info-header">${info.dateRange || '(日期無資料)'}</div>
-        <div class="class-info-row">
-            學生：${info.studentInfo || '(無資料)'}
-        </div>
-        <div class="class-info-row">
-            老師：<strong>${info.teacher?.fullName || '(無資料)'}</strong> (ID：${info.teacher?.oneClubId || 'N/A'})
-        </div>
-        <div class="class-info-row class-info-footer">
-            <div class="class-info-flex">
-                <div>師電：0${info.teacher?.mobile || 'N/A'}</div>
-                <div>輔導：<strong>${info.tutorName || '(無資料)'}</strong></div>
-            </div>
-        </div>
-    `;
 }
 
 // ===== 時間格式化函數 =====
