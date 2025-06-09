@@ -137,23 +137,22 @@ async function getJwtToken() {
                 console.warn('ONE_CLUB_JWT environment variable is set but empty. Proceeding to fetch from remote function.');
                 // Fall through to fetch from coffeeshoplist if env var is empty
             } else {
+                console.log('Using ONE_CLUB_JWT from environment variable');
                 return { success: true, data: { token: process.env.ONE_CLUB_JWT } };
             }
+        } else {
+            console.log('ONE_CLUB_JWT not found in environment variables. Fetching from remote function.');
         }
         
-        // CRITICAL: The URL below is hardcoded.
-        // If 'stirring-pothos-28253d.netlify.app' is incorrect or the 'coffeeshoplist' function
-        // is not available at this path, this call will fail.
-        // Strongly consider using an environment variable for this URL:
-        // const coffeeshopListUrl = process.env.COFFEESHOP_LIST_FUNCTION_URL || 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
-        const coffeeshopListUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
+        // 使用環境變數作為URL來源，避免硬編碼URL
+        const coffeeshopListUrl = process.env.COFFEESHOP_LIST_FUNCTION_URL || 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
         
         console.log(`Fetching JWT from remote function: ${coffeeshopListUrl}`);
 
         const response = await fetch(coffeeshopListUrl);
         
         if (!response.ok) {
-            const errorBody = await response.text().catch(() => "Could not retrieve error body"); // Gracefully attempt to get error body
+            const errorBody = await response.text().catch(() => "Could not retrieve error body");
             console.error(`Fetch from coffeeshoplist failed with status: ${response.status}. Response: ${errorBody}`);
             throw new Error(`Failed to fetch token from coffeeshoplist. Status: ${response.status}.`);
         }
@@ -382,7 +381,7 @@ async function fetchCompleteClassInfo(data) {
             
             if (parentResult.success && parentResult.data.data) {
                 contactId = parentResult.data.data.contactId || "#";
-                const bxButton = `<a href="https://oneclass.bitrix24.com/crm/contact/details/${contactId}/" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#0078D7; color:white; padding:1px 5px; border-radius:15px; cursor:pointer; font-size: 5px; text-decoration:none;">BX</a>`;
+                const bxButton = `<a href="https://oneclass.bitrix24.com/crm/contact/details/${contactId}/" target="_blank" rel="noopener noreferrer" style="display:inline-block; background-color:#0078D7; color:white; padding:1px 5px; border-radius:15px; cursor:pointer; font-size: 10px; text-decoration:none;">Bitix24</a>`;
                 studentInfo = `<strong>${student.name}</strong> (${student.parentOneClubId}) ${bxButton}`;
                 tutorName = parentResult.data.data.tutor?.name || "(無資料)";
             }
