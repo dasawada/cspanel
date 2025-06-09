@@ -393,10 +393,10 @@ async function fetchCompleteClassInfo(data) {
                 teacher: {
                     fullName: teacher.fullName,
                     oneClubId: teacher.oneClubId,
-                    mobile: teacher.mobile
+                    mobile: teacher.mobile + `<div style="margin-top:4px;color:#888;font-size:12px;">教室ID：${courseId}</div>`
                 },
                 // 在輔導欄位下方新增顯示教室ID
-                tutorName: tutorName + `<div style="margin-top:4px;color:#888;font-size:12px;">教室ID：${courseId}</div>`,
+                tutorName: tutorName,
                 contactId,
                 rawData: { courseData, students }
             };
