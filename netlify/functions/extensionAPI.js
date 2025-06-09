@@ -370,7 +370,7 @@ async function fetchCompleteClassInfo(data) {
 
         const typeLabel = courseData.isAudition ? "（試聽）" : (typeLabels[courseData.type] || "（不明）");
         const dateRange = formatCustomDateRange(courseData.startAt, courseData.endAt) + typeLabel +
-           `<div style="#41535b;font-size:12px;">${courseId}</div>`;
+           `<div style="color:#41535b;font-size:12px;">${courseId}</div>`;
 
         let studentInfo = "(無資料)";
         let tutorName = "(無資料)";
