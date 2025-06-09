@@ -387,18 +387,19 @@ async function fetchCompleteClassInfo(data) {
             }
         }
 
-        const completeInfo = {
-            dateRange,
-            studentInfo,
-            teacher: {
-                fullName: teacher.fullName,
-                oneClubId: teacher.oneClubId,
-                mobile: teacher.mobile
-            },
-            tutorName,
-            contactId,
-            rawData: { courseData, students }
-        };
+            const completeInfo = {
+                dateRange,
+                studentInfo,
+                teacher: {
+                    fullName: teacher.fullName,
+                    oneClubId: teacher.oneClubId,
+                    mobile: teacher.mobile
+                },
+                // 在輔導欄位下方新增顯示教室ID
+                tutorName: tutorName + `<div style="margin-top:4px;color:#888;font-size:12px;">教室ID：${courseId}</div>`,
+                contactId,
+                rawData: { courseData, students }
+            };
 
         return { success: true, data: completeInfo };
         
