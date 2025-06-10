@@ -1,4 +1,4 @@
-import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+import { callGoogleSheetBatchAPI } from '../../script/googleSheetAPI.js';
 // 初始化會議分類數組
 let ongoingMeetings = [];
 let upcomingMeetings = [];
