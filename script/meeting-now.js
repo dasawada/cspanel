@@ -660,29 +660,67 @@ function createCopyableAccountElement(accountid) {
 
 async function fetchCourses(status, startAt, endAt) {
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
+    let retryCount = 0;
+    const maxRetries = 2;
     
-    try {
-        const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/zoomclass`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
+    // Validate inputs before making the request
+    if (!status || !startAt || !endAt) {
+        console.warn('fetchCourses: Missing required parameters', { status, startAt, endAt });
+        return []; // Return empty array if parameters are invalid
+    }
+    
+    while (retryCount <= maxRetries) {
+        try {
+            const requestBody = {
                 action: 'fetchCourses',
                 courseStatus: status,
                 startAt: startAt,
                 endAt: endAt
-            })
-        });
+            };
+            
+            console.log(`Attempt ${retryCount + 1}: Fetching ${status} courses`, requestBody);
+            
+            const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/zoomclass`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestBody)
+            });
 
-        if (!response.ok) {
-            throw new Error(`API 請求失敗: ${response.status}`);
+            // Log detailed response info for debugging
+            console.log(`Response status for ${status} courses:`, response.status);
+            
+            if (!response.ok) {
+                // For 400 errors, try to get the response body for more details
+                let errorDetails = '';
+                try {
+                    const errorBody = await response.text();
+                    errorDetails = `: ${errorBody}`;
+                } catch (e) { /* Ignore if can't read body */ }
+                
+                throw new Error(`API 請求失敗: ${response.status}${errorDetails}`);
+            }
+
+            const data = await response.json();
+            const courses = data?.data?.courses || [];
+            console.log(`Successfully fetched ${courses.length} ${status} courses`);
+            return courses;
+        } catch (error) {
+            console.error(`獲取${status}課程失敗 (嘗試 ${retryCount + 1}/${maxRetries + 1}):`, error);
+            
+            // If we've reached max retries, return empty array instead of throwing
+            if (retryCount === maxRetries) {
+                console.warn(`已達到最大重試次數，返回空數組`);
+                return [];
+            }
+            
+            // Exponential backoff: wait longer between each retry
+            const delay = Math.pow(2, retryCount) * 1000; // 1s, 2s, 4s
+            await new Promise(resolve => setTimeout(resolve, delay));
+            retryCount++;
         }
-
-        const data = await response.json();
-        return data?.data?.courses || [];
-    } catch (error) {
-        console.error('獲取課程失敗:', error);
-        throw error;
     }
+    
+    return []; // Fallback return
 }
