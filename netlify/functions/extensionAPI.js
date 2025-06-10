@@ -67,37 +67,35 @@ exports.handler = async (event, context) => {
         }
 
         // 驗證 Firebase token
-        // admin.auth().verifyIdToken(token) will throw an error if the token is invalid.
-        // This error will be caught by the catch block below.
         const decodedToken = await admin.auth().verifyIdToken(token);
-        // The 'if (!decodedToken)' block that was here is removed as verifyIdToken throws on failure,
-        // and auth errors are specifically handled in the catch block.
 
-        let result;
+        let result; // This variable will hold the final object to be stringified for the response body.
         switch (action) {
             case 'searchBitrixContact':
-                result = await searchBitrixContact(data);
+                result = await searchBitrixContact(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'searchBitrixContactAdvanced': // 新增：多格式電話搜尋
-                result = await searchBitrixContactAdvanced(data);
+                result = await searchBitrixContactAdvanced(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'getJwtToken':
-                result = await getJwtToken();
+                result = await getJwtToken(); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'getCourseInfo':
-                result = await getCourseInfo(data);
+                result = await getCourseInfo(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'verifyCourseIds':
-                result = await verifyCourseIds(data);
+                result = await verifyCourseIds(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'getParentInfo':
-                result = await getParentInfo(data);
+                result = await getParentInfo(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'fetchCompleteClassInfo':
-                result = await fetchCompleteClassInfo(data);
+                result = await fetchCompleteClassInfo(data); // Returns {success: ..., data: ...} or {success: ..., error: ...}
                 break;
             case 'checkAndProcessCourseInfo':
-                result = await checkAndProcessCourseInfo(data);
+                const processedCourseData = await checkAndProcessCourseInfo(data); // This returns {html: ..., redirectUrl: ...}
+                // Wrap the result of checkAndProcessCourseInfo to match client expectations
+                result = { success: true, data: processedCourseData };
                 break;
             default:
                 return {
@@ -107,10 +105,13 @@ exports.handler = async (event, context) => {
                 };
         }
 
+        // The 'result' variable now holds the correctly structured response for all actions.
+        // If an action handler (like Bitrix ones or fetchCompleteClassInfo) already sets 'success: false',
+        // that will be preserved. For checkAndProcessCourseInfo, we've wrapped it with 'success: true'.
         return {
-            statusCode: 200,
+            statusCode: 200, // Client will check the 'success' field in the JSON body
             headers,
-            body: JSON.stringify(result) // Assumes 'result' from action handlers includes success status
+            body: JSON.stringify(result)
         };
 
     } catch (error) {
