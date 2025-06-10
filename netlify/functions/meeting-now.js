@@ -659,14 +659,20 @@ function createCopyableAccountElement(accountid) {
 }
 
 async function fetchCourses(status, startAt, endAt) {
+    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
+    
     try {
-        const url = `https://api-new.oneclass.co/mms/course/findAllUseAggregate?courseStatus=${status}&startAt=${startAt}&endAt=${endAt}&isBelong=false&isAudition=false&isUseZoom=true&skip=0&orderBy=desc&limit=100`;
-        
-        const response = await fetch(url, {
+        const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/zoomclass`, {
+            method: 'POST',
             headers: {
-                'Authorization': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJodHRwOi8vbXlhY2NvdW50Lm5hbmkuY29vbC8iLCJzdWIiOiJ1c2Vycy9PTkVXVDAwNzQ1IiwiZnJvbSI6Ik5hbmkiLCJ1c2VybmFtZSI6Ik9ORVdUMDA3NDUiLCJlbWFpbHZhbGlkIjp0cnVlLCJtb2JpbGV2YWxpZCI6ZmFsc2UsImVtYWlsIjoiamltbXkuY2hpZW4udHBAb25lY2xhc3MudHciLCJ1aWQiOiI3NDBkNWUwMC1mYjA3LTExZWUtYTIxZS0yZmJlN2I4NTkxY2EiLCJqdGkiOiIzNTZhYTFhOC01OTRmLTRkN2ItOGQzZi1kNmVhMzAyODIzYWUiLCJpYXQiOjE3NDQzNDc5OTAsImV4cCI6MTc0OTUzMTk5MH0.YJ7cIHdcT-FRCUj8cNr8mgXSF04gbGb6jffiwTAufuI',
                 'Content-Type': 'application/json'
-            }
+            },
+            body: JSON.stringify({
+                action: 'fetchCourses',
+                courseStatus: status,
+                startAt: startAt,
+                endAt: endAt
+            })
         });
 
         if (!response.ok) {
