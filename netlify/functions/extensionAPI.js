@@ -416,73 +416,92 @@ async function fetchCompleteClassInfo(data) {
     }
 }
 
-// ===== 課程檢查與處理邏輯 =====
+// Helper function to generate HTML for class info
+function generateClassInfoHtml(info) {
+    if (!info) {
+        return '<p style="color:orange;">未找到課程詳細資訊。</p>';
+    }
+    // Ensure teacher object and its properties exist to avoid 'undefined'
+    const teacherFullName = info.teacher?.fullName || '(無資料)';
+    const teacherOneClubId = info.teacher?.oneClubId || 'N/A';
+    const teacherMobile = info.teacher?.mobile ? `0${info.teacher.mobile}` : 'N/A'; // Corrected template literal usage
+    const tutorName = info.tutorName || '(無資料)';
+
+    return `
+        <div class="class-info-header">${info.dateRange || '(日期無資料)'}</div>
+        <div class="class-info-row">
+            學生：${info.studentInfo || '(無資料)'}
+        </div>
+        <div class="class-info-row">
+            老師：<strong>${teacherFullName}</strong> (ID：${teacherOneClubId})
+        </div>
+        <div class="class-info-row class-info-footer">
+            <div class="class-info-flex">
+                <div>師電：${teacherMobile}</div>
+                <div>輔導：<strong>${tutorName}</strong></div>
+            </div>
+        </div>
+    `;
+}
+
+// ===== 課程檢查與處理邏輯 (Modified) =====
 async function checkAndProcessCourseInfo(data) {
     const { content } = data;
-    
     try {
         function extractCourseId(input) {
-            const matches = input.match(/([0-9a-fA-F]{24})/);
-            return matches || [];
+            // Use 'g' flag for multiple matches and ensure unique IDs
+            const matches = input.match(/([0-9a-fA-F]{24})/g);
+            return matches ? Array.from(new Set(matches)) : [];
         }
 
         let courseIds = extractCourseId(content);
-        courseIds = Array.from(new Set(courseIds));
 
         if (courseIds.length === 0) {
-            return {
-                success: true,
-                data: {
-                    type: 'no_course_id',
-                    redirectUrl: `https://oneclub.backstage.oneclass.com.tw/customer/customerlist/${content}`,
-                    message: '非課程ID/教室ID，將改為搜尋客戶列表'
-                }
+            const message = '非課程ID/教室ID，將改為搜尋客戶列表';
+            return { // This object becomes the 'data' field in the final successful response
+                html: `<p style="color:red;">${message}</p>`,
+                redirectUrl: `https://oneclub.backstage.oneclass.com.tw/customer/customerlist/${content}`
             };
         }
 
+        let courseInfoResult;
+        let finalCourseIdToFetch;
+
         if (courseIds.length === 1) {
-            const result = await fetchCompleteClassInfo({ courseId: courseIds[0] });
-            return {
-                success: true,
-                data: {
-                    type: 'single_course',
-                    courseInfo: result.data,
-                    courseId: courseIds[0]
-                }
-            };
+            finalCourseIdToFetch = courseIds[0];
+            courseInfoResult = await fetchCompleteClassInfo({ courseId: finalCourseIdToFetch });
         } else {
             const verificationResult = await verifyCourseIds({ courseIds });
             if (!verificationResult.success) {
-                throw new Error('Course verification failed');
+                const errorMessage = verificationResult.error || '多課程ID驗證失敗';
+                return { html: `<p style="color:red;">${errorMessage}</p>` };
             }
 
             const validResult = verificationResult.data.find(r => r.valid);
             if (validResult) {
-                const courseInfo = await fetchCompleteClassInfo({ courseId: validResult.id });
-                return {
-                    success: true,
-                    data: {
-                        type: 'multiple_course_found',
-                        courseInfo: courseInfo.data,
-                        courseId: validResult.id,
-                        allResults: verificationResult.data
-                    }
-                };
+                finalCourseIdToFetch = validResult.id;
+                courseInfoResult = await fetchCompleteClassInfo({ courseId: finalCourseIdToFetch });
             } else {
-                return {
-                    success: true,
-                    data: {
-                        type: 'no_valid_course',
-                        message: '查詢失敗，無有效的課程資料',
-                        allResults: verificationResult.data
-                    }
-                };
+                const message = '查詢失敗，提供的多個ID中無有效的課程資料';
+                return { html: `<p style="color:red;">${message}</p>` };
             }
         }
-        
+
+        if (courseInfoResult && courseInfoResult.success && courseInfoResult.data) {
+            const html = generateClassInfoHtml(courseInfoResult.data);
+            return { html: html };
+        } else {
+            const errorMessage = (courseInfoResult && courseInfoResult.error) 
+                               ? courseInfoResult.error 
+                               : `無法獲取課程ID ${finalCourseIdToFetch || '未知'} 的詳細資訊。`;
+            return { html: `<p style="color:red;">${errorMessage}</p>` };
+        }
     } catch (error) {
-        console.error('Check and process course info failed:', error);
-        return { success: false, error: error.message || 'Check and process failed' };
+        // This catch is for unexpected errors within checkAndProcessCourseInfo itself.
+        console.error('Critical Error in checkAndProcessCourseInfo:', error.message, error.stack);
+        // Re-throw to be caught by the main handler, which will return a generic 500 error.
+        // The client will display its generic error message for this.
+        throw error;
     }
 }
 
