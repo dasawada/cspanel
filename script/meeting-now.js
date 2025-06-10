@@ -1,4 +1,5 @@
 import { callGoogleSheetBatchAPI } from '../../script/googleSheetAPI.js';
+import { ZVaccountEmailMap } from '../../script/ZVaccountEmailMap.js';
 // 初始化會議分類數組
 let ongoingMeetings = [];
 let upcomingMeetings = [];
@@ -620,12 +621,16 @@ function createMeetingItem(meeting, className, index, accountid) {
 }
 
 // 創建可複製的 account 資訊元素的函數
+// 創建可複製的 account 資訊元素的函數
 function createCopyableAccountElement(accountid) {
     const accountSpan = document.createElement('span');
     accountSpan.textContent = accountid;
     accountSpan.className = 'meeting-now-account-span';
     accountSpan.style.cursor = 'pointer';
     accountSpan.style.color = 'gray';
+
+    // 取得對應的 email
+    const emailToCopy = ZVaccountEmailMap[accountid] || accountid;
 
     // 懸停變色效果
     accountSpan.addEventListener('mouseover', function() {
@@ -638,7 +643,8 @@ function createCopyableAccountElement(accountid) {
     // 點擊複製功能
     accountSpan.addEventListener('click', async function() {
         try {
-            await navigator.clipboard.writeText(accountid);
+            // 複製 email 而非顯示的 accountid
+            await navigator.clipboard.writeText(emailToCopy);
             accountSpan.style.color = 'green';
             accountSpan.textContent = accountid + ' (已複製)';
             setTimeout(() => {
