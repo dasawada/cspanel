@@ -49,50 +49,80 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        const { token, action, data: actionPayload } = parsedBody; // Renamed 'data' to 'actionPayload'
+        const { token, action, data } = parsedBody;
 
         if (!token) {
-            return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing token.' }) };
-        }
-        if (!action) {
-            return { statusCode: 400, headers, body: JSON.stringify({ success: false, error: 'Missing action.' }) };
-        }
-
-        await admin.auth().verifyIdToken(token); // verifyIdToken throws on failure
-
-        let functionResult;
-        switch (action) {
-            case 'checkAndProcessCourseInfo':
-                functionResult = await checkAndProcessCourseInfo(actionPayload); // This should return an object like { html: "...", redirectUrl: "..." }
-                break;
-            // Add other actions here if you have them
-            // case 'anotherAction':
-            //     functionResult = await anotherAction(actionPayload);
-            //     break;
-            default:
-                console.warn(`Unknown action received: ${action}`);
-                return {
-                    statusCode: 400,
-                    headers,
-                    body: JSON.stringify({ success: false, error: `Unknown action: ${action}` })
-                };
-        }
-
-        // Ensure the response is structured as { success: true, data: { ... } }
-        return {
-            statusCode: 200,
-            headers,
-            body: JSON.stringify({ success: true, data: functionResult })
-        };
-
-    } catch (error) {
-        console.error('Handler Execution Error:', error.message, error.stack ? error.stack : error);
-
-        if (error.code && error.code.startsWith('auth/')) {
             return {
                 statusCode: 401, // Unauthorized
                 headers,
-                body: JSON.stringify({ success: false, error: 'Authentication failed: ' + error.message })
+                body: JSON.stringify({ success: false, error: 'Firebase token is missing in request.' })
+            };
+        }
+        if (!action) {
+            return {
+                statusCode: 400, // Bad Request
+                headers,
+                body: JSON.stringify({ success: false, error: 'Action is missing in request.' })
+            };
+        }
+
+        // 驗證 Firebase token
+        // admin.auth().verifyIdToken(token) will throw an error if the token is invalid.
+        // This error will be caught by the catch block below.
+        const decodedToken = await admin.auth().verifyIdToken(token);
+        // The 'if (!decodedToken)' block that was here is removed as verifyIdToken throws on failure,
+        // and auth errors are specifically handled in the catch block.
+
+        let result;
+        switch (action) {
+            case 'searchBitrixContact':
+                result = await searchBitrixContact(data);
+                break;
+            case 'searchBitrixContactAdvanced': // 新增：多格式電話搜尋
+                result = await searchBitrixContactAdvanced(data);
+                break;
+            case 'getJwtToken':
+                result = await getJwtToken();
+                break;
+            case 'getCourseInfo':
+                result = await getCourseInfo(data);
+                break;
+            case 'verifyCourseIds':
+                result = await verifyCourseIds(data);
+                break;
+            case 'getParentInfo':
+                result = await getParentInfo(data);
+                break;
+            case 'fetchCompleteClassInfo':
+                result = await fetchCompleteClassInfo(data);
+                break;
+            case 'checkAndProcessCourseInfo':
+                result = await checkAndProcessCourseInfo(data);
+                break;
+            default:
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: 'Invalid action provided.' })
+                };
+        }
+
+        return {
+            statusCode: 200,
+            headers,
+            body: JSON.stringify(result) // Assumes 'result' from action handlers includes success status
+        };
+
+    } catch (error) {
+        // Log the original error for server-side debugging
+        console.error('Handler Execution Error:', error.message, error.stack ? error.stack : error);
+
+        if (error.code && error.code.startsWith('auth/')) {
+            // Firebase authentication specific errors
+            return {
+                statusCode: 401, // Unauthorized
+                headers,
+                body: JSON.stringify({ success: false, error: `Authentication error: ${error.message}` })
             };
         }
         // Generic error handler for other types of errors
@@ -345,7 +375,8 @@ async function fetchCompleteClassInfo(data) {
         };
 
         const typeLabel = courseData.isAudition ? "（試聽）" : (typeLabels[courseData.type] || "（不明）");
-        const dateRange = formatCustomDateRange(courseData.startAt, courseData.endAt) + typeLabel;
+        const dateRange = formatCustomDateRange(courseData.startAt, courseData.endAt) + typeLabel +
+           `<div style="color:#41535b;font-size:12px;">${courseId}</div>`;
 
         let studentInfo = "(無資料)";
         let tutorName = "(無資料)";
