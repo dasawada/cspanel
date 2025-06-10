@@ -1,3 +1,9 @@
+// ===== 重要提醒 =====
+// 1. 必須設置 BITRIX_WEBHOOK_URL 環境變數
+// 2. Webhook URL 格式: https://{your-domain}.bitrix24.com/rest/{user-id}/{webhook-token}
+// 3. URL 結尾不要加 "/"
+// 4. 確保 Webhook 具有適當的 CRM 權限
+
 const admin = require('firebase-admin');
 const fetch = require('node-fetch');
 
