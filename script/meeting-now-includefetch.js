@@ -1,5 +1,5 @@
-import { callGoogleSheetBatchAPI } from '../../script/googleSheetAPI.js';
-import { ZVaccountEmailMap } from '../../script/ZVaccountEmailMap.js';
+import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+import { ZVaccountEmailMap } from './ZVaccountEmailMap.js';
 // 初始化會議分類數組
 let ongoingMeetings = [];
 let upcomingMeetings = [];
