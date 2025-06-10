@@ -26,24 +26,115 @@ exports.handler = async (event) => {
 
   try {
     const body = JSON.parse(event.body || '{}');
-    const { classId } = body; // Assuming classId is the parameter needed
+    const { action, courseStatus, startAt, endAt, classId } = body;
 
-    if (!classId) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing classId' }) };
+    // JWT token from environment variable
+    const jwt = process.env.ONE_CLUB_JWT;
+    if (!jwt) {
+      return { 
+        statusCode: 500, 
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: 'Missing JWT token in environment' }) 
+      };
     }
 
-    // Here you would implement the logic to handle the Zoom class request
-    // For example, making an API call to fetch Zoom class details
+    // Handle fetchCourses action
+    if (action === 'fetchCourses') {
+      if (!courseStatus || !startAt || !endAt) {
+        return { 
+          statusCode: 400, 
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: 'Missing required parameters for fetchCourses' }) 
+        };
+      }
 
-    return {
-      statusCode: 200,
+      console.log(`Fetching ${courseStatus} courses from ${startAt} to ${endAt}`);
+
+      try {
+        const url = `https://api-new.oneclass.co/mms/course/findAllUseAggregate?courseStatus=${courseStatus}&startAt=${startAt}&endAt=${endAt}&isBelong=false&isAudition=false&isUseZoom=true&skip=0&orderBy=desc&limit=100`;
+        
+        const response = await fetch(url, {
+          headers: {
+            'Authorization': jwt,
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (!response.ok) {
+          console.error(`API request failed with status: ${response.status}`);
+          return { 
+            statusCode: response.status, 
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ error: `API request failed with status: ${response.status}` }) 
+          };
+        }
+
+        const data = await response.json();
+        console.log(`Successfully fetched ${data?.data?.courses?.length || 0} courses`);
+
+        return {
+          statusCode: 200,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(data)
+        };
+      } catch (error) {
+        console.error('Error fetching courses:', error);
+        return {
+          statusCode: 500,
+          headers: {
+            'Access-Control-Allow-Origin': '*',
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ error: error.message })
+        };
+      }
+    }
+
+    // Handle the original classId functionality
+    if (classId) {
+      // Here you would implement the logic to handle the Zoom class request
+      // For example, making an API call to fetch Zoom class details
+
+      return {
+        statusCode: 200,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ message: 'Zoom class data fetched successfully' }) // Placeholder response
+      };
+    }
+
+    // If neither action nor classId is provided
+    return { 
+      statusCode: 400, 
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ message: 'Zoom class data fetched successfully' }) // Placeholder response
+      body: JSON.stringify({ error: 'Missing required parameters (action or classId)' }) 
     };
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    console.error('Function error:', err);
+    return { 
+      statusCode: 500, 
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: err.message }) 
+    };
   }
 };
