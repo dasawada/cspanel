@@ -365,9 +365,9 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             if (!studentName) return;
 
             // Convert course times to Taiwan timezone
-            const startTime = new Date(course.startAt); // This is a Date object
-            const endTime = new Date(course.endAt);   // This is a Date object
-            const currentTime = new Date(); // This is used for classification
+            const startTime = new Date(course.startAt);
+            const endTime = new Date(course.endAt);
+            const currentTime = new Date();
 
             // Try to find matching sheet data
             const sheetData = findMatchingSheetData(course, sheetsData, currentDate);
@@ -375,7 +375,6 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             // Create meeting object
             const meeting = {
                 name: `${studentName} - ${course.tags.map(t => t.name).join(', ')}`,
-                actualStartTime: startTime, // Store the full Date object for sorting
                 startTime: new Date(startTime).toLocaleTimeString('zh-TW', { 
                     timeZone: 'Asia/Taipei',
                     hour: '2-digit', 
@@ -396,7 +395,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
                 hasMeetingInfo: !!sheetData
             };
 
-            // Classify meeting based on time (uses the `startTime` and `endTime` Date objects from this scope)
+            // Classify meeting based on time
             if (currentTime >= startTime && currentTime < endTime) {
                 ongoingMeetings.push(meeting);
             } else if (currentTime < startTime) {
@@ -424,7 +423,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         }
 
         // Sort meetings
-        const sortMeetings = (a, b) => a.actualStartTime - b.actualStartTime; // Sort by the full Date object
+        const sortMeetings = (a, b) => a.startTime.localeCompare(b.startTime);
         ongoingMeetings.sort(sortMeetings);
         upcomingMeetings.sort(sortMeetings);
         waitingMeetings.sort(sortMeetings);
@@ -730,4 +729,4 @@ async function fetchCourses(status, startAt, endAt) {
     }
     
     return []; // Fallback return
-}
+} 
