@@ -365,9 +365,9 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             if (!studentName) return;
 
             // Convert course times to Taiwan timezone
-            const startTime = new Date(course.startAt);
-            const endTime = new Date(course.endAt);
-            const currentTime = new Date();
+            const startTime = new Date(course.startAt); // This is a Date object
+            const endTime = new Date(course.endAt);   // This is a Date object
+            const currentTimeInLoop = new Date(); // Renamed to avoid conflict with the outer scope currentTime
 
             // Try to find matching sheet data
             const sheetData = findMatchingSheetData(course, sheetsData, currentDate);
@@ -375,6 +375,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             // Create meeting object
             const meeting = {
                 name: `${studentName} - ${course.tags.map(t => t.name).join(', ')}`,
+                actualStartTime: startTime, // Store the full Date object for sorting
                 startTime: new Date(startTime).toLocaleTimeString('zh-TW', { 
                     timeZone: 'Asia/Taipei',
                     hour: '2-digit', 
@@ -396,16 +397,16 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             };
 
             // Classify meeting based on time
-            if (currentTime >= startTime && currentTime < endTime) {
+            if (currentTimeInLoop >= startTime && currentTimeInLoop < endTime) {
                 ongoingMeetings.push(meeting);
-            } else if (currentTime < startTime) {
-                const timeDifferenceInHours = (startTime - currentTime) / (1000 * 60 * 60);
+            } else if (currentTimeInLoop < startTime) {
+                const timeDifferenceInHours = (startTime - currentTimeInLoop) / (1000 * 60 * 60);
                 if (timeDifferenceInHours <= 0.5) {
                     upcomingMeetings.push(meeting);
                 } else {
                     waitingMeetings.push(meeting);
                 }
-            } else if (currentTime >= endTime) {
+            } else if (currentTimeInLoop >= endTime) {
                 endedMeetings.push(meeting);
             }
         });
@@ -422,12 +423,12 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
             endedMeetings = filter(endedMeetings);
         }
 
-        // Sort meetings
-        const sortMeetings = (a, b) => a.startTime.localeCompare(b.startTime);
-        ongoingMeetings.sort(sortMeetings);
-        upcomingMeetings.sort(sortMeetings);
-        waitingMeetings.sort(sortMeetings);
-        endedMeetings.sort(sortMeetings);
+        // Sort meetings in ascending order (earliest first)
+        const sortMeetingsAsc = (a, b) => a.actualStartTime - b.actualStartTime; 
+        ongoingMeetings.sort(sortMeetingsAsc);
+        upcomingMeetings.sort(sortMeetingsAsc);
+        waitingMeetings.sort(sortMeetingsAsc);
+        endedMeetings.sort(sortMeetingsAsc);
 
         // 顯示結果
         resultDiv.innerHTML = '';
@@ -729,4 +730,4 @@ async function fetchCourses(status, startAt, endAt) {
     }
     
     return []; // Fallback return
-} 
+}

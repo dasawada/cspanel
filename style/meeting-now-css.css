@@ -189,6 +189,8 @@
     font-size: 16px;
     padding: 0 8px;
     margin-right: 10px;
+    width: 28px;
+    height: 28px;
 }
 
 .meeting-toggle-btn:hover {
