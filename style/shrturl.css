@@ -1,6 +1,6 @@
 /* 長網址input */
 #ShrtURL_longUrl {
-    width: 380px; 
+    width: 200px; 
     margin-right: 6px;
 	margin-bottom: 2px;
 }
@@ -116,7 +116,7 @@
 /* 輸出框樣式 */
 #ShrtURL_isGdOutput,
 #ShrtURL_reurlOutput {
-    width: 350px;
+    width: 200px;
     margin-right: 6px;
     background-color: #F5F5F5;
 }
