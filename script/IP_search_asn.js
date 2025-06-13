@@ -13,15 +13,10 @@ const countryMappingPromise = getCountryMapping();
  */
 async function getSheetData() {
   try {
-    console.log("[getSheetData] 呼叫 callGoogleSheetAPI，參數：", {
-      range: listRange,
-      method: "GET"
-    });
     const data = await callGoogleSheetAPI({
       range: listRange,
       method: "GET"
     });
-    console.log("[getSheetData] 回傳資料：", data);
     const sheetData = [];
     if (data.values) {
       data.values.forEach(row => {
@@ -32,10 +27,7 @@ async function getSheetData() {
           sheetData.push({ cidrRange, isp1, isp2 });
         }
       });
-    } else {
-      console.error("[getSheetData] 沒有找到資料");
     }
-    console.log("[getSheetData] 最終資料：", sheetData);
     return sheetData;
   } catch (error) {
     console.error("[getSheetData] 發生錯誤：", error);
@@ -48,15 +40,10 @@ async function getSheetData() {
  */
 async function getCountryMapping() {
   try {
-    console.log("[getCountryMapping] 呼叫 callGoogleSheetAPI，參數：", {
-      range: countryMappingRange,
-      method: "GET"
-    });
     const data = await callGoogleSheetAPI({
       range: countryMappingRange,
       method: "GET"
     });
-    console.log("[getCountryMapping] 回傳資料：", data);
     const mapping = {};
     if (data.values) {
       data.values.forEach(row => {
@@ -66,10 +53,7 @@ async function getCountryMapping() {
           mapping[eng] = chi;
         }
       });
-    } else {
-      console.error("[getCountryMapping] 沒有找到國家對照資料");
     }
-    console.log("[getCountryMapping] 最終 mapping：", mapping);
     return mapping;
   } catch (error) {
     console.error("[getCountryMapping] 發生錯誤：", error);
@@ -114,14 +98,11 @@ async function getGoogleMapUrl(lat, lon) {
  * 處理 IP 輸入，讀取 ipinfo API 資料，並依據 Google Sheet 資料及國家對照表來顯示結果
  */
 async function IP_handleIpInput(ip) {
-  console.log("[IP_handleIpInput] 處理 IP：", ip);
   const ipinfoToken = '5da0a6c614f15b';
   const url = `https://ipinfo.io/${ip}?token=${ipinfoToken}`;
   try {
-    console.log("[IP_handleIpInput] Fetch ipinfo URL：", url);
     const response = await fetch(url);
     const data = await response.json();
-    console.log("[IP_handleIpInput] ipinfo 回傳：", data);
 
     // 取得 ipinfo 中的國家代碼及 city
     const countryCode = data.country || 'N/A';
@@ -131,13 +112,11 @@ async function IP_handleIpInput(ip) {
 
     // 取得國家對照表
     const countryMapping = await countryMappingPromise;
-    console.log("[IP_handleIpInput] countryMapping：", countryMapping);
     const country = countryMapping[countryCode] || countryCode;
     const countryDisplay = city ? `${country}／${city}` : country;
 
     // 取得服務商資料
     const sheetData = await sheetDataPromise;
-    console.log("[IP_handleIpInput] sheetData：", sheetData);
     let matchedEntry = null;
     for (const entry of sheetData) {
       if (isIpInCidr(ip, entry.cidrRange)) {
@@ -145,7 +124,6 @@ async function IP_handleIpInput(ip) {
         break;
       }
     }
-    console.log("[IP_handleIpInput] matchedEntry：", matchedEntry);
 
     let ispDisplay = '';
     if (matchedEntry) {
@@ -202,7 +180,7 @@ async function IP_handleIpInput(ip) {
     console.error("[IP_handleIpInput] 錯誤：", error);
     IP_clearOutput();
     document.getElementById('ip_country').textContent = `錯誤：`;
-    document.getElementById('ip_org').textContent = `${error}`;
+    document.getElementById('ip_org').textContent = `${error.message || error}`;
   }
 }
 
@@ -219,31 +197,41 @@ function IP_clearOutput() {
   }
   document.getElementById('ip_result_container').classList.remove('hasResult');
 
-  // After clearing, trigger height adjustment
-  adjustHeight();
+  if (container) {
+    // Temporarily disable transition to ensure 'auto' height is accurately determined for scrollHeight
+    container.style.transition = 'none';
+    // Set height to auto to allow it to shrink to content
+    container.style.height = 'auto';
+    // adjustHeight will read the new scrollHeight and apply it (or minHeight)
+    // and also restore the transition.
+    adjustHeight();
+  } else {
+    // Still call adjustHeight in case it needs to do something even if container was initially null
+    // (though it has a guard, this is for completeness of flow)
+    adjustHeight();
+  }
 }
 
 // 調整介面高度的程式碼
 const container = document.querySelector('.IPsearch_in_panelALL');
 const ipInput = document.getElementById('ip_input');
+let originalPlaceholder = '';
 
 const adjustHeight = () => {
+  if (!container) return;
+
   requestAnimationFrame(() => {
-    // scrollHeight is the height of content including padding.
-    // This is usually what you want to set for the container's height
-    // if box-sizing is content-box.
+    // Always ensure the correct transition is set before any height modification
+    container.style.transition = 'height 0.1s ease';
+
     let targetHeight = container.scrollHeight;
-    
-    // Apply minHeight constraint
-    const minHeight = 45; // 根據需要調整
+    const minHeight = 36; // Should match CSS min-height
     targetHeight = Math.max(targetHeight, minHeight);
 
-    // Only update and trigger transition if the height actually changes
     if (container.style.height !== `${targetHeight}px`) {
-      container.style.transition = 'height 0.3s ease';
       container.style.height = `${targetHeight}px`;
     }
-    console.log("[adjustHeight] New container height:", targetHeight);
+    // If height doesn't change, the transition is still correctly set by the line above.
   });
 };
 
@@ -251,47 +239,64 @@ const observer = new MutationObserver(() => {
   adjustHeight();
 });
 
-observer.observe(container, { childList: true, subtree: true });
-
-document.getElementById('ip_input').addEventListener('input', async function(event) {
-  const ip = event.target.value.trim();
-  if (ip === '') {
-    IP_clearOutput(); // This will now also call adjustHeight
-    return;
-  }
-  console.log("[Event] Input changed. Processing IP:", ip);
-  await IP_handleIpInput(ip); // DOM changes here, MutationObserver will call adjustHeight
-});
-
-document.addEventListener('DOMContentLoaded', () => {
-  IP_fetchNewUpdateDate();
-  adjustHeight(); // Initial adjustment
-});
-
 /* 
   獲取最近更新日期並設置 ip 搜尋框的 placeholder
   使用共用 API 模組，從後端取得更新日期
 */
 async function IP_fetchNewUpdateDate() {
+  if (!ipInput) return;
   try {
-    console.log("[IP_fetchNewUpdateDate] Fetching update date...");
     const data = await callGoogleSheetAPI({
       range: 'update!A1:A1',
       method: "GET"
     });
-    console.log("[IP_fetchNewUpdateDate] Data received:", data);
-    if (!data.values || !data.values.length) {
-      throw new Error('No data found in the specified range.');
+    if (!data.values || !data.values.length || !data.values[0][0]) {
+      throw new Error('No date data found in the specified range.');
     }
     const dateUpdated = data.values[0][0];
-    document.getElementById('ip_input').placeholder = '資料於 ' + dateUpdated + ' 更新';
+    originalPlaceholder = '資料於 ' + dateUpdated + ' 更新';
+    ipInput.placeholder = originalPlaceholder;
   } catch (error) {
     console.error("[IP_fetchNewUpdateDate] Error:", error);
-    document.getElementById('ip_input').placeholder = '資料更新失敗';
+    originalPlaceholder = '資料更新失敗';
+    ipInput.placeholder = originalPlaceholder;
   }
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  if (!ipInput) {
+    console.error('#ip_input element not found on DOMContentLoaded. IP Search may not function.');
+  }
+  if (!container) {
+    console.error('.IPsearch_in_panelALL container not found on DOMContentLoaded. Height adjustments may not work.');
+  }
+
   IP_fetchNewUpdateDate();
-  adjustHeight();
+
+  if (container) {
+    observer.observe(container, { childList: true, subtree: true, characterData: true });
+    adjustHeight();
+  }
+  
+  if (ipInput) {
+    ipInput.addEventListener('input', async function(event) {
+      const currentIp = event.target.value.trim();
+      if (currentIp === '') {
+        IP_clearOutput();
+        ipInput.placeholder = '請輸入IP';
+        return;
+      }
+      
+      if (ipInput.placeholder !== originalPlaceholder && originalPlaceholder) {
+          ipInput.placeholder = originalPlaceholder;
+      }
+
+      await IP_handleIpInput(currentIp);
+    });
+
+    ipInput.addEventListener('blur', function(event) {
+        if (event.target.value.trim() === '' && originalPlaceholder) {
+        }
+    });
+  }
 });
