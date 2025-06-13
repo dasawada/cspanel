@@ -235,7 +235,7 @@ b, h1, h2, h3, h4, h5, h6 {
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     height: auto; /* 固定高度 */
-    width: 500px;
+    width: auto;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     top: 40px;
@@ -960,4 +960,27 @@ textarea {
 
 .panel-tabs input[type="radio"]:checked + label + .panel-tab-content {
     display: block;
+}
+
+/* General styling for p tags inside the result container */
+#ip_result_container p {
+    margin-top: 2px; /* Adjust as needed for when content is visible */
+    margin-bottom: 2px; /* Adjust as needed for when content is visible */
+    padding: 0;
+    line-height: 1.4; /* Or your preferred line-height */
+}
+
+/* When ip_result_container does NOT have 'hasResult', ensure its children don't add extra space */
+#ip_result_container:not(.hasResult) #ip_country,
+#ip_result_container:not(.hasResult) #ip_org {
+    margin: 0 !important; /* Remove margins to prevent them from taking up space when empty */
+    /* Optional: if they still take space, you might need to ensure their height is 0 when truly empty */
+    /* height: 0; */ /* Be cautious with this, test if needed */
+    /* line-height: 0; */ /* Also cautious */
+}
+
+/* Ensure the result container itself doesn't have padding when it's not showing results */
+#ip_result_container:not(.hasResult) {
+    padding-top: 0;
+    padding-bottom: 0;
 }
