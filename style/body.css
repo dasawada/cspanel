@@ -56,7 +56,7 @@ b, h1, h2, h3, h4, h5, h6 {
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 確保容器為相對定位 */
     left: 0px;
-    top: 230px;
+    top: 240px;
     gap: 10px;
     display: flex;
     flex-wrap: nowrap;
@@ -79,12 +79,12 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 .optitlepanel {
     background-color: white;
-    padding: 8px;
+    padding: 10px;
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 400px;
-    height: 135px;
+    height: 120px;
     box-sizing: border-box;
     position: absolute;
     top: 0px;
@@ -93,7 +93,6 @@ b, h1, h2, h3, h4, h5, h6 {
 
 .idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet,.assist-issue {
     background-color: white;
-    padding: 3px;
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
@@ -107,6 +106,9 @@ b, h1, h2, h3, h4, h5, h6 {
 
 .toggle-container label {
     cursor: pointer;
+}
+.toggle-container {
+    padding: 4px;
 }
 
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
@@ -209,29 +211,30 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 
 .IPsearch_in_panelALL {
-    top: 230px;
+    top: 240px;
     left: 115px;
     display: flex;                 /* 使用 Flexbox */
     flex-direction: column;        /* 垂直排列 */
-    justify-content: space-between;/* 子元素在垂直方向上均匀分布 */
+    justify-content: normal;/* 子元素在垂直方向上均匀分布 */
     align-items: flex-start;       /* 子元素靠左对齐 */
-    padding: 6px 6px 6px 6px;      /* 内边距 */
+    padding: 0px 6px 0px 6px;      /* 内边距 */
     z-index: 996;
     min-height: 36px;              /* 设置初始最小高度 */
     width: 285px;                  /* 固定宽度 */
     overflow: hidden;              /* 控制内容溢出 */
     transition: height 0.1s ease;  /* 统一过渡时间 */
     position: absolute;
+    height: auto;
 }
 
 
 .linkout {
     background-color: white;
-    padding: 5px; 
+    padding: 5px 8px; 
     border: 1px solid #ccc;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    height: 95px; /* 固定高度 */
+    height: auto; /* 固定高度 */
     width: 500px;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
@@ -240,7 +243,7 @@ b, h1, h2, h3, h4, h5, h6 {
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
+    align-items: flex-start;
 }
 .input-container,
 #shortUrlContainer {
@@ -847,7 +850,7 @@ textarea {
 /* 容器樣式 */
 .fudausearch-container {
     width: 400px;
-    height: 75px;
+    height: 105px;
     font-size: 12px;
     color: #4d4d4d;
     border: 1px solid #ccc;
@@ -896,7 +899,7 @@ textarea {
 .panel-tabs-container {
     position: absolute;
     left: 410px;
-    top: 145px;
+    top: 160px;
     width: 500px;
     height: 600px;
     background-color: transparent;
@@ -930,7 +933,7 @@ textarea {
 }
 
 .panel-tabs label {
-    padding: 3px 10px;
+    padding: 5px 10px;
     color: #bcbcbc;
     background-color: #f5f5f5;
     border: 1px solid #ccc;
