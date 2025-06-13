@@ -158,24 +158,32 @@ async function IP_handleIpInput(ip) {
       ispDisplay = org;
     }
 
+    const ipResultContainer = document.getElementById('ip_result_container');
     document.getElementById('ip_country').innerHTML = `<span class="label">國家：</span>${countryDisplay}`;
     const ispLines = ispDisplay.split('\n').map(line => line.trim());
-    document.getElementById('ip_org').innerHTML = `<span class="label">服務商：</span><br>${ispLines.join('<br>')}`;
+    document.getElementById('ip_org').innerHTML = `<span class="label">服務商：</span>${ispLines.join('<br>')}`;
+
     if (hostname) {
-      document.getElementById('ip_hostname').innerHTML = `<span class="label">主機名：</span>${hostname}`;
-    } else {
-      document.getElementById('ip_hostname').innerHTML = '';
+        let hostnameElement = document.getElementById('ip_hostname');
+        if (!hostnameElement) {
+            hostnameElement = document.createElement('p');
+            hostnameElement.id = 'ip_hostname';
+            hostnameElement.style.margin = '0';
+            hostnameElement.style.padding = '0';
+            ipResultContainer.appendChild(hostnameElement);
+        }
+        hostnameElement.innerHTML = `<span class="label">主機名：</span>${hostname}`;
     }
+
     document.getElementById('ip_result_container').classList.add('hasResult');
 
     // 地圖處理
-    const ipResultContainer = document.getElementById('ip_result_container');
     let ipMapContainer = document.getElementById('ip_map');
     if (!ipMapContainer) {
       ipMapContainer = document.createElement('div');
       ipMapContainer.id = 'ip_map';
       ipMapContainer.style.width = '260px';
-      ipMapContainer.style.height = '220px';
+      ipMapContainer.style.height = '180px';
       ipMapContainer.style.margin = '5px auto 5px';
       ipResultContainer.appendChild(ipMapContainer);
     }
@@ -201,45 +209,41 @@ async function IP_handleIpInput(ip) {
 function IP_clearOutput() {
   document.getElementById('ip_country').textContent = '';
   document.getElementById('ip_org').textContent = '';
-  document.getElementById('ip_hostname').textContent = '';
+  const hostnameElement = document.getElementById('ip_hostname');
+  if (hostnameElement) {
+    hostnameElement.remove();
+  }
+  const mapElement = document.getElementById('ip_map');
+  if (mapElement) {
+    mapElement.remove();
+  }
   document.getElementById('ip_result_container').classList.remove('hasResult');
+
+  // After clearing, trigger height adjustment
+  adjustHeight();
 }
-
-// 監聽 ip 輸入框的 keydown 與 input 事件
-document.getElementById('ip_input').addEventListener('keydown', async function(event) {
-  if (event.key === 'Enter') {
-    event.preventDefault();
-    const ip = event.target.value.trim();
-    if (ip === '') {
-      IP_clearOutput();
-      return;
-    }
-    console.log("[Event] Enter pressed. Processing IP:", ip);
-    await IP_handleIpInput(ip);
-  }
-});
-
-document.getElementById('ip_input').addEventListener('input', async function(event) {
-  const ip = event.target.value.trim();
-  if (ip === '') {
-    IP_clearOutput();
-    return;
-  }
-  console.log("[Event] Input changed. Processing IP:", ip);
-  await IP_handleIpInput(ip);
-});
 
 // 調整介面高度的程式碼
 const container = document.querySelector('.IPsearch_in_panelALL');
-const initialHeight = '36px';
 const ipInput = document.getElementById('ip_input');
 
 const adjustHeight = () => {
   requestAnimationFrame(() => {
-    const newHeight = container.scrollHeight + 'px';
-    container.style.transition = 'height 0.3s ease';
-    container.style.height = ipInput.value === '' ? initialHeight : newHeight;
-    console.log("[adjustHeight] New container height:", newHeight);
+    // scrollHeight is the height of content including padding.
+    // This is usually what you want to set for the container's height
+    // if box-sizing is content-box.
+    let targetHeight = container.scrollHeight;
+    
+    // Apply minHeight constraint
+    const minHeight = 45; // 根據需要調整
+    targetHeight = Math.max(targetHeight, minHeight);
+
+    // Only update and trigger transition if the height actually changes
+    if (container.style.height !== `${targetHeight}px`) {
+      container.style.transition = 'height 0.3s ease';
+      container.style.height = `${targetHeight}px`;
+    }
+    console.log("[adjustHeight] New container height:", targetHeight);
   });
 };
 
@@ -249,15 +253,20 @@ const observer = new MutationObserver(() => {
 
 observer.observe(container, { childList: true, subtree: true });
 
-ipInput.addEventListener('input', () => {
-  setTimeout(adjustHeight, 0);
+document.getElementById('ip_input').addEventListener('input', async function(event) {
+  const ip = event.target.value.trim();
+  if (ip === '') {
+    IP_clearOutput(); // This will now also call adjustHeight
+    return;
+  }
+  console.log("[Event] Input changed. Processing IP:", ip);
+  await IP_handleIpInput(ip); // DOM changes here, MutationObserver will call adjustHeight
 });
 
-ipInput.addEventListener('paste', () => {
-  setTimeout(adjustHeight, 50);
+document.addEventListener('DOMContentLoaded', () => {
+  IP_fetchNewUpdateDate();
+  adjustHeight(); // Initial adjustment
 });
-
-ipInput.addEventListener('click', adjustHeight);
 
 /* 
   獲取最近更新日期並設置 ip 搜尋框的 placeholder
