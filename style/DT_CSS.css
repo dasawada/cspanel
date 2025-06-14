@@ -232,3 +232,40 @@
     max-height: calc(100vh - 250px); /* 限制最大高度 */
     overflow-y: auto;
 }
+
+/* 新增橫向排列的表單元素 */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+}
+
+.form-col {
+    flex: 1;
+    min-width: 0; /* 防止內容撐開 */
+}
+
+.form-col label {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.form-col input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-row label {
+    white-space: nowrap;
+}
+
+.input-row input {
+    flex: 1;
+    min-width: 0;
+}

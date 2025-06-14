@@ -1,4 +1,3 @@
-
 <html lang="zh-Hant">
 <head>
 <!-- Google tag (gtag.js) -->
@@ -190,18 +189,36 @@
     <div class="DT_left_panel">
         <!-- 移動基本資訊部分到左側 -->
         <div class="form-group">
-            <label for="DT_datetime">日期時間：<span class="red-asterisk">*</span></label>
-            <input type="text" id="DT_datetime" name="datetime" placeholder="YYYY/MM/DD hh:mm">
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="input-row">
+                        <label for="DT_datetime">日期時間</label>
+                        <input type="text" id="DT_datetime" name="datetime" placeholder="YYYY/MM/DD hh:mm">
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="input-row">
+                        <label for="DT_name">學生姓名</label>
+                        <input type="text" id="DT_name" name="name">
+                    </div>
+                </div>
+            </div>
         </div>
         <div class="form-group">
-            <label for="DT_name">學生姓名：<span class="red-asterisk">*</span></label>
-            <input type="text" id="DT_name" name="name">
-            <label for="DT_phone">連絡電話：<span class="red-asterisk">*</span></label>
-            <input type="text" id="DT_phone" name="phone" placeholder="可填家長姓名、電話">
-        </div>
-        <div class="form-group">
-            <label for="DT_project">測試工程師：<span class="red-asterisk">*</span></label>
-            <input type="text" id="DT_project" name="project">
+            <div class="form-row">
+                <div class="form-col">
+                    <div class="input-row">
+                        <label for="DT_project">測試人員</label>
+                        <input type="text" id="DT_project" name="project">
+                    </div>
+                </div>
+                <div class="form-col">
+                    <div class="input-row">
+                        <label for="DT_phone">連絡電話</label>
+                        <input type="text" id="DT_phone" name="phone" placeholder="可填家長姓名、電話">
+                    </div>
+                </div>
+            </div>
         </div>
         <!-- 使用設備部分 -->
         <div class="DT_SON_BORDER" style="background: white;">
@@ -209,11 +226,11 @@
                 <h3>使用設備</h3>
                 <div class="device-group">
                     <div class="row">
-                        <div><label for="DT_device_1">設備<span class="red-asterisk">*</span></label></div>
-                        <div><label for="DT_brand_1">品牌<span class="red-asterisk">*</span></label></div>
-                        <div><label for="DT_os_1">作業系統<span class="red-asterisk">*</span></label></div>
-                        <div><label for="DT_os_version_1">版本/硬體<span class="red-asterisk">*</span></label></div>
-                        <div><label for="DT_browser_1">瀏覽器<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_device_1">設備</label></div>
+                        <div><label for="DT_brand_1">品牌</label></div>
+                        <div><label for="DT_os_1">作業系統</label></div>
+                        <div><label for="DT_os_version_1">版本/硬體</label></div>
+                        <div><label for="DT_browser_1">瀏覽器</label></div>
                     </div>
                     <div class="row">
                         <div>
@@ -284,9 +301,9 @@
                 <h3>網路連線</h3>
                 <div class="connection-group">
                     <div class="form-group">
-                        <label for="DT_provider_1">電信業者：<span class="red-asterisk">*</span></label>
+                        <label for="DT_provider_1">電信業者：</label>
                         <input type="text" id="DT_provider_1" name="provider" >
-                        <label for="DT_connection_1">連線方式：<span class="red-asterisk">*</span></label>
+                        <label for="DT_connection_1">連線方式：</label>
                         <select id="DT_connection_1" name="connection" >
                             <option value="-">-</option>
                             <option value="Wi-Fi">Wi-Fi</option>
@@ -295,7 +312,7 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="DT_speed_1">當前網速：<span class="red-asterisk">*</span></label>
+                        <label for="DT_speed_1">當前網速：</label>
                         <textarea id="DT_speed_1" name="speed" ></textarea>
                     </div>
                 </div>
@@ -303,23 +320,23 @@
 	<div class="spacer"></div>
             <button type="button" onclick="addConnection()">新增網路連線</button>
         </div>
+        <div class="form-group">
+            <label for="DT_issues">測試問題：</label>
+            <textarea id="DT_issues" name="issues"></textarea>
+        </div>
     </div>
     
     <div class="DT_right_panel">
         <!-- 移動檢測結果部分到右側 -->
         <div class="form-group">
             <div class="DV_sutable">
-                <label for="DT_suitable">是否適合上課：<span class="red-asterisk">*</span></label>
+                <label for="DT_suitable">是否適合上課：</label>
                 <input type="radio" id="DT_suitable_yes" name="suitable" value="適合">適合
                 <input type="radio" id="DT_suitable_no" name="suitable" value="不適合">不適合
             </div>
         </div>
         <div class="form-group">
-            <label for="DT_issues">測試問題：<span class="red-asterisk">*</span></label>
-            <textarea id="DT_issues" name="issues"></textarea>
-        </div>
-        <div class="form-group">
-            <label for="DT_process">處理過程：<span class="red-asterisk">*</span></label>
+            <label for="DT_process">處理過程：</label>
             <textarea id="DT_process" name="process"></textarea>
         </div>
         <div class="form-group">
@@ -605,4 +622,4 @@
     <script type="module" src="script/IP_search_asn.js"></script>
     <script type="module" src="script/fusearch.js"></script>
 </body>
-</html> 
+</html>
