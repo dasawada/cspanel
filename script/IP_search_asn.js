@@ -1,5 +1,41 @@
 import { callGoogleSheetAPI, callGoogleSheetBatchAPI, callGoogleMapsAPI } from "./googleSheetAPI.js";
 
+// --- 日誌記錄開始 ---
+const logEntries = [];
+function log(eventType, details) {
+    const timestamp = new Date().toISOString();
+    const entry = {
+        timestamp,
+        eventType,
+        details
+    };
+    logEntries.push(entry);
+    console.log('[Logger]', JSON.parse(JSON.stringify(entry))); // 使用 JSON.parse(JSON.stringify()) 避免 console 顯示活動對象
+}
+
+// 將 logEntries 和一個下載函數暴露到全域，僅供調試
+window.debugLogEntries = logEntries; // 使用不同的名稱以避免潛在衝突
+window.downloadLogFile = function() {
+    if (typeof window.debugLogEntries === 'undefined' || !Array.isArray(window.debugLogEntries)) {
+        console.error("[DownloadLogFile] 'window.debugLogEntries' is not available or not an array.");
+        return;
+    }
+    const filename = `ip_search_log_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
+    const blob = new Blob([JSON.stringify(window.debugLogEntries, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    console.log(`[DownloadLogFile] Log downloaded as ${filename}`);
+    // 可選：清空日誌以便下次使用
+    // window.debugLogEntries.length = 0;
+};
+// --- 日誌記錄結束 ---
+
 // 定義各個範圍，不再定義 spreadsheetId
 const listRange = 'ip-list!B1:E';
 const countryMappingRange = 'ip-dixt!A:C';
@@ -7,6 +43,8 @@ const countryMappingRange = 'ip-dixt!A:C';
 // 先記錄全域 Promise（供 IP_handleIpInput 使用）
 const sheetDataPromise = getSheetData();
 const countryMappingPromise = getCountryMapping();
+
+const MIN_PANEL_HEIGHT = 36; // Define a constant for minimum height
 
 /**
  * 讀取 Google Sheet 中服務商資料
@@ -137,9 +175,16 @@ async function IP_handleIpInput(ip) {
     }
 
     const ipResultContainer = document.getElementById('ip_result_container');
-    document.getElementById('ip_country').innerHTML = `<span class="label">國家：</span>${countryDisplay}`;
+    const countryElement = document.getElementById('ip_country');
+    const orgElement = document.getElementById('ip_org');
+
+    // 先將元素設為可見，再填入內容
+    countryElement.style.display = ''; // 恢復預設或 CSS 指定的 display 樣式
+    orgElement.style.display = '';   // 恢復預設或 CSS 指定的 display 樣式
+
+    countryElement.innerHTML = `<span class="label">國家：</span>${countryDisplay}`;
     const ispLines = ispDisplay.split('\n').map(line => line.trim());
-    document.getElementById('ip_org').innerHTML = `<span class="label">服務商：</span>${ispLines.join('<br>')}`;
+    orgElement.innerHTML = `<span class="label">服務商：</span>${ispLines.join('<br>')}`;
 
     if (hostname) {
         let hostnameElement = document.getElementById('ip_hostname');
@@ -150,6 +195,7 @@ async function IP_handleIpInput(ip) {
             hostnameElement.style.padding = '0';
             ipResultContainer.appendChild(hostnameElement);
         }
+        hostnameElement.style.display = ''; // 確保可見
         hostnameElement.innerHTML = `<span class="label">主機名：</span>${hostname}`;
     }
 
@@ -165,6 +211,7 @@ async function IP_handleIpInput(ip) {
       ipMapContainer.style.margin = '5px auto 5px';
       ipResultContainer.appendChild(ipMapContainer);
     }
+    ipMapContainer.style.display = ''; // 確保地圖容器可見
     if (data.loc) {
       const [lat, lon] = data.loc.split(',');
       const embedUrl = await getGoogleMapUrl(lat, lon);
@@ -172,44 +219,69 @@ async function IP_handleIpInput(ip) {
         ipMapContainer.innerHTML = `<iframe width="260" height="260" frameborder="0" style="border:0; width:100%; height:100%;" src="${embedUrl}" allowfullscreen></iframe>`;
       } else {
         ipMapContainer.innerHTML = "";
+        ipMapContainer.style.display = 'none'; // 如果沒有地圖內容，則隱藏
       }
     } else {
       ipMapContainer.innerHTML = "";
+      ipMapContainer.style.display = 'none'; // 如果沒有位置數據，則隱藏
     }
+    
+    // 在搜尋結果出來後強制調整高度
+    requestAnimationFrame(() => {
+      adjustHeight(true);
+    });
   } catch (error) {
     console.error("[IP_handleIpInput] 錯誤：", error);
-    IP_clearOutput();
-    document.getElementById('ip_country').textContent = `錯誤：`;
-    document.getElementById('ip_org').textContent = `${error.message || error}`;
+    IP_clearOutput(); // IP_clearOutput 內部會處理隱藏
+    const countryElement = document.getElementById('ip_country');
+    const orgElement = document.getElementById('ip_org');
+
+    // 顯示錯誤訊息前，確保元素可見
+    countryElement.style.display = '';
+    orgElement.style.display = '';
+
+    countryElement.textContent = `錯誤：`;
+    orgElement.textContent = `${error.message || error}`;
+    
+    // 在顯示錯誤後強制調整高度
+    requestAnimationFrame(() => {
+      adjustHeight(true);
+    });
   }
 }
 
+// filepath: /Users/jianmingxiu/cspanel_clone/cspanel/script/IP_search_asn.js
+// ...
 function IP_clearOutput() {
-  document.getElementById('ip_country').textContent = '';
-  document.getElementById('ip_org').textContent = '';
+  const countryElement = document.getElementById('ip_country');
+  const orgElement = document.getElementById('ip_org');
+
+  if (countryElement) { 
+    countryElement.textContent = ''; // 這些是靜態的，不清空會留白
+    countryElement.style.display = 'none';
+  }
+  if (orgElement) { 
+    orgElement.textContent = ''; // 這些是靜態的，不清空會留白
+    orgElement.style.display = 'none';
+  }
+
   const hostnameElement = document.getElementById('ip_hostname');
   if (hostnameElement) {
-    hostnameElement.remove();
+    hostnameElement.remove(); // <--- 改為 remove()
   }
+
   const mapElement = document.getElementById('ip_map');
   if (mapElement) {
-    mapElement.remove();
+    mapElement.remove(); // <--- 改為 remove()
   }
-  document.getElementById('ip_result_container').classList.remove('hasResult');
 
-  if (container) {
-    // Temporarily disable transition to ensure 'auto' height is accurately determined for scrollHeight
-    container.style.transition = 'none';
-    // Set height to auto to allow it to shrink to content
-    container.style.height = 'auto';
-    // adjustHeight will read the new scrollHeight and apply it (or minHeight)
-    // and also restore the transition.
-    adjustHeight();
-  } else {
-    // Still call adjustHeight in case it needs to do something even if container was initially null
-    // (though it has a guard, this is for completeness of flow)
-    adjustHeight();
+  const ipResultContainer = document.getElementById('ip_result_container');
+  if (ipResultContainer) {
+    ipResultContainer.classList.remove('hasResult');
   }
+  
+  // 清空輸出後直接調整高度至最小值
+  adjustHeightToMin();
 }
 
 // 調整介面高度的程式碼
@@ -217,26 +289,106 @@ const container = document.querySelector('.IPsearch_in_panelALL');
 const ipInput = document.getElementById('ip_input');
 let originalPlaceholder = '';
 
-const adjustHeight = () => {
+// 新增直接調整至最小高度的函數
+function adjustHeightToMin() {
+  if (!container) return;
+  
+  if (typeof log === 'function') {
+    log('adjustHeightToMin_call', { 
+      MIN_PANEL_HEIGHT: MIN_PANEL_HEIGHT,
+      currentHeight: container.style.height
+    });
+  }
+  
+  requestAnimationFrame(() => {
+    container.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+    container.style.height = `${MIN_PANEL_HEIGHT}px`;
+    
+    if (typeof log === 'function') {
+      log('adjustHeightToMin_complete', { 
+        newHeight: container.style.height
+      });
+    }
+  });
+}
+
+const adjustHeight = (animate = true) => {
+  if (typeof log === 'function') {
+    log('adjustHeight_start', { 
+      animate: animate, 
+      scrollHeight: container ? container.scrollHeight : 'N/A', 
+      currentStyleHeight: container ? container.style.height : 'N/A' 
+    });
+  }
   if (!container) return;
 
   requestAnimationFrame(() => {
-    // Always ensure the correct transition is set before any height modification
-    container.style.transition = 'height 0.1s ease';
+    if (animate) {
+      container.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+    } else {
+      container.style.transition = 'none';
+    }
 
-    let targetHeight = container.scrollHeight;
-    const minHeight = 36; // Should match CSS min-height
-    targetHeight = Math.max(targetHeight, minHeight);
+    // 取得實際需要的高度，檢查內部元素實際高度
+    let targetHeight = 0;
+    const ipResultContainer = document.getElementById('ip_result_container');
+    
+    // 如果結果容器有內容，計算所有可見子元素的高度總和
+    if (ipResultContainer && ipResultContainer.classList.contains('hasResult')) {
+      // 獲取所有非隱藏的子元素
+      const visibleChildren = Array.from(ipResultContainer.children)
+        .filter(child => child.style.display !== 'none');
+      
+      // 計算每個可見子元素的高度
+      visibleChildren.forEach(child => {
+        targetHeight += child.offsetHeight;
+      });
+      
+      // 加上輸入框和容器的padding/margin等
+      targetHeight += ipInput ? ipInput.offsetHeight : 0;
+      targetHeight += 20; // 額外空間用於 padding 和 margin
+    } else {
+      // 如果沒有結果，使用最小高度
+      targetHeight = MIN_PANEL_HEIGHT;
+    }
+    
+    targetHeight = Math.max(targetHeight, MIN_PANEL_HEIGHT); 
 
     if (container.style.height !== `${targetHeight}px`) {
       container.style.height = `${targetHeight}px`;
+      
+      // 確保高度設置成功，強制重排
+      // @ts-ignore
+      container.offsetHeight;
     }
-    // If height doesn't change, the transition is still correctly set by the line above.
+    
+    if (typeof log === 'function') {
+      log('adjustHeight_end', { 
+        newStyleHeight: container ? container.style.height : 'N/A',
+        finalTargetHeight: targetHeight,
+        offsetHeight: container ? container.offsetHeight : 'N/A'
+      });
+    }
   });
 };
 
+let debounceTimeout;
 const observer = new MutationObserver(() => {
-  adjustHeight();
+  clearTimeout(debounceTimeout);
+  debounceTimeout = setTimeout(() => {
+    if (container) {
+      // @ts-ignore
+      container.offsetHeight; // 讀取 offsetHeight 來觸發 reflow
+    }
+    if (typeof log === 'function') { 
+      log('MutationObserver_adjustHeight_call', { 
+        scrollHeight: container ? container.scrollHeight : 'N/A', 
+        offsetHeight: container ? container.offsetHeight : 'N/A', 
+        styleHeight: container ? container.style.height : 'N/A' 
+      });
+    }
+    adjustHeight(); 
+  }, 200); 
 });
 
 /* 
@@ -274,8 +426,12 @@ document.addEventListener('DOMContentLoaded', () => {
   IP_fetchNewUpdateDate();
 
   if (container) {
-    observer.observe(container, { childList: true, subtree: true, characterData: true });
-    adjustHeight();
+    adjustHeight(false); // Set initial height without animation
+    observer.observe(container, { 
+      childList: true,    // Observe direct children changes
+      subtree: true,      // Observe all descendants
+      characterData: true // Observe text content changes
+    });
   }
   
   if (ipInput) {
@@ -283,6 +439,7 @@ document.addEventListener('DOMContentLoaded', () => {
       const currentIp = event.target.value.trim();
       if (currentIp === '') {
         IP_clearOutput();
+        // 現在實作了 adjustHeightToMin 函數，替代之前被註解的程式碼
         ipInput.placeholder = '請輸入IP';
         return;
       }
@@ -296,7 +453,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
     ipInput.addEventListener('blur', function(event) {
         if (event.target.value.trim() === '' && originalPlaceholder) {
+            ipInput.placeholder = originalPlaceholder;
         }
+    });
+
+    // 新增：監聽 keydown 事件以禁用 Enter 鍵的預設提交行為
+    ipInput.addEventListener('keydown', function(event) {
+      if (event.key === 'Enter' || event.keyCode === 13) {
+        event.preventDefault(); // 防止表單提交
+      }
     });
   }
 });

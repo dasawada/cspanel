@@ -219,10 +219,9 @@ b, h1, h2, h3, h4, h5, h6 {
     align-items: flex-start;       /* 子元素靠左对齐 */
     padding: 0px 6px 0px 6px;      /* 内边距 */
     z-index: 996;
-    min-height: 36px;              /* 设置初始最小高度 */
+    min-height: 42px;              /* 设置初始最小高度 */
     width: 285px;                  /* 固定宽度 */
     overflow: hidden;              /* 控制内容溢出 */
-    transition: height 0.1s ease;  /* 统一过渡时间 */
     position: absolute;
     height: auto;
 }
