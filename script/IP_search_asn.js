@@ -10,14 +10,12 @@ function log(eventType, details) {
         details
     };
     logEntries.push(entry);
-    console.log('[Logger]', JSON.parse(JSON.stringify(entry))); // 使用 JSON.parse(JSON.stringify()) 避免 console 顯示活動對象
 }
 
 // 將 logEntries 和一個下載函數暴露到全域，僅供調試
 window.debugLogEntries = logEntries; // 使用不同的名稱以避免潛在衝突
 window.downloadLogFile = function() {
     if (typeof window.debugLogEntries === 'undefined' || !Array.isArray(window.debugLogEntries)) {
-        console.error("[DownloadLogFile] 'window.debugLogEntries' is not available or not an array.");
         return;
     }
     const filename = `ip_search_log_${new Date().toISOString().replace(/[:.]/g, '-')}.json`;
@@ -30,9 +28,6 @@ window.downloadLogFile = function() {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-    console.log(`[DownloadLogFile] Log downloaded as ${filename}`);
-    // 可選：清空日誌以便下次使用
-    // window.debugLogEntries.length = 0;
 };
 // --- 日誌記錄結束 ---
 
@@ -68,7 +63,6 @@ async function getSheetData() {
     }
     return sheetData;
   } catch (error) {
-    console.error("[getSheetData] 發生錯誤：", error);
     return [];
   }
 }
@@ -94,7 +88,6 @@ async function getCountryMapping() {
     }
     return mapping;
   } catch (error) {
-    console.error("[getCountryMapping] 發生錯誤：", error);
     return {};
   }
 }
@@ -127,7 +120,6 @@ async function getGoogleMapUrl(lat, lon) {
     const data = await callGoogleMapsAPI({ lat, lon });
     return data.embedUrl;
   } catch (error) {
-    console.error("[getGoogleMapUrl] 無法取得地圖連結：", error);
     return "";
   }
 }
@@ -231,7 +223,6 @@ async function IP_handleIpInput(ip) {
       adjustHeight(true);
     });
   } catch (error) {
-    console.error("[IP_handleIpInput] 錯誤：", error);
     IP_clearOutput(); // IP_clearOutput 內部會處理隱藏
     const countryElement = document.getElementById('ip_country');
     const orgElement = document.getElementById('ip_org');
@@ -267,12 +258,12 @@ function IP_clearOutput() {
 
   const hostnameElement = document.getElementById('ip_hostname');
   if (hostnameElement) {
-    hostnameElement.remove(); // <--- 改為 remove()
+    hostnameElement.remove();
   }
 
   const mapElement = document.getElementById('ip_map');
   if (mapElement) {
-    mapElement.remove(); // <--- 改為 remove()
+    mapElement.remove();
   }
 
   const ipResultContainer = document.getElementById('ip_result_container');
@@ -409,7 +400,6 @@ async function IP_fetchNewUpdateDate() {
     originalPlaceholder = '資料於 ' + dateUpdated + ' 更新';
     ipInput.placeholder = originalPlaceholder;
   } catch (error) {
-    console.error("[IP_fetchNewUpdateDate] Error:", error);
     originalPlaceholder = '資料更新失敗';
     ipInput.placeholder = originalPlaceholder;
   }
@@ -417,10 +407,8 @@ async function IP_fetchNewUpdateDate() {
 
 document.addEventListener('DOMContentLoaded', () => {
   if (!ipInput) {
-    console.error('#ip_input element not found on DOMContentLoaded. IP Search may not function.');
   }
   if (!container) {
-    console.error('.IPsearch_in_panelALL container not found on DOMContentLoaded. Height adjustments may not work.');
   }
 
   IP_fetchNewUpdateDate();
