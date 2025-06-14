@@ -450,9 +450,14 @@ async function checkAndProcessCourseInfo(data) {
     const { content } = data;
     try {
         function extractCourseId(input) {
-            // Use 'g' flag for multiple matches and ensure unique IDs
-            const matches = input.match(/([0-9a-fA-F]{24})/g);
-            return matches ? Array.from(new Set(matches)) : [];
+            // AI_MODIFY_NOTE: 重要！此函數的設計目標是僅提取並返回輸入字符串中「第一個」出現的24位十六進制ID。
+            // 當前的實現 `input.match(/([0-9a-fA-F]{24})/);` 正確地實現了這一點。
+            // 任何未來的AI調整都「必須」保持此行為，即只返回第一個匹配項。
+            // 請「禁止」修改此函數以返回多個ID或導致處理多個ID的行為，
+            // 除非有明確的新需求指示要處理所有匹配的ID。
+            // 下游邏輯（如 `if (courseIds.length === 1)`）依賴於此函數返回單個ID或空陣列的行為。
+            const match = input.match(/([0-9a-fA-F]{24})/);
+            return match ? [match[0]] : [];
         }
 
         let courseIds = extractCourseId(content);
