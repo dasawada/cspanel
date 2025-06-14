@@ -450,9 +450,14 @@ async function checkAndProcessCourseInfo(data) {
     const { content } = data;
     try {
         function extractCourseId(input) {
-            // Use 'g' flag for multiple matches and ensure unique IDs
-            const matches = input.match(/([0-9a-fA-F]{24})/g);
-            return matches ? Array.from(new Set(matches)) : [];
+            // AI_MODIFY_NOTE: 重要！此函數的設計目標是僅提取並返回輸入字符串中「第一個」出現的24位十六進制ID。
+            // 當前的實現 `input.match(/([0-9a-fA-F]{24})/);` 正確地實現了這一點。
+            // 任何未來的AI調整都「必須」保持此行為，即只返回第一個匹配項。
+            // 請「禁止」修改此函數以返回多個ID或導致處理多個ID的行為，
+            // 除非有明確的新需求指示要處理所有匹配的ID。
+            // 下游邏輯（如 `if (courseIds.length === 0)` 或 `courseIds.length === 1`）依賴於此函數返回單個ID或空陣列的行為。
+            const match = input.match(/([0-9a-fA-F]{24})/);
+            return match ? [match[0]] : [];
         }
 
         let courseIds = extractCourseId(content);
@@ -465,28 +470,10 @@ async function checkAndProcessCourseInfo(data) {
             };
         }
 
-        let courseInfoResult;
-        let finalCourseIdToFetch;
-
-        if (courseIds.length === 1) {
-            finalCourseIdToFetch = courseIds[0];
-            courseInfoResult = await fetchCompleteClassInfo({ courseId: finalCourseIdToFetch });
-        } else {
-            const verificationResult = await verifyCourseIds({ courseIds });
-            if (!verificationResult.success) {
-                const errorMessage = verificationResult.error || '多課程ID驗證失敗';
-                return { html: `<p style="color:red;">${errorMessage}</p>` };
-            }
-
-            const validResult = verificationResult.data.find(r => r.valid);
-            if (validResult) {
-                finalCourseIdToFetch = validResult.id;
-                courseInfoResult = await fetchCompleteClassInfo({ courseId: finalCourseIdToFetch });
-            } else {
-                const message = '查詢失敗，提供的多個ID中無有效的課程資料';
-                return { html: `<p style="color:red;">${message}</p>` };
-            }
-        }
+        // 至此，courseIds 陣列必然只包含一個課程 ID，因為 extractCourseId 的設計如此，
+        // 且 courseIds.length === 0 的情況已在上一個 if 區塊處理。
+        const finalCourseIdToFetch = courseIds[0];
+        const courseInfoResult = await fetchCompleteClassInfo({ courseId: finalCourseIdToFetch });
 
         if (courseInfoResult && courseInfoResult.success && courseInfoResult.data) {
             const html = generateClassInfoHtml(courseInfoResult.data);
@@ -494,7 +481,7 @@ async function checkAndProcessCourseInfo(data) {
         } else {
             const errorMessage = (courseInfoResult && courseInfoResult.error) 
                                ? courseInfoResult.error 
-                               : `無法獲取課程ID ${finalCourseIdToFetch || '未知'} 的詳細資訊。`;
+                               : `無法獲取課程ID ${finalCourseIdToFetch} 的詳細資訊。`;
             return { html: `<p style="color:red;">${errorMessage}</p>` };
         }
     } catch (error) {
