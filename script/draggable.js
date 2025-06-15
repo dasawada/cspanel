@@ -2,7 +2,7 @@
  * 讓指定元素可拖曳，彼此互不影響，並自動套用拖曳樣式
  * @param {HTMLElement} panel  要拖曳的主體元素
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
- * @param {Object} options     { left, top, width, height, color }
+ * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary }
  */
 export function makeDraggable(panel, handle, options = {}) {
   handle = handle || panel;
@@ -72,10 +72,29 @@ export function makeDraggable(panel, handle, options = {}) {
     currentX: 0, currentY: 0,
     animationFrameId: null
   };
-  const BOUNDARY_BUFFER = 20;
+  const BOUNDARY_BUFFER = 20; // This will only be used if disableBoundary is false
   const BOUNCE_DURATION = 300;
-  const viewportWidth = options.width || window.innerWidth;
-  const viewportHeight = options.height || window.innerHeight;
+  let viewportWidth, viewportHeight;
+  let boundaryElement = options.boundaryElement;
+
+  function updateBoundary() {
+    if (boundaryElement) {
+      const boundaryRect = boundaryElement.getBoundingClientRect();
+      viewportWidth = boundaryRect.width;
+      viewportHeight = boundaryRect.height;
+    } else {
+      viewportWidth = options.width || window.innerWidth;
+      viewportHeight = options.height || window.innerHeight;
+    }
+  }
+
+  // 初始化邊界 (即使 disableBoundary 為 true，也先計算一次，以防後續動態切換)
+  updateBoundary();
+
+  // 如果設置了 updateBoundary 選項，則監聽視窗大小變化
+  if (options.updateBoundary) {
+    window.addEventListener('resize', updateBoundary);
+  }
 
   let dragOverlay = null; // 新增遮罩變數
 
@@ -142,13 +161,17 @@ export function makeDraggable(panel, handle, options = {}) {
     const dy = dragState.currentY - dragState.startY;
     let newLeft = dragState.elementX + dx;
     let newTop = dragState.elementY + dy;
-    const elementRect = panel.getBoundingClientRect();
-    const minLeft = 0 - BOUNDARY_BUFFER, maxLeft = viewportWidth - elementRect.width + BOUNDARY_BUFFER;
-    const minTop = 0 - BOUNDARY_BUFFER, maxTop = viewportHeight - elementRect.height + BOUNDARY_BUFFER;
-    if (newLeft < minLeft) newLeft = minLeft - (minLeft - newLeft) * 0.3;
-    else if (newLeft > maxLeft) newLeft = maxLeft + (newLeft - maxLeft) * 0.3;
-    if (newTop < minTop) newTop = minTop - (minTop - newTop) * 0.3;
-    else if (newTop > maxTop) newTop = maxTop + (newTop - maxTop) * 0.3;
+
+    if (!options.disableBoundary) { // <<< MODIFICATION: Conditional boundary check
+      const elementRect = panel.getBoundingClientRect();
+      const minLeft = 0 - BOUNDARY_BUFFER, maxLeft = viewportWidth - elementRect.width + BOUNDARY_BUFFER;
+      const minTop = 0 - BOUNDARY_BUFFER, maxTop = viewportHeight - elementRect.height + BOUNDARY_BUFFER;
+      if (newLeft < minLeft) newLeft = minLeft - (minLeft - newLeft) * 0.3;
+      else if (newLeft > maxLeft) newLeft = maxLeft + (newLeft - maxLeft) * 0.3;
+      if (newTop < minTop) newTop = minTop - (minTop - newTop) * 0.3;
+      else if (newTop > maxTop) newTop = maxTop + (newTop - maxTop) * 0.3;
+    }
+
     dragState.translateX = newLeft - dragState.elementX;
     dragState.translateY = newTop - dragState.elementY;
     panel.style.transform = `translate3d(${dragState.translateX}px, ${dragState.translateY}px, 0)`;
@@ -177,15 +200,20 @@ export function makeDraggable(panel, handle, options = {}) {
       dragState.animationFrameId = null;
     }
     dragState.isDragging = false;
-    const elementRect = panel.getBoundingClientRect();
+    
     let finalX = dragState.elementX + dragState.translateX;
     let finalY = dragState.elementY + dragState.translateY;
     let needsBounce = false;
-    if (finalX < 0) { finalX = 0; needsBounce = true; }
-    else if (finalX + elementRect.width > viewportWidth) { finalX = viewportWidth - elementRect.width; needsBounce = true; }
-    if (finalY < 0) { finalY = 0; needsBounce = true; }
-    else if (finalY + elementRect.height > viewportHeight) { finalY = viewportHeight - elementRect.height; needsBounce = true; }
-    if (needsBounce) {
+
+    if (!options.disableBoundary) { // <<< MODIFICATION: Conditional boundary check and bounce
+      const elementRect = panel.getBoundingClientRect();
+      if (finalX < 0) { finalX = 0; needsBounce = true; }
+      else if (finalX + elementRect.width > viewportWidth) { finalX = viewportWidth - elementRect.width; needsBounce = true; }
+      if (finalY < 0) { finalY = 0; needsBounce = true; }
+      else if (finalY + elementRect.height > viewportHeight) { finalY = viewportHeight - elementRect.height; needsBounce = true; }
+    }
+
+    if (needsBounce) { // This will only be true if !options.disableBoundary and a boundary was hit
       panel.style.transition = `transform ${BOUNCE_DURATION}ms cubic-bezier(0.25, 0.1, 0.25, 1.0)`;
       const finalTranslateX = finalX - dragState.elementX;
       const finalTranslateY = finalY - dragState.elementY;
@@ -212,14 +240,73 @@ export function makeDraggable(panel, handle, options = {}) {
       localStorage.setItem(storageKey, JSON.stringify({ left: finalX, top: finalY }));
     }
   }
+
+  // 將匿名事件處理器定義為具名函數，以便後續移除
+  const preventDefaultDragStart = e => e.preventDefault();
+  const onVisibilityChange = () => {
+    if (document.hidden) {
+      // 如果頁面隱藏，也觸發拖曳結束的邏輯
+      // handleDragEnd 會處理 isDragging 狀態，所以重複呼叫是安全的
+      handleDragEnd();
+    }
+  };
+
+  function cleanup() {
+    // 如果在拖曳過程中元素被移除，確保呼叫 handleDragEnd 來清理拖曳狀態和臨時監聽器
+    if (dragState.isDragging) {
+      handleDragEnd();
+    }
+
+    // 移除添加到 handle 元素的事件監聽器
+    handle.removeEventListener('pointerdown', handleDragStart);
+    handle.removeEventListener('mousedown', handleDragStart);
+    handle.removeEventListener('touchstart', handleDragStart, { passive: false });
+    handle.removeEventListener('dragstart', preventDefaultDragStart);
+
+    // 移除添加到 window 和 document 的持久性事件監聽器
+    if (options.updateBoundary) {
+      window.removeEventListener('resize', updateBoundary);
+    }
+    window.removeEventListener('blur', handleDragEnd);
+    document.removeEventListener('visibilitychange', onVisibilityChange);
+
+    // dragOverlay 的移除已經包含在 handleDragEnd 中，
+    // 如果 isDragging 為 true，則 handleDragEnd 會被呼叫。
+    // 如果 isDragging 為 false，dragOverlay 理應為 null。
+    // 為保險起見，可以再檢查一次，但通常由 handleDragEnd 處理。
+    if (dragOverlay) {
+        dragOverlay.remove();
+        dragOverlay = null;
+    }
+  }
+
+  // 在元素被移除時執行清理
+  const observer = new MutationObserver(mutations => {
+    for (const mutation of mutations) {
+      if (mutation.removedNodes.length) {
+        for (const node of mutation.removedNodes) {
+          if (node === panel || node.contains(panel)) {
+            observer.disconnect(); // 先停止觀察，避免重複觸發
+            cleanup();
+            break; // 已找到並處理，跳出內部循環
+          }
+        }
+      }
+      // 如果 panel 已被移除，外部循環也應考慮中斷（如果 observer.disconnect() 後 mutations 列表不再重要）
+      if (!document.body.contains(panel)) break; 
+    }
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // 添加持久性事件監聽器
   handle.addEventListener('pointerdown', handleDragStart);
   handle.addEventListener('mousedown', handleDragStart);
   handle.addEventListener('touchstart', handleDragStart, { passive: false });
-  handle.addEventListener('dragstart', e => e.preventDefault());
+  handle.addEventListener('dragstart', preventDefaultDragStart);
+
   window.addEventListener('blur', handleDragEnd);
-  document.addEventListener('visibilitychange', () => {
-    if (document.hidden) handleDragEnd();
-  });
+  document.addEventListener('visibilitychange', onVisibilityChange);
+
   // 初始定位（支援跨頁面唯一 key）
   setTimeout(() => {
     const panelId = panel.id || panel.dataset.draggableId;
@@ -230,6 +317,7 @@ export function makeDraggable(panel, handle, options = {}) {
         saved = JSON.parse(localStorage.getItem(storageKey));
       } catch {}
     }
+    // 初始位置設定不受 disableBoundary 影響，它只影響拖曳行為
     panel.style.left = (saved?.left !== undefined ? saved.left : (options.left !== undefined ? options.left : 100)) + 'px';
     panel.style.top = (saved?.top !== undefined ? saved.top : (options.top !== undefined ? options.top : 100)) + 'px';
     panel.style.position = 'absolute';
@@ -241,14 +329,15 @@ export function makeDraggable(panel, handle, options = {}) {
 
   import { makeDraggable } from './script/draggable.js';
 
-  // 讓多個不同區塊都能各自拖曳，互不干擾
+  // 啟用邊界限制 (預設行為)
   const panelA = document.getElementById('panelA');
   const handleA = panelA.querySelector('.handleA');
   makeDraggable(panelA, handleA, { left: 100, top: 100, color: '#ff0000' });
 
+  // 停用邊界限制，允許自由拖曳
   const panelB = document.getElementById('panelB');
   const handleB = panelB.querySelector('.handleB');
-  makeDraggable(panelB, handleB, { left: 400, top: 200, color: '#00ff00' });
+  makeDraggable(panelB, handleB, { left: 400, top: 200, color: '#00ff00', disableBoundary: true });
 
   // 只要呼叫 makeDraggable(你的div, 你的把手)，每個都能獨立拖曳
 */

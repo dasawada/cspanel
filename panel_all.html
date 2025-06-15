@@ -597,10 +597,21 @@
 		</div>
     </div>
 </div>
-    <script type="module">
+<script type="module">
     import { createCannedMessagesPanel } from './script/dragb_msg_pnl.js';
-    createCannedMessagesPanel({ id: 'canned-panel-main', left: 1300, top: 75 });
-    </script>
+    createCannedMessagesPanel({ 
+        id: 'canned-panel-main',
+        left: 1300,
+        top: 75,
+        // 設定固定的拖曳邊界寬高
+        width: 1680,  // 例如：設定邊界寬度為 1000px
+        height: 1000, // 例如：設定邊界高度為 800px
+        // 啟用動態邊界更新 (如果 width/height 是固定數字，此選項會確保邊界維持這些固定數字)
+        updateBoundary: true,
+        // 啟用邊界限制 (設為 false 或移除此行以啟用邊界)
+        disableBoundary: false 
+    });
+</script>
     <script src="script/IpMobileAlert.js"></script>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
