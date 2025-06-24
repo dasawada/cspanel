@@ -542,7 +542,6 @@ async function checkAndProcessCourseInfo(data) {
                 role:     'observer',
                 classType
             });
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
             const boardButtonAdvisor = `<a href="${boardUrlAdvisor}" target="_blank" style="display:inline-block;margin-left:4px;background:#28a745;color:#fff;padding:1px 5px;border-radius:12px;font-size:10px;text-decoration:none;">顧問</a>`;
             const boardButtonObserver = `<a href="${boardUrlObserver}" target="_blank" style="display:inline-block;margin-left:4px;background:#17a2b8;color:#fff;padding:1px 5px;border-radius:12px;font-size:10px;text-decoration:none;">觀察者</a>`;
 
