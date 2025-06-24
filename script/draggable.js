@@ -69,6 +69,7 @@ export function makeDraggable(panel, handle, options = {}) {
     startX: 0, startY: 0,
     elementX: 0, elementY: 0,
     translateX: 0, translateY: 0,
+    pointerOffsetX: 0, pointerOffsetY: 0,
     currentX: 0, currentY: 0,
     animationFrameId: null
   };
@@ -132,6 +133,11 @@ export function makeDraggable(panel, handle, options = {}) {
     dragState.elementY = panel.style.top
       ? parseInt(panel.style.top, 10)
       : (panel.getBoundingClientRect().top + window.scrollY);
+
+    // 滑鼠指標相對於元素左上角的位移
+    dragState.pointerOffsetX = pageX - dragState.elementX;
+    dragState.pointerOffsetY = pageY - dragState.elementY;
+
     panel.style.transition = 'none';
     panel.classList.add('draggable-dragging');
     document.addEventListener('pointermove', handleDragMove);
@@ -157,10 +163,8 @@ export function makeDraggable(panel, handle, options = {}) {
   function updateElementPosition() {
     dragState.animationFrameId = null;
     if (!dragState.isDragging) return;
-    const dx = dragState.currentX - dragState.startX;
-    const dy = dragState.currentY - dragState.startY;
-    let newLeft = dragState.elementX + dx;
-    let newTop = dragState.elementY + dy;
+    let newLeft = dragState.currentX - dragState.pointerOffsetX;
+    let newTop = dragState.currentY - dragState.pointerOffsetY;
 
     if (!options.disableBoundary) { // <<< MODIFICATION: Conditional boundary check
       const elementRect = panel.getBoundingClientRect();
