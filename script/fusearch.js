@@ -91,33 +91,48 @@ function handleXuewuMode(row, group, input) {
 
 function handleIndependentMode(row, group, input) {
   let fudausearch_results = [];
-  
-  // 如果有組長且組長不是本人，則顯示兩者
-  if (row[8] && row[1] !== row[8]) {
-    fudausearch_results = [
-      { text: row[1], fullName: row[1].slice(1), type: "顧問本人" },
-      {
-        text: `組長：${row[8]}`,
-        fullName: row[8].slice(1),
-        type: "組長"
-      }
-    ];
+
+  // 顧問本人
+  fudausearch_results.push({
+    text: row[1],
+    fullName: row[1].slice(1),
+    type: "顧問本人"
+  });
+
+  // 職代一
+  if (row[3]) {
+    fudausearch_results.push({
+      text: row[3],
+      fullName: row[3].slice(1),
+      type: "職代一"
+    });
   }
-  // 如果組長就是本人，只顯示組長身份
-  else if (row[8] && row[1] === row[8]) {
-    fudausearch_results = [{
+
+  // 職代二
+  if (row[5]) {
+    fudausearch_results.push({
+      text: row[5],
+      fullName: row[5].slice(1),
+      type: "職代二"
+    });
+  }
+
+  // 組長（若有且不是本人，避免重複）
+  if (row[8] && row[1] !== row[8]) {
+    fudausearch_results.push({
       text: `組長：${row[8]}`,
       fullName: row[8].slice(1),
       type: "組長"
-    }];
+    });
+  } else if (row[8] && row[1] === row[8]) {
+    // 組長就是本人，顯示組長身份（但已在顧問本人顯示，不重複）
+    fudausearch_results.push({
+      text: `組長：${row[8]}`,
+      fullName: row[8].slice(1),
+      type: "組長"
+    });
   }
-  // 如果沒有組長，只顯示本人
-  else {
-    fudausearch_results = [
-      { text: row[1], fullName: row[1].slice(1), type: "顧問本人" }
-    ];
-  }
-  
+
   return fudausearch_results;
 }
 
