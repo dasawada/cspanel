@@ -164,6 +164,23 @@ async function fudausearch_search() {
 
   if (!hasMatch) fudausearch_results = [];
 
+  // 過濾掉 text 為「無資料」或空字串的按鈕
+  fudausearch_results = fudausearch_results.filter(r => r.text && r.text !== "無資料");
+
+  // 依 fullName 去重，若有組長則優先保留組長
+  const uniqueMap = new Map();
+  fudausearch_results.forEach(r => {
+    if (!uniqueMap.has(r.fullName)) {
+      uniqueMap.set(r.fullName, r);
+    } else {
+      // 若已存在，且目前是組長則覆蓋
+      if (r.type === "組長") {
+        uniqueMap.set(r.fullName, r);
+      }
+    }
+  });
+  fudausearch_results = Array.from(uniqueMap.values());
+
   fudausearch_results = fudausearch_sortButtons(fudausearch_results);
   fudausearch_renderButtons(fudausearch_results);
 }
