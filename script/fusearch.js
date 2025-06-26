@@ -22,7 +22,7 @@ async function fudausearch_loadData() {
 function fudausearch_sortButtons(results) {
   const typeOrder = [
     "學務部", "排課組", "客服工程師",
-    "組長", "輔導本人", "職代一", "職代二",
+    "組長", "輔導本人", "顧問本人", "職代一", "職代二",
     "公帳號", "數字組",
   ];
   return results.sort((a, b) => typeOrder.indexOf(a.type) - typeOrder.indexOf(b.type));
