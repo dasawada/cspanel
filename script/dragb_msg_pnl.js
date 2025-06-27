@@ -409,239 +409,28 @@ export function createCannedMessagesPanel(options = {}) {
     課程時間：${courseTime}
     課程標籤：${tagNames}`;
       panel.querySelector(`#${panelId}-tab2 textarea`).value = apiTexts["tab2"];
-      // 顯示家長 Bitrix 連結與警示
-      let warningMsg = '';
-      if (isNongXiao) warningMsg = `<p class="canned-panel-warning">【國小自然實作探究】不找代課，直接順延！</p>`;
-      courseResultDiv.innerHTML = `
-        <p><strong>家長 Bitrix 連結：</strong>
-          <a href="${bitrixUrl}" target="_blank">${bitrixUrl}</a>
-        </p>
-        ${warningMsg}
-      `;
-      if (isNongXiao) {
-        // 只更新 tab2
-        panel.querySelector(`#${panelId}-tab1 textarea`).value = defaultTexts["tab1"];
-        panel.querySelector(`#${panelId}-tab3 textarea`).value = defaultTexts["tab3"];
-        panel.querySelector(`#${panelId}-tab4 textarea`).value = defaultTexts["tab4"];
-        apiTexts["tab1"] = defaultTexts["tab1"];
-        apiTexts["tab3"] = defaultTexts["tab3"];
-        apiTexts["tab4"] = defaultTexts["tab4"];
-      } else {
-        apiTexts["tab1"] = `親愛的家長您好：
-
-    學員姓名：${studentNames}
-    課程時間：${courseTime}
-    課程標籤：${tagNames}
-
-    老師因故無法出席，為讓孩子的學習不間斷，
-    我們已安排代課老師，感謝您的理解與支持！`;
-        apiTexts["tab3"] = `親愛的家長您好：
-
-    學員姓名：${studentNames}
-    課程時間：${courseTime}
-    課程標籤：${tagNames}
-
-    因老師們正忙碌中，尚無師資接任課程，
-    故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
-        apiTexts["tab4"] = `老師請假，請於授課提醒內完成學生狀況交接
-
-    1、學員姓名：${studentNames}
-    2、課程時間：${courseTime}
-    3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
-        panel.querySelector(`#${panelId}-tab1 textarea`).value = apiTexts["tab1"];
-        panel.querySelector(`#${panelId}-tab3 textarea`).value = apiTexts["tab3"];
-        panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts["tab4"];
-      }
-      // leaveOrders 處理
-      const teacherLeave = courseData.leaveOrders && courseData.leaveOrders.some(lo => lo.role === 'teacher');
-      if (teacherLeave) {
-        apiTexts["tab1"] = defaultTexts["tab1"];
-        apiTexts["tab4"] = defaultTexts["tab4"];
-        panel.querySelector(`#${panelId}-tab1 textarea`).value = defaultTexts["tab1"];
-        panel.querySelector(`#${panelId}-tab4 textarea`).value = defaultTexts["tab4"];
-        // 新增動畫與查詢準備中課程
-        let warningEl = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-        if (!warningEl) {
-          panel.querySelector(`#${panelId}-tab1`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假</p>');
-          warningEl = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-        }
-        // 準備中課程查詢動畫
-        let spinnerId = `${panelId}-tab1-spinner`;
-        // 先移除舊的 spinner
-        const oldSpinner = panel.querySelector(`#${spinnerId}`);
-        if (oldSpinner) oldSpinner.remove();
-        warningEl.insertAdjacentHTML('beforeend', ` <span id="${spinnerId}" style="display:inline-block;vertical-align:middle;"><span class="canned-panel-spinner" style="display:inline-block;width:16px;height:16px;border:2px solid #f3f3f3;border-top:2px solid #e57373;border-radius:50%;animation:spin 1s linear infinite;margin-left:5px;"></span>查詢準備中課程...</span>`);
-        // 動畫CSS（只插入一次）
-        if (!document.getElementById('canned-panel-spinner-style')) {
-          const style = document.createElement('style');
-          style.id = 'canned-panel-spinner-style';
-          style.textContent = `@keyframes spin{0%{transform:rotate(0deg);}100%{transform:rotate(360deg);}}`;
-          document.head.appendChild(style);
-        }
-        // 查詢準備中課程
-        const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
-        const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
-
-        // 取得查詢條件
-        const startAt = courseData.startAt;
-        const endAt = courseData.endAt;
-        const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
-        fetch(courseApiUrl, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            checkPreparing: {
-              startAt,
-              endAt,
-              studentName,
-              courseStatus: 'preparing',
-              isBelong: 'false',
-              isAudition: 'false',
-              haveLeaveOrder: false,
-              skip: 0,
-              limit: 5,
-              orderBy: 'desc',
-              'transferCourseType[]': [
-                'individualLiveCourse',
-                'groupLiveCourse',
-                'individualCambridge',
-                'publicLiveStreamingCourse',
-                'publicReplayStreamingCourse'
-              ]
-            }
-          })
+      // 顯示家長所有 Chat 入口
+      fetch(`https://stirring-pothos-28253d.netlify.app/.netlify/functions/classbxopchfetch?id=${encodeURIComponent(contactId)}`)
+        .then(res => {
+          if (!res.ok) throw new Error('Chat API 請求錯誤，狀態碼：' + res.status);
+          return res.json();
         })
-        .then(res => res.json())
-        .then(preparingJson => {
-          // 移除動畫
-          const spinner = panel.querySelector(`#${spinnerId}`);
-          if (spinner) spinner.remove();
-
-          // 支援多種 API 回傳格式
-          // 僅以正確格式判斷（data.courses 與 total）
-          let preparingCourses = [];
-          let total = 0;
-          if (preparingJson?.data && Array.isArray(preparingJson.data.courses)) {
-            preparingCourses = preparingJson.data.courses;
-            total = typeof preparingJson.data.total === 'number' ? preparingJson.data.total : preparingCourses.length;
-          } else if (preparingJson?.preparingCourses?.data && Array.isArray(preparingJson.preparingCourses.data.courses)) {
-            preparingCourses = preparingJson.preparingCourses.data.courses;
-            total = typeof preparingJson.preparingCourses.data.total === 'number' ? preparingJson.preparingCourses.data.total : preparingCourses.length;
-          }
-
-          if (preparingJson && preparingJson.status === 'success' && total === 0) {
-            // 無課，顯示「複製搶課」按鈕（tab1、tab4都要顯示）
-
-            // 1. 清除所有 warning 內的「，請輸入最新代課網址」
-            const tab1Warning = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-            if (tab1Warning && tab1Warning.textContent.includes('，請輸入最新代課網址')) {
-              tab1Warning.textContent = tab1Warning.textContent.replace('，請輸入最新代課網址', '');
-            }
-            let tab4Warning = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-            if (tab4Warning && tab4Warning.textContent.includes('，請輸入最新代課網址')) {
-              tab4Warning.textContent = tab4Warning.textContent.replace('，請輸入最新代課網址', '');
-            }
-
-            if (!panel.querySelector(`#${panelId}-tab1-copy-preparing`)) {
-              tab1Warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-tab1-copy-preparing" style="margin-left:8px;padding:2px 8px;font-size:12px;cursor:pointer;">複製搶課</button>`);
-              const copyBtn = panel.querySelector(`#${panelId}-tab1-copy-preparing`);
-              copyBtn.addEventListener('click', () => {
-                const url = `https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseData.id}`;
-                navigator.clipboard.writeText(url).then(() => {
-                  copyBtn.textContent = '已複製';
-                  copyBtn.classList.add('copied');
-                  setTimeout(() => {
-                    copyBtn.textContent = '複製搶課';
-                    copyBtn.classList.remove('copied');
-                  }, 1200);
-                });
-              });
-            }
-            if (!panel.querySelector(`#${panelId}-tab4-copy-preparing`)) {
-              tab4Warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-tab4-copy-preparing" style="margin-left:8px;padding:2px 8px;font-size:12px;cursor:pointer;">複製搶課</button>`);
-              const copyBtn4 = panel.querySelector(`#${panelId}-tab4-copy-preparing`);
-              copyBtn4.addEventListener('click', () => {
-                const url = `https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseData.id}`;
-                navigator.clipboard.writeText(url).then(() => {
-                  copyBtn4.textContent = '已複製';
-                  copyBtn4.classList.add('copied');
-                  setTimeout(() => {
-                    copyBtn4.textContent = '複製搶課';
-                    copyBtn4.classList.remove('copied');
-                  }, 1200);
-                });
-              });
-            }
-          } else if (preparingJson && preparingJson.status === 'success' && total > 0) {
-            // 有課，紅字提示「請注意：本課程老師已請假，請輸入最新代課網址」
-            let tab1Warning = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-            if (!tab1Warning) {
-              panel.querySelector(`#${panelId}-tab1`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
-              tab1Warning = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-            } else {
-              // 若已存在，補上「，請輸入最新代課網址」
-              if (!tab1Warning.textContent.includes('請輸入最新代課網址')) {
-                tab1Warning.textContent = tab1Warning.textContent.trimEnd() + '，請輸入最新代課網址';
-              }
-            }
-            let tab4Warning = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-            if (!tab4Warning) {
-              panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假，請輸入最新代課網址</p>');
-              tab4Warning = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-            } else {
-              if (!tab4Warning.textContent.includes('請輸入最新代課網址')) {
-                tab4Warning.textContent += '，請輸入最新代課網址';
-              }
-            }
-            // 移除複製搶課按鈕
-            const copyBtn = panel.querySelector(`#${panelId}-tab1-copy-preparing`);
-            if (copyBtn) copyBtn.remove();
-            const copyBtn4 = panel.querySelector(`#${panelId}-tab4-copy-preparing`);
-            if (copyBtn4) copyBtn4.remove();
-          } else {
-            // 有課，移除「複製搶課」按鈕（如果有的話）
-            const copyBtn = panel.querySelector(`#${panelId}-tab1-copy-preparing`);
-            if (copyBtn) copyBtn.remove();
-            const copyBtn4 = panel.querySelector(`#${panelId}-tab4-copy-preparing`);
-            if (copyBtn4) copyBtn4.remove();
-          }
+        .then(data => {
+          if (!data.chats || !data.portal) throw new Error('查無任何 Chat');
+          const chatCards = data.chats.map(chat => `
+            <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${data.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+              ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
+            </div>
+          `).join('');
+          courseResultDiv.innerHTML = `
+            <div><strong>BX對話入口：</strong></div>
+            <div>${chatCards}</div>
+          `;
         })
-        .catch(() => {
-          // 查詢失敗也移除動畫
-          const spinner = panel.querySelector(`#${spinnerId}`);
-          if (spinner) spinner.remove();
+        .catch(e => {
+          courseResultDiv.innerHTML = `<p style="color:red;">查詢 chat 失敗：${e.message}</p>`;
         });
-        // tab4 warning
-        let tab4Warning = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-        if (!tab4Warning) {
-          panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假</p>');
-          tab4Warning = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-        }
-      } else {
-        // 非請假，移除 warning 與複製搶課按鈕
-        const w1 = panel.querySelector(`#${panelId}-tab1 .canned-panel-warning`);
-        if (w1) w1.remove();
-        const copyBtn = panel.querySelector(`#${panelId}-tab1-copy-preparing`);
-        if (copyBtn) copyBtn.remove();
-        const w4 = panel.querySelector(`#${panelId}-tab4 .canned-panel-warning`);
-        if (w4) w4.remove();
-
-        // TAB2、TAB3保持預設罐頭
-        panel.querySelector(`#${panelId}-tab2 textarea`).value = defaultTexts["tab2"];
-        panel.querySelector(`#${panelId}-tab3 textarea`).value = defaultTexts["tab3"];
-        apiTexts["tab2"] = defaultTexts["tab2"];
-        apiTexts["tab3"] = defaultTexts["tab3"];
-
-        // TAB2、TAB3紅字提示
-        let tab2Warning = panel.querySelector(`#${panelId}-tab2 .canned-panel-warning`);
-        if (!tab2Warning) {
-          panel.querySelector(`#${panelId}-tab2`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">課程未請假</p>');
-        }
-        let tab3Warning = panel.querySelector(`#${panelId}-tab3 .canned-panel-warning`);
-        if (!tab3Warning) {
-          panel.querySelector(`#${panelId}-tab3`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">課程未請假</p>');
-        }
-      }
+      // ...existing code...
     })
     .catch(error => {
       courseResultDiv.innerHTML = `<p style="color:red;">辨識失敗：${error.message}</p>`;
