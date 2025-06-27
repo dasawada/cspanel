@@ -1,10 +1,26 @@
 const fetch = require('node-fetch');
 
 exports.handler = async function(event, context) {
+  // 設定 CORS header
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  };
+
+  // 處理預檢請求
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 200,
+      headers: corsHeaders,
+      body: '',
+    };
+  }
+
   const ems = process.env.ems; // Bitrix24 webhook base url
   const id = event.queryStringParameters.id;
   if (!ems || !id) {
-    return { statusCode: 400, body: JSON.stringify({ error: '缺少參數' }) };
+    return { statusCode: 400, headers: corsHeaders, body: JSON.stringify({ error: '缺少參數' }) };
   }
 
   // Helper: call Bitrix24 API
@@ -123,7 +139,7 @@ exports.handler = async function(event, context) {
     // 3. 整理 chat 資訊
     const chatIds = Array.from(collectedChatIds);
     if (!chatIds.length) {
-      return { statusCode: 200, body: JSON.stringify({ chats: [], portal: null }) };
+      return { statusCode: 200, headers: corsHeaders, body: JSON.stringify({ chats: [], portal: null }) };
     }
 
     // 取得 portal 網域
@@ -132,7 +148,8 @@ exports.handler = async function(event, context) {
 
     // 取得 chat 詳細資訊
     const chats = [];
-    for (const cid of chatIds) {
+    for (let i = 0; i < chatIds.length; i++) {
+      const cid = chatIds[i];
       let r = {};
       try {
         const dialogData = await bx('im.dialog.get.json', { DIALOG_ID: 'chat' + cid });
@@ -146,9 +163,10 @@ exports.handler = async function(event, context) {
 
     return {
       statusCode: 200,
+      headers: corsHeaders,
       body: JSON.stringify({ chats, portal })
     };
   } catch (e) {
-    return { statusCode: 500, body: JSON.stringify({ error: e.message }) };
+    return { statusCode: 500, headers: corsHeaders, body: JSON.stringify({ error: e.message }) };
   }
 };
