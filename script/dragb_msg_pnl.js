@@ -444,17 +444,17 @@ export function createCannedMessagesPanel(options = {}) {
         // tab1, tab4 帶入學生資訊
         apiTexts.tab1 = `親愛的家長您好：
 
-學員姓名：${studentNames}
-課程時間：${courseTime}
-課程標籤：${tagNames}
+    學員姓名：${studentNames}
+    課程時間：${courseTime}
+    課程標籤：${tagNames}
 
-老師因故無法出席，為讓孩子的學習不間斷，
-我們已安排代課老師，感謝您的理解與支持！`;
+    老師因故無法出席，為讓孩子的學習不間斷，
+    我們已安排代課老師，感謝您的理解與支持！`;
         apiTexts.tab4 = `老師請假，請於授課提醒內完成學生狀況交接
 
-1、學員姓名：${studentNames}
-2、課程時間：${courseTime}
-3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+    1、學員姓名：${studentNames}
+    2、課程時間：${courseTime}
+    3、https://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
 
         // tab2, tab3 維持預設
         // tab2, tab3 顯示紅字「課程未請假」
@@ -484,19 +484,19 @@ export function createCannedMessagesPanel(options = {}) {
           // 非自然實作：tab2, tab3 帶入學生資訊，tab1, tab4 預設
           apiTexts.tab2 = `親愛的家長您好：
 
-學員姓名：${studentNames}
-課程時間：${courseTime}
-課程標籤：${tagNames}
+    學員姓名：${studentNames}
+    課程時間：${courseTime}
+    課程標籤：${tagNames}
 
-老師因故請假，課程將取消，請聯繫輔導老師協助安排，謝謝您的理解與配合。`;
+    老師因故請假，課程將取消，請聯繫輔導老師協助安排，謝謝您的理解與配合。`;
           apiTexts.tab3 = `親愛的家長您好：
 
-學員姓名：${studentNames}
-課程時間：${courseTime}
-課程標籤：${tagNames}
+    學員姓名：${studentNames}
+    課程時間：${courseTime}
+    課程標籤：${tagNames}
 
-因老師們正忙碌中，尚無師資接任課程，
-故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
+    因老師們正忙碌中，尚無師資接任課程，
+    故課程將取消，後續將由輔導老師與您溝通補課事宜，謝謝您。`;
 
           // tab1, tab4 顯示紅字「請注意：本課程老師已請假」
           ['tab1', 'tab4'].forEach(tab => {
