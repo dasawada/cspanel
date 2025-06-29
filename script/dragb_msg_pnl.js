@@ -484,7 +484,8 @@ export function createCannedMessagesPanel(options = {}) {
           // 非自然實作：tab2, tab3 帶入學生資訊，tab1, tab4 預設
           apiTexts.tab2 = `親愛的家長您好：
     以下課程老師因故無法授課，課程將取消，
-    如需安排代課，請您聯繫輔導老師為您服務，謝謝您的理解與配合。
+    如需安排代課，請您聯繫輔導老師為您服務，
+    謝謝您的理解與配合。
 
     學員姓名：${studentNames}
     課程時間：${courseTime}
