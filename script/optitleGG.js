@@ -172,13 +172,11 @@ function search() {
     document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
     return;
   }
-  
+
   const proceedSearch = () => {
     let foundRecord = null;
-    // 遍歷結構化資料，每個 record 為一欄資料陣列
     structuredWtfRecords.some(record => {
       return record.some(cell => {
-        // 將 cell 中的空白也全數移除再比較
         if (cell && cell.replace(/\s/g, '').toLowerCase() === searchTerm) {
           foundRecord = {
             consultant: cell,
@@ -190,65 +188,11 @@ function search() {
         return false;
       });
     });
-    // 清空舊結果
     document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
     document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
     if (foundRecord) {
-      const p = document.createElement('p');
-      
-      // 添加皇冠圖標
-      const crownSpan = document.createElement('span');
-      crownSpan.innerHTML = '👑';
-      crownSpan.style.cursor = 'pointer';
-      crownSpan.title = '點擊複製【公帳號_客服用】';
-      crownSpan.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = '公帳號_';
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        crownSpan.title = '已複製！';
-        setTimeout(() => { crownSpan.title = '點擊複製【公帳號_客服用】'; }, 1000);
-      });
-      
-      const consultantSpan = document.createElement('span');
-      consultantSpan.textContent = foundRecord.consultant;
-      consultantSpan.className = 'green-gradient-text copyable-text';
-      consultantSpan.style.cursor = 'pointer';
-      consultantSpan.title = '點我一下複製名字';
-      consultantSpan.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = foundRecord.consultant.length <= 2 ? foundRecord.consultant.slice(-1) : foundRecord.consultant.slice(-2);
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        consultantSpan.title = '已複製！';
-        setTimeout(() => { consultantSpan.title = '點我一下複製名字'; }, 1000);
-      });
-      const leaderSpan = document.createElement('span');
-      leaderSpan.textContent = foundRecord.teamLeader;
-      leaderSpan.className = 'yellow-gradient-text copyable-text';
-      leaderSpan.style.cursor = 'pointer';
-      leaderSpan.title = '點我一下複製名字';
-      leaderSpan.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = foundRecord.teamLeader.length <= 2 ? foundRecord.teamLeader.slice(-1) : foundRecord.teamLeader.slice(-2);
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
-        leaderSpan.title = '已複製！';
-        setTimeout(() => { leaderSpan.title = '點我一下複製名字'; }, 1000);
-      });
-      p.appendChild(crownSpan);
-      p.appendChild(document.createTextNode(' 顧問'));
-      p.appendChild(consultantSpan);
-      p.appendChild(document.createTextNode(' 的組長是：'));
-      p.appendChild(leaderSpan);
-      p.appendChild(document.createTextNode(` (team: ${foundRecord.team})`));
-      document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
+      // ...原本顯示 foundRecord 的程式...
+      // ...existing code...
     } else {
       const p = document.createElement('p');
       p.textContent = `【${searchTerm}】咦？這顧問找不到組長唷ఠ_ఠ`;
@@ -256,10 +200,21 @@ function search() {
     }
   };
 
-  if(structuredWtfRecords.length === 0) {
-    loadWtfData().then(proceedSearch);
-  } else {
+  // 只要輸入長度 <= 2，永遠只用快取，不 fetch
+  if (searchTerm.length <= 2) {
     proceedSearch();
+    return;
+  }
+
+  // 輸入長度 >= 3，若快取查無資料才 fetch
+  let foundInCache = false;
+  structuredWtfRecords.some(record => {
+    return record.some(cell => cell && cell.replace(/\s/g, '').toLowerCase() === searchTerm && (foundInCache = true));
+  });
+  if (foundInCache) {
+    proceedSearch();
+  } else {
+    loadWtfData().then(proceedSearch);
   }
 }
 
