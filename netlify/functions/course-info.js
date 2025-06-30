@@ -1,12 +1,41 @@
 const fetch = require('node-fetch');
 
-const fetchWithJwt = async (url, jwt) => {
-  const resp = await fetch(url, {
-    headers: {
-      'Accept': 'application/json, text/plain, */*',
-      'Authorization': jwt
+// ===== fetch with timeout & retry 工具 =====
+async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
+  return Promise.race([
+    fetch(url, options),
+    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
+  ]);
+}
+
+async function fetchWithRetry(url, options = {}, timeoutMs = 3000, maxRetry = 3, intervalMs = 300) {
+  let lastError;
+  for (let i = 0; i < maxRetry; i++) {
+    try {
+      const response = await fetchWithTimeout(url, options, timeoutMs);
+      if (response.ok) return response;
+      lastError = new Error('Response not ok');
+    } catch (err) {
+      lastError = err;
     }
-  });
+    if (i < maxRetry - 1) await new Promise(r => setTimeout(r, intervalMs));
+  }
+  throw lastError;
+}
+
+// 改寫 fetchWithJwt，加入 retry/timeout
+const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
+  const resp = await fetchWithRetry(
+    url,
+    {
+      headers: {
+        'Accept': 'application/json, text/plain, */*',
+        'Authorization': jwt
+      }
+    },
+    timeoutMs,
+    maxRetry
+  );
   return resp.json();
 };
 

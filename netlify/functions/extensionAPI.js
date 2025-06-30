@@ -193,6 +193,29 @@ async function getJwtToken() {
     }
 }
 
+// ===== fetch with timeout & retry 工具 =====
+async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
+    return Promise.race([
+        fetch(url, options),
+        new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs))
+    ]);
+}
+
+async function fetchWithRetry(url, options = {}, timeoutMs = 3000, maxRetry = 3, intervalMs = 300) {
+    let lastError;
+    for (let i = 0; i < maxRetry; i++) {
+        try {
+            const response = await fetchWithTimeout(url, options, timeoutMs);
+            if (response.ok) return response;
+            lastError = new Error('Response not ok');
+        } catch (err) {
+            lastError = err;
+        }
+        if (i < maxRetry - 1) await new Promise(r => setTimeout(r, intervalMs));
+    }
+    throw lastError;
+}
+
 // ===== OneBoard URL 產生器 =====
 function generateOneBoardUrl({ courseId, userId, userName, role = 'advisor', classType = 'sync-single' }) {
     const SECRET = process.env.ONEBOARD_SECRET;
@@ -316,21 +339,22 @@ function generatePhoneFormats(phone) {
 async function getCourseInfo(data) {
     const { courseId } = data;
     const apiUrl = "https://api-new.oneclass.co/mms/course/UseAggregate";
-    
     try {
         const jwtResult = await getJwtToken();
-        if (!jwtResult.success) {
-            throw new Error('Failed to get JWT token');
-        }
-        
-        const response = await fetch(`${apiUrl}/${courseId}`, {
-            method: "GET",
-            headers: {
-                Accept: "application/json",
-                Authorization: jwtResult.data.token,
+        if (!jwtResult.success) throw new Error('Failed to get JWT token');
+        const response = await fetchWithRetry(
+            `${apiUrl}/${courseId}`,
+            {
+                method: "GET",
+                headers: {
+                    Accept: "application/json",
+                    Authorization: jwtResult.data.token,
+                },
             },
-        });
-        
+            3000, // 每次最多等3秒
+            3,    // 最多重試3次
+            300   // 每次間隔0.3秒
+        );
         const result = await response.json();
         return { success: true, data: result };
     } catch (error) {
@@ -342,21 +366,21 @@ async function getCourseInfo(data) {
 async function verifyCourseIds(data) {
     const { courseIds } = data;
     const apiUrl = "https://api-new.oneclass.co/mms/course/UseAggregate";
-    
     try {
         const jwtResult = await getJwtToken();
-        if (!jwtResult.success) {
-            throw new Error('Failed to get JWT token');
-        }
-
+        if (!jwtResult.success) throw new Error('Failed to get JWT token');
         const verificationPromises = courseIds.map(id => {
-            return fetch(`${apiUrl}/${id}`, {
-                method: "GET",
-                headers: {
-                    Accept: "application/json",
-                    Authorization: jwtResult.data.token,
+            return fetchWithRetry(
+                `${apiUrl}/${id}`,
+                {
+                    method: "GET",
+                    headers: {
+                        Accept: "application/json",
+                        Authorization: jwtResult.data.token,
+                    },
                 },
-            })
+                3000, 3, 300
+            )
             .then((response) => response.json())
             .then((data) => {
                 if (data && data.status === "success") {
@@ -366,7 +390,6 @@ async function verifyCourseIds(data) {
             })
             .catch(() => ({ id, valid: false }));
         });
-
         const results = await Promise.all(verificationPromises);
         return { success: true, data: results };
     } catch (error) {
@@ -378,9 +401,12 @@ async function verifyCourseIds(data) {
 async function getParentInfo(data) {
     const { parentOneClubId } = data;
     const parentApiUrl = "https://api.oneclass.co/staff/customers/";
-    
     try {
-        const response = await fetch(`${parentApiUrl}${parentOneClubId}`);
+        const response = await fetchWithRetry(
+            `${parentApiUrl}${parentOneClubId}`,
+            {},
+            3000, 3, 300
+        );
         const result = await response.json();
         return { success: true, data: result };
     } catch (error) {
