@@ -2,11 +2,7 @@ import { getAccountResultsFromSheet, allMeetingCompareCheckForConflicts } from '
 
 export class ConflictChecker {
     constructor() {
-        this.minInterval = 60000; // 1 分鐘
-        this.maxInterval = 300000; // 5 分鐘
-        this.extendedInterval = 600000; // 10 分鐘
-        this.currentInterval = this.minInterval;
-        this.lastChangeTime = Date.now();
+        this.interval = 900000; // 15 分鐘
         this.cacheKey = 'meetingConflictCache';
         this.checkTimer = null;
     }
@@ -31,7 +27,7 @@ export class ConflictChecker {
                 }
             });
 
-            // 開始智能輪詢
+            // 開始定時檢查
             this.scheduleNextCheck();
         } catch (error) {
             console.error('Failed to start conflict checker:', error);
@@ -49,26 +45,12 @@ export class ConflictChecker {
             if (hasChanges) {
                 localStorage.setItem(this.cacheKey, JSON.stringify(newData));
                 await this.updateUI(newData);
-                this.lastChangeTime = Date.now();
-                this.currentInterval = this.minInterval;
-            } else {
-                this.adjustInterval();
             }
             
             return hasChanges;
         } catch (error) {
             console.error('Conflict check failed:', error);
             return false;
-        }
-    }
-
-    adjustInterval() {
-        const timeSinceLastChange = Date.now() - this.lastChangeTime;
-        
-        if (timeSinceLastChange > 3600000) { // 1小時無變化
-            this.currentInterval = this.extendedInterval;
-        } else if (timeSinceLastChange > 1800000) { // 30分鐘無變化
-            this.currentInterval = this.maxInterval;
         }
     }
 
@@ -81,7 +63,7 @@ export class ConflictChecker {
             this.checkWithCache().finally(() => {
                 this.scheduleNextCheck();
             });
-        }, this.currentInterval);
+        }, this.interval);
     }
 
     isEqual(obj1, obj2) {

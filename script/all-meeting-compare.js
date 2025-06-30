@@ -110,7 +110,7 @@ function allMeetingCompareIsSameMeetingDay(meeting1, meeting2) {
 }
 
 // 檢查會議時間是否重疊
-function allMeetingCompareCheckForConflicts(meetings) {
+export function allMeetingCompareCheckForConflicts(meetings) {
     const conflicts = [];
 
     for (let i = 0; i < meetings.length; i++) {
