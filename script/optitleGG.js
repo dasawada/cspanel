@@ -88,11 +88,6 @@ function clearOutput() {
   }, 1000);
 }
 
-document.getElementById('consultantName').addEventListener('input', checkInputs);
-document.getElementById('studentName').addEventListener('input', checkInputs);
-document.getElementById('parentName').addEventListener('input', checkInputs);
-document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
-
 function clearFields() {
   document.getElementById("consultantName").value = "";
   document.getElementById("studentName").value = "";
@@ -214,17 +209,16 @@ function search() {
   if (foundInCache) {
     proceedSearch();
   } else {
-    loadWtfData().then(proceedSearch);
+    // fetch 完後再查一次，避免 race condition
+    loadWtfData().then(() => {
+      proceedSearch();
+    });
   }
 }
 
 // 在 DOMContentLoaded 時先載入結構化資料
 document.addEventListener('DOMContentLoaded', function() {
   loadWtfData();
-  document.getElementById('consultantName').addEventListener('input', checkInputs);
-  document.getElementById('studentName').addEventListener('input', checkInputs);
-  document.getElementById('parentName').addEventListener('input', checkInputs);
-  document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
   document.getElementById('clearButton').addEventListener('click', clearFields);
 });
 let previousOptitleOutput = '';
