@@ -450,9 +450,24 @@ export function createCannedMessagesPanel(options = {}) {
 
     老師因故無法出席，為讓孩子的學習不間斷，
     我們已安排代課老師，感謝您的理解與支持！`;
-        // 只取時間段（去掉日期）
-        const timeOnly = courseTime.replace(/^.*?(\d{2}:\d{2}\s*-\s*\d{2}:\d{2}).*$/, '$1');
-        apiTexts.tab4 = `${studentNames}\t${timeOnly} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+        // 只取日期+時間段
+        const date = new Date(courseData.startAt);
+        const mmdd = `${date.getMonth() + 1}`.padStart(2, '0') + '/' + `${date.getDate()}`.padStart(2, '0');
+        const startTime = date.toLocaleTimeString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+        const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+        const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
+
+        apiTexts.tab4 = `${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
 
         // tab2, tab3 維持預設
         // tab2, tab3 顯示紅字「課程未請假」
