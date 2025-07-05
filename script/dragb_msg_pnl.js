@@ -474,7 +474,8 @@ export function createCannedMessagesPanel(options = {}) {
           parentData.tutor &&
           typeof parentData.tutor.name === 'string'
         ) {
-          tutorNameWithoutSurname = parentData.tutor.name.slice(1);
+          const name = parentData.tutor.name.trim();
+          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
         }
 
         // 取得組別對照表
