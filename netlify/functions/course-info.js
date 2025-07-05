@@ -1,5 +1,10 @@
 const fetch = require('node-fetch');
 
+const GROUP_API_URL = process.env.GROUP_API_URL;
+if (!GROUP_API_URL) {
+  throw new Error('Missing GROUP_API_URL environment variable');
+}
+
 // ===== fetch with timeout & retry 工具 =====
 async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
   return Promise.race([
@@ -41,7 +46,6 @@ const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
 
 let cachedTutorToGroup = null;
 let lastFetchTime = 0;
-const GROUP_API_URL = process.env.GROUP_API_URL || 'https://script.google.com/macros/s/AKfycbwXePo0a2i_YqfsIdJYY6Z1dH-4tiH2bNZVToJBwsLNl4Ya5BRK69k6SS7ah-JpYJnH2Q/exec';
 
 async function fetchTutorToGroup() {
   // 每10分鐘更新一次
