@@ -339,7 +339,7 @@ export function createCannedMessagesPanel(options = {}) {
 
   // ===== 3.6. 查詢課程 & 家長資訊 =====
   function doIdentifyCourse() {
-    showSearchSpinner(); // 確保搜尋開始時顯示 spinner
+    showSearchSpinner();
     // 1. 每次查詢前，全部重設
     ['tab1', 'tab2', 'tab3', 'tab4'].forEach(tab => {
       // 清除 warning
@@ -389,7 +389,7 @@ export function createCannedMessagesPanel(options = {}) {
       return fetch(parentApiUrl, { method: 'GET', headers: { 'Accept': 'application/json, text/plain, */*' } });
     })
     .then(parentRes => parentRes.json())
-    .then(parentJson => {
+    .then(async parentJson => {
       if (!parentJson || typeof parentJson !== 'object' || parentJson.status !== 'success') {
         courseResultDiv.innerHTML = `<p style="color:red;">家長 API 查詢失敗，請確認學生資料完整或稍後再試。</p>`;
         removeSearchSpinner();
@@ -450,6 +450,7 @@ export function createCannedMessagesPanel(options = {}) {
 
     老師因故無法出席，為讓孩子的學習不間斷，
     我們已安排代課老師，感謝您的理解與支持！`;
+
         // 只取日期+時間段
         const date = new Date(courseData.startAt);
         const mmdd = `${date.getMonth() + 1}`.padStart(2, '0') + '/' + `${date.getDate()}`.padStart(2, '0');
@@ -467,7 +468,27 @@ export function createCannedMessagesPanel(options = {}) {
         });
         const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
 
-        apiTexts.tab4 = `${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+        // 取得輔導老師名字（去掉姓氏，只留名字）
+        let tutorNameWithoutSurname = '';
+        if (
+          parentData.tutor &&
+          typeof parentData.tutor.name === 'string'
+        ) {
+          tutorNameWithoutSurname = parentData.tutor.name.slice(1);
+        }
+
+        // 取得組別對照表
+        const tutorToGroupMap = await fetchTutorGroupMapFromAPI();
+        const groupName = tutorToGroupMap[tutorNameWithoutSurname] || '';
+
+        // 直接用本機時間（台灣時區）產生 tab4 內容
+        const localDate = new Date();
+        const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
+
+        // 產生 tab4 內容，第二欄為組別
+        apiTexts.tab4 = `${tutorNameWithoutSurname}\t${groupName}\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+        panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
 
         // tab2, tab3 維持預設
         // tab2, tab3 顯示紅字「課程未請假」
@@ -642,4 +663,20 @@ export function createCannedMessagesPanel(options = {}) {
 
   // ===== 3.8. 回傳面板節點 (可選) =====
   return panel;
+}
+
+// 在 createCannedMessagesPanel 外部宣告，避免每次查詢都 fetch
+let tutorToGroup = null;
+async function fetchTutorGroupMapFromAPI() {
+  if (tutorToGroup) return tutorToGroup;
+  const apiUrl = 'https://script.google.com/macros/s/AKfycbwXePo0a2i_YqfsIdJYY6Z1dH-4tiH2bNZVToJBwsLNl4Ya5BRK69k6SS7ah-JpYJnH2Q/exec';
+  const res = await fetch(apiUrl);
+  const data = await res.json();
+  // 假設 data 是 [{ group: "T1", tutor: "奇雅" }, ...]
+  const map = {};
+  data.forEach(row => {
+    if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
+  });
+  tutorToGroup = map;
+  return map;
 }
