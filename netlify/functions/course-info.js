@@ -39,6 +39,26 @@ const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
   return resp.json();
 };
 
+let cachedTutorToGroup = null;
+let lastFetchTime = 0;
+const GROUP_API_URL = process.env.GROUP_API_URL || 'https://script.google.com/macros/s/AKfycbwXePo0a2i_YqfsIdJYY6Z1dH-4tiH2bNZVToJBwsLNl4Ya5BRK69k6SS7ah-JpYJnH2Q/exec';
+
+async function fetchTutorToGroup() {
+  // 每10分鐘更新一次
+  if (cachedTutorToGroup && Date.now() - lastFetchTime < 10 * 60 * 1000) {
+    return cachedTutorToGroup;
+  }
+  const res = await fetch(GROUP_API_URL);
+  const data = await res.json();
+  const map = {};
+  data.forEach(row => {
+    if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
+  });
+  cachedTutorToGroup = map;
+  lastFetchTime = Date.now();
+  return map;
+}
+
 exports.handler = async (event) => {
   // CORS 處理（如需跨網域呼叫）
   if (event.httpMethod === 'OPTIONS') {
@@ -113,13 +133,22 @@ exports.handler = async (event) => {
       return { statusCode: 400, body: JSON.stringify({ error: 'Missing courseId or checkPreparing' }) };
     }
 
+    // 取得組別對照表
+    const tutorToGroupMap = await fetchTutorToGroup();
+
     return {
       statusCode: 200,
       headers: {
         'Access-Control-Allow-Origin': '*',
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ status: 'success', data: courseData, parent: parentJson, preparingCourses })
+      body: JSON.stringify({
+        status: 'success',
+        data: courseData,
+        parent: parentJson,
+        preparingCourses,
+        tutorToGroupMap
+      })
     };
   } catch (err) {
     return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
