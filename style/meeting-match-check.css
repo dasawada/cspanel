@@ -124,6 +124,7 @@
 #meeting-check-form {
     height: auto;
     gap: 5px;
+    grid-template-columns: 1fr 1fr 1fr;
 }
 
 /* 調整 Flatpickr 日期按鈕的大小 */
