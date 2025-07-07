@@ -667,15 +667,18 @@ export function createCannedMessagesPanel(options = {}) {
 }
 
 let tutorToGroup = null;
-async function fetchTutorGroupMapFromAPI() {
+async function fetchTutorGroupMapFromAPI(courseId = '') {
   if (tutorToGroup) return tutorToGroup;
   const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/course-info';
-  const res = await fetch(apiUrl);
-  const data = await res.json();
-  const map = {};
-  data.forEach(row => {
-    if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
+  const res = await fetch(apiUrl, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ courseId })
   });
+  const json = await res.json();
+  // 根據你的 serverless function 回傳格式
+  // 可能是 json.tutorToGroupMap 或 json.data.tutorToGroupMap
+  const map = json.tutorToGroupMap || (json.data && json.data.tutorToGroupMap) || {};
   tutorToGroup = map;
   return map;
 }

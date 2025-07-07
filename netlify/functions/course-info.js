@@ -92,7 +92,14 @@ exports.handler = async (event) => {
     const { courseId, checkPreparing } = body;
     const jwt = process.env.ONE_CLUB_JWT;
     if (!jwt) {
-      return { statusCode: 500, body: JSON.stringify({ error: 'Missing ONE_CLUB_JWT' }) };
+      return {
+        statusCode: 500,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: 'Missing ONE_CLUB_JWT' })
+      };
     }
 
     let courseData = null;
@@ -134,7 +141,14 @@ exports.handler = async (event) => {
 
     // 若兩者皆無，回傳錯誤
     if (!courseId && !checkPreparing) {
-      return { statusCode: 400, body: JSON.stringify({ error: 'Missing courseId or checkPreparing' }) };
+      return {
+        statusCode: 400,
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ error: 'Missing courseId or checkPreparing' })
+      };
     }
 
     // 取得組別對照表
@@ -155,6 +169,13 @@ exports.handler = async (event) => {
       })
     };
   } catch (err) {
-    return { statusCode: 500, body: JSON.stringify({ error: err.message }) };
+    return {
+      statusCode: 500,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: err.message })
+    };
   }
 };
