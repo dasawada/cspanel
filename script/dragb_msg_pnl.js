@@ -476,11 +476,16 @@ export function createCannedMessagesPanel(options = {}) {
         ) {
           const name = parentData.tutor.name.trim();
           tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
         }
 
         // 取得組別對照表
         const tutorToGroupMap = await fetchTutorGroupMapFromAPI();
-        const groupName = tutorToGroupMap[tutorNameWithoutSurname] || '';
+        let groupName = tutorToGroupMap[tutorNameWithoutSurname];
+        // 若查不到，嘗試直接用原名查一次
+        if (!groupName && parentData.tutor && typeof parentData.tutor.name === 'string') {
+          groupName = tutorToGroupMap[parentData.tutor.name.trim()] || '';
+        }
 
         // 直接用本機時間（台灣時區）產生 tab4 內容
         const localDate = new Date();
