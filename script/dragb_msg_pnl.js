@@ -676,8 +676,7 @@ async function fetchTutorGroupMapFromAPI(courseId = '') {
     body: JSON.stringify({ courseId })
   });
   const json = await res.json();
-  // 根據你的 serverless function 回傳格式
-  // 可能是 json.tutorToGroupMap 或 json.data.tutorToGroupMap
+  // 直接取物件
   const map = json.tutorToGroupMap || (json.data && json.data.tutorToGroupMap) || {};
   tutorToGroup = map;
   return map;
