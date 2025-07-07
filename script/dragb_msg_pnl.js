@@ -666,12 +666,10 @@ export function createCannedMessagesPanel(options = {}) {
   return panel;
 }
 
-// 在 createCannedMessagesPanel 外部宣告，避免每次查詢都 fetch
 let tutorToGroup = null;
 async function fetchTutorGroupMapFromAPI() {
   if (tutorToGroup) return tutorToGroup;
-  const apiUrl = import.meta.env.GROUP_API_URL; // 或 process.env.GROUP_API_URL
-  if (!apiUrl) throw new Error('GROUP_API_URL 環境變數未設定');
+  const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/course-info';
   const res = await fetch(apiUrl);
   const data = await res.json();
   const map = {};
