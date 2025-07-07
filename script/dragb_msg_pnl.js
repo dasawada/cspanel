@@ -670,10 +670,10 @@ export function createCannedMessagesPanel(options = {}) {
 let tutorToGroup = null;
 async function fetchTutorGroupMapFromAPI() {
   if (tutorToGroup) return tutorToGroup;
-  const apiUrl = 'https://script.google.com/macros/s/AKfycbwXePo0a2i_YqfsIdJYY6Z1dH-4tiH2bNZVToJBwsLNl4Ya5BRK69k6SS7ah-JpYJnH2Q/exec';
+  const apiUrl = import.meta.env.GROUP_API_URL; // 或 process.env.GROUP_API_URL
+  if (!apiUrl) throw new Error('GROUP_API_URL 環境變數未設定');
   const res = await fetch(apiUrl);
   const data = await res.json();
-  // 假設 data 是 [{ group: "T1", tutor: "奇雅" }, ...]
   const map = {};
   data.forEach(row => {
     if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
