@@ -375,6 +375,7 @@ export function createCannedMessagesPanel(options = {}) {
       return response.json();
     })
     .then(json => {
+      console.log('API 回傳:', json);
       if (json.status !== 'success') throw new Error('API 回傳非 success: ' + JSON.stringify(json));
       courseData = json.data;
       studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
@@ -681,6 +682,7 @@ async function fetchTutorGroupMapFromAPI(courseId = '') {
     body: JSON.stringify({ courseId })
   });
   const json = await res.json();
+  console.log('API 回傳:', json);
   // 直接取物件
   const map = json.tutorToGroupMap || (json.data && json.data.tutorToGroupMap) || {};
   tutorToGroup = map;
