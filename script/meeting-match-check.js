@@ -135,7 +135,10 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
                 };
             }
 
-            if (date >= startDate && date <= endDate && repeatPattern.includes(dayMap[checkDay])) {
+            const hasDateOverlap = dateRangesOverlap(queryStartDate, queryEndDate, startDate, endDate);
+            const hasPatternMatch = repeatPattern.includes(dayMap[checkDay]);
+
+            if (hasDateOverlap && hasPatternMatch) {
                 if (startTime < meetingEndTime && endTime > meetingStartTime) {
                     accountResults[accountid].hasMeeting = true;
                     accountResults[accountid].overlappingMeetings.push({
