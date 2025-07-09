@@ -122,35 +122,26 @@
 }
 
 #meeting-check-form {
-    height: auto;
-    gap: 5px;
-    grid-template-columns: 1fr 1fr 1fr;
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-items: center;
+    width: 100%;
 }
 
-/* 調整 Flatpickr 日期按鈕的大小 */
-.flatpickr-day {
-    width: 20px;
-    height: 20px;
-    line-height: 20px; /* 確保文字垂直居中 */
-    padding: 0;
-    margin: 2px; /* 調整按鈕之間的間距 */
-    font-size: 12px; /* 根據需要調整字體大小 */
-    border-radius: 4px; /* 可選：設置按鈕的圓角 */
+#meeting-check-form input,
+#meeting-check-form select,
+#meeting-check-form button {
+    width: 100%;
+    box-sizing: border-box;
 }
 
-.flatpickr-day.today {
-    border-color: #b3b3b3; /* 今日日期的邊框顏色 */
+.meeting-check-form-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
 }
-
-.flatpickr-day:hover {
-    background: #e6e6e6; /* 懸停時的背景顏色 */
-}
-
-.flatpickr-day.selected {
-    background-color: #3b82f6; /* 選中日期的背景顏色 */
-    color: #ffffff; /* 選中日期的字體顏色 */
-} 
-
 .meeting-check-title .toggle-icon {
     position: absolute;
     right: 10px;

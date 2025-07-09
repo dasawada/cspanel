@@ -1,32 +1,32 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 
 document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
-    event.preventDefault();  // 阻止表單提交
-    console.log('表單提交被攔截');
+    event.preventDefault();
 
-    const dateInput = document.getElementById('meeting-check-date').value;
+    const meetingType = document.getElementById('meeting-type').value; // 修改為從下拉選單提取值
+
+    // 其他邏輯保持不變
+    const startDateInput = document.getElementById('meeting-check-date').value;
+    const endDateInput = document.getElementById('meeting-check-end-date').value;
     const startTimeInput = document.getElementById('meeting-check-start-time').value;
     const endTimeInput = document.getElementById('meeting-check-end-time').value;
 
-    // 獲取會議類型的值
-    const meetingType = document.querySelector('input[name="meeting-type"]:checked').value;
-
-    // 驗證輸入
-    if (!dateInput || !startTimeInput || !endTimeInput) {
+    if (!startDateInput || !endDateInput || !startTimeInput || !endTimeInput) {
         document.getElementById('meeting-check-error').textContent = '請輸入有效的日期和時間範圍。';
         return;
     }
 
-    const date = new Date(dateInput);
+    const queryStartDate = new Date(startDateInput);
+    const queryEndDate = new Date(endDateInput);
     const startTime = meetingCheckParseTime(startTimeInput);
     const endTime = meetingCheckParseTime(endTimeInput);
 
-    if (!startTime || !endTime) {
-        document.getElementById('meeting-check-error').textContent = '請輸入有效的時間格式。';
+    if (queryStartDate > queryEndDate) {
+        document.getElementById('meeting-check-error').textContent = '開始日期不能晚於結束日期。';
         return;
     }
-    // 呼叫 checkMeeting 函數，檢查會議衝突
-    checkMeeting(date, startTime, endTime, meetingType);
+
+    checkMeetingRange(queryStartDate, queryEndDate, startTime, endTime, meetingType);
 });
 
 function meetingCheckParseTime(input) {
@@ -51,7 +51,12 @@ function meetingCheckParseTime(input) {
     return null;  // 如果解析失敗，返回 null
 }
 
-async function checkMeeting(date, startTime, endTime, meetingType) {
+// 在文件開頭添加 dateRangesOverlap 函數
+function dateRangesOverlap(startDate1, endDate1, startDate2, endDate2) {
+    return (startDate1 <= endDate2) && (startDate2 <= endDate1);
+}
+
+async function checkMeetingRange(queryStartDate, queryEndDate, startTime, endTime, meetingType) {
     // 根據選擇的類型設定搜尋的 Sheet 名稱
     let sheetName = '';
     if (meetingType === '長週期') {
@@ -69,7 +74,6 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
         const rows = data.valueRanges[0].values;
 
         const accountResults = {};
-        const checkDay = date.getDay();
 
         const dayMap = {
             0: '日',
@@ -135,22 +139,29 @@ async function checkMeeting(date, startTime, endTime, meetingType) {
                 };
             }
 
-            const hasDateOverlap = dateRangesOverlap(queryStartDate, queryEndDate, startDate, endDate);
-            const hasPatternMatch = repeatPattern.includes(dayMap[checkDay]);
+            const hasOverlap = (queryStartDate <= endDate) && (queryEndDate >= startDate);
 
-            if (hasDateOverlap && hasPatternMatch) {
-                if (startTime < meetingEndTime && endTime > meetingStartTime) {
-                    accountResults[accountid].hasMeeting = true;
-                    accountResults[accountid].overlappingMeetings.push({
-                        name: meetingName,
-                        startDate: startDate,
-                        endDate: endDate,
-                        repeatPattern: repeatPattern.join(','),
-                        timeRange: `${meetingStartTime} - ${meetingEndTime}`,
-                        info: meetingInfo,
-                        account: accountid,
-                        label: label
-                    });
+            if (repeatPattern.includes(dayMap[queryStartDate.getDay()]) && hasOverlap) {
+                for (let currentDate = new Date(Math.max(queryStartDate.getTime(), startDate.getTime())); 
+                     currentDate <= Math.min(queryEndDate.getTime(), endDate.getTime()); 
+                     currentDate.setDate(currentDate.getDate() + 1)) {
+                    
+                    if (repeatPattern.includes(dayMap[currentDate.getDay()])) {
+                        if (startTime < meetingEndTime && endTime > meetingStartTime) {
+                            accountResults[accountid].hasMeeting = true;
+                            accountResults[accountid].overlappingMeetings.push({
+                                name: meetingName,
+                                startDate: startDate,
+                                endDate: endDate,
+                                repeatPattern: repeatPattern.join(','),
+                                timeRange: `${meetingStartTime} - ${meetingEndTime}`,
+                                info: meetingInfo,
+                                account: accountid,
+                                label: label
+                            });
+                            break;
+                        }
+                    }
                 }
             }
         }

@@ -540,36 +540,42 @@
         <div id="modal-meeting-results"></div>
     </div>
 </div>
-				<b>[騰訊] 衝堂查詢</b>
-				<div id="meeting-check-form-container">
-			<form id="meeting-check-form" style="display: grid; align-items: center;">
-				<!-- 第一行 -->
-				<div class="meeting-check-form-group">
-					<input type="date" id="meeting-check-date" name="date" required style="width: 100%;">
-				</div>
-				<div class="meeting-check-form-group">
-					<input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required style="width: 100%;">
-				</div>
-				<div class="meeting-check-form-group">
-					<input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required style="width: 100%;">
-				</div>
-				<!-- 第二行 -->
-				<div class="meeting-check-form-group">
-					<label><input type="radio" name="meeting-type" value="長週期" checked> 長週期</label>
-				</div>
-				<div class="meeting-check-form-group">
-					<label><input type="radio" name="meeting-type" value="短週期"> 短週期</label>
-				</div>
-                <div class="meeting-check-form-group">
-					<button type="submit" style="width: 100%;">查詢</button>
-				</div>
-			</form>
-				<div id="meeting-check-result-scrollbar">
-					<div id="meeting-check-result"></div>
-					<div id="meeting-check-error"></div>
-					<div id="meeting-check-account-results"></div>
-				</div>
-
+                <b>[騰訊] 衝堂查詢</b>
+                <div id="meeting-check-form-container">
+                    <form id="meeting-check-form">
+                        <!-- 第一行 -->
+                        <div class="meeting-check-form-group">
+                            <label for="meeting-check-date">開始日期</label>
+                            <input type="date" id="meeting-check-date" name="date" required>
+                        </div>
+                        <div class="meeting-check-form-group">
+                            <label for="meeting-check-end-date">結束日期</label>
+                            <input type="date" id="meeting-check-end-date" name="end-date" required>
+                        </div>
+                        <div class="meeting-check-form-group">
+                            <label for="meeting-type">週期</label>
+                            <select id="meeting-type" name="meeting-type" required>
+                                <option value="長週期" selected>長週期</option>
+                                <option value="短週期">短週期</option>
+                            </select>
+                        </div>
+                    
+                        <!-- 第二行 -->
+                        <div class="meeting-check-form-group">
+                            <input type="text" id="meeting-check-start-time" name="start-time" placeholder="開始時間" required>
+                        </div>
+                        <div class="meeting-check-form-group">
+                            <input type="text" id="meeting-check-end-time" name="end-time" placeholder="結束時間" required>
+                        </div>
+                        <div class="meeting-check-form-group">
+                            <button type="submit" style="width: 100%;">查詢</button>
+                        </div>
+                    </form>
+                        <div id="meeting-check-result-scrollbar">
+                            <div id="meeting-check-result"></div>
+                            <div id="meeting-check-error"></div>
+                            <div id="meeting-check-account-results"></div>
+                        </div>
 				</div>
 			</div>	
 		</div>
