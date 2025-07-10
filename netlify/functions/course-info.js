@@ -167,7 +167,8 @@ exports.handler = async (event) => {
         status: 'success',
         data: courseData,
         parent: parentJson,
-        preparingCourses
+        preparingCourses,
+        tutorToGroupMap: await fetchTutorToGroup() // <--- 新增這行
       })
     };
   } catch (err) {

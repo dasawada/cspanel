@@ -378,6 +378,7 @@ export function createCannedMessagesPanel(options = {}) {
       console.log('API 回傳:', json);
       if (json.status !== 'success') throw new Error('API 回傳非 success: ' + JSON.stringify(json));
       courseData = json.data;
+      const tutorToGroupMap = json.tutorToGroupMap || {};
       studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
       tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
       courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
