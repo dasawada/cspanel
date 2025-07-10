@@ -112,6 +112,12 @@ exports.handler = async (event) => {
       }
       courseData = courseJson.data;
 
+      // 取得組別對照表，並加進 courseData
+      const tutorToGroupMap = await fetchTutorToGroup();
+      if (courseData.tutor) {
+        courseData.group = tutorToGroupMap[courseData.tutor.trim()] || null;
+      }
+
       // 查家長
       if (courseData.students && courseData.students.length > 0) {
         const parentOneClubId = courseData.students[0].parentOneClubId;
@@ -151,9 +157,6 @@ exports.handler = async (event) => {
       };
     }
 
-    // 取得組別對照表
-    const tutorToGroupMap = await fetchTutorToGroup();
-
     return {
       statusCode: 200,
       headers: {
@@ -164,8 +167,7 @@ exports.handler = async (event) => {
         status: 'success',
         data: courseData,
         parent: parentJson,
-        preparingCourses,
-        tutorToGroupMap
+        preparingCourses
       })
     };
   } catch (err) {
