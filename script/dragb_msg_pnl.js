@@ -363,6 +363,7 @@ export function createCannedMessagesPanel(options = {}) {
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
     const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
     let courseData, studentNames = '', tagNames = '', courseTime = '';
+    let tutorToGroupMap = {}; // <-- 這裡宣告在外層
     fetch(courseApiUrl, {
       method: 'POST',
       headers: {
@@ -378,7 +379,7 @@ export function createCannedMessagesPanel(options = {}) {
       console.log('API 回傳:', json);
       if (json.status !== 'success') throw new Error('API 回傳非 success: ' + JSON.stringify(json));
       courseData = json.data;
-      const tutorToGroupMap = json.tutorToGroupMap || {};
+      tutorToGroupMap = json.tutorToGroupMap || {}; // <-- 這裡填值
       studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
       tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
       courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
@@ -482,11 +483,14 @@ export function createCannedMessagesPanel(options = {}) {
         }
 
         // 取得組別對照表
-        const tutorToGroupMap = await fetchTutorGroupMapFromAPI();
-        let groupName = tutorToGroupMap[tutorNameWithoutSurname];
-        // 若查不到，嘗試直接用原名查一次
-        if (!groupName && parentData.tutor && typeof parentData.tutor.name === 'string') {
-          groupName = tutorToGroupMap[parentData.tutor.name.trim()] || '';
+        // const tutorToGroupMap = await fetchTutorGroupMapFromAPI(); // ← 刪除這行
+
+        let groupName = '';
+        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+          const name = parentData.tutor.name.trim();
+          let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
         }
 
         // 直接用本機時間（台灣時區）產生 tab4 內容
@@ -671,21 +675,4 @@ export function createCannedMessagesPanel(options = {}) {
 
   // ===== 3.8. 回傳面板節點 (可選) =====
   return panel;
-}
-
-let tutorToGroup = null;
-async function fetchTutorGroupMapFromAPI(courseId = '') {
-  if (tutorToGroup) return tutorToGroup;
-  const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/course-info';
-  const res = await fetch(apiUrl, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ courseId })
-  });
-  const json = await res.json();
-  console.log('API 回傳:', json);
-  // 直接取物件
-  const map = json.tutorToGroupMap || (json.data && json.data.tutorToGroupMap) || {};
-  tutorToGroup = map;
-  return map;
 }
