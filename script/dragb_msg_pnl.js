@@ -430,6 +430,7 @@ export function createCannedMessagesPanel(options = {}) {
       // ====== 統一流程開始 ======
       const isNongXiao = tagNames.indexOf("國小自然實作探究") !== -1;
       const teacherLeave = courseData.leaveOrders && courseData.leaveOrders.some(lo => lo.role === 'teacher');
+      const isFirstCourse = courseData.name && (courseData.name.includes("首課") || courseData.name.includes("換師"));
 
       // 先清空所有 warning、搶課按鈕
       ['tab1', 'tab2', 'tab3', 'tab4'].forEach(tab => {
@@ -441,6 +442,79 @@ export function createCannedMessagesPanel(options = {}) {
 
       // 預設所有 tab 內容
       apiTexts = Object.assign({}, defaultTexts);
+
+      // 首課特殊處理：需要老師請假 + 課程標題包含"首課"
+      if (teacherLeave && isFirstCourse) {
+        // 隱藏tab1~3
+        ['tab1', 'tab2', 'tab3'].forEach(tab => {
+          const tabMenuItem = panel.querySelector(`.canned-panel-tab-menu li[data-tab="${tab}"]`);
+          const tabContent = panel.querySelector(`#${panelId}-${tab}`);
+          if (tabMenuItem) tabMenuItem.style.display = 'none';
+          if (tabContent) tabContent.classList.remove('active');
+        });
+        
+        // 顯示並切換到tab4
+        const tab4MenuItem = panel.querySelector('.canned-panel-tab-menu li[data-tab="tab4"]');
+        const tab4Content = panel.querySelector(`#${panelId}-tab4`);
+        if (tab4MenuItem) {
+          tab4MenuItem.style.display = 'block';
+          tab4MenuItem.classList.add('active');
+        }
+        if (tab4Content) tab4Content.classList.add('active');
+        
+        panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning" style="font-weight: bold;">此堂為首課，老師請假先不通知家長，<br>請於LINE主表登記通報🥸</p>');
+        
+        // 取得輔導老師名字（去掉姓氏，只留名字）
+        let tutorNameWithoutSurname = '';
+        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+          const name = parentData.tutor.name.trim();
+          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+        }
+
+        // 取得組別
+        let groupName = '';
+        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+          const name = parentData.tutor.name.trim();
+          let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+        }
+
+        // 取得時間資訊
+        const date = new Date(courseData.startAt);
+        const mmdd = `${date.getMonth() + 1}`.padStart(2, '0') + '/' + `${date.getDate()}`.padStart(2, '0');
+        const startTime = date.toLocaleTimeString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+        const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
+          timeZone: 'Asia/Taipei',
+          hour: '2-digit',
+          minute: '2-digit',
+          hourCycle: 'h23'
+        });
+        const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
+
+        // 台灣時區日期
+        const localDate = new Date();
+        const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+        const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
+
+        // 首課專用格式
+        apiTexts.tab4 = `${tutorNameWithoutSurname}\t${groupName}\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}`;
+        panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
+        
+        return; // 首課處理完畢，直接返回
+      }
+
+      // 恢復所有tab顯示（非首課時）
+      ['tab1', 'tab2', 'tab3', 'tab4'].forEach(tab => {
+        const tabMenuItem = panel.querySelector(`.canned-panel-tab-menu li[data-tab="${tab}"]`);
+        if (tabMenuItem) tabMenuItem.style.display = 'block';
+      });
 
       // 1. 老師沒請假
       if (!teacherLeave) {
@@ -652,7 +726,7 @@ export function createCannedMessagesPanel(options = {}) {
     }
     if (endAt) {
       const date = new Date(endAt);
-      formattedEnd = date.toLocaleTimeString('zh-TW', {
+      formattedEnd = date.toLocaleTimeString('zh-Taipei', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
