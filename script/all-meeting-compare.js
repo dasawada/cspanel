@@ -1,4 +1,5 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+import { ConflictChecker } from './ConflictChecker.js';
 
 // 從 Google Sheets 中讀取數據
 async function getSheetData(sheetName) {
@@ -326,133 +327,8 @@ export async function getAccountResultsFromSheet() {
     return allMeetingCompareProcessMeetingData(meetingData);
 }
 
-// 添加緩存與智能輪詢邏輯
-class ConflictChecker {
-    constructor() {
-        this.minInterval = 60000; // 最小間隔 1 分鐘
-        this.maxInterval = 300000; // 最大間隔 5 分鐘
-        this.currentInterval = this.minInterval;
-        this.lastChangeTime = Date.now();
-        this.cacheKey = 'meetingConflictCache';
-    }
-
-    async start() {
-        // 初始化檢查
-        await this.checkWithCache();
-        
-        // 註冊頁面可見性事件
-        document.addEventListener('visibilitychange', () => {
-            if (!document.hidden) {
-                this.checkWithCache();
-            }
-        });
-
-        // 開始智能輪詢
-        this.scheduleNextCheck();
-    }
-
-    async checkWithCache() {
-        try {
-            const cachedData = localStorage.getItem(this.cacheKey);
-            const cache = cachedData ? JSON.parse(cachedData) : null;
-            
-            const newData = await getAccountResultsFromSheet();
-            const hasChanges = !this.isEqual(cache, newData);
-            
-            if (hasChanges) {
-                localStorage.setItem(this.cacheKey, JSON.stringify(newData));
-                await this.updateUI(newData);
-                this.lastChangeTime = Date.now();
-                this.currentInterval = this.minInterval;
-            } else {
-                this.adjustInterval();
-            }
-            
-            return hasChanges;
-        } catch (error) {
-            console.error('Conflict check failed:', error);
-            return false;
-        }
-    }
-
-    adjustInterval() {
-        const timeSinceLastChange = Date.now() - this.lastChangeTime;
-        if (timeSinceLastChange > 1800000) { // 30分鐘無變化
-            this.currentInterval = this.maxInterval;
-        }
-    }
-
-    scheduleNextCheck() {
-        setTimeout(() => {
-            this.checkWithCache().finally(() => {
-                this.scheduleNextCheck();
-            });
-        }, this.currentInterval);
-    }
-
-    isEqual(obj1, obj2) {
-        return JSON.stringify(obj1) === JSON.stringify(obj2);
-    }
-
-    async updateUI(data) {
-        const hasConflicts = this.checkForConflicts(data);
-        const settingsButton = document.getElementById('settings-button');
-        settingsButton.style.display = hasConflicts ? 'inline' : 'none';
-        
-        // 如果有衝突且用戶允許通知，發送通知
-        if (hasConflicts && Notification.permission === 'granted') {
-            this.sendNotification();
-        }
-    }
-
-    checkForConflicts(data) {
-        for (const account in data) {
-            const accountData = data[account];
-            const conflicts = allMeetingCompareCheckForConflicts(accountData.meetings);
-
-            if (conflicts.length > 0) {
-                return true; // 發現有衝突
-            }
-        }
-        return false; // 沒有衝突
-    }
-
-    async sendNotification() {
-        const notification = new Notification('會議衝突提醒', {
-            body: '檢測到新的會議時間衝突',
-            icon: '/path/to/icon.png'
-        });
-        
-        notification.onclick = () => {
-            window.focus();
-            document.getElementById('settings-button').click();
-        };
-    }
-}
-
 // 當頁面載入時，自動檢查會議衝突，並開始定時檢查
 window.addEventListener('DOMContentLoaded', async function() {
     const conflictChecker = new ConflictChecker();
     await conflictChecker.start();
 });
-
-async function fetchMeetingsToCompare() {
-    try {
-        const ranges = ['「騰訊會議(長週期)」!A:K', '「騰訊會議(短週期)」!A:K'];
-        const data = await callGoogleSheetBatchAPI({ ranges });
-        
-        // Process both sheets
-        const allMeetings = [];
-        data.valueRanges.forEach((sheet, index) => {
-            if (sheet.values) {
-                const sheetMeetings = processMeetingData(sheet.values);
-                allMeetings.push(...sheetMeetings);
-            }
-        });
-        
-        return allMeetings;
-    } catch (error) {
-        console.error('Error fetching meetings for comparison:', error);
-        throw error;
-    }
-}
