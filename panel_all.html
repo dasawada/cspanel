@@ -350,6 +350,72 @@
 
 </div>
 </div>
+<!-- Firebase Easy Login Panel (獨立於 linkout左方) -->
+<div id="firebase-login-panel" style="position: fixed; right: 20px; bottom: 20px; width:260px; border:1px solid #eee; border-radius:8px; padding:12px; background:#fafcff; box-shadow:0 2px 8px #eee; z-index:9999;">
+    <div id="firebase-login-content">
+        <h4 style="margin-top:0;">登入以使用進階功能</h4>
+        <input type="email" id="firebase-login-email" placeholder="Email" style="width:90%;margin-bottom:6px;">
+        <input type="password" id="firebase-login-password" placeholder="密碼" style="width:90%;margin-bottom:6px;">
+        <button id="firebase-login-btn" style="width:100%;margin-bottom:6px;">登入</button>
+        <button id="firebase-logout-btn" style="width:100%;display:none;">登出</button>
+        <div id="firebase-login-status" style="color:#888;font-size:13px;margin-top:4px;"></div>
+    </div>
+</div>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+<script>
+// Firebase config
+const firebaseConfig = {
+  apiKey: "AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M",
+  authDomain: "cstoolsapi.firebaseapp.com",
+  projectId: "cstoolsapi",
+  storageBucket: "cstoolsapi.firebasestorage.app",
+  messagingSenderId: "632885029336",
+  appId: "1:632885029336:web:f491b9cc28fe3f2504aaad"
+};
+firebase.initializeApp(firebaseConfig);
+const auth = firebase.auth();
+const loginPanel = document.getElementById('firebase-login-panel');
+const loginBtn = document.getElementById('firebase-login-btn');
+const logoutBtn = document.getElementById('firebase-logout-btn');
+const statusDiv = document.getElementById('firebase-login-status');
+loginBtn.onclick = async function() {
+  const email = document.getElementById('firebase-login-email').value;
+  const password = document.getElementById('firebase-login-password').value;
+  statusDiv.textContent = '';
+  try {
+    const userCred = await auth.signInWithEmailAndPassword(email, password);
+    const token = await userCred.user.getIdToken();
+    localStorage.setItem('firebase_id_token', token);
+    statusDiv.textContent = '登入成功';
+    loginPanel.style.display = 'none';
+    logoutBtn.style.display = '';
+  } catch(e) {
+    statusDiv.textContent = '登入失敗：' + (e.message || e.code);
+  }
+};
+logoutBtn.onclick = function() {
+  auth.signOut();
+  localStorage.removeItem('firebase_id_token');
+  loginPanel.style.display = '';
+  logoutBtn.style.display = 'none';
+  statusDiv.textContent = '';
+};
+auth.onAuthStateChanged(async function(user) {
+  if (user) {
+    const token = await user.getIdToken();
+    localStorage.setItem('firebase_id_token', token);
+    loginPanel.style.display = 'none';
+    logoutBtn.style.display = '';
+    statusDiv.textContent = '已登入';
+  } else {
+    loginPanel.style.display = '';
+    logoutBtn.style.display = 'none';
+    statusDiv.textContent = '';
+    localStorage.removeItem('firebase_id_token');
+  }
+});
+</script>
 <!-- 顧問名單googlesheet -->
 <div class="consultantlistgooglesheet small-size" style="top:0px">
     <div class="toggle-container">
@@ -373,29 +439,30 @@
 </div>
 
 <!--短網址-->
-<div class="linkout">
-    <div class="input-container">
-        <input type="text" id="ShrtURL_longUrl" placeholder="輸入網址">
-        <button id="ShrtURL_shortenButton">製作短網址</button>
-    </div>
-    <div id="ShrtURL_isGdContainer">
-        <input type="text" id="ShrtURL_isGdOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
-        <div style="width:85px">
-            <button id="ShrtURL_isGdCopyButton">複製</button>
+    <div class="linkout">
+        <div class="input-container">
+            <input type="text" id="ShrtURL_longUrl" placeholder="輸入網址">
+            <button id="ShrtURL_shortenButton">製作短網址</button>
+        </div>
+        <div id="ShrtURL_isGdContainer">
+            <input type="text" id="ShrtURL_isGdOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+            <div style="width:85px">
+                <button id="ShrtURL_isGdCopyButton">複製</button>
+            </div>
+        </div>
+
+        <div id="ShrtURL_reurlContainer">
+            <input type="text" id="ShrtURL_reurlOutput" placeholder="此處將顯示【reurl.cc】短網址" readonly>
+            <div style="width:85px">
+                <button id="ShrtURL_reurlCopyButton">複製</button>
+            </div>
+        </div>
+
+        <div id="ShrtURL_clearButton" onclick="ShrtURL_clearInputs()">
+            <i class="fas fa-trash"></i>
         </div>
     </div>
-
-    <div id="ShrtURL_reurlContainer">
-        <input type="text" id="ShrtURL_reurlOutput" placeholder="此處將顯示【reurl.cc】短網址" readonly>
-        <div style="width:85px">
-            <button id="ShrtURL_reurlCopyButton">複製</button>
-        </div>
-    </div>
-
-    <div id="ShrtURL_clearButton" onclick="ShrtURL_clearInputs()">
-        <i class="fas fa-trash"></i>
-    </div>
-</div>
+    <!--end linkout-->
 
 <!--ip搜尋-->
     <div class="IPsearch_in_panelALL">
