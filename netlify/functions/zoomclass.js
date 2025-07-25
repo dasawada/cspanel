@@ -1,4 +1,16 @@
 const fetch = require('node-fetch');
+const admin = require('firebase-admin');
+
+// Firebase Admin 初始化
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert({
+      projectId: process.env.FIREBASE_PROJECT_ID,
+      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+      privateKey: process.env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n')
+    })
+  });
+}
 
 exports.handler = async (event) => {
   // CORS handling
@@ -21,6 +33,24 @@ exports.handler = async (event) => {
         'Access-Control-Allow-Origin': '*'
       },
       body: JSON.stringify({ error: 'Method Not Allowed' }),
+    };
+  }
+
+  // Firebase 驗證
+  let token;
+  try {
+    const body = JSON.parse(event.body || '{}');
+    token = body.token;
+    if (!token) throw new Error('Missing token');
+    await admin.auth().verifyIdToken(token);
+  } catch (err) {
+    return {
+      statusCode: 401,
+      headers: {
+        'Access-Control-Allow-Origin': '*',
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ error: 'Authentication required' })
     };
   }
 
@@ -137,4 +167,4 @@ exports.handler = async (event) => {
       body: JSON.stringify({ error: err.message }) 
     };
   }
-}; 
+};
