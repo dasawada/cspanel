@@ -676,9 +676,17 @@ async function fetchCourses(status, startAt, endAt) {
         return []; // Return empty array if parameters are invalid
     }
     
+    // 取得 Firebase token
+    const token = localStorage.getItem('firebase_id_token');
+    if (!token) {
+        console.warn('fetchCourses: 尚未登入，無法取得 token');
+        return [];
+    }
+    
     while (retryCount <= maxRetries) {
         try {
             const requestBody = {
+                token, // <--- 加入 token
                 action: 'fetchCourses',
                 courseStatus: status,
                 startAt: startAt,
