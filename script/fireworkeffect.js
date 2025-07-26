@@ -55,8 +55,22 @@ export async function loadLoginPanel() {
   const pwdInput = document.getElementById('firebase-login-bar-password');
   const barStatus = document.getElementById('firebase-login-bar-status');
 
+  // 監聽 input active 時 enter 送出登入
+  [emailInput, pwdInput].forEach(input => {
+    input.addEventListener('keydown', function(e) {
+      if (e.key === 'Enter') {
+        loginBtn.click();
+      }
+    });
+  });
+
+  let lastLoginFail = false;
+
   loginBtn.onclick = async function() {
     statusMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
+    loginBtn.style.color = '#2d8cf0';
+    loginBtn.removeAttribute('title');
+    lastLoginFail = false;
     try {
       const email = emailInput.value;
       const password = pwdInput.value;
@@ -64,13 +78,31 @@ export async function loadLoginPanel() {
       const token = await userCred.user.getIdToken();
       localStorage.setItem('firebase_id_token', token);
       statusMsg.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2ecc71"></i>';
+      window.dispatchEvent(new Event('firework-login-success'));
     } catch(e) {
-      statusMsg.innerHTML = `<i class=\"fa-solid fa-circle-xmark\" style=\"color:#e74c3c\"></i> 登入失敗：${e.message || e.code}`;
+      // 不顯示錯誤訊息，loginBtn 變紅，hover 顯示 title
+      loginBtn.style.color = '#e74c3c';
+      loginBtn.title = '登入失敗，請檢查帳號密碼';
+      lastLoginFail = true;
+      statusMsg.innerHTML = '';
     }
   };
+  // 失敗後 hover loginBtn 顯示 title，移開時保留紅色
+  loginBtn.onmouseenter = function() {
+    if (lastLoginFail) {
+      loginBtn.title = '登入失敗，請檢查帳號密碼';
+    }
+  };
+  loginBtn.onmouseleave = function() {
+    if (lastLoginFail) {
+      loginBtn.title = '';
+    }
+  };
+
   logoutBtn.onclick = function() {
     auth.signOut();
     localStorage.removeItem('firebase_id_token');
+    window.dispatchEvent(new Event('firework-logout-success'));
     // UI 狀態會由 onAuthStateChanged 控制
   };
 
@@ -95,6 +127,7 @@ export async function loadLoginPanel() {
       barContent.style.maxWidth = 'unset';
       barContent.style.justifyContent = 'center';
       barContent.style.padding = '8px 12px';
+      window.dispatchEvent(new Event('firework-login-success'));
     } else {
       // 展開欄位
       emailInput.style.display = '';

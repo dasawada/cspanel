@@ -478,7 +478,13 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
 
         // 如果沒有任何會議
         if (resultDiv.children.length === 0) {
-            resultDiv.textContent = '今日沒有會議安排。';
+            // 新增判斷是否未登入
+            const token = localStorage.getItem('firebase_id_token');
+            if (!token) {
+                resultDiv.textContent = '請先登入。';
+            } else {
+                resultDiv.textContent = '今日沒有會議安排。';
+            }
         }
 
     } catch (error) {
@@ -494,7 +500,13 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         waitingMeetings = [];
         endedMeetings = [];
         if (resultDiv) {
-            resultDiv.innerHTML = '載入會議資料時發生錯誤';
+            // 新增判斷是否未登入
+            const token = localStorage.getItem('firebase_id_token');
+            if (!token) {
+                resultDiv.innerHTML = '請先登入。';
+            } else {
+                resultDiv.innerHTML = '載入會議資料時發生錯誤';
+            }
         }
     }
 }
@@ -738,4 +750,12 @@ async function fetchCourses(status, startAt, endAt) {
     }
     
     return []; // Fallback return
+}
+export async function refreshMeetingPanel() {
+    const now = new Date();
+    const taiwanOffset = 8 * 60;
+    const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
+    const currentDate = localTime.toISOString().split('T')[0];
+    const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
+    await meetingsearchFetchMeetings(currentDate, currentTime, localTime);
 }
