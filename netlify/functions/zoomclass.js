@@ -1,6 +1,14 @@
 const fetch = require('node-fetch');
 const admin = require('firebase-admin');
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
+  'Content-Type': 'application/json'
+};
+
 // Firebase Admin 初始化
 if (!admin.apps.length) {
   admin.initializeApp({
@@ -13,25 +21,18 @@ if (!admin.apps.length) {
 }
 
 exports.handler = async (event) => {
-  // CORS handling
+  // CORS preflight
   if (event.httpMethod === 'OPTIONS') {
     return {
       statusCode: 200,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Requested-With',
-      },
+      headers: corsHeaders,
       body: '',
     };
   }
   if (event.httpMethod !== 'POST') {
     return {
       statusCode: 405,
-      headers: {
-        'Allow': 'POST, OPTIONS',
-        'Access-Control-Allow-Origin': '*'
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Method Not Allowed' }),
     };
   }
@@ -46,10 +47,7 @@ exports.handler = async (event) => {
   } catch (err) {
     return {
       statusCode: 401,
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Authentication required' })
     };
   }
@@ -63,10 +61,7 @@ exports.handler = async (event) => {
     if (!jwt) {
       return { 
         statusCode: 500, 
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
+        headers: corsHeaders,
         body: JSON.stringify({ error: 'Missing JWT token in environment' }) 
       };
     }
@@ -76,10 +71,7 @@ exports.handler = async (event) => {
       if (!courseStatus || !startAt || !endAt) {
         return { 
           statusCode: 400, 
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json'
-          },
+          headers: corsHeaders,
           body: JSON.stringify({ error: 'Missing required parameters for fetchCourses' }) 
         };
       }
@@ -100,10 +92,7 @@ exports.handler = async (event) => {
           console.error(`API request failed with status: ${response.status}`);
           return { 
             statusCode: response.status, 
-            headers: {
-              'Access-Control-Allow-Origin': '*',
-              'Content-Type': 'application/json'
-            },
+            headers: corsHeaders,
             body: JSON.stringify({ error: `API request failed with status: ${response.status}` }) 
           };
         }
@@ -113,20 +102,14 @@ exports.handler = async (event) => {
 
         return {
           statusCode: 200,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json'
-          },
+          headers: corsHeaders,
           body: JSON.stringify(data)
         };
       } catch (error) {
         console.error('Error fetching courses:', error);
         return {
           statusCode: 500,
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Content-Type': 'application/json'
-          },
+          headers: corsHeaders,
           body: JSON.stringify({ error: error.message })
         };
       }
@@ -139,10 +122,7 @@ exports.handler = async (event) => {
 
       return {
         statusCode: 200,
-        headers: {
-          'Access-Control-Allow-Origin': '*',
-          'Content-Type': 'application/json'
-        },
+        headers: corsHeaders,
         body: JSON.stringify({ message: 'Zoom class data fetched successfully' }) // Placeholder response
       };
     }
@@ -150,20 +130,14 @@ exports.handler = async (event) => {
     // If neither action nor classId is provided
     return { 
       statusCode: 400, 
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: 'Missing required parameters (action or classId)' }) 
     };
   } catch (err) {
     console.error('Function error:', err);
     return { 
       statusCode: 500, 
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Content-Type': 'application/json'
-      },
+      headers: corsHeaders,
       body: JSON.stringify({ error: err.message }) 
     };
   }
