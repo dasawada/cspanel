@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BX Messenger</title>
+  <style>
+    .bx-messenger-textarea {
+      width: 100%;
+      height: 100px;
+      border: 1px solid #ccc;
+      padding: 10px;
+      margin-top: 20px;
+    }
+    .floating-buttons {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .floating-buttons button {
+      padding: 10px 20px;
+      background-color: #007bff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h1>BX Messenger</h1>
+  <textarea class="bx-messenger-textarea" placeholder="Type your message here..."></textarea>
+
+  <script>
+    console.log('BX話術腳本已加載');
+
+    // 動態插入漂浮按鈕容器
+    const insertFloatingButtons = (target) => {
+      const container = document.createElement('div');
+      container.className = 'floating-buttons';
+
+      const button1 = document.createElement('button');
+      button1.textContent = 'Button 1';
+      button1.onclick = () => alert('Button 1 clicked');
+
+      const button2 = document.createElement('button');
+      button2.textContent = 'Button 2';
+      button2.onclick = () => alert('Button 2 clicked');
+
+      container.appendChild(button1);
+      container.appendChild(button2);
+
+      document.body.appendChild(container);
+      console.log('漂浮按鈕已插入');
+    };
+
+    // 確認目標元素是否存在，並綁定點擊事件
+    const checkAndBindEvents = () => {
+      const target = document.querySelector('.bx-messenger-textarea');
+      if (target) {
+        if (!target.dataset.bound) {
+          console.log('找到目標元素:', target);
+          target.dataset.bound = 'true';
+
+          // 動態插入漂浮按鈕容器
+          insertFloatingButtons(target);
+        } else {
+          console.log('目標元素已綁定，跳過重複操作');
+        }
+      } else {
+        console.log('目標元素尚未出現');
+      }
+    };
+
+    // 等待 DOM 完全加載後執行
+    document.addEventListener('DOMContentLoaded', () => {
+      checkAndBindEvents();
+    });
+  </script>
+</body>
+</html>
