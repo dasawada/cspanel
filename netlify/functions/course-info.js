@@ -104,6 +104,8 @@ exports.handler = async (event) => {
 
     let courseData = null;
     let parentJson = null;
+    let tutorToGroupMap = {}; // 提前宣告，避免重複調用
+    
     if (courseId) {
       // 查課程
       const courseJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/UseAggregate/${courseId}`, jwt);
@@ -113,7 +115,7 @@ exports.handler = async (event) => {
       courseData = courseJson.data;
 
       // 取得組別對照表，並加進 courseData
-      const tutorToGroupMap = await fetchTutorToGroup();
+      tutorToGroupMap = await fetchTutorToGroup(); // 只調用一次
       if (courseData.tutor) {
         courseData.group = tutorToGroupMap[courseData.tutor.trim()] || null;
       }
@@ -128,6 +130,9 @@ exports.handler = async (event) => {
           parentJson = await parentResp.json();
         }
       }
+    } else {
+      // 如果沒有 courseId，仍需要取得 tutorToGroupMap
+      tutorToGroupMap = await fetchTutorToGroup();
     }
 
     // 查準備中課程
@@ -168,10 +173,11 @@ exports.handler = async (event) => {
         data: courseData,
         parent: parentJson,
         preparingCourses,
-        tutorToGroupMap: await fetchTutorToGroup() // <--- 新增這行
+        tutorToGroupMap // 直接使用已獲取的變數
       })
     };
   } catch (err) {
+    console.error('Course-info handler error:', err); // 添加錯誤日誌
     return {
       statusCode: 500,
       headers: {
