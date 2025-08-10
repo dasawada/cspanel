@@ -1,3 +1,17 @@
+// 可由全域變數覆寫 API Base，例如：
+//   window.CSPANEL_API_BASE = 'https://your-worker.example.workers.dev';
+// 預設為現有 Netlify Functions 路徑
+let API_BASE = (typeof window !== 'undefined' && window.CSPANEL_API_BASE)
+  ? String(window.CSPANEL_API_BASE).replace(/\/+$/,'')
+  : 'https://sheetread.jimmychienwada.cc';
+
+export function setApiBase(base) {
+  API_BASE = String(base || '').replace(/\/+$/,'');
+}
+function apiUrl(path) {
+  return `${API_BASE}/${path}`;
+}
+
 /**
  * 單一範圍讀取 Google Sheets 的資料（透過 Netlify Function 代理）
  * @param {Object} options
@@ -7,7 +21,7 @@
  * @returns {Promise} 回傳解析後的 JSON 資料
  */
 export async function callGoogleSheetAPI({ range, method = "GET", payload = null }) {
-  const proxyUrl = "https://stirring-pothos-28253d.netlify.app/.netlify/functions/googleSheetProxy";
+  const proxyUrl = apiUrl('googleSheetProxy');
   const response = await fetch(proxyUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -30,7 +44,7 @@ export async function callGoogleSheetAPI({ range, method = "GET", payload = null
  * @returns {Promise} 回傳解析後的 JSON 資料，內容包含 embedUrl 屬性
  */
 export async function callGoogleMapsAPI({ lat, lon }) {
-  const proxyUrl = "https://stirring-pothos-28253d.netlify.app/.netlify/functions/googleSheetProxy";
+  const proxyUrl = apiUrl('googleSheetProxy');
   const response = await fetch(proxyUrl, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -52,7 +66,7 @@ export async function callGoogleMapsAPI({ lat, lon }) {
  * @returns {Promise} 回傳解析後的 JSON 資料（結果在 result.valueRanges 中）
  */
 export async function callGoogleSheetBatchAPI({ ranges }) {
-  const proxyUrl = "https://stirring-pothos-28253d.netlify.app/.netlify/functions/googleSheetProxyBatch";
+  const proxyUrl = apiUrl('googleSheetProxyBatch');
   const response = await fetch(proxyUrl, {
     method: "POST",
     headers: { 
