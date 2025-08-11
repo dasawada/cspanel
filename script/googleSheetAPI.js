@@ -5,15 +5,69 @@ let API_BASE = (typeof window !== 'undefined' && window.CSPANEL_API_BASE)
   ? String(window.CSPANEL_API_BASE).replace(/\/+$/,'')
   : 'https://sheetread.jimmychienwada.cc';
 
+// 備援機制的三層路由
+const API_ENDPOINTS = [
+  'https://sheetread.jimmychienwada.cc',  // 第一優先
+  'https://google-sheet-worker.yuusuke-hamasaki.workers.dev',  // 第二優先
+  'https://stirring-pothos-28253d.netlify.app/.netlify/functions'  // 最後退回Netlify
+];
+
 export function setApiBase(base) {
   API_BASE = String(base || '').replace(/\/+$/,'');
 }
-function apiUrl(path) {
-  return `${API_BASE}/${path}`;
+
+function apiUrl(path, baseUrl = API_BASE) {
+  if (baseUrl.includes('netlify')) {
+    // Netlify使用不同的路徑結構
+    return `${baseUrl}/${path}`;
+  }
+  return `${baseUrl}/${path}`;
 }
 
 /**
- * 單一範圍讀取 Google Sheets 的資料（透過 Netlify Function 代理）
+ * 嘗試呼叫API，具備fallback機制
+ * @param {string} endpoint API端點路徑
+ * @param {Object} requestOptions fetch請求選項
+ * @param {boolean} isNetlify 是否為Netlify端點
+ * @returns {Promise} 回傳fetch response
+ */
+async function fetchWithFallback(endpoint, requestOptions, isNetlify = false) {
+  for (let i = 0; i < API_ENDPOINTS.length; i++) {
+    const baseUrl = API_ENDPOINTS[i];
+    const isCurrentNetlify = baseUrl.includes('netlify');
+    
+    try {
+      const url = apiUrl(endpoint, baseUrl);
+      const response = await fetch(url, requestOptions);
+      
+      if (response.ok) {
+        return response;
+      }
+      
+      // 如果不是最後一個端點，繼續嘗試下一個
+      if (i < API_ENDPOINTS.length - 1) {
+        console.warn(`API endpoint ${baseUrl} failed with status ${response.status}, trying next endpoint...`);
+        continue;
+      } else {
+        // 最後一個端點也失敗了，拋出錯誤
+        const errorText = await response.text();
+        throw new Error(`All API endpoints failed. Last error: HTTP ${response.status}: ${errorText}`);
+      }
+    } catch (error) {
+      // 如果不是最後一個端點，繼續嘗試下一個
+      if (i < API_ENDPOINTS.length - 1) {
+        console.warn(`API endpoint ${baseUrl} failed with error:`, error.message, 'trying next endpoint...');
+        continue;
+      } else {
+        // 最後一個端點也失敗了，拋出錯誤
+        throw new Error(`All API endpoints failed. Last error: ${error.message}`);
+      }
+    }
+  }
+}
+
+/**
+ * 單一範圍讀取 Google Sheets 的資料（透過代理，具備fallback機制）
  * @param {Object} options
  *   - range: 讀取的範圍字串，例如 "Sheet1!A:K"
  *   - method: 請求方法，預設 "GET"
@@ -21,65 +75,50 @@ function apiUrl(path) {
  * @returns {Promise} 回傳解析後的 JSON 資料
  */
 export async function callGoogleSheetAPI({ range, method = "GET", payload = null }) {
-  const proxyUrl = apiUrl('googleSheetProxy');
-  const response = await fetch(proxyUrl, {
+  const requestOptions = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ range, method, payload })
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
-  }
-  
+  };
+
+  const response = await fetchWithFallback('googleSheetProxy', requestOptions);
   return response.json();
 }
 
 /**
- * 讀取 Google Maps 嵌入 URL（透過 Netlify Function 代理）
+ * 讀取 Google Maps 嵌入 URL（透過代理，具備fallback機制）
  * @param {Object} options
  *   - lat: 緯度
  *   - lon: 經度
  * @returns {Promise} 回傳解析後的 JSON 資料，內容包含 embedUrl 屬性
  */
 export async function callGoogleMapsAPI({ lat, lon }) {
-  const proxyUrl = apiUrl('googleSheetProxy');
-  const response = await fetch(proxyUrl, {
+  const requestOptions = {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ mapRequest: true, lat, lon })
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
-  }
-  
+  };
+
+  const response = await fetchWithFallback('googleSheetProxy', requestOptions);
   return response.json();
 }
 
 /**
- * 批次讀取多個範圍（Google Sheets API 的 batchGet）
+ * 批次讀取多個範圍（Google Sheets API 的 batchGet），具備fallback機制
  * @param {Object} options
  *   - ranges: 陣列，例如 [ "Sheet1!A:K", "Sheet2!A:K" ]
  * @returns {Promise} 回傳解析後的 JSON 資料（結果在 result.valueRanges 中）
  */
 export async function callGoogleSheetBatchAPI({ ranges }) {
-  const proxyUrl = apiUrl('googleSheetProxyBatch');
-  const response = await fetch(proxyUrl, {
+  const requestOptions = {
     method: "POST",
     headers: { 
       "Content-Type": "application/json"
     },
     mode: 'cors',
     body: JSON.stringify({ ranges })
-  });
-  
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`HTTP ${response.status}: ${errorText}`);
-  }
-  
+  };
+
+  const response = await fetchWithFallback('googleSheetProxyBatch', requestOptions);
   return response.json();
 }
