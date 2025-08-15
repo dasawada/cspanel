@@ -192,12 +192,12 @@ function processTutorName(name) {
 // ===== 組裝摘要 =====
 async function buildCourseSummary(courseId, courseData) {
     const typeLabels = {
-        individualLiveCourse: "（家教）",
-        individualLearningBarPlusCourse: "（學霸）",
-        groupLiveCourse: "（家教團）",
-        individualTutorialCenterPlusCourse: "（補教）",
-        groupTutorialCenterPlusCourse: "（補教團）",
-        groupLearningBarPlusCourse: "（學霸團）"
+        individualLiveCourse: "家教個人課",
+        individualLearningBarPlusCourse: "學Bar個人課",
+        groupLiveCourse: "家教團體課",
+        individualTutorialCenterPlusCourse: "補教個人課",
+        groupTutorialCenterPlusCourse: "補教團體課",
+        groupLearningBarPlusCourse: "學Bar團體課"
     };
 
     const timeRange = formatCustomDateRange(courseData.startAt, courseData.endAt);
