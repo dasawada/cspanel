@@ -13,16 +13,11 @@ exports.handler = async (event, context) => {
 
     let courseId;
 
-    // 支援 GET 請求從 URL 路徑取得 courseId
     if (event.httpMethod === 'GET') {
-        // 從路徑中提取 courseId: /hash24/courseid
         const pathSegments = event.path.split('/').filter(segment => segment);
-        
-        // 路徑應該是 ['hash24', 'courseid']
         if (pathSegments.length >= 2) {
-            courseId = pathSegments[pathSegments.length - 1]; // 取最後一段作為 courseId
+            courseId = pathSegments[pathSegments.length - 1];
         }
-        
         if (!courseId) {
             return {
                 statusCode: 400,
@@ -30,10 +25,7 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ success: false, error: '請在 URL 中提供課程編號，格式: /hash24/courseid' })
             };
         }
-    }
-    // 支援 POST 請求從 body 取得 courseId
-    else if (event.httpMethod === 'POST') {
-        let parsedBody;
+    } else if (event.httpMethod === 'POST') {
         try {
             if (!event.body) {
                 return { 
@@ -42,7 +34,7 @@ exports.handler = async (event, context) => {
                     body: JSON.stringify({ success: false, error: '請求內容遺失' }) 
                 };
             }
-            parsedBody = JSON.parse(event.body);
+            const parsedBody = JSON.parse(event.body);
             courseId = parsedBody.courseId;
         } catch (e) {
             console.error("JSON 解析錯誤:", e.message);
@@ -52,8 +44,7 @@ exports.handler = async (event, context) => {
                 body: JSON.stringify({ success: false, error: '請求內容格式錯誤' }) 
             };
         }
-    }
-    else {
+    } else {
         return {
             statusCode: 405,
             headers,
@@ -70,7 +61,6 @@ exports.handler = async (event, context) => {
             };
         }
 
-        // 驗證 courseId 格式 (24位十六進制)
         if (!/^[0-9a-fA-F]{24}$/.test(courseId)) {
             return {
                 statusCode: 400,
@@ -80,11 +70,20 @@ exports.handler = async (event, context) => {
         }
 
         const result = await getCourseInfo(courseId);
+        if (!result.success) {
+            return {
+                statusCode: 404,
+                headers,
+                body: JSON.stringify({ success: false, error: '課程不存在或無法存取' })
+            };
+        }
+
+        const summary = await buildCourseSummary(courseId, result.data);
         
         return {
             statusCode: 200,
             headers,
-            body: JSON.stringify(result)
+            body: JSON.stringify(summary)
         };
 
     } catch (error) {
@@ -100,44 +99,29 @@ exports.handler = async (event, context) => {
 // ===== JWT Token 取得函數 =====
 async function getJwtToken() {
     try {
-        // 優先使用環境變數中的 JWT Token
         if (process.env.ONE_CLUB_JWT && process.env.ONE_CLUB_JWT.trim() !== '') {
             return { success: true, token: process.env.ONE_CLUB_JWT };
         }
-        
-        // 如果環境變數沒有，則從遠端函數取得
         const coffeeshopListUrl = process.env.COFFEESHOP_LIST_FUNCTION_URL || 
             'https://stirring-pothos-28253d.netlify.app/.netlify/functions/coffeeshoplist';
-        
         const response = await fetch(coffeeshopListUrl);
-        
-        if (!response.ok) {
-            throw new Error(`取得 JWT Token 失敗，狀態碼: ${response.status}`);
-        }
-        
+        if (!response.ok) throw new Error(`取得 JWT Token 失敗，狀態碼: ${response.status}`);
         const result = await response.json();
-        
         if (!result || typeof result.token !== 'string' || result.token.trim() === '') {
             throw new Error('JWT Token 格式無效或為空');
         }
-        
         return { success: true, token: result.token };
-        
     } catch (error) {
         return { success: false, error: `JWT Token 取得失敗: ${error.message}` };
     }
 }
 
-// ===== 取得課程資訊 =====
+// ===== 取得課程資訊 (保持原始結構) =====
 async function getCourseInfo(courseId) {
     const apiUrl = "https://api-new.oneclass.co/mms/course/UseAggregate";
-    
     try {
         const jwtResult = await getJwtToken();
-        if (!jwtResult.success) {
-            throw new Error(jwtResult.error);
-        }
-
+        if (!jwtResult.success) throw new Error(jwtResult.error);
         const response = await fetch(`${apiUrl}/${courseId}`, {
             method: "GET",
             headers: {
@@ -145,24 +129,98 @@ async function getCourseInfo(courseId) {
                 Authorization: `Bearer ${jwtResult.token}`,
             },
         });
-
         if (!response.ok) {
             throw new Error(`API 回應錯誤: ${response.status}`);
         }
-
         const result = await response.json();
-        
         if (result.status !== "success") {
-            return { 
-                success: false, 
-                error: "課程不存在或無法存取" 
-            };
+            return { success: false };
         }
-
         return { success: true, data: result.data };
-        
     } catch (error) {
         console.error('取得課程資訊錯誤:', error.message);
-        return { success: false, error: '課程資訊取得失敗' };
+        return { success: false };
     }
+}
+
+// ===== 取得輔導姓名（家長端資料） =====
+async function getTutorName(parentOneClubId) {
+    if (!parentOneClubId) return null;
+    const url = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) return null;
+        const json = await resp.json();
+        return json?.data?.tutor?.name || null;
+    } catch {
+        return null;
+    }
+}
+
+// ===== 起訖時間格式化 =====
+function formatCustomDateRange(startIso, endIso) {
+    if (!startIso) return "(無資料)";
+    const wMap = {
+        "週日": "(日)", "週一": "(一)", "週二": "(二)", "週三": "(三)",
+        "週四": "(四)", "週五": "(五)", "週六": "(六)",
+    };
+    const start = new Date(startIso);
+    const end = endIso ? new Date(endIso) : null;
+    const optionsDate = { timeZone: "Asia/Taipei", year: "numeric", month: "2-digit", day: "2-digit", weekday: "short" };
+    const optionsTime = { timeZone: "Asia/Taipei", hour: "2-digit", minute: "2-digit", hourCycle: "h23" };
+    const dateFormatter = new Intl.DateTimeFormat("zh-TW", optionsDate);
+    const timeFormatter = new Intl.DateTimeFormat("zh-TW", optionsTime);
+    const startParts = dateFormatter.formatToParts(start);
+    const sYear = startParts.find(x => x.type === "year").value;
+    const sMonth = startParts.find(x => x.type === "month").value.padStart(2, "0");
+    const sDay = startParts.find(x => x.type === "day").value.padStart(2, "0");
+    const sWeekday = startParts.find(x => x.type === "weekday").value;
+    const sWeekAbbr = wMap[sWeekday] || "";
+    const sTime = timeFormatter.format(start);
+    const eTime = end ? timeFormatter.format(end) : "";
+    return `${sYear}-${sMonth}-${sDay} ${sWeekAbbr} ${sTime} - ${eTime}`;
+}
+
+// ===== 輔導姓名處理（3 個中文字截成前兩字） =====
+function processTutorName(name) {
+    if (!name) return "(無資料)";
+    const threeChinese = /^[\u4e00-\u9fa5]{3}$/;
+    if (threeChinese.test(name)) return name.slice(0, 2);
+    return name;
+}
+
+// ===== 組裝摘要 =====
+async function buildCourseSummary(courseId, courseData) {
+    const typeLabels = {
+        individualLiveCourse: "（家教）",
+        individualLearningBarPlusCourse: "（學霸）",
+        groupLiveCourse: "（家教團）",
+        individualTutorialCenterPlusCourse: "（補教）",
+        groupTutorialCenterPlusCourse: "（補教團）",
+        groupLearningBarPlusCourse: "（學霸團）"
+    };
+
+    const timeRange = formatCustomDateRange(courseData.startAt, courseData.endAt);
+    const courseType = courseData.isAudition ? "（試聽）" : (typeLabels[courseData.type] || "（不明）");
+
+    let studentName = "(無資料)";
+    let tutorName = "(無資料)";
+    if (Array.isArray(courseData.students) && courseData.students.length > 0) {
+        const firstStudent = courseData.students[0];
+        studentName = firstStudent.name || "(無資料)";
+        const rawTutor = await getTutorName(firstStudent.parentOneClubId);
+        tutorName = processTutorName(rawTutor);
+    }
+
+    const teacherName = courseData.teacher?.fullName || "(無資料)";
+
+    return {
+        success: true,
+        timeRange,      // 起訖時間
+        courseType,     // 課程類型（中文標籤）
+        studentName,    // 學生名稱（第一位學生）
+        teacherName,    // 老師名稱
+        courseId,       // 課程 ID
+        tutorName       // 輔導（規則處理後）
+    };
 }
