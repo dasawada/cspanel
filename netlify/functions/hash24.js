@@ -4,43 +4,64 @@ exports.handler = async (event, context) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS'
     };
 
     if (event.httpMethod === 'OPTIONS') {
         return { statusCode: 200, headers, body: '' };
     }
 
-    if (event.httpMethod !== 'POST') {
-        return {
-            statusCode: 405,
-            headers,
-            body: JSON.stringify({ success: false, error: '不支援的請求方法' })
-        };
-    }
+    let courseId;
 
-    let parsedBody;
-    try {
-        if (!event.body) {
+    // 支援 GET 請求從 URL 路徑取得 courseId
+    if (event.httpMethod === 'GET') {
+        // 從路徑中提取 courseId: /hash24/courseid
+        const pathSegments = event.path.split('/').filter(segment => segment);
+        
+        // 路徑應該是 ['hash24', 'courseid']
+        if (pathSegments.length >= 2) {
+            courseId = pathSegments[pathSegments.length - 1]; // 取最後一段作為 courseId
+        }
+        
+        if (!courseId) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ success: false, error: '請在 URL 中提供課程編號，格式: /hash24/courseid' })
+            };
+        }
+    }
+    // 支援 POST 請求從 body 取得 courseId
+    else if (event.httpMethod === 'POST') {
+        let parsedBody;
+        try {
+            if (!event.body) {
+                return { 
+                    statusCode: 400, 
+                    headers, 
+                    body: JSON.stringify({ success: false, error: '請求內容遺失' }) 
+                };
+            }
+            parsedBody = JSON.parse(event.body);
+            courseId = parsedBody.courseId;
+        } catch (e) {
+            console.error("JSON 解析錯誤:", e.message);
             return { 
                 statusCode: 400, 
                 headers, 
-                body: JSON.stringify({ success: false, error: '請求內容遺失' }) 
+                body: JSON.stringify({ success: false, error: '請求內容格式錯誤' }) 
             };
         }
-        parsedBody = JSON.parse(event.body);
-    } catch (e) {
-        console.error("JSON 解析錯誤:", e.message);
-        return { 
-            statusCode: 400, 
-            headers, 
-            body: JSON.stringify({ success: false, error: '請求內容格式錯誤' }) 
+    }
+    else {
+        return {
+            statusCode: 405,
+            headers,
+            body: JSON.stringify({ success: false, error: '不支援的請求方法，請使用 GET 或 POST' })
         };
     }
 
     try {
-        const { courseId } = parsedBody;
-
         if (!courseId) {
             return {
                 statusCode: 400,
