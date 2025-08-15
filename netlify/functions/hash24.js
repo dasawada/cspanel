@@ -185,7 +185,7 @@ function formatCustomDateRange(startIso, endIso) {
 function processTutorName(name) {
     if (!name) return "(無資料)";
     const threeChinese = /^[\u4e00-\u9fa5]{3}$/;
-    if (threeChinese.test(name)) return name.slice(0, 2);
+    if (threeChinese.test(name)) return name.slice(1, 3);
     return name;
 }
 
