@@ -762,22 +762,6 @@ function shortenTutorName(name) {
   return trimmed; // 其他長度不處理
 }
 
-// 將原始 UTC ISO 時間轉為 UTC+8 顯示並加上標籤
-function formatToUtc8Label(iso) {
-  if (!iso) return '';
-  const fmt = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Asia/Taipei',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hourCycle: 'h23'
-  });
-  // 會輸出 YYYY-MM-DD HH:MM
-  return fmt.format(new Date(iso)) + ' UTC+8';
-}
-
 function simplifyCourseInfo(completeInfo) {
   if (!completeInfo || !completeInfo.rawData) {
     return null;
@@ -797,34 +781,16 @@ function simplifyCourseInfo(completeInfo) {
     ? "（試聽）"
     : (typeLabels[courseData.type] || "（不明）");
 
-  const startAtUtc = courseData.startAt || '';
-  const endAtUtc = courseData.endAt || '';
-  const startAtUtc8 = formatToUtc8Label(startAtUtc);
-  const endAtUtc8 = formatToUtc8Label(endAtUtc);
-
-  const tutorFull = completeInfo.tutorName || '(無資料)';
-  const tutorShort = shortenTutorName(completeInfo.tutorName);
-
   return {
-    // (5) courseid
     courseId: courseData.id || '',
-    // 原始 UTC (保留方便其他腳本需要原值)
-    startAtUtc,
-    endAtUtc,
-    // 轉換後 UTC+8 並標註
-    startAtUtc8,
-    endAtUtc8,
-    // (1) 起訖時間（已為台北時區段，不再附 UTC+8；如需可自行組合 startAtUtc8/endAtUtc8）
+    startAt: courseData.startAt || '',
+    endAt: courseData.endAt || '',
     timeRange: formatCustomDateRange(courseData.startAt, courseData.endAt),
-    // (2) 課程類型
     courseType: courseTypeLabel,
-    // (3) 學生名稱
     studentName: firstStudent.name || '(無資料)',
-    // (4) 老師名稱
     teacherName: (courseData.teacher && courseData.teacher.fullName) || '(無資料)',
-    // (6) 輔導（三字時去掉第一字）
-    tutorNameShort: tutorShort,
-    tutorNameFull: tutorFull
+    tutorName: shortenTutorName(completeInfo.tutorName),
+    tutorNameFull: completeInfo.tutorName || '(無資料)'
   };
 }
 
@@ -845,8 +811,6 @@ async function getMinimalCourseInfo({ courseId }) {
   }
 }
 
-// 範例：
-// const r = await getMinimalCourseInfo({ courseId: 'xxxxxxxxxxxxxxxxxxxxxxxx' });
-// console.log(r);
-
-//
+// 範例使用：
+// const result = await getMinimalCourseInfo({ courseId: '64e5d5e4c3c9b0c1d2e3f4a5' });
+// if (result.success) console.log(result.data);
