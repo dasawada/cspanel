@@ -116,6 +116,41 @@ async function getJwtToken() {
     }
 }
 
+// ====== 輔導對應組別快取與取得 ======
+let _tutorGroupCache = null;
+let _tutorGroupLastFetch = 0;
+async function fetchTutorToGroup() {
+    const url = process.env.GROUP_API_URL;
+    if (!url) return {};
+    // 10分鐘快取
+    if (_tutorGroupCache && Date.now() - _tutorGroupLastFetch < 10 * 60 * 1000) {
+        return _tutorGroupCache;
+    }
+    try {
+        const resp = await fetch(url);
+        if (!resp.ok) return {};
+        const arr = await resp.json();
+        const map = {};
+        if (Array.isArray(arr)) {
+            arr.forEach(row => {
+                if (row.tutor && row.group) {
+                    map[row.tutor.trim()] = String(row.group).trim();
+                }
+            });
+        }
+        _tutorGroupCache = map;
+        _tutorGroupLastFetch = Date.now();
+        return map;
+    } catch {
+        return {};
+    }
+}
+async function getTutorGroup(tutorName) {
+    if (!tutorName) return null;
+    const map = await fetchTutorToGroup();
+    return map[tutorName.trim()] || null;
+}
+
 // ===== 取得課程資訊 (保持原始結構) =====
 async function getCourseInfo(courseId) {
     const apiUrl = "https://api-new.oneclass.co/mms/course/UseAggregate";
@@ -205,11 +240,13 @@ async function buildCourseSummary(courseId, courseData) {
 
     let studentName = "(無資料)";
     let tutorName = "(無資料)";
+    let tutorGroup = null;
     if (Array.isArray(courseData.students) && courseData.students.length > 0) {
         const firstStudent = courseData.students[0];
         studentName = firstStudent.name || "(無資料)";
         const rawTutor = await getTutorName(firstStudent.parentOneClubId);
-        tutorName = processTutorName(rawTutor);
+        tutorGroup = await getTutorGroup(rawTutor); // 先用原始輔導名稱查組別
+        tutorName = processTutorName(rawTutor);     // 再進行裁切處理
     }
 
     const teacherName = courseData.teacher?.fullName || "(無資料)";
@@ -218,9 +255,10 @@ async function buildCourseSummary(courseId, courseData) {
         success: true,
         timeRange,      // 起訖時間
         courseType,     // 課程類型（中文標籤）
-        studentName,    // 學生名稱（第一位學生）
+        students: studentName,   // <- 改名
         teacherName,    // 老師名稱
         courseId,       // 課程 ID
-        tutorName       // 輔導（規則處理後）
+        tutorName,      // 輔導（規則處理後）
+        TutorGroup: tutorGroup   // 新增組別
     };
 }
