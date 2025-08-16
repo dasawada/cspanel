@@ -216,6 +216,24 @@ function formatCustomDateRange(startIso, endIso) {
     return `${sYear}-${sMonth}-${sDay} ${sWeekAbbr} ${sTime} - ${eTime}`;
 }
 
+// ===== parentNeed 專用日期區段 (YYYY/MM/DD(週)HH:MM-HH:MM) =====
+function formatParentNeedRange(startIso, endIso) {
+    if (!startIso) return "";
+    const w = ["日","一","二","三","四","五","六"];
+    const tz = "Asia/Taipei";
+    const dStart = new Date(startIso);
+    const dEnd = endIso ? new Date(endIso) : null;
+    const pad = n => String(n).padStart(2,"0");
+    const y = dStart.getFullYear();
+    const m = pad(dStart.getMonth()+1);
+    const d = pad(dStart.getDate());
+    const wd = w[dStart.getDay()];
+    const hms = (dt)=> pad(dt.getHours()) + ":" + pad(dt.getMinutes());
+    const t1 = hms(dStart);
+    const t2 = dEnd ? hms(dEnd) : "";
+    return `${y}/${m}/${d}(${wd})${t1}-${t2}`;
+}
+
 // ===== 輔導姓名處理（3 個中文字截成前兩字） =====
 function processTutorName(name) {
     if (!name) return "(無資料)";
@@ -236,7 +254,10 @@ async function buildCourseSummary(courseId, courseData) {
     };
 
     const timeRange = formatCustomDateRange(courseData.startAt, courseData.endAt);
-    const courseType = courseData.isAudition ? "（試聽）" : (typeLabels[courseData.type] || "（不明）");
+
+    // 原本給前端顯示的課程類型（保留可能的試聽標記）
+    const rawTypeLabel = typeLabels[courseData.type] || "不明課程";
+    const courseType = courseData.isAudition ? `${rawTypeLabel}（試聽）` : rawTypeLabel;
 
     let studentName = "(無資料)";
     let tutorName = "(無資料)";
@@ -245,20 +266,63 @@ async function buildCourseSummary(courseId, courseData) {
         const firstStudent = courseData.students[0];
         studentName = firstStudent.name || "(無資料)";
         const rawTutor = await getTutorName(firstStudent.parentOneClubId);
-        tutorGroup = await getTutorGroup(rawTutor); // 先用原始輔導名稱查組別
-        tutorName = processTutorName(rawTutor);     // 再進行裁切處理
+        tutorGroup = await getTutorGroup(rawTutor);
+        tutorName = processTutorName(rawTutor);
     }
 
     const teacherName = courseData.teacher?.fullName || "(無資料)";
 
-    return {
+    // parentNeed：規格要求格式
+    // 規格中示例為 "YYYY/MM/DD(週)HH:MM-HH:MM 課程類型 老師：xxx"
+    // 示例文字 "老師：xxx" 直覺應為授課老師，規格描述用 {tutorName} 有歧義；此處使用 teacherName，若需改為 tutorName 可調整。
+    const parentNeedRange = formatParentNeedRange(courseData.startAt, courseData.endAt);
+    const parentNeed = parentNeedRange
+        ? `${parentNeedRange} ${rawTypeLabel} 老師：${teacherName}`
+        : "";
+
+    // counsel options 與預選
+    const counselOptions = ["教材錯誤", "老師曠課"];
+    let preselect = "";
+    if (process.env.COUNSEL_PRESELECT_REASON && counselOptions.includes(process.env.COUNSEL_PRESELECT_REASON)) {
+        preselect = process.env.COUNSEL_PRESELECT_REASON;
+    }
+
+    // adminStatus 預設模板或環境覆寫
+    // 若使用環境覆寫，請以 \n 表示換行並自行包含末尾 '----'
+    let adminStatus;
+    if (process.env.ADMIN_STATUS_TEMPLATE) {
+        adminStatus = process.env.ADMIN_STATUS_TEMPLATE;
+    } else {
+        adminStatus = `[${counselOptions[0]}]\n老師One客服反映: (請填寫細節)\n[${counselOptions[1]}]\n老師未到，已於HH:MM請學生下課\n----`;
+    }
+
+    const summary = {
         success: true,
-        timeRange,      // 起訖時間
-        courseType,     // 課程類型（中文標籤）
-        students: studentName,   // <- 改名
-        teacherName,    // 老師名稱
-        courseId,       // 課程 ID
-        tutorName,      // 輔導（規則處理後）
-        TutorGroup: tutorGroup   // 新增組別
+        timeRange,          // 舊欄位保留
+        courseType,         // 舊欄位保留
+        students: studentName,
+        teacherName,
+        courseId,
+        tutorName,
+        TutorGroup: tutorGroup,
+        // 新增需求欄位
+        counsel: true,
+        parentNeed,         // 指定格式
+        adminStatus,        // 多行字串（含\n與----）
+        checkboxEnhancements: {
+            counsel: {
+                type: "select",
+                id: "counsel-reason",
+                label: "原因",
+                options: counselOptions,
+                value: preselect // 空字串代表不預選
+            }
+        }
+        // 可擴充: selectedType / subType / extras / version 等，如需時再加入
     };
+
+    // 避免輸出空字串欄位（parentNeed 若空是否省略依需求；此處若為空則移除）
+    if (!summary.parentNeed) delete summary.parentNeed;
+
+    return summary;
 }
