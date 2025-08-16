@@ -301,69 +301,88 @@ const ISSUE_BUILDERS = {
 
   // === 新增：一次性九類配置 ===
   issueConfig: ({ base, courseData, options }) => {
-    // 共用：家長需求時間模板（僅課程通訊問題需要完整句，其它多為前綴或空）
-    const parentNeedFull = formatParentNeed(
+    // 課程資訊 (Asia/Taipei) 用於可選插入
+    const classInfoString = formatParentNeed(
       courseData,
       base.courseType.replace(/^（|\(|\）|\)/g,'').trim() || '課程',
       base.teacherName
     );
 
+    // 類別顯示順序 (九類)
     const radioOrder = [
       '請假與補課','課程討論','考卷/作業相關','紙本講義相關',
       '合約內容相關','課程通訊問題','系統操作','推薦親友','其他'
     ];
 
-    // 課程通訊問題
-    const commsReasons = ['不選','[教材錯誤]','[老師曠課]'];
-    const commsBlocks = {
-      '[教材錯誤]': '[教材錯誤]\n老師One客服反映: (請填寫細節)\n',
-      '[老師曠課]': '[老師曠課]\n老師未到，已於HH:MM請學生下課\n'
-    };
-
-    // 考卷/作業相關 子分類
+    // 子分類: 考卷/作業相關
     const examSubTypes = [
-      { value:'', label:'請選擇子分類', parentNeedPrefix:'', adminTemplate:'' },
-      { value:'考卷檢討', label:'考卷檢討', parentNeedPrefix:'[課程考卷檢討] ', adminTemplate:'已查課表、並轉傳綠Line，老師：' },
-      { value:'作業檢討', label:'作業檢討', parentNeedPrefix:'[課程作業檢討] ', adminTemplate:'已查課表、並轉傳綠Line，老師：' },
-      { value:'教材講解', label:'教材講解', parentNeedPrefix:'[教材講解] ', adminTemplate:'' }
+      { value:'',        label:'請選擇子分類', parentNeedPrefix:'' },
+      { value:'考卷檢討', label:'考卷檢討',   parentNeedPrefix:'[課程考卷檢討] ' , adminTemplate:'已查課表、並轉傳綠Line，老師：' },
+      { value:'作業檢討', label:'作業檢討',   parentNeedPrefix:'[課程作業檢討] ' , adminTemplate:'已查課表、並轉傳綠Line，老師：' },
+      { value:'教材講解', label:'教材講解',   parentNeedPrefix:'[教材講解] ' }
     ];
 
-    // 預設 plain 類型
-    function plain(label, extra = {}) {
-      return { mode:'plain', label, parentNeedPrefix:'', adminTemplate:'', ...extra };
-    }
+    // 子分類: 課程通訊問題
+    const commsSubTypes = [
+      { value:'',          label:'請選擇原因', parentNeedPrefix:'' , prefill:'' },
+      { value:'[教材錯誤]', label:'[教材錯誤]', parentNeedPrefix:'[教材錯誤] ' , prefill:'[教材錯誤]\n老師One客服反映: (請填寫細節)\n' },
+      { value:'[老師曠課]', label:'[老師曠課]', parentNeedPrefix:'[老師曠課] ' , prefill:'[老師曠課]\n老師未到，已於HH:MM請學生下課\n' }
+    ];
 
-    const radioConfigs = {
-      '請假與補課': plain('請假與補課'),
-      '課程討論': plain('課程討論'),
-      '考卷/作業相關': {
-        mode:'examHomework',
-        label:'考卷/作業相關',
-        subTypes: examSubTypes
-      },
-      '紙本講義相關': plain('紙本講義相關'),
-      '合約內容相關': plain('合約內容相關'),
-      '課程通訊問題': {
-        mode:'comms',
-        label:'課程通訊問題',
-        parentNeed: parentNeedFull,          // 直接給完成版
-        reasons: commsReasons,
-        reasonBlocks: commsBlocks,
-        adminDelimiter: '----',
-        counselDefault: true
-      },
-      '系統操作': plain('系統操作'),
-      '推薦親友': plain('推薦親友'),
-      '其他': plain('其他')
+    // 類別定義 (統一 schema)
+    // classInfo = 是否插入課程資訊行 (formatParentNeed 產生的字串)
+    const categoryDefs = {
+      '請假與補課':      { label:'請假與補課',      classInfo:true,  parentNeedPrefix:'[請假與補課] ' },
+      '課程討論':        { label:'課程討論',        classInfo:true,  parentNeedPrefix:'[課程討論] ' },
+      '考卷/作業相關':    { label:'考卷/作業相關',    classInfo:true,  parentNeedPrefix:'', subTypes: examSubTypes },
+      '紙本講義相關':    { label:'紙本講義相關',    classInfo:true,  parentNeedPrefix:'[紙本講義] ' },
+      '合約內容相關':    { label:'合約內容相關',    classInfo:true,  parentNeedPrefix:'[合約內容] ' },
+      '課程通訊問題':    { label:'課程通訊問題',    classInfo:true,  parentNeedPrefix:'', subTypes: commsSubTypes, counselDefault:true, adminDelimiter:'----' },
+      '系統操作':        { label:'系統操作',        classInfo:false, parentNeedPrefix:'[系統操作] ' },
+      '推薦親友':        { label:'推薦親友',        classInfo:false, parentNeedPrefix:'[推薦親友] ' },
+      '其他':            { label:'其他',            classInfo:false, parentNeedPrefix:'' }
     };
 
-    // 嚴格檢查：確保九類齊全
-    radioOrder.forEach(k=>{
-      if(!radioConfigs[k]) radioConfigs[k]=plain(k);
-    });
+    // 組合 parentNeed：parentNeedPrefix + classInfoString(若開關為真)
+    function buildParentNeed(prefix, useClassInfo) {
+      return (prefix || '') + (useClassInfo ? classInfoString : '');
+    }
+
+    // 深度處理每個類別
+    const radioConfigs = {};
+    for (const key of radioOrder) {
+      const def = categoryDefs[key] || { label:key, classInfo:false, parentNeedPrefix:'' };
+      const { label, classInfo, parentNeedPrefix, subTypes, counselDefault, adminDelimiter } = def;
+
+      if (Array.isArray(subTypes) && subTypes.length) {
+        // 處理子分類
+        const builtSubTypes = subTypes.map(st => ({
+          ...st,
+            parentNeed: buildParentNeed(st.parentNeedPrefix ?? parentNeedPrefix ?? '', classInfo)
+        }));
+        radioConfigs[key] = {
+          label,
+          classInfo,
+          parentNeedPrefix,
+          parentNeed: buildParentNeed(parentNeedPrefix, classInfo),
+          subTypes: builtSubTypes,
+          counselDefault,
+          adminDelimiter
+        };
+      } else {
+        // 無子分類
+        radioConfigs[key] = {
+          label,
+          classInfo,
+          parentNeedPrefix,
+          parentNeed: buildParentNeed(parentNeedPrefix, classInfo)
+        };
+      }
+    }
 
     return {
       selectedType: options.preselect || '課程通訊問題',
+      classInfoString,         // 提供前端需要時可顯示/除錯
       radioConfigs,
       defaultRadioOrder: radioOrder
     };
