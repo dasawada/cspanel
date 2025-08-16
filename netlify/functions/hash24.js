@@ -297,53 +297,77 @@ async function buildBaseCourseSummary(courseId, courseData) {
  * 回傳要 merge 的物件
  */
 const ISSUE_BUILDERS = {
-  // “課程通訊問題” 專用
-  courseComms: ({ base, courseData, options }) => {
-    // options 可允許自訂 reasons / blocks；未提供用預設
-    const reasons = Array.isArray(options.reasons)
-      ? ['不選', ...options.reasons.filter(r => r !== '不選')]
-      : ['不選', '[教材錯誤]', '[老師曠課]'];
+  courseComms: ({ base, courseData, options }) => { /* 原本保留 (若還需要) */ },
 
-    // 預設 reasonBlocks，可由 options.reasonBlocks 覆蓋/擴充
-    const defaultBlocks = {
-      '[教材錯誤]': '[教材錯誤]\n老師One客服反映: (請填寫細節)\n',
-      '[老師曠課]': '[老師曠課]\n老師未到，已於HH:MM請學生下課\n'
-    };
-    const reasonBlocks = {
-      ...defaultBlocks,
-      ...(options.reasonBlocks || {})
-    };
-
-    const parentNeed = formatParentNeed(
+  // === 新增：一次性九類配置 ===
+  issueConfig: ({ base, courseData, options }) => {
+    // 共用：家長需求時間模板（僅課程通訊問題需要完整句，其它多為前綴或空）
+    const parentNeedFull = formatParentNeed(
       courseData,
       base.courseType.replace(/^（|\(|\）|\)/g,'').trim() || '課程',
       base.teacherName
     );
 
+    const radioOrder = [
+      '請假與補課','課程討論','考卷/作業相關','紙本講義相關',
+      '合約內容相關','課程通訊問題','系統操作','推薦親友','其他'
+    ];
+
+    // 課程通訊問題
+    const commsReasons = ['不選','[教材錯誤]','[老師曠課]'];
+    const commsBlocks = {
+      '[教材錯誤]': '[教材錯誤]\n老師One客服反映: (請填寫細節)\n',
+      '[老師曠課]': '[老師曠課]\n老師未到，已於HH:MM請學生下課\n'
+    };
+
+    // 考卷/作業相關 子分類
+    const examSubTypes = [
+      { value:'', label:'請選擇子分類', parentNeedPrefix:'', adminTemplate:'' },
+      { value:'考卷檢討', label:'考卷檢討', parentNeedPrefix:'[課程考卷檢討] ', adminTemplate:'已查課表、並轉傳綠Line，老師：' },
+      { value:'作業檢討', label:'作業檢討', parentNeedPrefix:'[課程作業檢討] ', adminTemplate:'已查課表、並轉傳綠Line，老師：' },
+      { value:'教材講解', label:'教材講解', parentNeedPrefix:'[教材講解] ', adminTemplate:'' }
+    ];
+
+    // 預設 plain 類型
+    function plain(label, extra = {}) {
+      return { mode:'plain', label, parentNeedPrefix:'', adminTemplate:'', ...extra };
+    }
+
+    const radioConfigs = {
+      '請假與補課': plain('請假與補課'),
+      '課程討論': plain('課程討論'),
+      '考卷/作業相關': {
+        mode:'examHomework',
+        label:'考卷/作業相關',
+        subTypes: examSubTypes
+      },
+      '紙本講義相關': plain('紙本講義相關'),
+      '合約內容相關': plain('合約內容相關'),
+      '課程通訊問題': {
+        mode:'comms',
+        label:'課程通訊問題',
+        parentNeed: parentNeedFull,          // 直接給完成版
+        reasons: commsReasons,
+        reasonBlocks: commsBlocks,
+        adminDelimiter: '----',
+        counselDefault: true
+      },
+      '系統操作': plain('系統操作'),
+      '推薦親友': plain('推薦親友'),
+      '其他': plain('其他')
+    };
+
+    // 嚴格檢查：確保九類齊全
+    radioOrder.forEach(k=>{
+      if(!radioConfigs[k]) radioConfigs[k]=plain(k);
+    });
+
     return {
-      selectedType: '課程通訊問題',
-      // 讓前端預設勾選轉輔導；可用 options 控制
-      counsel: options.counsel === false ? false : true,
-      parentNeed,
-      commsReasons: reasons,
-      reasonBlocks,
-      adminDelimiter: options.adminDelimiter || '----',
-      selectedReason: options.selectedReason || '',
-      // 保留舊補強 (可選)
-      checkboxEnhancements: options.disableCheckboxEnhancements ? undefined : {
-        counsel: {
-          type: 'select',
-          id: 'counsel-reason',
-          label: '原因',
-          options: reasons.filter(r => r !== '不選').map(r => r.replace(/^\[|\]$/g,'')),
-          value: ''
-        }
-      }
+      selectedType: options.preselect || '課程通訊問題',
+      radioConfigs,
+      defaultRadioOrder: radioOrder
     };
   }
-
-  // 未來新增其他 builder：
-  // examHomework: (...) => ({ selectedType: '考卷/作業相關', ... })
 };
 
 // ================== Helpers ==================
