@@ -216,22 +216,39 @@ function formatCustomDateRange(startIso, endIso) {
     return `${sYear}-${sMonth}-${sDay} ${sWeekAbbr} ${sTime} - ${eTime}`;
 }
 
-// ===== parentNeed 專用日期區段 (YYYY/MM/DD(週)HH:MM-HH:MM) =====
+// ===== parentNeed 專用日期區段 (YYYY/MM/DD(週)HH:MM-HH:MM)（修正：改用 Intl 與 Asia/Taipei，避免時區偏差） =====
 function formatParentNeedRange(startIso, endIso) {
     if (!startIso) return "";
-    const w = ["日","一","二","三","四","五","六"];
-    const tz = "Asia/Taipei";
-    const dStart = new Date(startIso);
-    const dEnd = endIso ? new Date(endIso) : null;
-    const pad = n => String(n).padStart(2,"0");
-    const y = dStart.getFullYear();
-    const m = pad(dStart.getMonth()+1);
-    const d = pad(dStart.getDate());
-    const wd = w[dStart.getDay()];
-    const hms = (dt)=> pad(dt.getHours()) + ":" + pad(dt.getMinutes());
-    const t1 = hms(dStart);
-    const t2 = dEnd ? hms(dEnd) : "";
-    return `${y}/${m}/${d}(${wd})${t1}-${t2}`;
+    const start = new Date(startIso);
+    const end = endIso ? new Date(endIso) : null;
+
+    const dateFormatter = new Intl.DateTimeFormat("zh-TW", {
+        timeZone: "Asia/Taipei",
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        weekday: "short"
+    });
+    const timeFormatter = new Intl.DateTimeFormat("zh-TW", {
+        timeZone: "Asia/Taipei",
+        hour: "2-digit",
+        minute: "2-digit",
+        hourCycle: "h23"
+    });
+
+    const wMap = { "週日":"日","週一":"一","週二":"二","週三":"三","週四":"四","週五":"五","週六":"六" };
+
+    const parts = dateFormatter.formatToParts(start);
+    const y = parts.find(p=>p.type==="year").value;
+    const m = parts.find(p=>p.type==="month").value.padStart(2,"0");
+    const d = parts.find(p=>p.type==="day").value.padStart(2,"0");
+    const weekdayFull = parts.find(p=>p.type==="weekday").value;
+    const wd = wMap[weekdayFull] || "";
+
+    const tStart = timeFormatter.format(start);
+    const tEnd = end ? timeFormatter.format(end) : "";
+
+    return `${y}/${m}/${d}(${wd})${tStart}-${tEnd}`;
 }
 
 // ===== 輔導姓名處理（3 個中文字截成前兩字） =====
