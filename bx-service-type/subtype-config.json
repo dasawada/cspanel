@@ -1,0 +1,28 @@
+// subtype-config.json
+{
+  "考卷/作業相關": {
+    "enabled": true,
+    "requireSelection": true,
+    "parentTagPattern": "^\\[課程[^\\[\\]]*\\]\\s*|\\[教材講解\\]\\s*",
+    "adminTagPattern": "^已查課表、並轉傳綠Line，老師：[^：]*：?\\s*",
+    "subTypes": [
+      { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "考卷檢討", "label": "考卷檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程考卷檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
+      { "value": "作業檢討", "label": "作業檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程作業檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
+      { "value": "教材講解", "label": "教材講解", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長\n＊客制教材轉輔導", "parentTag": "[教材講解] ", "adminTag": "" }
+    ]
+  },
+  "課程通訊問題": {
+    "enabled": true,
+    "requireSelection": true,
+    "parentTagPattern": "^\\[教材錯誤\\]\\s*|^\\[老師曠課\\]\\s*|\\[課程[^\\[\\]]*\\]\\s*|\\[教材講解\\]\\s*",
+    "adminTagPattern": "^老師One客服反映:|^老師曠課，致電 通均響底未接，已於 : 請學生下課，再麻煩輔導協助安排補課事宜。?",
+    "subTypes": [
+      { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "教材錯誤", "label": "教材錯誤", "parentTag": "[教材錯誤] ", "adminTag": "老師One客服反映:" },
+      { "value": "老師曠課", "label": "老師曠課", "parentTag": "[老師曠課] ", "adminTag": "老師曠課，致電 通均響底未接，已於 : 請學生下課，再麻煩輔導協助安排補課事宜。" }
+    ]
+  }
+}
