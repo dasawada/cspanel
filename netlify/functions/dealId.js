@@ -109,11 +109,15 @@ exports.handler = async (event) => {
     return { statusCode: 200, headers, body: '' };
   }
 
-  // 取得 dealId
+  // 取得 dealId，支援 /dealId/:id 及 ?dealId=xxx
   let dealId;
   if (event.httpMethod === 'GET') {
+    // 先從 path 取最後一段
+    const segments = event.path.split('/').filter(Boolean);
+    dealId = segments.length > 1 ? segments[segments.length - 1] : undefined;
+    // 若 query 有 dealId，則覆寫
     const url = new URL(event.rawUrl || `http://localhost${event.path}${event.rawQuery ? '?' + event.rawQuery : ''}`);
-    dealId = url.searchParams.get('dealId');
+    if (url.searchParams.get('dealId')) dealId = url.searchParams.get('dealId');
   } else if (event.httpMethod === 'POST' && event.body) {
     try {
       const bodyObj = JSON.parse(event.body);
