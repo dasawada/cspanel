@@ -73,9 +73,12 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
+        success: true,
         students,
+        count: result.data.customers.length,
         TutorGroup: "T2",
-        tutorName: "學BAR"
+        tutorName: "學BAR",
+        searchType: "studentSearch2B"
       })
     };
   } catch (e) {

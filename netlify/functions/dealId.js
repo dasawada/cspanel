@@ -324,6 +324,7 @@ exports.handler = async (event) => {
       statusCode: 200,
       headers,
       body: JSON.stringify({
+        success: !!result, // 有學生資料則 success:true
         students: result,
         count: filtered.length,
         dealId,
@@ -357,6 +358,7 @@ exports.handler = async (event) => {
       statusCode,
       headers,
       body: JSON.stringify({
+        success: false,
         error: errorMessage,
         detail: error.message,
         type: error.name
