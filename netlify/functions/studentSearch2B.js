@@ -1,6 +1,6 @@
 /**
  * Netlify Function: 學BAR學生搜尋
- * GET /.netlify/functions/studentSearch2B?name=xxx
+ * GET /.netlify/functions/search2b?name=xxx
  * POST body: { name }
  */
 
@@ -21,8 +21,8 @@ exports.handler = async (event) => {
   }
 
   let name;
-  // 支援 /studentSearch2B/:value 路徑
-  const pathMatch = event.path.match(/^\/\.netlify\/functions\/studentSearch2B\/(.+)$/);
+  // 支援 /search2b/:value 路徑
+  const pathMatch = event.path.match(/^\/\.netlify\/functions\/search2b\/(.+)$/);
   if (pathMatch && pathMatch[1]) {
     name = decodeURIComponent(pathMatch[1]);
   } else if (event.httpMethod === 'GET') {
