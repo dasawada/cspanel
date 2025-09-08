@@ -1,85 +1,159 @@
-/*  Netlify Function: Proxy to Cloudflare Workers search API
- *  Call example (前端):
- *    fetch('/.netlify/functions/searchidtostudent?keyword=abc')
- *  或 POST:
- *    fetch('/.netlify/functions/searchidtostudent', { method:'POST', body: JSON.stringify({ keyword:'abc' }) })
+/* Netlify Function: Proxy to Cloudflare Workers search & student API
+ * 新增支援路徑：
+ *   /.netlify/functions/searchidtostudent/search/101061
+ *   /.netlify/functions/searchidtostudent/search/abcdef123456abcdef123456
+ *   /.netlify/functions/searchidtostudent/search2b/王小明
+ *   /.netlify/functions/searchidtostudent/101061   (純數字自動視為 search/{dealId})
+ * 舊式仍可：
+ *   /.netlify/functions/searchidtostudent?keyword=101061
  */
-const DEFAULT_BASE = 'https://aitest.yuusuke-hamasaki.workers.dev/api/search/';
+const DEFAULT_ROOT = 'https://aitest.yuusuke-hamasaki.workers.dev/api'; // 不加尾斜線
+const LEGACY_SEARCH_BASE = DEFAULT_ROOT + '/search/'; // 舊 query 模式
 
-const allowOrigin = process.env.CORS_ALLOW_ORIGIN || '*'; // 可改成你的網域
+const allowOrigin = process.env.CORS_ALLOW_ORIGIN || '*';
 
-exports.handler = async (event, context) => {
-  // CORS Preflight
+exports.handler = async (event) => {
   if (event.httpMethod === 'OPTIONS') {
-    return {
-      statusCode: 204,
-      headers: corsHeaders(),
-      body: ''
-    };
+    return { statusCode: 204, headers: corsHeaders(), body: '' };
   }
 
+  const started = Date.now();
   try {
     const method = event.httpMethod || 'GET';
-
-    // 遠端基底，可用環境變數覆寫 (e.g. SEARCH_API_BASE)
-    const base = (process.env.SEARCH_API_BASE || DEFAULT_BASE).replace(/\/+$/, '/') ;
-
-    // 將本地 query string 直接附加
+    const rawPath = event.path || '';
+    const trailing = extractTrailing(rawPath); // 取得 function 名稱後的部分 (可能為 '', '/search/xxx', '/101')
+    const cleanTrail = trailing.replace(/^\/+/, ''); // 去前導斜線
     const queryString = event.rawQuery ? `?${event.rawQuery}` : '';
 
-    // 若想支援動態子路徑，可解析 event.path；此處固定指向 base
-    const targetUrl = base + queryString;
+    const apiRoot = (process.env.SEARCH_API_ROOT || DEFAULT_ROOT).replace(/\/+$/, '');
+    let targetUrl;
 
-    // 準備 fetch 選項
+    if (cleanTrail) {
+      // 具有子路徑
+      targetUrl = buildUrlFromTrailing(apiRoot, cleanTrail, queryString);
+      if (!targetUrl.valid) {
+        return badRequest(targetUrl.errorCode || 'invalid_path', targetUrl.message || 'Invalid path');
+      }
+      targetUrl = targetUrl.url;
+    } else {
+      // 無子路徑 => fallback 舊模式 (keyword/hash24/dealId 以 query)
+      targetUrl = (process.env.SEARCH_API_BASE || LEGACY_SEARCH_BASE).replace(/\/+$/, '/') + queryString.replace(/^\?/, '?');
+    }
+
     const fetchOptions = {
       method,
       headers: filterOutboundHeaders(event.headers),
       redirect: 'follow'
     };
 
-    // 傳遞 body（僅適用可帶 body 的方法）
     if (['POST','PUT','PATCH','DELETE'].includes(method)) {
       fetchOptions.body = event.body && (event.isBase64Encoded
         ? Buffer.from(event.body, 'base64')
         : event.body);
     }
 
-    // Node 18+ 內建 fetch；若舊 runtime 需安裝 node-fetch
-    const response = await fetch(targetUrl, fetchOptions);
-
-    // 嘗試判定是否為 JSON
-    const contentType = response.headers.get('content-type') || '';
+    const upstream = await fetch(targetUrl, fetchOptions);
+    const contentType = upstream.headers.get('content-type') || '';
     const isBinary = !/^(application\/json|text\/|application\/(javascript|xml|x-www-form-urlencoded)|image\/svg)/i.test(contentType);
 
     let body;
     if (isBinary) {
-      const arrayBuffer = await response.arrayBuffer();
-      body = Buffer.from(arrayBuffer).toString('base64');
+      const ab = await upstream.arrayBuffer();
+      body = Buffer.from(ab).toString('base64');
     } else {
-      body = await response.text();
+      body = await upstream.text();
     }
 
-    // 回傳，保留部分 headers
     return {
-      statusCode: response.status,
+      statusCode: upstream.status,
       headers: {
         ...corsHeaders(),
         'Content-Type': contentType || 'application/octet-stream',
         'Cache-Control': 'no-store',
+        'X-Proxy-Upstream': targetUrl,
+        'X-Proxy-Elapsed': String(Date.now() - started)
       },
       body,
       isBase64Encoded: isBinary
     };
-
   } catch (err) {
     console.error('Proxy error:', err);
     return {
       statusCode: 502,
       headers: corsHeaders(),
-      body: JSON.stringify({ error: 'Upstream fetch failed', detail: err.message })
+      body: JSON.stringify({
+        error: 'Upstream fetch failed',
+        detail: err.message
+      })
     };
   }
 };
+
+function extractTrailing(fullPath) {
+  const marker = '/.netlify/functions/searchidtostudent';
+  const idx = fullPath.indexOf(marker);
+  if (idx === -1) return '';
+  return fullPath.slice(idx + marker.length); // 可能為 '' 或 '/search/123'
+}
+
+function buildUrlFromTrailing(apiRoot, trail, query) {
+  // 支援：
+  // search/{idOrHash}
+  // search2b/{name}
+  // {numericOnly} -> search/{dealId}
+  const parts = trail.split('/').filter(Boolean); // 去除空字串
+  if (parts.length === 1) {
+    const only = parts[0];
+    if (/^\d+$/.test(only)) {
+      // 單純數字 => dealId
+      return {
+        valid: true,
+        url: `${apiRoot}/search/${encodeURIComponent(only)}${query}`
+      };
+    }
+    // 單一字串但不是純數字 -> 視為錯誤（避免誤判 search2b 少層）
+    return { valid: false, errorCode: 'missing_prefix', message: 'Path must start with search/ or search2b/' };
+  }
+
+  const prefix = parts[0];
+  const tail = parts.slice(1).join('/'); // 允許名字中含 / 的話可再改
+  if (!tail) {
+    return { valid: false, errorCode: 'missing_identifier', message: 'Missing identifier after prefix' };
+  }
+
+  if (prefix === 'search') {
+    if (!isDealId(tail) && !isHash24(tail)) {
+      return { valid: false, errorCode: 'invalid_identifier', message: 'Must be numeric dealId or 24-char hex hash' };
+    }
+    return {
+      valid: true,
+      url: `${apiRoot}/search/${encodeURIComponent(tail)}${query}`
+    };
+  }
+
+  if (prefix === 'search2b') {
+    if (tail.length > 40) {
+      return { valid: false, errorCode: 'name_too_long', message: 'Name too long' };
+    }
+    return {
+      valid: true,
+      url: `${apiRoot}/search2b/${encodeURIComponent(tail)}${query}`
+    };
+  }
+
+  return { valid: false, errorCode: 'unsupported_prefix', message: 'Unsupported path prefix' };
+}
+
+function isDealId(v) { return /^\d+$/.test(v); }
+function isHash24(v) { return /^[a-fA-F0-9]{24}$/.test(v); }
+
+function badRequest(code, message) {
+  return {
+    statusCode: 400,
+    headers: corsHeaders(),
+    body: JSON.stringify({ error: code, message })
+  };
+}
 
 function corsHeaders() {
   return {
@@ -90,11 +164,8 @@ function corsHeaders() {
   };
 }
 
-// 過濾掉不適合轉發的瀏覽器端頭 (可再精簡)
 function filterOutboundHeaders(incoming = {}) {
-  const banned = new Set([
-    'host','connection','content-length','accept-encoding','origin','referer'
-  ]);
+  const banned = new Set(['host','connection','content-length','accept-encoding','origin','referer']);
   const out = {};
   for (const [k,v] of Object.entries(incoming)) {
     const lower = k.toLowerCase();
@@ -102,7 +173,6 @@ function filterOutboundHeaders(incoming = {}) {
     if (lower.startsWith('sec-')) continue;
     out[k] = v;
   }
-  // 確保接受 JSON
   if (!out['Accept']) out['Accept'] = 'application/json, text/plain;q=0.8,*/*;q=0.5';
   return out;
 }
