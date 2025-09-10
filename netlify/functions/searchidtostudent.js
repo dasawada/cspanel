@@ -1,17 +1,16 @@
 /* Netlify Function: Proxy to Cloudflare Workers search & student API
- * 新增支援路徑：
+ * 支援路徑：
  *   /.netlify/functions/searchidtostudent/search/101061
  *   /.netlify/functions/searchidtostudent/search/abcdef123456abcdef123456
  *   /.netlify/functions/searchidtostudent/search2b/王小明
- *   /.netlify/functions/searchidtostudent/101061   (純數字自動視為 search/{dealId})
- * 舊式仍可：
+ *   /.netlify/functions/searchidtostudent/101061   (純數字 -> search/{dealId})
+ * 舊式：
  *   /.netlify/functions/searchidtostudent?keyword=101061
  */
-const DEFAULT_ROOT = 'https://aitest.yuusuke-hamasaki.workers.dev/api'; // 不加尾斜線
-const LEGACY_SEARCH_BASE = DEFAULT_ROOT + '/search/'; // 舊 query 模式
+const DEFAULT_ROOT = 'https://aitest.yuusuke-hamasaki.workers.dev/api';
+const LEGACY_SEARCH_BASE = DEFAULT_ROOT + '/search/';
 
 const allowOrigin = process.env.CORS_ALLOW_ORIGIN || '*';
-// 新增：簡易冷啟動偵測
 let isColdStart = !global.__NF_WARM__;
 global.__NF_WARM__ = true;
 
@@ -20,104 +19,152 @@ exports.handler = async (event) => {
     return { statusCode: 204, headers: corsHeaders(), body: '' };
   }
 
-  // 內部階段計時
-  const t0 = Date.now();
-  let tParse = 0, tUpFetch = 0, tRead = 0;
+  // --- 高精度計時 (ns) ---
+  const t0 = now();              // 進入 handler
+  let tBuild, tFetchStart, tHeaders, tFirstByte, tBodyEnd, tJsonStart, tJsonEnd;
 
   try {
     const method = event.httpMethod || 'GET';
+
+    // 解析與組 URL
     const rawPath = event.path || '';
-    const trailing = extractTrailing(rawPath); // 取得 function 名稱後的部分 (可能為 '', '/search/xxx', '/101')
-    const cleanTrail = trailing.replace(/^\/+/, ''); // 去前導斜線
+    const trailing = extractTrailing(rawPath);
+    const cleanTrail = trailing.replace(/^\/+/, '');
     const queryString = event.rawQuery ? `?${event.rawQuery}` : '';
 
     const apiRoot = (process.env.SEARCH_API_ROOT || DEFAULT_ROOT).replace(/\/+$/, '');
     let targetUrl;
-
     if (cleanTrail) {
-      // 具有子路徑
       const built = buildUrlFromTrailing(apiRoot, cleanTrail, queryString);
       if (!built.valid) {
         return badRequest(built.errorCode || 'invalid_path', built.message || 'Invalid path');
       }
       targetUrl = built.url;
     } else {
-      // 無子路徑 => fallback 舊模式 (keyword/hash24/dealId 以 query)
       targetUrl = (process.env.SEARCH_API_BASE || LEGACY_SEARCH_BASE).replace(/\/+$/, '/') + queryString.replace(/^\?/, '?');
     }
 
-    tParse = Date.now();
-
+    // 準備 headers / options
     const fetchOptions = {
       method,
       headers: filterOutboundHeaders(event.headers),
       redirect: 'follow'
     };
-
     if (['POST','PUT','PATCH','DELETE'].includes(method)) {
       fetchOptions.body = event.body && (event.isBase64Encoded
         ? Buffer.from(event.body, 'base64')
         : event.body);
     }
 
-    const upstream = await fetch(targetUrl, fetchOptions);
-    tUpFetch = Date.now();
+    tBuild = now();              // 組 URL 與 options 完成
+    tFetchStart = tBuild;        // 發起 fetch (同步即可視為同一刻)
 
-    const contentType = upstream.headers.get('content-type') || '';
+    const upstream = await fetch(targetUrl, fetchOptions);
+    tHeaders = now();            // 收到回應標頭 (TTFB)
+
+    const contentType = (upstream.headers.get('content-type') || '').toLowerCase();
     const isBinary = !/^(application\/json|text\/|application\/(javascript|xml|x-www-form-urlencoded)|image\/svg)/i.test(contentType);
 
-    let body;
-    if (isBinary) {
-      const ab = await upstream.arrayBuffer();
-      body = Buffer.from(ab).toString('base64');
+    // 以串流方式讀取以取得 firstByte 與 download 時間
+    let bodyText;
+    if (upstream.body && typeof upstream.body.getReader === 'function') {
+      const reader = upstream.body.getReader();
+      const chunks = [];
+      let totalLen = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (!tFirstByte) tFirstByte = now(); // 第一個 chunk
+        chunks.push(value);
+        totalLen += value.byteLength;
+      }
+      tBodyEnd = now();
+      if (isBinary) {
+        bodyText = Buffer.concat(chunks.map(u8 => Buffer.from(u8))).toString('base64');
+      } else {
+        bodyText = Buffer.concat(chunks.map(u8 => Buffer.from(u8))).toString('utf8');
+      }
     } else {
-      body = await upstream.text();
+      // fallback（極少數情況）——失去 firstByte 精度
+      if (isBinary) {
+        const ab = await upstream.arrayBuffer();
+        tFirstByte = tFirstByte || now();
+        tBodyEnd = now();
+        bodyText = Buffer.from(ab).toString('base64');
+      } else {
+        bodyText = await upstream.text();
+        tFirstByte = tFirstByte || now();
+        tBodyEnd = now();
+      }
     }
-    tRead = Date.now();
 
-    const totalMs = tRead - t0;
-    const parseMs = tParse - t0;
-    const upMs = tUpFetch - tParse;
-    const readMs = tRead - tUpFetch;
+    // Optional: JSON parse timing (只為測量，不修改輸出)
+    let jsonMs = 0;
+    if (!isBinary && process.env.PROXY_PARSE_JSON === '1' && contentType.includes('application/json')) {
+      tJsonStart = now();
+      try { JSON.parse(bodyText); } catch (_) { /* ignore parse error */ }
+      tJsonEnd = now();
+      jsonMs = msDiff(tJsonStart, tJsonEnd);
+    }
 
-    // 取用上游快取/地理相關線索（若有）
+    // 若未取得 firstByte（非常少，代表無 body）則視為等於 headers
+    if (!tFirstByte) tFirstByte = tHeaders;
+
+    // 計算各段時間
+    const buildMs     = msDiff(t0, tBuild);
+    const waitMs      = msDiff(tFetchStart, tHeaders);      // fetch -> headers (TTFB + upstream processing)
+    const firstByteMs = msDiff(tHeaders, tFirstByte);       // headers -> first chunk
+    const downloadMs  = msDiff(tFirstByte, tBodyEnd);       // first chunk -> body end
+    const totalMs     = msDiff(t0, tBodyEnd);
+
     const upstreamCache = upstream.headers.get('cf-cache-status') || upstream.headers.get('x-cache') || '';
     const upstreamCTLen = upstream.headers.get('content-length') || '';
     const region = process.env.AWS_REGION || process.env.NETLIFY_REGION || '';
 
-    // 方便雲端 Log 分析
+    // 結構化日誌
     console.log(JSON.stringify({
       at: new Date().toISOString(),
       route: cleanTrail || '(legacy)',
       targetUrl,
       status: upstream.status,
-      parseMs, upMs, readMs, totalMs,
       coldStart: isColdStart,
-      upstreamCache, upstreamCTLen, region
+      timing: { buildMs, waitMs, firstByteMs, downloadMs, jsonMs, totalMs },
+      upstream: { cache: upstreamCache, contentLength: upstreamCTLen },
+      region
     }));
 
-    const serverTiming = [
-      `parse;dur=${parseMs}`,
-      `upstream;dur=${upMs}`,
-      `read;dur=${readMs}`,
+    // Server-Timing (遵循瀏覽器格式)
+    const serverTimingParts = [
+      `build;dur=${buildMs}`,
+      `wait;dur=${waitMs}`,
+      `firstbyte;dur=${firstByteMs}`,
+      `download;dur=${downloadMs}`,
+      ...(jsonMs ? [`json;dur=${jsonMs}`] : []),
       `total;dur=${totalMs}`
-    ].join(', ');
+    ];
+    const serverTiming = serverTimingParts.join(', ');
 
     return {
       statusCode: upstream.status,
       headers: {
         ...corsHeaders(),
-        'Content-Type': contentType || 'application/octet-stream',
+        'Content-Type': contentType || (isBinary ? 'application/octet-stream' : 'text/plain; charset=utf-8'),
         'Cache-Control': 'no-store',
         'Server-Timing': serverTiming,
         'X-Proxy-Upstream': targetUrl,
-        'X-Proxy-Elapsed': String(totalMs),
         'X-Proxy-Cold': isColdStart ? '1' : '0',
         'X-Proxy-Region': region,
         'X-Upstream-Cache': upstreamCache,
-        'X-Upstream-CT': upstreamCTLen
+        'X-Upstream-CT': upstreamCTLen,
+        // 細節 timing headers
+        'X-Timing-Build': String(buildMs),
+        'X-Timing-Wait': String(waitMs),
+        'X-Timing-FirstByte': String(firstByteMs),
+        'X-Timing-Download': String(downloadMs),
+        'X-Timing-JSON': String(jsonMs),
+        'X-Timing-Total': String(totalMs)
       },
-      body,
+      body: bodyText,
       isBase64Encoded: isBinary
     };
   } catch (err) {
@@ -125,66 +172,50 @@ exports.handler = async (event) => {
     return {
       statusCode: 502,
       headers: corsHeaders(),
-      body: JSON.stringify({
-        error: 'Upstream fetch failed',
-        detail: err.message
-      })
+      body: JSON.stringify({ error: 'Upstream fetch failed', detail: err.message })
     };
   }
 };
+
+/* --------- Helpers --------- */
+function now() { return process.hrtime.bigint(); }
+function msDiff(a, b) {
+  if (!a || !b) return 0;
+  return Number(b - a) / 1e6;
+}
 
 function extractTrailing(fullPath) {
   const marker = '/.netlify/functions/searchidtostudent';
   const idx = fullPath.indexOf(marker);
   if (idx === -1) return '';
-  return fullPath.slice(idx + marker.length); // 可能為 '' 或 '/search/123'
+  return fullPath.slice(idx + marker.length);
 }
 
 function buildUrlFromTrailing(apiRoot, trail, query) {
-  // 支援：
-  // search/{idOrHash}
-  // search2b/{name}
-  // {numericOnly} -> search/{dealId}
-  const parts = trail.split('/').filter(Boolean); // 去除空字串
+  const parts = trail.split('/').filter(Boolean);
   if (parts.length === 1) {
     const only = parts[0];
     if (/^\d+$/.test(only)) {
-      // 單純數字 => dealId
-      return {
-        valid: true,
-        url: `${apiRoot}/search/${encodeURIComponent(only)}${query}`
-      };
+      return { valid: true, url: `${apiRoot}/search/${encodeURIComponent(only)}${query}` };
     }
-    // 單一字串但不是純數字 -> 視為錯誤（避免誤判 search2b 少層）
     return { valid: false, errorCode: 'missing_prefix', message: 'Path must start with search/ or search2b/' };
   }
-
   const prefix = parts[0];
-  const tail = parts.slice(1).join('/'); // 允許名字中含 / 的話可再改
-  if (!tail) {
-    return { valid: false, errorCode: 'missing_identifier', message: 'Missing identifier after prefix' };
-  }
+  const tail = parts.slice(1).join('/');
+  if (!tail) return { valid: false, errorCode: 'missing_identifier', message: 'Missing identifier after prefix' };
 
   if (prefix === 'search') {
     if (!isDealId(tail) && !isHash24(tail)) {
       return { valid: false, errorCode: 'invalid_identifier', message: 'Must be numeric dealId or 24-char hex hash' };
     }
-    return {
-      valid: true,
-      url: `${apiRoot}/search/${encodeURIComponent(tail)}${query}`
-    };
+    return { valid: true, url: `${apiRoot}/search/${encodeURIComponent(tail)}${query}` };
   }
-
   if (prefix === 'search2b') {
     if (tail.length > 40) {
       return { valid: false, errorCode: 'name_too_long', message: 'Name too long' };
     }
-    return {
-      valid: true,
-      url: `${apiRoot}/search2b/${encodeURIComponent(tail)}${query}`
-    };
+    return { valid: true, url: `${apiRoot}/search2b/${encodeURIComponent(tail)}${query}` };
   }
-
   return { valid: false, errorCode: 'unsupported_prefix', message: 'Unsupported path prefix' };
 }
 
