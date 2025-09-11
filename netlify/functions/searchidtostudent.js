@@ -234,6 +234,15 @@ function respond(ctx) {
   }
   serverTimingParts.push(`total;dur=${totalMs}`, `proxyoverhead;dur=${proxyOverheadMs}`);
 
+  // 新增：Expose headers / Timing-Allow-Origin
+  const expose = [
+    'Server-Timing',
+    'X-Proxy-Upstream','X-Proxy-Cold','X-Proxy-Region',
+    'X-Upstream-Cache','X-Upstream-CT',
+    'X-Cache','X-Request-Id',
+    'X-Timing-Build','X-Timing-Wait','X-Timing-FirstByte','X-Timing-Download','X-Timing-JSON','X-Timing-Total','X-Timing-ProxyOverhead'
+  ].join(', ');
+
   return {
     statusCode,
     headers: {
@@ -241,6 +250,8 @@ function respond(ctx) {
       'Content-Type': contentType || (isBase64Encoded ? 'application/octet-stream' : 'text/plain; charset=utf-8'),
       'Cache-Control': 'no-store',
       'Server-Timing': serverTimingParts.join(', '),
+      'Timing-Allow-Origin': '*',                   // 讓瀏覽器可讀 Server-Timing
+      'Access-Control-Expose-Headers': expose,      // 讓前端 JS 可讀自訂標頭
       'X-Proxy-Upstream': targetUrl,
       'X-Proxy-Cold': cold ? '1' : '0',
       'X-Proxy-Region': upstreamMeta.region || '',
