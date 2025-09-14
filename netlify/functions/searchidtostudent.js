@@ -157,10 +157,22 @@ exports.handler = async (event) => {
 
     const upstreamCache = upstream.headers.get('cf-cache-status') || upstream.headers.get('x-cache') || '';
     const upstreamCTLen = upstream.headers.get('content-length') || '';
+    const upstreamCE   = upstream.headers.get('content-encoding') || '';
+    const upstreamRay  = upstream.headers.get('cf-ray') || '';
+    const upstreamTE   = upstream.headers.get('transfer-encoding') || '';
+    const upstreamAge  = upstream.headers.get('age') || '';
     const region = process.env.AWS_REGION || process.env.NETLIFY_REGION || '';
 
     const statusCode = upstream.status;
-    const upstreamMeta = { cache: upstreamCache, contentLength: upstreamCTLen, region };
+    const upstreamMeta = {
+      cache: upstreamCache,
+      contentLength: upstreamCTLen,
+      contentEncoding: upstreamCE,
+      cfRay: upstreamRay,
+      transferEncoding: upstreamTE,
+      age: upstreamAge,
+      region
+    };
 
     // 寫入快取
     if (isCachable && statusCode === 200) {
@@ -238,7 +250,7 @@ function respond(ctx) {
   const expose = [
     'Server-Timing',
     'X-Proxy-Upstream','X-Proxy-Cold','X-Proxy-Region',
-    'X-Upstream-Cache','X-Upstream-CT',
+    'X-Upstream-Cache','X-Upstream-CT','X-Upstream-CE','X-Upstream-CF-Ray','X-Upstream-TE','X-Upstream-Age',
     'X-Cache','X-Request-Id',
     'X-Timing-Build','X-Timing-Wait','X-Timing-FirstByte','X-Timing-Download','X-Timing-JSON','X-Timing-Total','X-Timing-ProxyOverhead'
   ].join(', ');
@@ -248,7 +260,7 @@ function respond(ctx) {
     headers: {
       ...corsHeaders(),
       'Content-Type': contentType || (isBase64Encoded ? 'application/octet-stream' : 'text/plain; charset=utf-8'),
-      'Cache-Control': 'no-store',
+      'Cache-Control': process.env.PROXY_CACHE_CONTROL || 'no-store',
       'Server-Timing': serverTimingParts.join(', '),
       'Timing-Allow-Origin': '*',                   // 讓瀏覽器可讀 Server-Timing
       'Access-Control-Expose-Headers': expose,      // 讓前端 JS 可讀自訂標頭
@@ -257,6 +269,10 @@ function respond(ctx) {
       'X-Proxy-Region': upstreamMeta.region || '',
       'X-Upstream-Cache': upstreamMeta.cache || '',
       'X-Upstream-CT': upstreamMeta.contentLength || '',
+      'X-Upstream-CE': upstreamMeta.contentEncoding || '',
+      'X-Upstream-CF-Ray': upstreamMeta.cfRay || '',
+      'X-Upstream-TE': upstreamMeta.transferEncoding || '',
+      'X-Upstream-Age': upstreamMeta.age || '',
       'X-Cache': cacheState,
       'X-Request-Id': reqId,
       'X-Timing-Build': String(buildMs),
@@ -339,7 +355,7 @@ function corsHeaders() {
 }
 
 function filterOutboundHeaders(incoming = {}) {
-  const banned = new Set(['host','connection','content-length','accept-encoding','origin','referer']);
+  const banned = new Set(['host','connection','content-length','origin','referer']);
   const out = {};
   for (const [k,v] of Object.entries(incoming)) {
     const lower = k.toLowerCase();
@@ -348,6 +364,7 @@ function filterOutboundHeaders(incoming = {}) {
     out[k] = v;
   }
   if (!out['Accept']) out['Accept'] = 'application/json, text/plain;q=0.8,*/*;q=0.5';
+  if (!out['Accept-Encoding']) out['Accept-Encoding'] = 'gzip, br';
   return out;
 }
 
