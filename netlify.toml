@@ -7,14 +7,12 @@
 
 [build]
   functions = "netlify/functions"
+  edge_functions = "netlify/edge-functions"
 
 [[redirects]]
   from = "/.netlify/functions/*"
   to = "/.netlify/functions/:splat"
   status = 200
-
-[edge_functions]
-  directory = "netlify/edge-functions"
 
 [[edge_functions]]
   function = "searchidtostudent"
