@@ -1,8 +1,5 @@
-export const config = {
-  path: '/searchidtostudent/*'
-};
+export const config = { path: '/searchidtostudent/*' };
 
-// 目標後端固定為該域名（仍允許以環境變數 SEARCH_API_ROOT 覆寫）
 const DEFAULT_API_ROOT = 'https://aitest.yuusuke-hamasaki.workers.dev/api';
 
 export default async (request) => {
@@ -12,7 +9,7 @@ export default async (request) => {
   const url = new URL(request.url);
   const prefix = '/searchidtostudent';
   let trailing = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : '';
-  trailing = trailing.replace(/^\/+/, ''); // 去掉多餘前導斜線
+  trailing = trailing.replace(/^\/+/, '');
 
   const corsBase = {
     'Access-Control-Allow-Origin': allowOrigin,
@@ -26,45 +23,37 @@ export default async (request) => {
   }
 
   if (!trailing) {
-    return json({ error: 'missing_path', message: 'Path after /searchidtostudent/ is required' }, 400, corsBase);
+    return json({ error: 'missing_path' }, 400, corsBase);
   }
   if (trailing.includes('..')) {
     return json({ error: 'invalid_path' }, 400, corsBase);
   }
 
-  // 直接對 upstream 建立完整 URL
-  const targetUrl = `${apiRoot}/${trailing}${url.search}`;
+  // 對齊 serverless 行為：純數字或 24 hex 自動加上 search/
+  const norm = normalizeTrailing(trailing);
+  if (!norm.ok) {
+    return json({ error: norm.error || 'invalid_path' }, 400, corsBase);
+  }
 
-  // 準備 outbound headers
+  const targetUrl = `${apiRoot}/${norm.path}${url.search}`;
+
   const outboundHeaders = buildOutboundHeaders(request.headers);
 
-  // 可選逾時（避免卡住）
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 10000); // 10s
-  const init = {
-    method: request.method,
-    headers: outboundHeaders,
-    signal: controller.signal
-  };
-  if (!['GET', 'HEAD'].includes(request.method)) {
-    init.body = request.body;
-  }
+  const timeout = setTimeout(() => controller.abort(), 10000);
+  const init = { method: request.method, headers: outboundHeaders, signal: controller.signal };
+  if (!['GET','HEAD'].includes(request.method)) init.body = request.body;
 
   try {
     const upstream = await fetch(targetUrl, init);
     clearTimeout(timeout);
 
-    // 保留 upstream headers（再補 CORS）
     const respHeaders = new Headers(upstream.headers);
     respHeaders.set('Access-Control-Allow-Origin', allowOrigin);
     respHeaders.set('Access-Control-Expose-Headers', 'Content-Type,Content-Length');
     respHeaders.set('Vary', mergeVary(respHeaders.get('Vary'), 'Origin'));
 
-    // 直接串流回傳（避免重組造成編碼問題）
-    return new Response(upstream.body, {
-      status: upstream.status,
-      headers: respHeaders
-    });
+    return new Response(upstream.body, { status: upstream.status, headers: respHeaders });
   } catch (err) {
     const aborted = err?.name === 'AbortError';
     return json(
@@ -74,6 +63,18 @@ export default async (request) => {
     );
   }
 };
+
+function normalizeTrailing(t) {
+  // 已含前綴則直接使用
+  if (t.startsWith('search/')) return { ok: true, path: t };
+  if (t.startsWith('search2b/')) return { ok: true, path: t };
+
+  // 單段：判斷數字或 24 位 hex（對齊 serverless buildUrlFromTrailing 的邏輯）
+  if (/^\d+$/.test(t) || /^[a-fA-F0-9]{24}$/.test(t)) {
+    return { ok: true, path: `search/${t}` };
+  }
+  return { ok: false, error: 'unsupported_pattern' };
+}
 
 function buildOutboundHeaders(src) {
   const banned = new Set(['host','connection','content-length','origin','referer']);
@@ -87,20 +88,14 @@ function buildOutboundHeaders(src) {
   if (!h.has('Accept')) {
     h.set('Accept', 'application/json, text/plain;q=0.8,*/*;q=0.5');
   }
-  // 為避免壓縮/解壓差異造成亂碼，顯式要求 identity（必要時可移除）
-  if (!h.has('Accept-Encoding')) {
-    h.set('Accept-Encoding', 'identity');
-  }
+  // 不設定 Accept-Encoding 讓平台自動處理壓縮（避免亂碼）
   return h;
 }
 
 function json(obj, status, base) {
   return new Response(JSON.stringify(obj), {
     status,
-    headers: {
-      ...base,
-      'Content-Type': 'application/json; charset=utf-8'
-    }
+    headers: { ...base, 'Content-Type': 'application/json; charset=utf-8' }
   });
 }
 
@@ -108,5 +103,5 @@ function mergeVary(existing, add) {
   if (!existing) return add;
   const parts = new Set(existing.split(',').map(s => s.trim()).filter(Boolean));
   parts.add(add);
-  return Array.from(parts).join(', ');
+  return [...parts].join(', ');
 }
