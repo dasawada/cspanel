@@ -1,14 +1,15 @@
-// filepath: /cspanel/cspanel/netlify/edge-functions/searchidtostudent.js
-export default async (request) => {
-  const allowOrigin = process.env.CORS_ALLOW_ORIGIN || '*';
-  const apiRoot = (process.env.SEARCH_API_ROOT || 'https://aitest.yuusuke-hamasaki.workers.dev/api').replace(/\/+$/, '');
-  const url = new URL(request.url);
+export const config = {
+  path: '/searchidtostudent/*'
+};
 
-  // 與 netlify.toml 中 path 對應
-  const edgePrefix = '/searchidtostudent';
-  let trailing = url.pathname.startsWith(edgePrefix)
-    ? url.pathname.slice(edgePrefix.length)
-    : url.pathname;
+export default async (request, context) => {
+  // Deno 環境取得環境變數
+  const allowOrigin = Deno.env.get('CORS_ALLOW_ORIGIN') ?? '*';
+  const apiRoot = (Deno.env.get('SEARCH_API_ROOT') ?? 'https://aitest.yuusuke-hamasaki.workers.dev/api').replace(/\/+$/, '');
+
+  const url = new URL(request.url);
+  const prefix = '/searchidtostudent';
+  let trailing = url.pathname.startsWith(prefix) ? url.pathname.slice(prefix.length) : '';
   trailing = trailing.replace(/^\/+/, '');
 
   const corsBase = {
@@ -33,24 +34,31 @@ export default async (request) => {
 
   const outboundHeaders = filterOutboundHeaders(request.headers);
 
-  const fetchInit = { method: request.method, headers: outboundHeaders };
+  const init = {
+    method: request.method,
+    headers: outboundHeaders
+  };
   if (!['GET', 'HEAD'].includes(request.method)) {
-    fetchInit.body = request.body;
+    // 直接傳遞原始可讀串流
+    init.body = request.body;
   }
 
   try {
-    const upstream = await fetch(targetUrl, fetchInit);
-    const resHeaders = new Headers(upstream.headers);
-    resHeaders.set('Access-Control-Allow-Origin', allowOrigin);
-    resHeaders.set('Access-Control-Expose-Headers', 'Content-Type,Content-Length');
+    const upstreamReq = new Request(targetUrl, init);
+    const upstream = await fetch(upstreamReq);
 
-    // 不強制讀取為 text，直接串流轉回（Edge Response 可直接回傳）
+    const respHeaders = new Headers(upstream.headers);
+    respHeaders.set('Access-Control-Allow-Origin', allowOrigin);
+    respHeaders.set('Access-Control-Expose-Headers', 'Content-Type,Content-Length');
+
+    // 直接串流回傳
     return new Response(upstream.body, {
       status: upstream.status,
-      headers: resHeaders
+      headers: respHeaders
     });
   } catch (err) {
-    return json({ error: 'upstream_failed', detail: err.message }, 502, corsBase);
+    console.error('edge_upstream_error', err);
+    return json({ error: 'upstream_failed', detail: err.message ?? String(err) }, 502, corsBase);
   }
 };
 
@@ -76,6 +84,6 @@ function filterOutboundHeaders(src) {
   if (!out.has('Accept')) {
     out.set('Accept', 'application/json, text/plain;q=0.8,*/*;q=0.5');
   }
-  // 不手動設定 Accept-Encoding，讓平台自處理壓縮
+  // 不設 Accept-Encoding，讓平台自動處理
   return out;
 }
