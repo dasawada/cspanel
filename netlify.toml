@@ -1,16 +1,21 @@
-[[build]]
-  functions = "netlify/functions"
-  edge_functions = "netlify/edge-functions"
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/searchidtostudent"
-  status = 200
-  force = true
-
 [[headers]]
-  for = "/*"
+  for = "/.netlify/functions/*"
   [headers.values]
     Access-Control-Allow-Origin = "*"
-    Access-Control-Allow-Methods = "GET, POST, PUT, PATCH, DELETE, OPTIONS"
-    Access-Control-Allow-Headers = "Content-Type, Authorization, Accept"
+    Access-Control-Allow-Methods = "POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+
+[build]
+  functions = "netlify/functions"
+
+[[redirects]]
+  from = "/.netlify/functions/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
+
+[edge_functions]
+  directory = "netlify/edge-functions"
+
+[[edge_functions]]
+  function = "searchidtostudent"
+  path = "/searchidtostudent/*"
