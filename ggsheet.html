@@ -78,16 +78,16 @@
       const meetingData = parseMeetingContent(meetingContent);
 
       // 計算週期長短
-      const durationLabel = getDurationLabel(meetingData.startDate, meetingData.endDate);
+      const durationLabel = getDurationLabel(meetingData.startDate, meetingData.endDate, meetingData.isOneTime);
 
       // 定義 Google Sheets 的欄位
       const sheetData = {
         "學生姓名": meetingData.name,
         "開課日期": meetingData.startDate,
         "重複日": meetingData.weekDay,
-        "時長標籤": meetingData.isOneTime ? "一次性" : durationLabel,
+        "時長標籤": durationLabel,
         "時間範圍": meetingData.timeRange,
-        "帳號": getAccountName(meetingData.account),
+        "帳號": meetingData.account,
         "課程訊息": `OneClass 真人Live家教 ${meetingData.name}的課程教室\n${meetingData.link}\n#腾讯会议：${meetingData.meetingNumber || "無"}\n會議密碼：${meetingData.password || "無"}`,
         "課程截止日": meetingData.endDate,
         "備註": "",
@@ -118,29 +118,37 @@ function copyToClipboard(text) {
   document.body.removeChild(textarea);
 }
 
-    // 解析會議內容的函數
+    // 更新解析會議內容的函數，應用帳號轉換
     function parseMeetingContent(content) {
       const accountMatch = content.match(/^(.*?) 邀請您參加VooV Meeting/);
       const nameMatch = content.match(/家教(.+?)的課程教室/);
-      const topicMatch = content.match(/會議主題：(.+)/);
-      const timeMatch = content.match(/會議時間：(.+) \(GMT\+08:00\)/);
+      const timeMatch = content.match(/會議時間：(\d{4}\/\d{2}\/\d{2}) (\d{2}:\d{2})-(\d{2}:\d{2})/);
       const repeatMatch = content.match(/重複週期：(.+)/);
       const linkMatch = content.match(/(https?:\/\/\S+)/);
       const meetingNumberMatch = content.match(/#腾讯会议：([\s\S]*?)會議密碼/);
       const passwordMatch = content.match(/會議密碼：(\d{6})/);
 
       const isOneTime = !repeatMatch;
-      const startDate = isOneTime ? (timeMatch ? timeMatch[1].split(' ')[0].trim() : '') : repeatMatch[1].split('-')[0].trim();
-      const endDate = isOneTime ? startDate : repeatMatch[1].split('-')[1].split(' ')[0].trim();
-      const timeRange = timeMatch ? timeMatch[1].split(' ')[1].replace(/:/g, '') : '';
+
+      const startDate = isOneTime
+        ? timeMatch ? timeMatch[1].trim() : ''
+        : repeatMatch[1].split('-')[0].trim();
+
+      const endDate = isOneTime
+        ? startDate
+        : repeatMatch[1].split('-')[1].split(' ')[0].trim();
+
+      const timeRange = timeMatch ? `${timeMatch[2]}-${timeMatch[3]}`.replace(/:/g, '') : '';
       const weekDay = getWeekDay(startDate);
       const name = nameMatch ? nameMatch[1].trim() : '';
       const account = accountMatch ? accountMatch[1].trim() : '';
 
+      // 應用帳號轉換邏輯
+      const mappedAccount = getAccountName(account);
+
       return {
-        account: account,
+        account: mappedAccount,
         name: name,
-        topic: topicMatch ? topicMatch[1] : '',
         startDate: startDate,
         weekDay: weekDay,
         timeRange: timeRange,
@@ -148,7 +156,7 @@ function copyToClipboard(text) {
         link: linkMatch ? linkMatch[1] : '',
         meetingNumber: meetingNumberMatch ? meetingNumberMatch[1].trim() : '',
         password: passwordMatch ? passwordMatch[1] : '',
-        isOneTime: isOneTime
+        isOneTime: isOneTime,
       };
     }
 
@@ -175,20 +183,18 @@ function copyToClipboard(text) {
       return weekDays[date.getDay()];
     }
 
-    // 根據開始和結束日期計算週期長短
-    function getDurationLabel(startDate, endDate) {
-      if (!startDate || !endDate) return '';
+    // 計算週期標籤
+    function getDurationLabel(startDate, endDate, isOneTime) {
+      if (isOneTime) return "一次性";
       const start = new Date(startDate);
       const end = new Date(endDate);
-      if (isNaN(start) || isNaN(end)) return '';
-      const durationInDays = (end - start) / (1000 * 60 * 60 * 24);
-      return durationInDays <= 100 ? '短週期' : '長週期';
+      return (end - start) / (1000 * 60 * 60 * 24) <= 100 ? "短週期" : "長週期";
     }
-	
-	document.getElementById('clearButton').addEventListener('click', function() {
-		document.getElementById('meetingContentTextarea').value = '';
-		document.getElementById('taskLinkTextarea').value = '';
-	});
+    
+    document.getElementById('clearButton').addEventListener('click', function() {
+        document.getElementById('meetingContentTextarea').value = '';
+        document.getElementById('taskLinkTextarea').value = '';
+    });
 
   </script>
 </body>
