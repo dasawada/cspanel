@@ -72,23 +72,24 @@ async function fetchTutorToGroup() {
 }
 
 export default async (request, context) => {
-  // 修正 CORS 標頭設置
+  // 統一的 CORS 標頭
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
+    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Accept, Authorization, X-Requested-With',
     'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json'
   };
 
   // 處理 preflight OPTIONS 請求
   if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      status: 200,
+    return new Response('', {
+      status: 204,
       headers: corsHeaders
     });
   }
 
+  // 只允許 POST 請求
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
