@@ -15,4 +15,4 @@
 
 [[edge_functions]]
   function = "course-info-edge"
-  path = "/course-info/*"
+  path = "/course-info"
