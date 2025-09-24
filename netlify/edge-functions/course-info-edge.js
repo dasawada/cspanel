@@ -72,16 +72,18 @@ async function fetchTutorToGroup() {
 }
 
 export default async (request, context) => {
+  // 修正 CORS 標頭設置
   const corsHeaders = {
     'Access-Control-Allow-Origin': '*',
-    'Access-Control-Allow-Methods': 'POST, OPTIONS',
-    'Access-Control-Allow-Headers': 'Content-Type',
+    'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept, X-Requested-With',
+    'Access-Control-Max-Age': '86400',
     'Content-Type': 'application/json'
   };
 
-  // CORS 處理（如需跨網域呼叫）
+  // 處理 preflight OPTIONS 請求
   if (request.method === 'OPTIONS') {
-    return new Response('', {
+    return new Response(null, {
       status: 200,
       headers: corsHeaders
     });
@@ -90,10 +92,7 @@ export default async (request, context) => {
   if (request.method !== 'POST') {
     return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
       status: 405,
-      headers: {
-        ...corsHeaders,
-        'Allow': 'POST, OPTIONS'
-      }
+      headers: corsHeaders
     });
   }
 
