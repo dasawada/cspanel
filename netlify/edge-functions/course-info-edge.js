@@ -77,38 +77,52 @@ export default async (request, context) => {
     'Access-Control-Allow-Origin': '*',
     'Access-Control-Allow-Methods': 'POST, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Accept, Authorization, X-Requested-With',
-    'Access-Control-Max-Age': '86400',
-    'Content-Type': 'application/json'
+    'Access-Control-Max-Age': '86400'
   };
 
   // 處理 preflight OPTIONS 請求
   if (request.method === 'OPTIONS') {
-    return new Response('', {
-      status: 204,
+    return new Response(null, {
+      status: 200,
       headers: corsHeaders
     });
   }
 
   // 只允許 POST 請求
   if (request.method !== 'POST') {
-    return new Response(JSON.stringify({ error: 'Method Not Allowed' }), {
+    return new Response(JSON.stringify({ error: 'Method Not Allowed', method: request.method }), {
       status: 405,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
+    });
+  }
+
+  // 檢查環境變數
+  const GROUP_API_URL = Deno.env.get("GROUP_API_URL");
+  const jwt = Deno.env.get('ONE_CLUB_JWT');
+  
+  if (!GROUP_API_URL || !jwt) {
+    return new Response(JSON.stringify({ 
+      error: 'Missing environment variables',
+      details: {
+        hasGroupApiUrl: !!GROUP_API_URL,
+        hasJwt: !!jwt
+      }
+    }), {
+      status: 500,
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 
   try {
     const body = await request.json().catch(() => ({}));
     const { courseId, checkPreparing } = body;
-    const jwt = Deno.env.get('ONE_CLUB_JWT');
     
-    if (!jwt) {
-      return new Response(JSON.stringify({ error: 'Missing ONE_CLUB_JWT' }), {
-        status: 500,
-        headers: corsHeaders
-      });
-    }
-
     let courseData = null;
     let parentJson = null;
     
@@ -118,7 +132,10 @@ export default async (request, context) => {
       if (courseJson.status !== 'success') {
         return new Response(JSON.stringify({ error: 'Course API failed', detail: courseJson }), {
           status: 500,
-          headers: corsHeaders
+          headers: {
+            ...corsHeaders,
+            'Content-Type': 'application/json'
+          }
         });
       }
       courseData = courseJson.data;
@@ -160,7 +177,10 @@ export default async (request, context) => {
     if (!courseId && !checkPreparing) {
       return new Response(JSON.stringify({ error: 'Missing courseId or checkPreparing' }), {
         status: 400,
-        headers: corsHeaders
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
       });
     }
 
@@ -172,15 +192,23 @@ export default async (request, context) => {
       tutorToGroupMap: await fetchTutorToGroup()
     }), {
       status: 200,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
 
   } catch (err) {
     return new Response(JSON.stringify({ 
-      error: err instanceof Error ? err.message : 'Unknown error' 
+      error: 'Internal server error',
+      details: err instanceof Error ? err.message : 'Unknown error',
+      stack: err instanceof Error ? err.stack : undefined
     }), {
       status: 500,
-      headers: corsHeaders
+      headers: {
+        ...corsHeaders,
+        'Content-Type': 'application/json'
+      }
     });
   }
 };
