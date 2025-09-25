@@ -309,9 +309,71 @@ export function createCannedMessagesPanel(options = {}) {
   const searchBar = panel.querySelector('.canned-panel-search-bar');
   const spinner = panel.querySelector('#canned-panel-search-spinner');
 
+  // 防抖動函數
+  function debounce(func, delay) {
+    let timeoutId;
+    return function (...args) {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => func.apply(this, args), delay);
+    };
+  }
+
+  // 檢查是否為有效的課程ID格式
+  function isValidCourseIdFormat(text) {
+    // 檢查是否包含 24 位的 MongoDB ObjectId 格式
+    return /[0-9a-fA-F]{24}/.test(text);
+  }
+
+  // 防抖動的搜尋函數
+  const debouncedSearch = debounce(() => {
+    const currentValue = searchInput.value.trim();
+    if (currentValue && isValidCourseIdFormat(currentValue)) {
+      showSearchSpinner();
+      doIdentifyCourse();
+    }
+  }, 300); // 300ms 延遲
+
   searchInput.addEventListener('input', () => {
-    clearBtn.style.display = searchInput.value ? 'block' : 'none';
+    const currentValue = searchInput.value.trim();
+    clearBtn.style.display = currentValue ? 'block' : 'none';
+    
+    // 如果清空輸入，重置所有內容
+    if (!currentValue) {
+      for (let key in defaultTexts) {
+        panel.querySelector(`#${panelId}-${key} textarea`).value = defaultTexts[key];
+      }
+      apiTexts = Object.assign({}, defaultTexts);
+      courseResultDiv.innerHTML = '';
+      removeSearchSpinner();
+      return;
+    }
+    
+    // 如果輸入內容看起來像是課程ID，觸發搜尋
+    if (isValidCourseIdFormat(currentValue)) {
+      debouncedSearch();
+    }
   });
+
+  // 貼上事件處理（統一與 Enter 相同）
+  searchInput.addEventListener('paste', () => {
+    const currentValue = searchInput.value.trim();
+    if (currentValue) {
+      showSearchSpinner();
+      doIdentifyCourse();
+    }
+  });
+
+  // Enter 鍵處理（保持相同）
+  searchInput.addEventListener('keyup', (e) => {
+    if (e.key === 'Enter') {
+      const currentValue = searchInput.value.trim();
+      if (currentValue) {
+        showSearchSpinner();
+        doIdentifyCourse();
+      }
+    }
+  });
+
   clearBtn.addEventListener('click', () => {
     searchInput.value = '';
     clearBtn.style.display = 'none';
@@ -320,19 +382,13 @@ export function createCannedMessagesPanel(options = {}) {
     }
     apiTexts = Object.assign({}, defaultTexts);
     courseResultDiv.innerHTML = '';
-  });
-
-  // 只在真正執行搜尋時顯示 spinner
-  searchInput.addEventListener('keyup', (e) => {
-    if (e.key === 'Enter') {
-      showSearchSpinner();
-      doIdentifyCourse();
-    }
+    removeSearchSpinner(); // 清除時也要停止動畫
   });
 
   function showSearchSpinner() {
     if (spinner) spinner.style.display = 'inline-block';
   }
+
   function removeSearchSpinner() {
     if (spinner) spinner.style.display = 'none';
   }
@@ -361,7 +417,7 @@ export function createCannedMessagesPanel(options = {}) {
       return;
     }
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
-    const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
+    const courseApiUrl = `${NETLIFY_SITE_URL}/course-info`;
     let courseData, studentNames = '', tagNames = '', courseTime = '';
     let tutorToGroupMap = {}; // <-- 這裡宣告在外層
     fetch(courseApiUrl, {
@@ -626,7 +682,7 @@ export function createCannedMessagesPanel(options = {}) {
 
           // 查詢準備中課程，決定是否顯示搶課按鈕或「請輸入最新代課網址」紅字
           const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
-          const courseApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/course-info`;
+          const courseApiUrl = `${NETLIFY_SITE_URL}/course-info`;
           const startAt = courseData.startAt;
           const endAt = courseData.endAt;
           const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
