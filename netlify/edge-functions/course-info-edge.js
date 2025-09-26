@@ -119,6 +119,8 @@ export default async (request, context) => {
     });
   }
 
+  const startTime = Date.now(); // 記錄開始時間
+
   try {
     const body = await request.json().catch(() => ({}));
     const { courseId, checkPreparing } = body;
@@ -199,6 +201,7 @@ export default async (request, context) => {
     });
 
   } catch (err) {
+    console.log(`Request took ${Date.now() - startTime} ms`); // 記錄耗時
     return new Response(JSON.stringify({ 
       error: 'Internal server error',
       details: err instanceof Error ? err.message : 'Unknown error',
