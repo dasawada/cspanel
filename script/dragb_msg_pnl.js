@@ -315,6 +315,29 @@ export function createCannedMessagesPanel(options = {}) {
   let activeController = null;
   let latestQuery = '';
 
+  // 工具函數：帶重試的 fetch（專門處理 500 錯誤）
+  async function fetchWithRetry(url, options, retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const response = await fetch(url, options);
+        if (response.status === 500) {
+          if (i === retries - 1) {
+            throw new Error(`500 錯誤，重試 ${retries} 次後仍失敗`);
+          }
+          // 等待一段時間後重試（可選，增加延遲避免頻繁請求）
+          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+          continue;
+        }
+        return response;
+      } catch (error) {
+        if (error.name === 'AbortError') throw error; // 尊重中止信號
+        if (i === retries - 1) throw error;
+        // 等待後重試
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  }
+
   function showSpinnerGuard() {
     if (++pendingCount === 1 && spinner) spinner.style.display = 'inline-block';
   }
@@ -430,8 +453,8 @@ export function createCannedMessagesPanel(options = {}) {
     let courseData, studentNames = '', tagNames = '', courseTime = '';
     let tutorToGroupMap = {};
 
-    // 第一個 API 請求（加入 signal）
-    const courseResponse = await fetch(courseApiUrl, {
+    // 第一個 API 請求（使用帶重試的 fetch）
+    const courseResponse = await fetchWithRetry(courseApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ courseId }),
@@ -466,9 +489,9 @@ export function createCannedMessagesPanel(options = {}) {
       throw new DOMException('stale request', 'AbortError');
     }
 
-    // 第二個 API 請求（加入 signal）
+    // 第二個 API 請求（使用帶重試的 fetch）
     const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
-    const parentResponse = await fetch(parentApiUrl, {
+    const parentResponse = await fetchWithRetry(parentApiUrl, {
       method: 'GET',
       headers: { 'Accept': 'application/json, text/plain, */*' },
       signal
@@ -490,9 +513,9 @@ export function createCannedMessagesPanel(options = {}) {
       throw new DOMException('stale request', 'AbortError');
     }
 
-    // Chat API 請求（加入 signal）
+    // Chat API 請求（使用帶重試的 fetch）
     try {
-      const chatResponse = await fetch(
+      const chatResponse = await fetchWithRetry(
         `https://stirring-pothos-28253d.netlify.app/.netlify/functions/classbxopchfetch?id=${encodeURIComponent(contactId)}`,
         { signal }
       );
@@ -710,7 +733,7 @@ export function createCannedMessagesPanel(options = {}) {
         const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
         
         try {
-          const preparingResponse = await fetch(courseApiUrl, {
+          const preparingResponse = await fetchWithRetry(courseApiUrl, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
