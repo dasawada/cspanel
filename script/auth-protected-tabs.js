@@ -5,21 +5,21 @@ const tabsHTML = `
     <input type="radio" id="panel-tab-naniclub" name="panel-tab" checked="checked">
     <label for="panel-tab-naniclub">🗝️帳號搜尋</label>
     <div class="panel-tab-content">
-      <iframe class="responsive-iframe" src="userlogframe_left.html"></iframe>
+      <iframe class="responsive-iframe" src="7pc55uah1trppaw7ny.html"></iframe>
     </div>
 
     <!--   教室log tab -->
     <input type="radio" name="panel-tab" id="panel-tab-classlog">
     <label for="panel-tab-classlog">📊教室LOG</label>
     <div class="panel-tab-content">
-      <iframe class="responsive-iframe" src="userlogframe_right.html"></iframe>
+      <iframe class="responsive-iframe" src="xu7fwfh93rbyorxkds.html"></iframe>
     </div>
 
     <!--   課程日誌查詢 tab -->
     <input type="radio" name="panel-tab" id="panel-tab-courselog">
     <label for="panel-tab-courselog">📝課程日誌</label>
     <div class="panel-tab-content">
-      <iframe class="responsive-iframe" src="course-diaries.html"></iframe>
+      <iframe class="responsive-iframe" src="hhnueyfrsoj1na8pjj.html"></iframe>
     </div>
 
     <!--   Tools tab -->
