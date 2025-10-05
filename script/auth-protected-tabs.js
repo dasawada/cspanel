@@ -99,7 +99,7 @@ const ipHTML = `
     </div>
 `;
 
-window.addEventListener('firework-login-success', () => {
+window.addEventListener('firework-login-success', async () => {
   const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
   if (tabsPlaceholder) {
     tabsPlaceholder.innerHTML = tabsHTML;
@@ -107,6 +107,14 @@ window.addEventListener('firework-login-success', () => {
   const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
   if (ipPlaceholder) {
     ipPlaceholder.innerHTML = ipHTML;
+    
+    // 動態 import 並初始化 IP 搜尋邏輯
+    try {
+      const { initIPSearch } = await import('./IP_search.js');
+      await initIPSearch();
+    } catch (error) {
+      console.error('Failed to initialize IP search:', error);
+    }
   }
 });
 

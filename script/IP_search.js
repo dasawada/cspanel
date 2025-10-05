@@ -405,20 +405,130 @@ async function IP_fetchNewUpdateDate() {
   }
 }
 
-document.addEventListener('DOMContentLoaded', () => {
-  if (!ipInput) {
-  }
-  if (!container) {
+// 導出初始化函數
+export async function initIPSearch() {
+  // 初始化邏輯：設置事件監聽器、調整高度等
+  const container = document.querySelector('.IPsearch_in_panelALL');
+  const ipInput = document.getElementById('ip_input');
+  let originalPlaceholder = '';
+
+  // 調整高度函數（保持不變）
+  const adjustHeightToMin = () => {
+    if (!container) return;
+    requestAnimationFrame(() => {
+      container.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      container.style.height = `${MIN_PANEL_HEIGHT}px`;
+    });
+  };
+
+  const adjustHeight = (animate = true) => {
+    if (typeof log === 'function') {
+      log('adjustHeight_start', { 
+        animate: animate, 
+        scrollHeight: container ? container.scrollHeight : 'N/A', 
+        currentStyleHeight: container ? container.style.height : 'N/A' 
+      });
+    }
+    if (!container) return;
+
+    requestAnimationFrame(() => {
+      if (animate) {
+        container.style.transition = 'height 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+      } else {
+        container.style.transition = 'none';
+      }
+
+      // 取得實際需要的高度，檢查內部元素實際高度
+      let targetHeight = 0;
+      const ipResultContainer = document.getElementById('ip_result_container');
+      
+      // 如果結果容器有內容，計算所有可見子元素的高度總和
+      if (ipResultContainer && ipResultContainer.classList.contains('hasResult')) {
+        // 獲取所有非隱藏的子元素
+        const visibleChildren = Array.from(ipResultContainer.children)
+          .filter(child => child.style.display !== 'none');
+        
+        // 計算每個可見子元素的高度
+        visibleChildren.forEach(child => {
+          targetHeight += child.offsetHeight;
+        });
+        
+        // 加上輸入框和容器的padding/margin等
+        targetHeight += ipInput ? ipInput.offsetHeight : 0;
+        targetHeight += 20; // 額外空間用於 padding 和 margin
+      } else {
+        // 如果沒有結果，使用最小高度
+        targetHeight = MIN_PANEL_HEIGHT;
+      }
+      
+      targetHeight = Math.max(targetHeight, MIN_PANEL_HEIGHT); 
+
+      if (container.style.height !== `${targetHeight}px`) {
+        container.style.height = `${targetHeight}px`;
+        
+        // 確保高度設置成功，強制重排
+        // @ts-ignore
+        container.offsetHeight;
+      }
+      
+      if (typeof log === 'function') {
+        log('adjustHeight_end', { 
+          newStyleHeight: container ? container.style.height : 'N/A',
+          finalTargetHeight: targetHeight,
+          offsetHeight: container ? container.offsetHeight : 'N/A'
+        });
+      }
+    });
+  };
+
+  // MutationObserver（保持不變）
+  let debounceTimeout;
+  const observer = new MutationObserver(() => {
+    clearTimeout(debounceTimeout);
+    debounceTimeout = setTimeout(() => {
+      if (container) {
+        // @ts-ignore
+        container.offsetHeight; // 讀取 offsetHeight 來觸發 reflow
+      }
+      if (typeof log === 'function') { 
+        log('MutationObserver_adjustHeight_call', { 
+          scrollHeight: container ? container.scrollHeight : 'N/A', 
+          offsetHeight: container ? container.offsetHeight : 'N/A', 
+          styleHeight: container ? container.style.height : 'N/A' 
+        });
+      }
+      adjustHeight(); 
+    }, 200); 
+  });
+
+  // 獲取更新日期（保持不變）
+  async function IP_fetchNewUpdateDate() {
+    if (!ipInput) return;
+    try {
+      const data = await callGoogleSheetAPI({
+        range: 'update!A1:A1',
+        method: "GET"
+      });
+      if (!data.values || !data.values.length || !data.values[0][0]) {
+        throw new Error('No date data found in the specified range.');
+      }
+      const dateUpdated = data.values[0][0];
+      originalPlaceholder = '資料於 ' + dateUpdated + ' 更新';
+      ipInput.placeholder = originalPlaceholder;
+    } catch (error) {
+      originalPlaceholder = '資料更新失敗';
+      ipInput.placeholder = originalPlaceholder;
+    }
   }
 
-  IP_fetchNewUpdateDate();
-
+  // 初始化
+  await IP_fetchNewUpdateDate();
   if (container) {
-    adjustHeight(false); // Set initial height without animation
+    adjustHeight(false);
     observer.observe(container, { 
-      childList: true,    // Observe direct children changes
-      subtree: true,      // Observe all descendants
-      characterData: true // Observe text content changes
+      childList: true,
+      subtree: true,
+      characterData: true
     });
   }
   
@@ -452,4 +562,4 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     });
   }
-});
+}
