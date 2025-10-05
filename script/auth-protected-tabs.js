@@ -79,16 +79,44 @@ const tabsHTML = `
 </div>
 `;
 
+const ipHTML = `
+<div class="IPsearch_in_panelALL">
+        <div id="ip_search_form_container">
+            <form id="ip_search_form">
+                <label for="ip_input">IP：</label>
+                <input type="text" id="ip_input" name="ip_input" />
+            </form>
+        </div>
+        <div id="ip_result_container">
+            <p id="ip_country" style="margin: 0; padding: 0; line-height: 18px;"></p>
+            <p id="ip_org" style="margin: 0; padding: 0; line-height: 18px;"></p>
+            <p id="ip_hostname" style="margin: 0; padding: 0; line-height: 18px;"></p>
+        </div>
+        <a href="https://rpki.tw/stats/valid.html" 
+           title="資料來源為「財團法人台灣網路資訊中心」" 
+           class="IP_info-button" 
+           target="_blank">?</a>
+    </div>
+`;
+
 window.addEventListener('firework-login-success', () => {
-  const placeholder = document.getElementById('auth-protected-tabs-placeholder');
-  if (placeholder) {
-    placeholder.innerHTML = tabsHTML;
+  const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
+  if (tabsPlaceholder) {
+    tabsPlaceholder.innerHTML = tabsHTML;
+  }
+  const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
+  if (ipPlaceholder) {
+    ipPlaceholder.innerHTML = ipHTML;
   }
 });
 
 window.addEventListener('firework-logout-success', () => {
-  const placeholder = document.getElementById('auth-protected-tabs-placeholder');
-  if (placeholder) {
-    placeholder.innerHTML = '';
+  const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
+  if (tabsPlaceholder) {
+    tabsPlaceholder.innerHTML = '';
+  }
+  const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
+  if (ipPlaceholder) {
+    ipPlaceholder.innerHTML = '';
   }
 });
