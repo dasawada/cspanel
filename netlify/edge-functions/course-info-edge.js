@@ -186,11 +186,6 @@ export default async (request, context) => {
       });
     }
 
-    const delaySeconds = 30;
-    if (delaySeconds > 0) {
-      await new Promise(resolve => setTimeout(resolve, delaySeconds * 1000));
-    }
-
     return new Response(JSON.stringify({
       status: 'success',
       data: courseData,
