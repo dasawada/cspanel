@@ -56,8 +56,8 @@ let cachedTutorToGroup = null;
 let lastFetchTime = 0;
 
 async function fetchTutorToGroup() {
-  // 每10分鐘更新一次
-  if (cachedTutorToGroup && Date.now() - lastFetchTime < 10 * 60 * 1000) {
+  // 每3小時更新一次
+  if (cachedTutorToGroup && Date.now() - lastFetchTime < 3 * 60 * 60 * 1000) {
     return cachedTutorToGroup;
   }
   const res = await fetch(GROUP_API_URL);
