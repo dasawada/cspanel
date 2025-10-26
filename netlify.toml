@@ -16,3 +16,7 @@
 [[edge_functions]]
   function = "course-info-edge"
   path = "/course-info"
+
+[[edge_functions]]
+  function = "classbxopchfetch-edge"
+  path = "/classbxopchfetch"
