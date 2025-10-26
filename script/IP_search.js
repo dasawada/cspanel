@@ -179,16 +179,19 @@ async function IP_handleIpInput(ip) {
     orgElement.innerHTML = `<span class="label">服務商：</span>${ispLines.join('<br>')}`;
 
     if (hostname) {
-        let hostnameElement = document.getElementById('ip_hostname');
-        if (!hostnameElement) {
-            hostnameElement = document.createElement('p');
-            hostnameElement.id = 'ip_hostname';
-            hostnameElement.style.margin = '0';
-            hostnameElement.style.padding = '0';
-            ipResultContainer.appendChild(hostnameElement);
-        }
-        hostnameElement.style.display = ''; // 確保可見
-        hostnameElement.innerHTML = `<span class="label">主機名：</span>${hostname}`;
+      let hostnameElement = document.getElementById('ip_hostname');
+      if (!hostnameElement) {
+        hostnameElement = document.createElement('p');
+        hostnameElement.id = 'ip_hostname';
+        hostnameElement.style.margin = '0';
+        hostnameElement.style.padding = '0';
+        ipResultContainer.appendChild(hostnameElement);
+      }
+      hostnameElement.style.display = ''; // 確保可見
+      hostnameElement.innerHTML = `<span class="label">主機名：</span>${hostname}`;
+
+      // 新增：檢查並添加手機熱點標籤
+      addHotspotTag(hostname);
     }
 
     document.getElementById('ip_result_container').classList.add('hasResult');
@@ -561,5 +564,36 @@ export async function initIPSearch() {
         event.preventDefault(); // 防止表單提交
       }
     });
+  }
+}
+
+// 新增輔助函數：檢查hostname並添加手機熱點標籤
+function addHotspotTag(hostname) {
+  const orgElem = document.getElementById('ip_org');
+  if (!orgElem) return;
+
+  // 移除現有的標籤（如果存在），以避免重複
+  const existingTag = orgElem.querySelector('.mobile-hotspot-tag');
+  if (existingTag) {
+    existingTag.remove();
+  }
+
+  // 檢查hostname是否包含關鍵字
+  if (/mobile|emome/i.test(hostname) && !orgElem.querySelector('.mobile-hotspot-tag')) {
+    const tag = document.createElement('span');
+    tag.className = 'mobile-hotspot-tag';
+    Object.assign(tag.style, {
+      color: '#fff',
+      backgroundColor: 'rgb(61, 145, 200)',
+      border: '1px solid rgb(46, 89, 114)',
+      fontWeight: 'bold',
+      padding: '0px 4px',
+      marginLeft: '8px',
+      fontSize: '10px',
+      borderRadius: '4px',
+      display: 'inline-block'
+    });
+    tag.textContent = '手機熱點';
+    orgElem.appendChild(tag);
   }
 }
