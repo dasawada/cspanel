@@ -516,7 +516,7 @@ export function createCannedMessagesPanel(options = {}) {
     // Chat API 請求（使用帶重試的 fetch）
     try {
       const chatResponse = await fetchWithRetry(
-        `https://stirring-pothos-28253d.netlify.app/.netlify/functions/classbxopchfetch?id=${encodeURIComponent(contactId)}`,
+        `https://stirring-pothos-28253d.netlify.app/classbxopchfetch?id=${encodeURIComponent(contactId)}`,
         { signal }
       );
 
