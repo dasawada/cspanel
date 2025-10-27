@@ -167,6 +167,10 @@ export default async (request, context) => {
           const dialogData = await bx('im.dialog.get.json', { DIALOG_ID: 'chat' + cid });
           r = dialogData.result || {};
         } catch {}
+        // 過濾掉 entity_id 以 "|0" 結尾的聊天
+        if (r.entity_id && r.entity_id.endsWith('|0')) {
+          continue;
+        }
         let title = r.TITLE || r.title || r.name || (allChats[cid] && allChats[cid].connector) || '未知';
         title = title.replace('- OneClass體驗接待大廳', '');
         const status = statusOf(r.entity_data_1);
