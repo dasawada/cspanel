@@ -38,5 +38,19 @@
       { "value": "家長反映授課師狀況", "label": "家長反映授課師狀況", "desc": "", "parentTag": "[課程討論-家長反映授課師狀況] ", "adminTag": "" },
       { "value": "教材與進度問題", "label": "教材與進度問題", "desc": "", "parentTag": "[課程討論-教材與進度問題] ", "adminTag": "" }
     ]
+  },
+  "合約內容相關": {
+    "enabled": true,
+    "requireSelection": true,
+    "parentTagPattern": "^\\[合約內容相關[^\\[\\]]*\\]\\s*",
+    "adminTagPattern": "",
+    "subTypes": [
+      { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "退費", "label": "退費", "desc": "", "parentTag": "[合約內容相關-退費] ", "adminTag": "" },
+      { "value": "繳款", "label": "繳款", "desc": "", "parentTag": "[合約內容相關-繳款] ", "adminTag": "" },
+      { "value": "學制轉換", "label": "學制轉換", "desc": "", "parentTag": "[合約內容相關-學制轉換] ", "adminTag": "" },
+      { "value": "合約問題", "label": "合約問題", "desc": "", "parentTag": "[合約內容相關-合約問題] ", "adminTag": "" }
+    ]
   }
 }
