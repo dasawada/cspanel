@@ -9,7 +9,7 @@
       { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
       { "value": "考卷檢討", "label": "考卷檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程考卷檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
       { "value": "作業檢討", "label": "作業檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程作業檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
-      { "value": "教材講解", "label": "教材講解", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長\n＊客制教材轉輔導", "parentTag": "[教材講解] ", "adminTag": "" }
+      { "value": "教材講解", "label": "教材講解", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長\n＊客制教材轉輔導", "parentTag": "[教材講解] ", "adminTag": "已查課表、並轉傳綠Line，老師：" }
     ]
   },
   "課程通訊問題": {
@@ -22,6 +22,21 @@
       { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
       { "value": "教材錯誤", "label": "教材錯誤", "parentTag": "[教材錯誤] ", "adminTag": "老師One客服反映:" },
       { "value": "老師曠課", "label": "老師曠課", "parentTag": "[老師曠課] ", "adminTag": "老師曠課，致電 通均響底未接，已於 : 請學生下課，再麻煩輔導協助安排補課事宜。" }
+    ]
+  },
+  "課程討論": {
+    "enabled": true,
+    "requireSelection": true,
+    "parentTagPattern": "^\\[課程討論[^\\[\\]]*\\]\\s*",
+    "adminTagPattern": "",
+    "subTypes": [
+      { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+      { "value": "排課異動", "label": "排課異動", "desc": "", "parentTag": "[課程討論-排課異動] ", "adminTag": "" },
+      { "value": "師資異動", "label": "師資異動", "desc": "", "parentTag": "[課程討論-師資異動] ", "adminTag": "" },
+      { "value": "學生狀況反應", "label": "學生狀況反應", "desc": "", "parentTag": "[課程討論-學生狀況反應] ", "adminTag": "" },
+      { "value": "家長反映授課師狀況", "label": "家長反映授課師狀況", "desc": "", "parentTag": "[課程討論-家長反映授課師狀況] ", "adminTag": "" },
+      { "value": "教材與進度問題", "label": "教材與進度問題", "desc": "", "parentTag": "[課程討論-教材與進度問題] ", "adminTag": "" }
     ]
   }
 }
