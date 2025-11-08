@@ -26,6 +26,7 @@
       try {
         const docRef = window.firebase.firestore().collection('protectedTools').doc('transferTool');
         const docSnap = await docRef.get();
+        console.log('Firestore 讀取成功:', docSnap.exists);  // 添加此行
         
         if (docSnap.exists) {
           const data = docSnap.data();
@@ -37,11 +38,11 @@
           // 重新初始化腳本（例如，重新執行 DOMContentLoaded 邏輯）
           initializeToolScripts();
         } else {
-          console.error('Protected tool content not found in Firestore.');
+          console.error('文檔不存在');
           document.body.innerHTML = '<p>工具內容載入失敗，請聯繫管理員。</p>';
         }
       } catch (error) {
-        console.error('Failed to fetch protected tool content:', error);
+        console.error('Firestore 錯誤:', error);  // 添加此行
         document.body.innerHTML = '<p>載入工具失敗，請檢查網路或權限。</p>';
       }
     });
