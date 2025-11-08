@@ -96,7 +96,534 @@
       });
       
       // 重新綁定其他事件，例如 searchButton, copyButton 等
-      // ...（複製原有的 addEventListener 邏輯）
+
+      // State management
+      let sheetData = {
+        colA: "",
+        colB: "",
+        colC: "",
+        colD: "",
+        colE: "",
+        colF: "",
+        colG: "",
+        colH: "",
+        colI: "",
+        colJ: "",
+        colK: "",
+        colL: "",
+        colM: "",
+      }
+      let oneClubCustomers = []
+      let selectedOneClubId = ""
+      let teamSheetDataCache = null
+// 新增全域變數，儲存偵測到的學制（包含幼稚園）
+      let detectedSchoolType = ""
+      let studentData = [];  // 儲存學生詳細資料
+
+      // Constants (removed sensitive API endpoints)
+      // Removed FIREBASE_FUNCTION_URL as we use httpsCallable which handles URL and auth automatically
+      const EDUCATION_MAP = {
+        'K': '幼稚園',
+        'E': '國小',
+        'J': '國中',
+        'H': '高中'
+      };
+      
+      const GRADE_MAP = {
+        'K': {
+          '1': '',
+          '2': '',
+          '3': ''
+        },
+        'E': {
+          '1': '一年級',
+          '2': '二年級',
+          '3': '三年級',
+          '4': '四年級',
+          '5': '五年級',
+          '6': '六年級'
+        },
+        'J': {
+          '1': '一年級',
+          '2': '二年級',
+          '3': '三年級'
+        },
+        'H': {
+          '1': '一年級',
+          '2': '二年級',
+          '3': '三年級'
+        }
+      };
+
+      // DOM Elements
+      const dealIdInput = document.getElementById("dealId")
+      const searchButton = document.getElementById("searchButton")
+      const resultPre = document.getElementById("result")
+      const linksContainer = document.getElementById("linksContainer")
+      const copyButton = document.getElementById("copyButton")
+      const orderFrame = document.getElementById("orderFrame")
+      const orderLinkSpan = document.getElementById("orderLink")
+      const ocidSelect = document.getElementById("ocidSelect")
+
+      // Initialize input handlers
+      Object.keys(sheetData).forEach((key) => {
+        const input = document.getElementById(key)
+        if (input) {
+          input.addEventListener("change", (e) => {
+            sheetData[key] = e.target.value
+          })
+        }
+      })
+
+      // Event Listeners
+      dealIdInput.addEventListener("keypress", (e) => {
+        if (e.key === "Enter") {
+          fetchDealInfo()
+        }
+      })
+
+      searchButton.addEventListener("click", fetchDealInfo)
+      copyButton.addEventListener("click", copySheetData)
+      ocidSelect.addEventListener("change", (e) => {
+        selectedOneClubId = e.target.value;
+        
+        // If the big sheet exists, synchronize its OCID
+        const bigSheetContainer = document.getElementById("bigSheetContainer");
+        if (bigSheetContainer) {
+          const newCol2 = bigSheetContainer.querySelector("#newCol2");
+          if (newCol2) {
+            newCol2.value = e.target.value;
+          }
+        }
+        
+        // Removed updateTutorData call as it involves API
+      });
+
+      // Functions
+      async function fetchDealInfo() {
+        const cleanDealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, "")
+        dealIdInput.value = cleanDealId
+
+        if (!cleanDealId) {
+          resultPre.textContent = "請輸入有效的交易編號!"
+          return
+        }
+
+        searchButton.disabled = true
+        resultPre.textContent = "查詢中..."
+        clearSheetFields() // 這個函式會一併清除成交表資料
+        linksContainer.innerHTML = "" // 清空連結區塊
+
+        try {
+          // Call Firebase function using httpsCallable - this automatically handles the URL and authentication
+          const processDeal = window.firebase.functions().httpsCallable('processDeal');
+          const result = await processDeal({ dealId: cleanDealId, customerName: sheetData.colG || "", selectedOneClubId });
+          const data = result.data;
+
+          // Process returned data (simulate original logic)
+          const { notes, contactLink, dealLink, orderLink, orderData, quotationFormatted, customers, tutorName } = data;
+          resultPre.textContent = `【備註】\n${notes}`;
+          updateSheetDataFromBackend(orderData, quotationFormatted);
+          updateOneClubCustomers(customers);
+          if (tutorName) sheetData.colK = tutorName;
+
+          // Handle links and iframe (simplified)
+          updateOrderLink(orderLink);
+          orderFrame.src = orderLink || "about:blank";
+
+          // Add links to container
+          linksContainer.innerHTML = `
+            <div class="link-item">
+              <strong>聯絡人頁面:</strong>
+              <a href="${contactLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                ${contactLink}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
+                  <path d="M15 3h6v6"/>
+                  <path d="M10 14L21 3"/>
+                </svg>
+              </a>
+            </div>
+            <div class="link-item">
+              <strong>Deal頁面:</strong>
+              <a href="${dealLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                ${dealLink}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
+                  <path d="M15 3h6v6"/>
+                  <path d="M10 14L21 3"/>
+                </svg>
+              </a>
+            </div>
+          `;
+
+        } catch (err) {
+          resultPre.textContent = "錯誤：" + err.message
+        } finally {
+          searchButton.disabled = false
+        }
+      }
+
+      function updateSheetDataFromBackend(orderData, quotationFormatted) {
+        // Simulate data processing from backend
+        const newSheetData = { ...sheetData };
+        // Populate fields based on orderData (similar to original logic)
+        newSheetData.colA = orderData.payAt ? new Date(orderData.payAt).toLocaleDateString("en-US", { timeZone: "Asia/Taipei", month: "2-digit", day: "2-digit" }) : "";
+        newSheetData.colB = `#${orderData.crmNo || ""}`;
+        newSheetData.colF = orderData.students?.map(s => s.name).join("＆") || "";
+        newSheetData.colG = orderData.customerInfo?.name || "";
+        newSheetData.colM = orderData.amt || "";
+        // Add quotation processing
+        newSheetData.colI = quotationFormatted;
+        updateSheetData(newSheetData);
+        studentData = orderData.students || [];
+      }
+
+      function clearSheetFields() {
+        const emptyData = {
+          colA: "",
+          colB: "",
+          colC: "",
+          colD: "",
+          colE: "",
+          colF: "",
+          colG: "",
+          colH: "",
+          colI: "",
+          colJ: "",
+          colK: "",
+          colL: "",
+          colM: "",
+        }
+        updateSheetData(emptyData)
+        updateOneClubCustomers([])
+        
+        // 清除成交表資料
+        const bigSheetContainer = document.getElementById("bigSheetContainer")
+        if (bigSheetContainer) {
+          bigSheetContainer.remove()
+        }
+      }
+
+      function updateSheetData(newData) {
+        sheetData = newData
+        Object.keys(newData).forEach((key) => {
+          const input = document.getElementById(key)
+          if (input) {
+            input.value = newData[key]
+          }
+        })
+      }
+
+      function updateOneClubCustomers(customers) {
+        oneClubCustomers = customers
+        ocidSelect.innerHTML = ""
+        if (customers.length === 0) {
+          ocidSelect.innerHTML = '<option value="">無對應ID</option>'
+        } else {
+          customers.forEach((customer) => {
+            const option = document.createElement("option")
+            option.value = customer.oneClubId || ""
+            option.textContent = `${customer.name} (${customer.oneClubId || "?"})`
+            ocidSelect.appendChild(option)
+          })
+          selectedOneClubId = customers[0]?.oneClubId || ""
+        }
+      }
+
+      function updateOrderLink(link) {
+        if (link && link !== "無可用連結") {
+          const displayLink = link.length > 50 ? link.substring(0, 50) + "..." : link
+          orderLinkSpan.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                  ${displayLink}
+                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
+                      <path d="M15 3h6v6"/>
+                      <path d="M10 14L21 3"/>
+                  </svg>
+              </a>`
+        } else {
+          orderLinkSpan.textContent = "無可用連結"
+        }
+      }
+
+      function copySheetData() {
+        const rowData = []
+        // A 到 L 欄位
+        for (let c = "A".charCodeAt(0); c <= "L".charCodeAt(0); c++) {
+          const colId = "col" + String.fromCharCode(c)
+          let val = sheetData[colId] || ""
+          val = val.replace(/\r?\n/g, " / ")
+          rowData.push(val)
+        }
+        // M 欄位
+        rowData.push(sheetData.colM || "")
+        // N 欄 (OneClub ID) - 加上單引號確保數字格式
+        rowData.push(selectedOneClubId ? `${selectedOneClubId}` : "")
+        const tsvLine = rowData.join("\t")
+        navigator.clipboard
+          .writeText(tsvLine)
+          .then(() => {
+            alert("已複製 A~N 欄位到剪貼簿！")
+          })
+          .catch((err) => {
+            console.error("複製失敗:", err)
+            const temp = document.createElement("textarea")
+            temp.value = tsvLine
+            document.body.appendChild(temp)
+            temp.select()
+            document.execCommand("copy")
+            document.body.removeChild(temp)
+            alert("已複製 A~N 欄位到剪貼簿！")
+          })
+      }
+
+      document.addEventListener("DOMContentLoaded", function() {
+        // 取得所有標頭 th
+        const headerCells = document.querySelectorAll('table.data-table thead th');
+        headerCells.forEach((th, index) => {
+          // 建立 overlay div
+          const overlay = document.createElement("div");
+          overlay.className = "copy-overlay";
+          // 加入 data-index 屬性，方便後續對應欄位
+          overlay.setAttribute("data-index", index);
+          // 確保 th 為 relative 定位（CSS 中也可設定）
+          th.style.position = "relative";
+          th.appendChild(overlay);
+
+          // 綁定點擊事件
+          overlay.addEventListener("click", function(e) {
+            const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+            // 假設資料列有 id="dataRow"，取得該列的所有儲存格
+            const dataRow = document.getElementById("dataRow");
+            if (!dataRow) return;
+            const cells = dataRow.children;
+            if (idx >= cells.length) return;
+            const targetCell = cells[idx];
+
+            // 嘗試取得內部的 input 或 select 元素
+            let value = "";
+            const inputElement = targetCell.querySelector("input, select");
+            if (inputElement) {
+              value = inputElement.value;
+              // 檢查是否為 OCID 欄位
+              if (targetCell.querySelector("#newCol2")) {
+                value = value ? `${value}` : "";
+              }
+            } else {
+              value = targetCell.textContent.trim();
+            }
+
+            // 複製值到剪貼簿（支援 Chrome 與 Safari）
+            navigator.clipboard.writeText(value)
+              .then(() => {
+                // 複製成功後，加入變色效果
+                overlay.classList.add("copied");
+                // 1.5秒後移除效果
+                setTimeout(() => {
+                  overlay.classList.remove("copied");
+                }, 520);
+              })
+              .catch((err) => {
+                console.error("複製失敗:", err);
+                // 備援方案：利用 textarea 複製
+                const temp = document.createElement("textarea");
+                temp.value = value;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand("copy");
+                document.body.removeChild(temp);
+                // 備援方案同樣套用視覺效果
+                overlay.classList.add("copied");
+                setTimeout(() => {
+                  overlay.classList.remove("copied");
+                }, 520);
+              });
+          });
+        });
+      });
+
+        // 取得【生成】按鈕參考
+        const generateButton = document.getElementById("generateButton");
+        
+        generateButton.addEventListener("click", () => {
+          // 先清除現有的成交表資料
+          const existingContainer = document.getElementById("bigSheetContainer");
+          if (existingContainer) {
+            existingContainer.remove();
+          }
+
+          // 建立新的版位容器，id 設為 bigSheetContainer
+          const bigSheetContainer = document.createElement("div");
+          bigSheetContainer.id = "bigSheetContainer";
+          bigSheetContainer.className = "panel table-container"; // 共用相同樣式，max-height已設定為100px
+
+          // 產生標題與按鈕區塊
+          bigSheetContainer.innerHTML = `
+            <div class="table-header">
+              <h2 class="table-title">成交大表資料</h2>
+              <div class="table-actions">
+                <button class="button button-primary" id="copyButton2">
+                  複製
+                </button>
+              </div>
+            </div>
+            <div class="table-wrapper">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>輔導</th>
+                    <th>OCID</th>
+                    <th>成員</th>
+                    <th>學制</th>
+                    <th>年級</th>
+                    <th>立約人</th>
+                    <th>交編</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr id="dataRow2">
+                    <td><input type="text" class="cell-input" id="newCol1" value="${sheetData.colK || ''}" placeholder="輔導"></td>
+                    <td><input type="text" class="cell-input" id="newCol2" value="${ocidSelect.value || ''}" placeholder="OCID"></td>
+                    <td>
+                      <select id="newCol3" class="cell-input">
+                        ${studentData.map(s => 
+                          `<option value="${s.name}" data-education="${s.education}" data-grade="${s.grade}">${s.name}</option>`
+                        ).join('') || '<option value="">無成員資料</option>'}
+                      </select>
+                    </td>
+                    <td><input type="text" class="cell-input" id="newCol4" readonly></td>
+                    <td><input type="text" class="cell-input" id="newCol5" readonly></td>
+                    <td><input type="text" class="cell-input" id="newCol6" value="${sheetData.colG || ''}" placeholder="立約人"></td>
+                    <td><input type="text" class="cell-input" id="newCol7" value="${sheetData.colB || ''}" placeholder="交編"></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          `;
+
+          // 為成員選單添加切換事件
+          const newCol3 = bigSheetContainer.querySelector("#newCol3");
+          const newCol4 = bigSheetContainer.querySelector("#newCol4");
+          const newCol5 = bigSheetContainer.querySelector("#newCol5");
+          
+          newCol3.addEventListener("change", function() {
+            const selectedOption = this.options[this.selectedIndex];
+            const education = selectedOption.dataset.education;
+            const grade = selectedOption.dataset.grade;
+            
+            // 更新學制和年級
+            newCol4.value = EDUCATION_MAP[education] || '';
+            newCol5.value = GRADE_MAP[education]?.[grade] || '';
+            
+            // 複製選中的學生名稱
+            navigator.clipboard.writeText(this.value);
+          });
+
+          // 初始觸發一次 change 事件以設定初始值
+          if (newCol3.options.length > 0) {
+            newCol3.dispatchEvent(new Event('change'));
+          }
+
+          // 插入新版成交大表至 .panel-container 內
+          document.querySelector(".panel-container").insertAdjacentElement("beforeend", bigSheetContainer);
+
+          // 為新版位的表格標頭新增 overlay 複製功能（可複製單一欄位內容）
+          addCopyOverlay(bigSheetContainer);
+
+          // 新版位複製按鈕處理
+          const copyButton2 = document.getElementById("copyButton2");
+
+          copyButton2.addEventListener("click", () => {
+            const dataRow = document.getElementById("dataRow2");
+            const inputs = dataRow.querySelectorAll("input, select");
+            const rowData = [];
+            inputs.forEach((input, index) => {
+              let value = input.value.trim();
+              // 檢查是否為 OCID 欄位（index === 1）
+              if (index === 1 && value) {
+                value = `${value}`; // 加上單引號
+              }
+              rowData.push(value);
+            });
+            const tsvLine = rowData.join("\t");
+            navigator.clipboard.writeText(tsvLine).then(() => {
+              alert("已複製成交大表資料的內容！");
+            });
+          });
+
+          // 在生成表格後添加 newCol1 的值變化監聽
+          const newCol1 = bigSheetContainer.querySelector("#newCol1");
+          const colK = document.getElementById("colK");
+          
+          if (newCol1 && colK) {
+            // 監聽 input 事件以即時捕獲變化
+            newCol1.addEventListener("input", function(e) {
+              const newValue = e.target.value;
+              // 如果新值不為空且與 colK 當前值不同，則更新 colK
+              if (newValue && newValue !== colK.value) {
+                colK.value = newValue;
+                // 同時更新 sheetData
+                sheetData.colK = newValue;
+              }
+            });
+          }
+        });
+
+        // 依照原版邏輯，為指定容器中的每個表頭新增 overlay 複製功能
+        function addCopyOverlay(container) {
+          const headerCells = container.querySelectorAll("table.data-table thead th");
+          headerCells.forEach((th, index) => {
+            const overlay = document.createElement("div");
+            overlay.className = "copy-overlay";
+            overlay.setAttribute("data-index", index);
+            th.style.position = "relative";
+            th.appendChild(overlay);
+
+            overlay.addEventListener("click", function(e) {
+              const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+              // 取得對應 row 的所有儲存格
+              const dataRow = container.querySelector("tbody tr");
+              if (!dataRow) return;
+              const cells = dataRow.children;
+              if (idx >= cells.length) return;
+              const targetCell = cells[idx];
+              let value = "";
+              const inputElement = targetCell.querySelector("input, select");
+              if (inputElement) {
+                value = inputElement.value;
+                // 檢查是否為 OCID 欄位
+                if (targetCell.querySelector("#newCol2")) {
+                  value = value ? `${value}` : "";
+                }
+              } else {
+                value = targetCell.textContent.trim();
+              }
+              navigator.clipboard.writeText(value)
+                .then(() => {
+                  overlay.classList.add("copied");
+                  setTimeout(() => {
+                    overlay.classList.remove("copied");
+                  }, 520);
+                })
+                .catch(() => {
+                  const temp = document.createElement("textarea");
+                  temp.value = value;
+                  document.body.appendChild(temp);
+                  temp.select();
+                  document.execCommand("copy");
+                  document.body.removeChild(temp);
+                  overlay.classList.add("copied");
+                  setTimeout(() => {
+                    overlay.classList.remove("copied");
+                  }, 520);
+                });
+            });
+          });
+        }
+        document.getElementById("helpButton").addEventListener("click", function() {
+        window.open("TESTwhosthere.html", "HelpPopup", "width=650,height=700");
+      });
     }
   </script>
 </body>
