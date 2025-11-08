@@ -4,7 +4,7 @@ window.addEventListener('firework-login-success', async () => {
     const docRef = window.firebase.firestore().collection('protectedContent').doc('tabsAndIP');
     const docSnap = await docRef.get();
     
-    if (docSnap.exists()) {
+    if (docSnap.exists) {  // 修復：exists 是屬性，不是方法
       const data = docSnap.data();
       const tabsHTML = data.tabsHTML;
       const ipHTML = data.ipHTML;
