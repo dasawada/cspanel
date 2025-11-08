@@ -22,6 +22,7 @@
   <script type="module">
     // 登入成功後，從 Firestore 獲取並替換內容
     window.addEventListener('firework-login-success', async () => {
+      console.log('登入成功事件觸發');  // 添加此行
       try {
         const docRef = window.firebase.firestore().collection('protectedTools').doc('transferTool');
         const docSnap = await docRef.get();
