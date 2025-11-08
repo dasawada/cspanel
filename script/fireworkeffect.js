@@ -29,6 +29,12 @@ export async function loadLoginPanel() {
         s.src = "https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js";
         s.onload = r;
         document.head.appendChild(s);
+      }),
+      new Promise(r => {
+        const s = document.createElement('script');
+        s.src = "https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js";
+        s.onload = r;
+        document.head.appendChild(s);
       })
     ]);
   }
@@ -46,6 +52,7 @@ export async function loadLoginPanel() {
     window.firebase.initializeApp(firebaseConfig);
   }
   const auth = window.firebase.auth();
+  const db = window.firebase.firestore();
   const bar = document.getElementById('firebase-login-bar');
   const barContent = document.getElementById('firebase-login-bar-content');
   const loginBtn = document.getElementById('firebase-login-bar-btn');
