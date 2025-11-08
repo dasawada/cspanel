@@ -1,0 +1,81 @@
+<!-- filepath: [轉單小工具.html](http://_vscodecontentref_/0) -->
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device=1.0">
+  <title>訂單處理工具</title>
+  <!-- 保留必要的 CSS 和 Firebase 腳本 -->
+  <link rel="stylesheet" href="styles.css">
+  <!-- Firebase 腳本 -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <!-- 其他腳本，如 fireworkeffect.js -->
+  <script src="../script/fireworkeffect.js"></script>
+</head>
+<body>
+  <!-- 初始只顯示登入提示 -->
+  <div id="login-placeholder">
+    <p>請登入 Firebase 以使用工具。</p>
+  </div>
+
+  <script>
+    // 登入成功後，從 Firestore 獲取並替換內容
+    window.addEventListener('firework-login-success', async () => {
+      try {
+        const docRef = window.firebase.firestore().collection('protectedTools').doc('transferTool');
+        const docSnap = await docRef.get();
+        
+        if (docSnap.exists) {
+          const data = docSnap.data();
+          const toolHTML = data.toolHTML;
+          
+          // 替換整個 body 內容
+          document.body.innerHTML = toolHTML;
+          
+          // 重新初始化腳本（例如，重新執行 DOMContentLoaded 邏輯）
+          initializeToolScripts();
+        } else {
+          console.error('Protected tool content not found in Firestore.');
+          document.body.innerHTML = '<p>工具內容載入失敗，請聯繫管理員。</p>';
+        }
+      } catch (error) {
+        console.error('Failed to fetch protected tool content:', error);
+        document.body.innerHTML = '<p>載入工具失敗，請檢查網路或權限。</p>';
+      }
+    });
+
+    // 登出時，恢復登入提示
+    window.addEventListener('firework-logout-success', () => {
+      document.body.innerHTML = `
+        <div id="login-placeholder">
+          <p>請登入 Firebase 以使用工具。</p>
+        </div>
+      `;
+    });
+
+    // 自定義函數：重新初始化工具腳本
+    function initializeToolScripts() {
+      // 重新執行原有的初始化邏輯，例如：
+      // - 綁定事件監聽器
+      // - 初始化變數
+      // - 載入模組（如 fusearch.js, draggable.js）
+      
+      // 示例：重新載入模組
+      import('../script/fusearch.js').then(() => {
+        // 初始化 fusearch
+      });
+      import('../script/draggable.js').then(({ makeDraggable }) => {
+        // 重新初始化拖拽
+        const panel = document.getElementById('fudausearch-container');
+        const handle = panel.querySelector('.fudausearch-drag-handle');
+        makeDraggable(panel, handle, { left: 300, top: 185, color: '#a9bcc7' });
+      });
+      
+      // 重新綁定其他事件，例如 searchButton, copyButton 等
+      // ...（複製原有的 addEventListener 邏輯）
+    }
+  </script>
+</body>
+</html>
