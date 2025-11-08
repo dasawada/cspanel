@@ -4,14 +4,13 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device=1.0">
   <title>訂單處理工具</title>
-  <!-- 保留必要的 CSS 和 Firebase 腳本 -->
+  <!-- 保留必要的 CSS -->
   <link rel="stylesheet" href="styles.css">
   <!-- Firebase 腳本 -->
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- 其他腳本，如 fireworkeffect.js，添加 type="module" -->
-  <script type="module" src="../script/fireworkeffect.js"></script>
+  <!-- 移除 fireworkeffect.js 的引用 -->
 </head>
 <body>
   <!-- 初始只顯示登入提示 -->
@@ -20,13 +19,35 @@
   </div>
 
   <script type="module">
+    // 手動初始化 Firebase（複製 fireworkeffect.js 中的配置）
+    const firebaseConfig = {
+        apiKey: "AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M",
+      authDomain: "cstoolsapi.firebaseapp.com",
+      projectId: "cstoolsapi",
+      storageBucket: "cstoolsapi.firebasestorage.app",
+      messagingSenderId: "632885029336",
+      appId: "1:632885029336:web:f491b9cc28fe3f2504aaad"
+    };
+    window.firebase.initializeApp(firebaseConfig);
+
+    // 檢查登入狀態
+    window.firebase.auth().onAuthStateChanged((user) => {
+      if (user) {
+        // 已登入，觸發登入成功事件
+        window.dispatchEvent(new Event('firework-login-success'));
+      } else {
+        // 未登入，顯示提示
+        console.log('用戶未登入');
+      }
+    });
+
     // 登入成功後，從 Firestore 獲取並替換內容
     window.addEventListener('firework-login-success', async () => {
-      console.log('登入成功事件觸發');  // 添加此行
+      console.log('登入成功事件觸發');
       try {
         const docRef = window.firebase.firestore().collection('protectedTools').doc('transferTool');
         const docSnap = await docRef.get();
-        console.log('Firestore 讀取成功:', docSnap.exists);  // 添加此行
+        console.log('Firestore 讀取成功:', docSnap.exists);
         
         if (docSnap.exists) {
           const data = docSnap.data();
@@ -35,14 +56,14 @@
           // 替換整個 body 內容
           document.body.innerHTML = toolHTML;
           
-          // 重新初始化腳本（例如，重新執行 DOMContentLoaded 邏輯）
+          // 重新初始化腳本
           initializeToolScripts();
         } else {
           console.error('文檔不存在');
           document.body.innerHTML = '<p>工具內容載入失敗，請聯繫管理員。</p>';
         }
       } catch (error) {
-        console.error('Firestore 錯誤:', error);  // 添加此行
+        console.error('Firestore 錯誤:', error);
         document.body.innerHTML = '<p>載入工具失敗，請檢查網路或權限。</p>';
       }
     });
