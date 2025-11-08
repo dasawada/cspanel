@@ -132,6 +132,66 @@
 }
 .draggable-handle{color: darkgrey;}
   </style>
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { GoogleAuthProvider } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    // Firebase Auth UI (for quick login UI)
+    import "https://www.gstatic.com/firebasejs/ui/6.0.1/firebase-ui-auth.js";
+
+    // Initialize Firebase
+    const firebaseConfig = {
+      apiKey: "your-api-key",  // Replace with your Firebase API key
+      authDomain: "your-project.firebaseapp.com",  // Replace with your Auth domain
+      projectId: "your-project-id",  // Replace with your project ID
+      // Add other config as needed
+    };
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth(app);
+
+    // Auth UI Config
+    const uiConfig = {
+      signInSuccessUrl: window.location.href,  // Redirect to same page after login
+      signInOptions: [
+        GoogleAuthProvider.PROVIDER_ID,  // Use Google login for simplicity and security
+      ],
+      tosUrl: '<your-terms-of-service-url>',  // Optional: Terms of service
+      privacyPolicyUrl: '<your-privacy-policy-url>',  // Optional: Privacy policy
+    };
+
+    // Initialize Auth UI
+    const ui = new firebaseui.auth.AuthUI(auth);
+
+    // Check auth state and show/hide content
+    onAuthStateChanged(auth, (user) => {
+      const loginContainer = document.getElementById('login-container');
+      const mainContent = document.getElementById('main-content');
+      const logoutButton = document.getElementById('logout-button');
+
+      if (user) {
+        // User is signed in
+        loginContainer.style.display = 'none';
+        mainContent.style.display = 'block';
+        logoutButton.style.display = 'block';
+      } else {
+        // User is signed out
+        loginContainer.style.display = 'block';
+        mainContent.style.display = 'none';
+        logoutButton.style.display = 'none';
+        ui.start('#firebaseui-auth-container', uiConfig);
+      }
+    });
+
+    // Logout function
+    window.logout = () => {
+      signOut(auth).then(() => {
+        console.log('User signed out');
+      }).catch((error) => {
+        console.error('Sign out error:', error);
+      });
+    };
+  </script>
 </head>
 <body>
   <div class="fudausearch-container" id="fudausearch-container" style="z-index: 998;">
@@ -582,6 +642,22 @@ document.addEventListener("DOMContentLoaded", function() {
         });
     });
   });
+
+  // 定義必要的 DOM 元素變數
+  const dealIdInput = document.getElementById('dealId');
+  const searchButton = document.getElementById('searchButton');
+  const resultPre = document.getElementById('result');
+  const linksContainer = document.getElementById('linksContainer');
+  const orderFrame = document.getElementById('orderFrame');
+  const orderLinkSpan = document.getElementById('orderLink');
+  const ocidSelect = document.getElementById('ocidSelect');
+  const copyButton = document.getElementById('copyButton');
+
+  // 綁定搜尋按鈕點擊事件
+  searchButton.addEventListener('click', fetchDealInfo);
+
+  // 綁定複製按鈕點擊事件
+  copyButton.addEventListener('click', copySheetData);
 });
 
   const generateButton = document.getElementById("generateButton");
