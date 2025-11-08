@@ -4,101 +4,431 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device=1.0">
   <title>訂單處理工具</title>
-  <!-- 保留必要的 CSS -->
   <link rel="stylesheet" href="styles.css">
-  <!-- Firebase 腳本 -->
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
-  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
-  <!-- 移除 fireworkeffect.js 的引用 -->
+  <style>
+    .active-link {
+      background-color: #4a90e2;
+      color: white;
+    }
+    /* 容器樣式 */
+    .fudausearch-container {
+    width: 400px;
+    height: auto;
+    font-size: 12px;
+    color: #4d4d4d;
+    border: 1px solid #ccc;
+    border-radius: 10px;
+    background-color: white;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+    box-sizing: border-box;
+    gap: 10px;
+    padding-bottom: 10px;
+}
+
+/* 建議選單樣式 */
+.fudausearch-suggestions {
+    position: absolute;
+    top: 100%;
+    left: 10px;
+    width: 90%;
+    background-color: #fff;
+    border: 1px solid #ccc;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    z-index: 999;
+    display: none;
+}
+
+.fudausearch-suggestion-item {
+    padding: 8px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.fudausearch-suggestion-item:hover {
+    background-color: #f0f0f0;
+}
+.fudausearch-button {
+  background-color: #f0f0f0;
+  padding: 2px 6px;
+  border: 1px solid #bfbfbf;
+  border-radius: 4px;
+  cursor: pointer;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: background-color 0.1s ease;
+  line-height: 1.3;
+}
+/* 已複製樣式 */
+.fudausearch-button.copied {
+    color: white;
+    background-color: #28a745;
+    border-color: #28a745;
+  }
+  
+    /* 學務部按鈕特殊樣式 */
+  .fudausearch-button-special {
+    background-color: #df532d; 
+    color: white;             
+  }
+
+  .fudausearch-button-special:hover {
+    background-color: #B53A18;
+    color: white;
+  }
+
+  .fudausearch-button-paikezu {
+    background-color: #211898; 
+    color: white;             
+  }
+
+  .fudausearch-button-paikezu:hover {
+    background-color: #312B7A;
+    color: white;
+  }
+  
+  .fudausearch-button-kefugon {
+    background-color: #484661; 
+    color: white;             
+  }
+
+  .fudausearch-button-kefugon:hover {
+    background-color: #2A292E;
+    color: white;
+  }
+  .fudausearch-button-groupnumber {
+    background-color: #078eda;
+    color: white;
+  }
+  .fudausearch-button-groupnumber:hover {
+    background-color: #163c94;
+    color: white;
+  }
+/* 包裹輸入框與按鈕的容器 */
+.fudausearch-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  padding: 5px 10px 0px 10px;
+}
+
+#fudausearch-input {
+  flex: 1;
+}
+
+/* 清除按鈕樣式 */
+.fudausearch-clear-btn {
+  position: absolute;
+  right: 15px;
+  background-color: transparent;
+  border: none;
+  font-size: 15px;
+  color: #aaa;
+  cursor: pointer;
+  width: 15px;
+}
+
+.fudausearch-clear-btn:hover {
+  color: #000;
+}
+.draggable-handle{color: darkgrey;}
+  </style>
 </head>
 <body>
-  <!-- 初始只顯示登入提示 -->
-  <div id="login-placeholder">
-    <p>請登入 Firebase 以使用工具。</p>
+  <div class="fudausearch-container" id="fudausearch-container" style="z-index: 998;">
+    <div class="fudausearch-drag-handle" id="fudausearch-drag-handle">
+        職代是誰 (⁎⁍̴̛ᴗ⁍̴̛⁎)
+    </div>
+    <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
+    <div class="fudausearch-input-wrapper">
+        <input type="text" id="fudausearch-input" placeholder="輔導職代、顧問組長查詢" style="padding:2px 6px;font-size: 13px;" autocomplete="off" />
+        <button class="fudausearch-clear-btn" id="fudausearch-clear-btn">x</button>
+        <div id="fudausearch-suggestions" class="fudausearch-suggestions"></div>
+    </div>
+    <div id="fudausearch-results" style="padding: 0 10px;"></div>
+</div>
+<script type="module" src="../script/fusearch.js"></script>
+<script type="module">
+import { makeDraggable } from '../script/draggable.js';
+
+document.addEventListener('DOMContentLoaded', () => {
+const panel = document.getElementById('fudausearch-container');
+const handle = panel.querySelector('.fudausearch-drag-handle');
+makeDraggable(panel, handle, { left: 300, top: 185, color: '#a9bcc7'});
+});
+</script>
+  <div class="container">
+    <!-- Background Decorations -->
+    <div class="bg-decoration bg-decoration-1"></div>
+    <div class="bg-decoration bg-decoration-2"></div>
+
+    <!-- Left Panel -->
+    <div class="panel">
+      <div class="search-container">
+        <input type="text" id="dealId" class="search-input" placeholder="輸入Deal ID">
+        <button id="searchButton" class="search-button">
+          <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"/>
+            <path d="M21 21l-4.35-4.35"/>
+          </svg>
+          搜尋
+        </button>
+      </div>
+      <div class="result-container">
+        <pre id="result" class="result-text">等待搜尋...</pre>
+      </div>
+      <!-- 新增連結區塊，固定顯示在左側下方 -->
+      <div id="linksContainer" class="links-container"></div>
+    </div>
+
+    <!-- Right Panel -->
+    <div class="panel-container">
+      <!-- Table Container -->
+      <div class="panel table-container">
+        <div class="table-header">
+		<div class="title-group-left">
+          <h2 class="table-title">訂單資料表</h2>
+		  <button id="helpButton" class="help-button" title="說明">?</button>
+		  </div>
+          <div class="table-actions">
+            <button class="button button-primary" id="copyButton">
+              <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+                <path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/>
+              </svg>
+              複製
+            </button>
+			<button class="button button-primary" id="generateButton">
+      <!-- 可複用圖示或僅顯示文字 -->
+      生成
+    </button>
+          </div>
+        </div>
+
+        <div class="table-wrapper">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>轉單日</th>
+                <th>交編</th>
+                <th>聯絡人</th>
+                <th>狀態</th>
+                <th>顧問</th>
+                <th>學員名</th>
+                <th>立約人</th>
+                <th>科目</th>
+                <th>方案</th>
+                <th>J</th>
+                <th>輔導</th>
+                <th>組別</th>
+                <th>金額</th>
+                <th>OCID</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr id="dataRow">
+                <td><input type="text" class="cell-input" id="colA" placeholder="mm/dd"></td>
+                <td><input type="text" class="cell-input" id="colB" placeholder="交易編號"></td>
+                <td><input type="text" class="cell-input" id="colC" placeholder="聯絡人頁面"></td>
+                <td><input type="text" class="cell-input" id="colD"></td>
+                <td><input type="text" class="cell-input" id="colE" placeholder="顧問組別-姓名"></td>
+                <td><input type="text" class="cell-input" id="colF" placeholder="學生名單"></td>
+                <td><input type="text" class="cell-input" id="colG" placeholder="客戶名稱"></td>
+                <td><input type="text" class="cell-input" id="colH"></td>
+                <td><input type="text" class="cell-input" id="colI"></td>
+                <td><input type="text" class="cell-input" id="colJ"></td>
+                <td><input type="text" class="cell-input" id="colK"></td>
+                <td><input type="text" class="cell-input" id="colL"></td>
+                <td><input type="text" class="cell-input" id="colM" placeholder="金額"></td>
+                <td class="ocid-cell">
+                  <select id="ocidSelect" class="ocid-select">
+                    <option value="">無對應ID</option>
+                  </select>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- iframe Container -->
+      <div class="panel iframe-container">
+        <div class="iframe-content">
+          <iframe id="orderFrame" src="about:blank"></iframe>
+        </div>
+        <div class="iframe-footer">
+          <div class="iframe-link">
+            <strong>OneClass商品訂單連結:</strong>
+            <span id="orderLink" class="text-gray-500">無可用連結</span>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-  <script type="module">
-    // 手動初始化 Firebase（複製 fireworkeffect.js 中的配置）
-    const firebaseConfig = {
-        apiKey: "AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M",
-      authDomain: "cstoolsapi.firebaseapp.com",
-      projectId: "cstoolsapi",
-      storageBucket: "cstoolsapi.firebasestorage.app",
-      messagingSenderId: "632885029336",
-      appId: "1:632885029336:web:f491b9cc28fe3f2504aaad"
+  <script>
+    // State management
+    let sheetData = {
+      colA: "",
+      colB: "",
+      colC: "",
+      colD: "",
+      colE: "",
+      colF: "",
+      colG: "",
+      colH: "",
+      colI: "",
+      colJ: "",
+      colK: "",
+      colL: "",
+      colM: "",
+    }
+    let oneClubCustomers = []
+    let selectedOneClubId = ""
+    let teamSheetDataCache = null
+    let detectedSchoolType = ""
+    let studentData = []
+
+    // Constants
+    const TEAM_SHEET_ENDPOINT =
+      "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
+    
+    // Update these constants to use your Netlify site URL
+    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
+    const ONE_CLUB_SEARCH_API = `${NETLIFY_SITE_URL}/.netlify/functions/oneclub-customers`
+    const EDUCATION_MAP = {
+      'K': '幼稚園',
+      'E': '國小',
+      'J': '國中',
+      'H': '高中'
     };
-    window.firebase.initializeApp(firebaseConfig);
+    const PROCESS_DEAL_API = `${NETLIFY_SITE_URL}/.netlify/functions/process-deal`;
 
-    // 檢查登入狀態
-    window.firebase.auth().onAuthStateChanged((user) => {
-      if (user) {
-        // 已登入，觸發登入成功事件
-        window.dispatchEvent(new Event('firework-login-success'));
-      } else {
-        // 未登入，顯示提示
-        console.log('用戶未登入');
-      }
-    });
-
-    // 登入成功後，從 Firestore 獲取並替換內容
-    window.addEventListener('firework-login-success', async () => {
-      console.log('登入成功事件觸發');
-      try {
-        const docRef = window.firebase.firestore().collection('protectedTools').doc('transferTool');
-        const docSnap = await docRef.get();
-        console.log('Firestore 讀取成功:', docSnap.exists);
-        
-        if (docSnap.exists) {
-          const data = docSnap.data();
-          const toolHTML = data.toolHTML;
-          
-          // 替換整個 body 內容
-          document.body.innerHTML = toolHTML;
-          
-          // 重新初始化腳本
-          initializeToolScripts();
-        } else {
-          console.error('文檔不存在');
-          document.body.innerHTML = '<p>工具內容載入失敗，請聯繫管理員。</p>';
+    async function updateTutorData() {
+      if (!selectedOneClubId) return;
+      const name = (window.__tutorLookup && window.__tutorLookup[selectedOneClubId]) || '';
+      if (name) {
+        sheetData.colK = name;
+        const colKInput = document.getElementById('colK');
+        if (colKInput) colKInput.value = name;
+        const bigSheetContainer = document.getElementById('bigSheetContainer');
+        if (bigSheetContainer) {
+          const newCol1 = bigSheetContainer.querySelector('#newCol1');
+          if (newCol1) newCol1.value = name;
         }
-      } catch (error) {
-        console.error('Firestore 錯誤:', error);
-        document.body.innerHTML = '<p>載入工具失敗，請檢查網路或權限。</p>';
       }
-    });
+    }
 
-    // 登出時，恢復登入提示
-    window.addEventListener('firework-logout-success', () => {
-      document.body.innerHTML = `
-        <div id="login-placeholder">
-          <p>請登入 Firebase 以使用工具。</p>
-        </div>
-      `;
-    });
+    function buildSheetRow(payload) {
+      const old = document.querySelector('.link-selector');
+      if (old) old.remove();
 
-    // 自定義函數：重新初始化工具腳本
-    function initializeToolScripts() {
-      // 重新執行原有的初始化邏輯，例如：
-      // - 綁定事件監聽器
-      // - 初始化變數
-      // - 載入模組（如 fusearch.js, draggable.js）
-      
-      // 示例：重新載入模組
-      import('../script/fusearch.js').then(() => {
-        // 初始化 fusearch
-      });
-      import('../script/draggable.js').then(({ makeDraggable }) => {
-        // 重新初始化拖拽
-        const panel = document.getElementById('fudausearch-container');
-        const handle = panel.querySelector('.fudausearch-drag-handle');
-        makeDraggable(panel, handle, { left: 300, top: 185, color: '#a9bcc7' });
-      });
-      
-      // 重新綁定其他事件，例如 searchButton, copyButton 等
+      if (payload?.sheet) {
+        updateSheetData(payload.sheet);
+      }
 
-      // State management
-      let sheetData = {
+      updateOneClubCustomers(payload?.ocidOptions || []);
+      if (payload?.selectedOneClubId) {
+        selectedOneClubId = payload.selectedOneClubId;
+        const sel = document.getElementById('ocidSelect');
+        if (sel) sel.value = payload.selectedOneClubId;
+      }
+
+      window.__tutorLookup = payload?.tutorLookup || {};
+
+      const orderLinks = payload?.links?.orderLinks || [];
+      const firstLink = orderLinks[0] || null;
+      const contactLink = payload?.links?.contactLink || '';
+      const dealLink = payload?.links?.dealLink || '';
+      if (firstLink) {
+        orderFrame.src = firstLink;
+        updateOrderLink(firstLink);
+      } else {
+        orderFrame.src = 'about:blank';
+        updateOrderLink('無可用連結');
+      }
+
+      linksContainer.innerHTML = "";
+      const dealBtn = document.createElement('button');
+      dealBtn.textContent = `交編 #${document.getElementById('dealId').value.trim()}`;
+      dealBtn.onclick = () => window.open(dealLink, '_blank');
+      linksContainer.appendChild(dealBtn);
+      if (contactLink) {
+        const contactBtn = document.createElement('button');
+        contactBtn.textContent = `聯絡人 ${contactLink.split('/').filter(Boolean).pop()}`;
+        contactBtn.onclick = () => window.open(contactLink, '_blank');
+        linksContainer.appendChild(contactBtn);
+      }
+
+      if (orderLinks.length >= 2) {
+        const linkSelectorDiv = document.createElement('div');
+        linkSelectorDiv.className = 'link-selector';
+        linkSelectorDiv.style.marginBottom = '10px';
+        const link1Button = document.createElement('button');
+        link1Button.textContent = '訂單一';
+        link1Button.className = 'button button-small active-link';
+        link1Button.style.marginRight = '5px';
+
+        const link2Button = document.createElement('button');
+        link2Button.textContent = '訂單二';
+        link2Button.className = 'button button-small';
+
+        link1Button.onclick = () => {
+          orderFrame.src = orderLinks[0];
+          updateOrderLink(orderLinks[0]);
+          link1Button.className = 'button button-small active-link';
+          link2Button.className = 'button button-small';
+        };
+        link2Button.onclick = () => {
+          orderFrame.src = orderLinks[1];
+          updateOrderLink(orderLinks[1]);
+          link2Button.className = 'button button-small active-link';
+          link1Button.className = 'button button-small';
+        };
+
+        linkSelectorDiv.appendChild(link1Button);
+        linkSelectorDiv.appendChild(link2Button);
+        document.querySelector(".iframe-footer").insertAdjacentElement("beforebegin", linkSelectorDiv);
+      }
+
+      const notes = payload?.notes || '無備註';
+      resultPre.textContent = `【備註】\n${notes}`;
+
+      studentData = payload?.students || [];
+    }
+
+    async function fetchDealInfo() {
+      const cleanDealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, "")
+      dealIdInput.value = cleanDealId
+
+      if (!cleanDealId) {
+        resultPre.textContent = "請輸入有效的交易編號!"
+        return
+      }
+
+      searchButton.disabled = true
+      resultPre.textContent = "查詢中..."
+      clearSheetFields()
+      linksContainer.innerHTML = ""
+
+      try {
+        const res = await fetch(`${PROCESS_DEAL_API}?dealId=${encodeURIComponent(cleanDealId)}`, {
+          method: 'GET',
+          headers: { 'Accept': 'application/json' },
+          mode: 'cors'
+        })
+        if (!res.ok) throw new Error(`後端處理失敗: ${res.status}`)
+        const json = await res.json()
+        if (json.status !== 'success') throw new Error(json.message || '處理失敗')
+        buildSheetRow(json.data)
+      } catch (err) {
+        resultPre.textContent = "錯誤：" + err.message
+      } finally {
+        searchButton.disabled = false
+      }
+    }
+
+    function clearSheetFields() {
+      const emptyData = {
         colA: "",
         colB: "",
         colC: "",
@@ -113,518 +443,310 @@
         colL: "",
         colM: "",
       }
-      let oneClubCustomers = []
-      let selectedOneClubId = ""
-      let teamSheetDataCache = null
-// 新增全域變數，儲存偵測到的學制（包含幼稚園）
-      let detectedSchoolType = ""
-      let studentData = [];  // 儲存學生詳細資料
-
-      // Constants (removed sensitive API endpoints)
-      // Removed FIREBASE_FUNCTION_URL as we use httpsCallable which handles URL and auth automatically
-      const EDUCATION_MAP = {
-        'K': '幼稚園',
-        'E': '國小',
-        'J': '國中',
-        'H': '高中'
-      };
+      updateSheetData(emptyData)
+      updateOneClubCustomers([])
       
-      const GRADE_MAP = {
-        'K': {
-          '1': '',
-          '2': '',
-          '3': ''
-        },
-        'E': {
-          '1': '一年級',
-          '2': '二年級',
-          '3': '三年級',
-          '4': '四年級',
-          '5': '五年級',
-          '6': '六年級'
-        },
-        'J': {
-          '1': '一年級',
-          '2': '二年級',
-          '3': '三年級'
-        },
-        'H': {
-          '1': '一年級',
-          '2': '二年級',
-          '3': '三年級'
-        }
-      };
+      const bigSheetContainer = document.getElementById("bigSheetContainer")
+      if (bigSheetContainer) {
+        bigSheetContainer.remove()
+      }
+    }
 
-      // DOM Elements
-      const dealIdInput = document.getElementById("dealId")
-      const searchButton = document.getElementById("searchButton")
-      const resultPre = document.getElementById("result")
-      const linksContainer = document.getElementById("linksContainer")
-      const copyButton = document.getElementById("copyButton")
-      const orderFrame = document.getElementById("orderFrame")
-      const orderLinkSpan = document.getElementById("orderLink")
-      const ocidSelect = document.getElementById("ocidSelect")
-
-      // Initialize input handlers
-      Object.keys(sheetData).forEach((key) => {
+    function updateSheetData(newData) {
+      sheetData = newData
+      Object.keys(newData).forEach((key) => {
         const input = document.getElementById(key)
         if (input) {
-          input.addEventListener("change", (e) => {
-            sheetData[key] = e.target.value
-          })
+          input.value = newData[key]
         }
       })
+    }
 
-      // Event Listeners
-      dealIdInput.addEventListener("keypress", (e) => {
-        if (e.key === "Enter") {
-          fetchDealInfo()
-        }
-      })
-
-      searchButton.addEventListener("click", fetchDealInfo)
-      copyButton.addEventListener("click", copySheetData)
-      ocidSelect.addEventListener("change", (e) => {
-        selectedOneClubId = e.target.value;
-        
-        // If the big sheet exists, synchronize its OCID
-        const bigSheetContainer = document.getElementById("bigSheetContainer");
-        if (bigSheetContainer) {
-          const newCol2 = bigSheetContainer.querySelector("#newCol2");
-          if (newCol2) {
-            newCol2.value = e.target.value;
-          }
-        }
-        
-        // Removed updateTutorData call as it involves API
-      });
-
-      // Functions
-      async function fetchDealInfo() {
-        const cleanDealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, "")
-        dealIdInput.value = cleanDealId
-
-        if (!cleanDealId) {
-          resultPre.textContent = "請輸入有效的交易編號!"
-          return
-        }
-
-        searchButton.disabled = true
-        resultPre.textContent = "查詢中..."
-        clearSheetFields() // 這個函式會一併清除成交表資料
-        linksContainer.innerHTML = "" // 清空連結區塊
-
-        try {
-          // Call Firebase function using httpsCallable - this automatically handles the URL and authentication
-          const processDeal = window.firebase.functions().httpsCallable('processDeal');
-          const result = await processDeal({ dealId: cleanDealId, customerName: sheetData.colG || "", selectedOneClubId });
-          const data = result.data;
-
-          // Process returned data (simulate original logic)
-          const { notes, contactLink, dealLink, orderLink, orderData, quotationFormatted, customers, tutorName } = data;
-          resultPre.textContent = `【備註】\n${notes}`;
-          updateSheetDataFromBackend(orderData, quotationFormatted);
-          updateOneClubCustomers(customers);
-          if (tutorName) sheetData.colK = tutorName;
-
-          // Handle links and iframe (simplified)
-          updateOrderLink(orderLink);
-          orderFrame.src = orderLink || "about:blank";
-
-          // Add links to container
-          linksContainer.innerHTML = `
-            <div class="link-item">
-              <strong>聯絡人頁面:</strong>
-              <a href="${contactLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
-                ${contactLink}
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
-                  <path d="M15 3h6v6"/>
-                  <path d="M10 14L21 3"/>
-                </svg>
-              </a>
-            </div>
-            <div class="link-item">
-              <strong>Deal頁面:</strong>
-              <a href="${dealLink}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
-                ${dealLink}
-                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                  <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
-                  <path d="M15 3h6v6"/>
-                  <path d="M10 14L21 3"/>
-                </svg>
-              </a>
-            </div>
-          `;
-
-        } catch (err) {
-          resultPre.textContent = "錯誤：" + err.message
-        } finally {
-          searchButton.disabled = false
-        }
-      }
-
-      function updateSheetDataFromBackend(orderData, quotationFormatted) {
-        // Simulate data processing from backend
-        const newSheetData = { ...sheetData };
-        // Populate fields based on orderData (similar to original logic)
-        newSheetData.colA = orderData.payAt ? new Date(orderData.payAt).toLocaleDateString("en-US", { timeZone: "Asia/Taipei", month: "2-digit", day: "2-digit" }) : "";
-        newSheetData.colB = `#${orderData.crmNo || ""}`;
-        newSheetData.colF = orderData.students?.map(s => s.name).join("＆") || "";
-        newSheetData.colG = orderData.customerInfo?.name || "";
-        newSheetData.colM = orderData.amt || "";
-        // Add quotation processing
-        newSheetData.colI = quotationFormatted;
-        updateSheetData(newSheetData);
-        studentData = orderData.students || [];
-      }
-
-      function clearSheetFields() {
-        const emptyData = {
-          colA: "",
-          colB: "",
-          colC: "",
-          colD: "",
-          colE: "",
-          colF: "",
-          colG: "",
-          colH: "",
-          colI: "",
-          colJ: "",
-          colK: "",
-          colL: "",
-          colM: "",
-        }
-        updateSheetData(emptyData)
-        updateOneClubCustomers([])
-        
-        // 清除成交表資料
-        const bigSheetContainer = document.getElementById("bigSheetContainer")
-        if (bigSheetContainer) {
-          bigSheetContainer.remove()
-        }
-      }
-
-      function updateSheetData(newData) {
-        sheetData = newData
-        Object.keys(newData).forEach((key) => {
-          const input = document.getElementById(key)
-          if (input) {
-            input.value = newData[key]
-          }
+    function updateOneClubCustomers(customers) {
+      oneClubCustomers = customers
+      ocidSelect.innerHTML = ""
+      if (customers.length === 0) {
+        ocidSelect.innerHTML = '<option value="">無對應ID</option>'
+      } else {
+        customers.forEach((customer) => {
+          const option = document.createElement("option")
+          option.value = customer.oneClubId || ""
+          option.textContent = `${customer.name} (${customer.oneClubId || "?"})`
+          ocidSelect.appendChild(option)
         })
+        selectedOneClubId = customers[0]?.oneClubId || ""
       }
+    }
 
-      function updateOneClubCustomers(customers) {
-        oneClubCustomers = customers
-        ocidSelect.innerHTML = ""
-        if (customers.length === 0) {
-          ocidSelect.innerHTML = '<option value="">無對應ID</option>'
-        } else {
-          customers.forEach((customer) => {
-            const option = document.createElement("option")
-            option.value = customer.oneClubId || ""
-            option.textContent = `${customer.name} (${customer.oneClubId || "?"})`
-            ocidSelect.appendChild(option)
-          })
-          selectedOneClubId = customers[0]?.oneClubId || ""
+    function updateOrderLink(link) {
+      if (link && link !== "無可用連結") {
+        const displayLink = link.length > 50 ? link.substring(0, 50) + "..." : link
+        orderLinkSpan.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
+                ${displayLink}
+                <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
+                    <path d="M15 3h6v6"/>
+                    <path d="M10 14L21 3"/>
+                </svg>
+            </a>`
+      } else {
+        orderLinkSpan.textContent = "無可用連結"
+      }
+    }
+
+    function copySheetData() {
+      const rowData = []
+      for (let c = "A".charCodeAt(0); c <= "L".charCodeAt(0); c++) {
+        const colId = "col" + String.fromCharCode(c)
+        let val = sheetData[colId] || ""
+        val = val.replace(/\r?\n/g, " / ")
+        rowData.push(val)
+      }
+      rowData.push(sheetData.colM || "")
+      rowData.push(selectedOneClubId ? `${selectedOneClubId}` : "")
+      const tsvLine = rowData.join("\t")
+      navigator.clipboard
+        .writeText(tsvLine)
+        .then(() => {
+          alert("已複製 A~N 欄位到剪貼簿！")
+        })
+        .catch((err) => {
+          console.error("複製失敗:", err)
+          const temp = document.createElement("textarea")
+          temp.value = tsvLine
+          document.body.appendChild(temp)
+          temp.select()
+          document.execCommand("copy")
+          document.body.removeChild(temp)
+          alert("已複製 A~N 欄位到剪貼簿！")
+        })
+    }
+
+    ocidSelect.addEventListener("change", (e) => {
+      selectedOneClubId = e.target.value;
+      const bigSheetContainer = document.getElementById("bigSheetContainer");
+      if (bigSheetContainer) {
+        const newCol2 = bigSheetContainer.querySelector("#newCol2");
+        if (newCol2) newCol2.value = e.target.value;
+      }
+      updateTutorData();
+    });
+
+document.addEventListener("DOMContentLoaded", function() {
+  const headerCells = document.querySelectorAll('table.data-table thead th');
+  headerCells.forEach((th, index) => {
+    const overlay = document.createElement("div");
+    overlay.className = "copy-overlay";
+    overlay.setAttribute("data-index", index);
+    th.style.position = "relative";
+    th.appendChild(overlay);
+
+    overlay.addEventListener("click", function(e) {
+      const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+      const dataRow = document.getElementById("dataRow");
+      if (!dataRow) return;
+      const cells = dataRow.children;
+      if (idx >= cells.length) return;
+      const targetCell = cells[idx];
+
+      let value = "";
+      const inputElement = targetCell.querySelector("input, select");
+      if (inputElement) {
+        value = inputElement.value;
+        if (targetCell.querySelector("#newCol2")) {
+          value = value ? `${value}` : "";
         }
+      } else {
+        value = targetCell.textContent.trim();
       }
 
-      function updateOrderLink(link) {
-        if (link && link !== "無可用連結") {
-          const displayLink = link.length > 50 ? link.substring(0, 50) + "..." : link
-          orderLinkSpan.innerHTML = `<a href="${link}" target="_blank" rel="noopener noreferrer" class="text-blue-600 hover:underline">
-                  ${displayLink}
-                  <svg class="icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                      <path d="M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 016-2h6"/>
-                      <path d="M15 3h6v6"/>
-                      <path d="M10 14L21 3"/>
-                  </svg>
-              </a>`
-        } else {
-          orderLinkSpan.textContent = "無可用連結"
-        }
-      }
-
-      function copySheetData() {
-        const rowData = []
-        // A 到 L 欄位
-        for (let c = "A".charCodeAt(0); c <= "L".charCodeAt(0); c++) {
-          const colId = "col" + String.fromCharCode(c)
-          let val = sheetData[colId] || ""
-          val = val.replace(/\r?\n/g, " / ")
-          rowData.push(val)
-        }
-        // M 欄位
-        rowData.push(sheetData.colM || "")
-        // N 欄 (OneClub ID) - 加上單引號確保數字格式
-        rowData.push(selectedOneClubId ? `${selectedOneClubId}` : "")
-        const tsvLine = rowData.join("\t")
-        navigator.clipboard
-          .writeText(tsvLine)
-          .then(() => {
-            alert("已複製 A~N 欄位到剪貼簿！")
-          })
-          .catch((err) => {
-            console.error("複製失敗:", err)
-            const temp = document.createElement("textarea")
-            temp.value = tsvLine
-            document.body.appendChild(temp)
-            temp.select()
-            document.execCommand("copy")
-            document.body.removeChild(temp)
-            alert("已複製 A~N 欄位到剪貼簿！")
-          })
-      }
-
-      document.addEventListener("DOMContentLoaded", function() {
-        // 取得所有標頭 th
-        const headerCells = document.querySelectorAll('table.data-table thead th');
-        headerCells.forEach((th, index) => {
-          // 建立 overlay div
-          const overlay = document.createElement("div");
-          overlay.className = "copy-overlay";
-          // 加入 data-index 屬性，方便後續對應欄位
-          overlay.setAttribute("data-index", index);
-          // 確保 th 為 relative 定位（CSS 中也可設定）
-          th.style.position = "relative";
-          th.appendChild(overlay);
-
-          // 綁定點擊事件
-          overlay.addEventListener("click", function(e) {
-            const idx = parseInt(e.currentTarget.getAttribute("data-index"));
-            // 假設資料列有 id="dataRow"，取得該列的所有儲存格
-            const dataRow = document.getElementById("dataRow");
-            if (!dataRow) return;
-            const cells = dataRow.children;
-            if (idx >= cells.length) return;
-            const targetCell = cells[idx];
-
-            // 嘗試取得內部的 input 或 select 元素
-            let value = "";
-            const inputElement = targetCell.querySelector("input, select");
-            if (inputElement) {
-              value = inputElement.value;
-              // 檢查是否為 OCID 欄位
-              if (targetCell.querySelector("#newCol2")) {
-                value = value ? `${value}` : "";
-              }
-            } else {
-              value = targetCell.textContent.trim();
-            }
-
-            // 複製值到剪貼簿（支援 Chrome 與 Safari）
-            navigator.clipboard.writeText(value)
-              .then(() => {
-                // 複製成功後，加入變色效果
-                overlay.classList.add("copied");
-                // 1.5秒後移除效果
-                setTimeout(() => {
-                  overlay.classList.remove("copied");
-                }, 520);
-              })
-              .catch((err) => {
-                console.error("複製失敗:", err);
-                // 備援方案：利用 textarea 複製
-                const temp = document.createElement("textarea");
-                temp.value = value;
-                document.body.appendChild(temp);
-                temp.select();
-                document.execCommand("copy");
-                document.body.removeChild(temp);
-                // 備援方案同樣套用視覺效果
-                overlay.classList.add("copied");
-                setTimeout(() => {
-                  overlay.classList.remove("copied");
-                }, 520);
-              });
-          });
+      navigator.clipboard.writeText(value)
+        .then(() => {
+          overlay.classList.add("copied");
+          setTimeout(() => {
+            overlay.classList.remove("copied");
+          }, 520);
+        })
+        .catch((err) => {
+          console.error("複製失敗:", err);
+          const temp = document.createElement("textarea");
+          temp.value = value;
+          document.body.appendChild(temp);
+          temp.select();
+          document.execCommand("copy");
+          document.body.removeChild(temp);
+          overlay.classList.add("copied");
+          setTimeout(() => {
+            overlay.classList.remove("copied");
+          }, 520);
         });
+    });
+  });
+});
+
+  const generateButton = document.getElementById("generateButton");
+  
+  generateButton.addEventListener("click", () => {
+    const existingContainer = document.getElementById("bigSheetContainer");
+    if (existingContainer) {
+      existingContainer.remove();
+    }
+
+    const bigSheetContainer = document.createElement("div");
+    bigSheetContainer.id = "bigSheetContainer";
+    bigSheetContainer.className = "panel table-container";
+
+    bigSheetContainer.innerHTML = `
+      <div class="table-header">
+        <h2 class="table-title">成交大表資料</h2>
+        <div class="table-actions">
+          <button class="button button-primary" id="copyButton2">
+            複製
+          </button>
+        </div>
+      </div>
+      <div class="table-wrapper">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>輔導</th>
+              <th>OCID</th>
+              <th>成員</th>
+              <th>學制</th>
+              <th>年級</th>
+              <th>立約人</th>
+              <th>交編</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr id="dataRow2">
+              <td><input type="text" class="cell-input" id="newCol1" value="${sheetData.colK || ''}" placeholder="輔導"></td>
+              <td><input type="text" class="cell-input" id="newCol2" value="${ocidSelect.value || ''}" placeholder="OCID"></td>
+              <td>
+                <select id="newCol3" class="cell-input">
+                  ${studentData.map(s => 
+                    `<option value="${s.name}" data-education="${s.education}" data-grade="${s.grade}">${s.name}</option>`
+                  ).join('') || '<option value="">無成員資料</option>'}
+                </select>
+              </td>
+              <td><input type="text" class="cell-input" id="newCol4" readonly></td>
+              <td><input type="text" class="cell-input" id="newCol5" readonly></td>
+              <td><input type="text" class="cell-input" id="newCol6" value="${sheetData.colG || ''}" placeholder="立約人"></td>
+              <td><input type="text" class="cell-input" id="newCol7" value="${sheetData.colB || ''}" placeholder="交編"></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    `;
+
+    const newCol3 = bigSheetContainer.querySelector("#newCol3");
+    const newCol4 = bigSheetContainer.querySelector("#newCol4");
+    const newCol5 = bigSheetContainer.querySelector("#newCol5");
+    
+    newCol3.addEventListener("change", function() {
+      const selectedOption = this.options[this.selectedIndex];
+      const education = selectedOption.dataset.education;
+      const grade = selectedOption.dataset.grade;
+      
+      newCol4.value = EDUCATION_MAP[education] || '';
+      newCol5.value = GRADE_MAP[education]?.[grade] || '';
+      
+      navigator.clipboard.writeText(this.value);
+    });
+
+    if (newCol3.options.length > 0) {
+      newCol3.dispatchEvent(new Event('change'));
+    }
+
+    document.querySelector(".panel-container").insertAdjacentElement("beforeend", bigSheetContainer);
+
+    addCopyOverlay(bigSheetContainer);
+
+    const copyButton2 = document.getElementById("copyButton2");
+
+    copyButton2.addEventListener("click", () => {
+      const dataRow = document.getElementById("dataRow2");
+      const inputs = dataRow.querySelectorAll("input, select");
+      const rowData = [];
+      inputs.forEach((input, index) => {
+        let value = input.value.trim();
+        if (index === 1 && value) {
+          value = `${value}`;
+        }
+        rowData.push(value);
       });
+      const tsvLine = rowData.join("\t");
+      navigator.clipboard.writeText(tsvLine).then(() => {
+        alert("已複製成交大表資料的內容！");
+      });
+    });
 
-        // 取得【生成】按鈕參考
-        const generateButton = document.getElementById("generateButton");
-        
-        generateButton.addEventListener("click", () => {
-          // 先清除現有的成交表資料
-          const existingContainer = document.getElementById("bigSheetContainer");
-          if (existingContainer) {
-            existingContainer.remove();
-          }
-
-          // 建立新的版位容器，id 設為 bigSheetContainer
-          const bigSheetContainer = document.createElement("div");
-          bigSheetContainer.id = "bigSheetContainer";
-          bigSheetContainer.className = "panel table-container"; // 共用相同樣式，max-height已設定為100px
-
-          // 產生標題與按鈕區塊
-          bigSheetContainer.innerHTML = `
-            <div class="table-header">
-              <h2 class="table-title">成交大表資料</h2>
-              <div class="table-actions">
-                <button class="button button-primary" id="copyButton2">
-                  複製
-                </button>
-              </div>
-            </div>
-            <div class="table-wrapper">
-              <table class="data-table">
-                <thead>
-                  <tr>
-                    <th>輔導</th>
-                    <th>OCID</th>
-                    <th>成員</th>
-                    <th>學制</th>
-                    <th>年級</th>
-                    <th>立約人</th>
-                    <th>交編</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  <tr id="dataRow2">
-                    <td><input type="text" class="cell-input" id="newCol1" value="${sheetData.colK || ''}" placeholder="輔導"></td>
-                    <td><input type="text" class="cell-input" id="newCol2" value="${ocidSelect.value || ''}" placeholder="OCID"></td>
-                    <td>
-                      <select id="newCol3" class="cell-input">
-                        ${studentData.map(s => 
-                          `<option value="${s.name}" data-education="${s.education}" data-grade="${s.grade}">${s.name}</option>`
-                        ).join('') || '<option value="">無成員資料</option>'}
-                      </select>
-                    </td>
-                    <td><input type="text" class="cell-input" id="newCol4" readonly></td>
-                    <td><input type="text" class="cell-input" id="newCol5" readonly></td>
-                    <td><input type="text" class="cell-input" id="newCol6" value="${sheetData.colG || ''}" placeholder="立約人"></td>
-                    <td><input type="text" class="cell-input" id="newCol7" value="${sheetData.colB || ''}" placeholder="交編"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          `;
-
-          // 為成員選單添加切換事件
-          const newCol3 = bigSheetContainer.querySelector("#newCol3");
-          const newCol4 = bigSheetContainer.querySelector("#newCol4");
-          const newCol5 = bigSheetContainer.querySelector("#newCol5");
-          
-          newCol3.addEventListener("change", function() {
-            const selectedOption = this.options[this.selectedIndex];
-            const education = selectedOption.dataset.education;
-            const grade = selectedOption.dataset.grade;
-            
-            // 更新學制和年級
-            newCol4.value = EDUCATION_MAP[education] || '';
-            newCol5.value = GRADE_MAP[education]?.[grade] || '';
-            
-            // 複製選中的學生名稱
-            navigator.clipboard.writeText(this.value);
-          });
-
-          // 初始觸發一次 change 事件以設定初始值
-          if (newCol3.options.length > 0) {
-            newCol3.dispatchEvent(new Event('change'));
-          }
-
-          // 插入新版成交大表至 .panel-container 內
-          document.querySelector(".panel-container").insertAdjacentElement("beforeend", bigSheetContainer);
-
-          // 為新版位的表格標頭新增 overlay 複製功能（可複製單一欄位內容）
-          addCopyOverlay(bigSheetContainer);
-
-          // 新版位複製按鈕處理
-          const copyButton2 = document.getElementById("copyButton2");
-
-          copyButton2.addEventListener("click", () => {
-            const dataRow = document.getElementById("dataRow2");
-            const inputs = dataRow.querySelectorAll("input, select");
-            const rowData = [];
-            inputs.forEach((input, index) => {
-              let value = input.value.trim();
-              // 檢查是否為 OCID 欄位（index === 1）
-              if (index === 1 && value) {
-                value = `${value}`; // 加上單引號
-              }
-              rowData.push(value);
-            });
-            const tsvLine = rowData.join("\t");
-            navigator.clipboard.writeText(tsvLine).then(() => {
-              alert("已複製成交大表資料的內容！");
-            });
-          });
-
-          // 在生成表格後添加 newCol1 的值變化監聽
-          const newCol1 = bigSheetContainer.querySelector("#newCol1");
-          const colK = document.getElementById("colK");
-          
-          if (newCol1 && colK) {
-            // 監聽 input 事件以即時捕獲變化
-            newCol1.addEventListener("input", function(e) {
-              const newValue = e.target.value;
-              // 如果新值不為空且與 colK 當前值不同，則更新 colK
-              if (newValue && newValue !== colK.value) {
-                colK.value = newValue;
-                // 同時更新 sheetData
-                sheetData.colK = newValue;
-              }
-            });
-          }
-        });
-
-        // 依照原版邏輯，為指定容器中的每個表頭新增 overlay 複製功能
-        function addCopyOverlay(container) {
-          const headerCells = container.querySelectorAll("table.data-table thead th");
-          headerCells.forEach((th, index) => {
-            const overlay = document.createElement("div");
-            overlay.className = "copy-overlay";
-            overlay.setAttribute("data-index", index);
-            th.style.position = "relative";
-            th.appendChild(overlay);
-
-            overlay.addEventListener("click", function(e) {
-              const idx = parseInt(e.currentTarget.getAttribute("data-index"));
-              // 取得對應 row 的所有儲存格
-              const dataRow = container.querySelector("tbody tr");
-              if (!dataRow) return;
-              const cells = dataRow.children;
-              if (idx >= cells.length) return;
-              const targetCell = cells[idx];
-              let value = "";
-              const inputElement = targetCell.querySelector("input, select");
-              if (inputElement) {
-                value = inputElement.value;
-                // 檢查是否為 OCID 欄位
-                if (targetCell.querySelector("#newCol2")) {
-                  value = value ? `${value}` : "";
-                }
-              } else {
-                value = targetCell.textContent.trim();
-              }
-              navigator.clipboard.writeText(value)
-                .then(() => {
-                  overlay.classList.add("copied");
-                  setTimeout(() => {
-                    overlay.classList.remove("copied");
-                  }, 520);
-                })
-                .catch(() => {
-                  const temp = document.createElement("textarea");
-                  temp.value = value;
-                  document.body.appendChild(temp);
-                  temp.select();
-                  document.execCommand("copy");
-                  document.body.removeChild(temp);
-                  overlay.classList.add("copied");
-                  setTimeout(() => {
-                    overlay.classList.remove("copied");
-                  }, 520);
-                });
-            });
-          });
+    const newCol1 = bigSheetContainer.querySelector("#newCol1");
+    const colK = document.getElementById("colK");
+    
+    if (newCol1 && colK) {
+      newCol1.addEventListener("input", function(e) {
+        const newValue = e.target.value;
+        if (newValue && newValue !== colK.value) {
+          colK.value = newValue;
+          sheetData.colK = newValue;
         }
-        document.getElementById("helpButton").addEventListener("click", function() {
-        window.open("TESTwhosthere.html", "HelpPopup", "width=650,height=700");
       });
     }
+  });
+
+  function addCopyOverlay(container) {
+    const headerCells = container.querySelectorAll("table.data-table thead th");
+    headerCells.forEach((th, index) => {
+      const overlay = document.createElement("div");
+      overlay.className = "copy-overlay";
+      overlay.setAttribute("data-index", index);
+      th.style.position = "relative";
+      th.appendChild(overlay);
+
+      overlay.addEventListener("click", function(e) {
+        const idx = parseInt(e.currentTarget.getAttribute("data-index"));
+        const dataRow = container.querySelector("tbody tr");
+        if (!dataRow) return;
+        const cells = dataRow.children;
+        if (idx >= cells.length) return;
+        const targetCell = cells[idx];
+        let value = "";
+        const inputElement = targetCell.querySelector("input, select");
+        if (inputElement) {
+          value = inputElement.value;
+          if (targetCell.querySelector("#newCol2")) {
+            value = value ? `${value}` : "";
+          }
+        } else {
+          value = targetCell.textContent.trim();
+        }
+        navigator.clipboard.writeText(value)
+          .then(() => {
+            overlay.classList.add("copied");
+            setTimeout(() => {
+              overlay.classList.remove("copied");
+            }, 520);
+          })
+          .catch(() => {
+            const temp = document.createElement("textarea");
+            temp.value = value;
+            document.body.appendChild(temp);
+            temp.select();
+            document.execCommand("copy");
+            document.body.removeChild(temp);
+            overlay.classList.add("copied");
+            setTimeout(() => {
+              overlay.classList.remove("copied");
+            }, 520);
+          });
+      });
+    });
+  }
+  document.getElementById("helpButton").addEventListener("click", function() {
+  window.open("TESTwhosthere.html", "HelpPopup", "width=650,height=700");
+});
+
   </script>
 </body>
 </html>
