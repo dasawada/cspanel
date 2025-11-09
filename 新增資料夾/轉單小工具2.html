@@ -6,6 +6,28 @@
   <title>訂單處理工具</title>
   <link rel="stylesheet" href="styles.css">
   <style>
+html,body { margin:0; height:100%; }
+
+.auth-wrapper {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(74,144,226,.15), transparent 60%),
+    radial-gradient(circle at 85% 70%, rgba(125,206,160,.18), transparent 65%),
+    #f5f7fb;
+  box-sizing: border-box;
+  z-index: 1000; /* 確保登入層在最上方，隱藏後解除影響 */
+}
+
+.auth-card {
+  width: 380px;
+  margin: 0;
+}
+
+/* 其餘原有的 auth-card 內部細節樣式保持不動 */
     .active-link {
       background-color: #4a90e2;
       color: white;
@@ -131,36 +153,278 @@
   color: #000;
 }
 .draggable-handle{color: darkgrey;}
+
+    /* Auth (Login) Unified Style */
+    .auth-wrapper{
+      min-height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      background:
+        radial-gradient(circle at 15% 20%,rgba(74,144,226,.15),transparent 60%),
+        radial-gradient(circle at 85% 70%,rgba(125,206,160,.18),transparent 65%),
+        #f5f7fb;
+      padding:32px 16px;
+      box-sizing:border-box;
+    }
+    .auth-card{
+      width:380px;
+      background:#ffffff;
+      border:1px solid #dfe3ea;
+      border-radius:18px;
+      box-shadow:0 4px 12px rgba(0,0,0,.08),0 2px 4px rgba(0,0,0,.05);
+      padding:32px 34px 30px;
+      position:relative;
+      display:flex;
+      flex-direction:column;
+      gap:18px;
+      animation:cardIn .38s cubic-bezier(.32,.72,.29,.99);
+    }
+    @keyframes cardIn{
+      from{opacity:0;transform:translateY(14px) scale(.97)}
+      to{opacity:1;transform:translateY(0) scale(1)}
+    }
+    .auth-card:before{
+      content:"";
+      position:absolute;
+      inset:0;
+      border-radius:18px;
+      pointer-events:none;
+      background:
+        linear-gradient(140deg,rgba(74,144,226,.25),rgba(255,255,255,0) 45%),
+        linear-gradient(300deg,rgba(255,166,0,.18),rgba(255,255,255,0) 55%);
+      mix-blend-mode:overlay;
+    }
+    .auth-title{
+      margin:0;
+      font-size:22px;
+      font-weight:600;
+      letter-spacing:.5px;
+      color:#2f3a4a;
+      display:flex;
+      align-items:center;
+      gap:8px;
+    }
+    .auth-sub{
+      margin:-10px 0 8px;
+      font-size:13px;
+      line-height:1.5;
+      color:#5b6472;
+    }
+    .auth-form{display:flex;flex-direction:column;gap:14px;}
+    .input-group{display:flex;flex-direction:column;gap:6px;}
+    .input-label{
+      font-size:12px;
+      font-weight:600;
+      letter-spacing:.5px;
+      text-transform:uppercase;
+      color:#5a6575;
+    }
+    .auth-input{
+      height:42px;
+      padding:0 14px;
+      font-size:14px;
+      border:1px solid #cfd6df;
+      border-radius:10px;
+      background:#fff;
+      transition:.18s border-color,.18s box-shadow,.18s background-color;
+      font-family:inherit;
+    }
+    .auth-input:focus{
+      outline:none;
+      border-color:#4a90e2;
+      box-shadow:0 0 0 3px rgba(74,144,226,.25);
+    }
+    .auth-input::placeholder{color:#b0b8c2;}
+    .auth-button{
+      height:44px;
+      border:none;
+      border-radius:11px;
+      background:linear-gradient(135deg,#4a90e2,#3575c8);
+      color:#fff;
+      font-size:15px;
+      font-weight:600;
+      letter-spacing:.5px;
+      cursor:pointer;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:6px;
+      box-shadow:0 4px 10px -2px rgba(53,117,200,.55),0 2px 4px rgba(0,0,0,.08);
+      transition:.22s background,.22s box-shadow,.22s transform;
+    }
+    .auth-button:hover{
+      background:linear-gradient(135deg,#5aa0f0,#3575c8);
+      box-shadow:0 6px 14px -2px rgba(53,117,200,.6),0 3px 6px rgba(0,0,0,.09);
+      transform:translateY(-2px);
+    }
+    .auth-button:active{
+      transform:translateY(0);
+      box-shadow:0 3px 8px -2px rgba(53,117,200,.55),0 2px 4px rgba(0,0,0,.08);
+    }
+    .auth-error{
+      min-height:18px;
+      font-size:12.5px;
+      color:#d9534f;
+      font-weight:500;
+      letter-spacing:.4px;
+      word-break:break-all;
+    }
+    .auth-footer{
+      margin-top:4px;
+      font-size:11.5px;
+      color:#8a949f;
+      text-align:center;
+      line-height:1.5;
+    }
+    .auth-divider{
+      height:1px;
+      background:linear-gradient(90deg,rgba(0,0,0,0),rgba(0,0,0,.12) 10%,rgba(0,0,0,.12) 90%,rgba(0,0,0,0));
+      margin:4px 0 2px;
+    }
+    .auth-badge{
+      position:absolute;
+      top:10px;
+      right:12px;
+      font-size:10px;
+      font-weight:600;
+      letter-spacing:.7px;
+      background:#eef4fb;
+      color:#3470b3;
+      padding:4px 8px;
+      border-radius:20px;
+      box-shadow:inset 0 0 0 1px #d0e2f3;
+    }
+    .auth-logo{
+      width:34px;
+      height:34px;
+      border-radius:12px;
+      background:linear-gradient(135deg,#4a90e2 15%,#50c9ce);
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      color:#fff;
+      font-size:17px;
+      font-weight:600;
+      letter-spacing:-.5px;
+      box-shadow:0 4px 10px -2px rgba(74,144,226,.55),0 2px 4px rgba(0,0,0,.08);
+    }
+    .auth-inline{
+      display:flex;
+      align-items:center;
+      gap:12px;
+    }
+    .auth-mini-note{
+      margin-top:2px;
+      font-size:11px;
+      color:#6d7784;
+      line-height:1.4;
+    }
+    @media (max-width:480px){
+      .auth-card{width:100%;padding:26px 24px 26px;border-radius:16px;}
+      .auth-title{font-size:20px;}
+    }
   </style>
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
 
-    // TODO: Replace with your Firebase project config
+    // 只保留公開的 Firebase 配置
     const firebaseConfig = {
       apiKey: "AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M",
       authDomain: "cstoolsapi.firebaseapp.com",
-      projectId: "cstoolsapi",
-      storageBucket: "cstoolsapi.firebasestorage.app",
-      messagingSenderId: "632885029336",
-      appId: "1:632885029336:web:f491b9cc28fe3f2504aaad"
+      projectId: "cstoolsapi"
     };
 
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
 
-    window.auth = auth; // Make auth available globally for the script below
+    window.auth = auth;
+    window.onAuthStateChanged = onAuthStateChanged;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      let currentUser = null;
+      
+      onAuthStateChanged(auth, (user) => {
+        currentUser = user;
+        const loginContainer = document.getElementById('login-container');
+        const appContainer = document.getElementById('app-container');
+        
+        if (user) {
+          loginContainer.style.display = 'none';
+          appContainer.style.display = 'block';
+          user.getIdToken().then(token => {
+            window.userToken = token;
+          });
+        } else {
+          loginContainer.style.display = 'block';
+          appContainer.style.display = 'none';
+        }
+      });
+
+      // Login Button Handler
+      document.getElementById('login-btn').addEventListener('click', async () => {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const errorDiv = document.getElementById('login-error');
+        
+        errorDiv.textContent = '';
+        
+        try {
+          const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/order-tool-api', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'login', email, password })
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            await signInWithCustomToken(auth, result.token);
+          } else {
+            errorDiv.textContent = result.error || '登入失敗';
+          }
+        } catch (error) {
+          console.error('Login error:', error);
+          errorDiv.textContent = '登入過程發生錯誤，請稍後再試';
+        }
+      });
+    });
   </script>
 </head>
 <body>
-  <!-- Login Container -->
-  <div id="login-container" style="display: block; text-align: center; padding: 50px;">
-    <h2>請登入以使用工具</h2>
-    <input type="email" id="email" placeholder="Email" style="display: block; margin: 10px auto; padding: 10px; width: 200px;">
-    <input type="password" id="password" placeholder="Password" style="display: block; margin: 10px auto; padding: 10px; width: 200px;">
-    <button id="login-btn" style="padding: 10px 20px; margin: 10px;">登入</button>
-    <div id="login-error" style="color: red; margin-top: 10px;"></div>
+  <!-- 重構登入介面 -->
+  <div id="login-container" class="auth-wrapper" style="display:block;">
+    <div class="auth-card">
+      <div class="auth-badge">INTERNAL</div>
+      <div class="auth-inline">
+        <div class="auth-logo">OC</div>
+        <h2 class="auth-title">轉單小幫手</h2>
+      </div>
+      <p class="auth-sub">請使用授權帳號登入。</p>
+
+      <form class="auth-form" onsubmit="return false;">
+        <div class="input-group">
+          <label for="email" class="input-label">Email</label>
+          <input type="email" id="email" class="auth-input" placeholder="name@oneclass.com" autocomplete="username">
+        </div>
+        <div class="input-group">
+          <label for="password" class="input-label">Password</label>
+            <input type="password" id="password" class="auth-input" placeholder="••••••••" autocomplete="current-password">
+        </div>
+        <button id="login-btn" type="button" class="auth-button">
+          登入
+        </button>
+        <div id="login-error" class="auth-error"></div>
+      </form>
+
+      <div class="auth-divider"></div>
+      <div class="auth-footer">
+        僅限授權內部人員使用 · 未經授權請勿嘗試登入
+        <div class="auth-mini-note">登入成功後自動跳轉工具主畫面</div>
+      </div>
+    </div>
   </div>
 
   <!-- App Container (hidden until authenticated) -->
@@ -298,34 +562,6 @@
   </div>
 
   <script>
-    // Firebase Auth State Listener
-    let user = null;
-    onAuthStateChanged(window.auth, (currentUser) => {
-      user = currentUser;
-      const loginContainer = document.getElementById('login-container');
-      const appContainer = document.getElementById('app-container');
-      if (user) {
-        loginContainer.style.display = 'none';
-        appContainer.style.display = 'block';
-      } else {
-        loginContainer.style.display = 'block';
-        appContainer.style.display = 'none';
-      }
-    });
-
-    // Login Button Handler
-    document.getElementById('login-btn').addEventListener('click', () => {
-      const email = document.getElementById('email').value;
-      const password = document.getElementById('password').value;
-      signInWithEmailAndPassword(window.auth, email, password)
-        .then(() => {
-          // Signed in successfully
-        })
-        .catch((error) => {
-          document.getElementById('login-error').textContent = error.message;
-        });
-    });
-
     // State management
     let sheetData = {
       colA: "",
@@ -351,10 +587,11 @@
 
     // Constants
     const TEAM_SHEET_ENDPOINT =
-      "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw"
+      "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=xxx"
     
     // Update these constants to use your Netlify site URL
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
+    const API_ENDPOINT = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`
     const ONE_CLUB_SEARCH_API = `${NETLIFY_SITE_URL}/.netlify/functions/oneclub-customers`
     const EDUCATION_MAP = {
       'K': '幼稚園',
@@ -462,14 +699,31 @@
     async function fetchTeamSheetData() {
       if (teamSheetDataCache) return teamSheetDataCache
 
-      const res = await fetch(TEAM_SHEET_ENDPOINT)
-      if (!res.ok) {
-        throw new Error(`顧問組別 GoogleSheet API 錯誤: ${res.status}`)
-      }
+      try {
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${window.userToken}`
+          },
+          body: JSON.stringify({ action: 'getTeamSheet', token: window.userToken })
+        });
 
-      const data = await res.json()
-      teamSheetDataCache = data.values || []
-      return teamSheetDataCache
+        if (!response.ok) {
+          throw new Error(`Team Sheet API 錯誤: ${response.status}`);
+        }
+
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Team Sheet API 回傳失敗');
+        }
+
+        teamSheetDataCache = result.data;
+        return teamSheetDataCache;
+      } catch (err) {
+        throw new Error(`顧問組別 API 錯誤: ${err.message}`);
+      }
     }
 
     function findTeamCodeForConsultant(name, sheetData) {
@@ -531,48 +785,54 @@
 
       searchButton.disabled = true
       resultPre.textContent = "查詢中..."
-      clearSheetFields() // 這個函式會一併清除成交表資料
-      linksContainer.innerHTML = "" // 清空連結區塊
-
-      const bitrixUrl = `https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get?ID=${cleanDealId}`
+      clearSheetFields()
+      linksContainer.innerHTML = ""
 
       try {
-        const bitrixRes = await fetch(bitrixUrl)
-        if (!bitrixRes.ok) {
-          throw new Error(`Bitrix查詢失敗: ${bitrixRes.status}`)
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${window.userToken}`
+          },
+          body: JSON.stringify({ 
+            action: 'getDealInfo', 
+            dealId: cleanDealId,
+            token: window.userToken 
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`API 錯誤: ${response.status}`);
         }
 
-        const bitrixJson = await bitrixRes.json()
-        if (bitrixJson.error) {
-          throw new Error(`Bitrix API錯誤: ${bitrixJson.error_description}`)
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'API 回傳失敗');
         }
 
-        const dealData = bitrixJson.result || {}
+        const bitrixJson = result.data;
+        const dealData = bitrixJson.result || {};
+        
         const notes = dealData.UF_CRM_1646312993 ? dealData.UF_CRM_1646312993.replace(/\r\n/g, "\n") : "無備註"
 
-        // 获取两个可能的订单链接
         const orderLink1 = dealData.UF_CRM_1646313465 || "";
         const orderLink2 = dealData.UF_CRM_1646313701 || "";
 
-        // 初始化基本变量和UI选择器
         let orderLink = "無可用連結";
         let activeOrderLink = null;
 
-        // 处理订单链接逻辑
         if (orderLink1 && !orderLink2) {
-          // 只有第一个链接可用
           orderLink = orderLink1;
           activeOrderLink = orderLink1;
         } else if (!orderLink1 && orderLink2) {
-          // 只有第二个链接可用
           orderLink = orderLink2;
           activeOrderLink = orderLink2;
         } else if (orderLink1 && orderLink2) {
-          // 两个链接都可用，默认使用第一个
           orderLink = orderLink1;
           activeOrderLink = orderLink1;
           
-          // 创建链接选择器UI
           const linkSelectorDiv = document.createElement("div");
           linkSelectorDiv.className = "link-selector";
           linkSelectorDiv.style.marginBottom = "10px";
@@ -586,7 +846,6 @@
           link2Button.textContent = "訂單二";
           link2Button.className = "button button-small";
           
-          // 设置点击事件
           link1Button.onclick = async function() {
             orderFrame.src = orderLink1;
             updateOrderLink(orderLink1);
@@ -618,7 +877,6 @@
           linkSelectorDiv.appendChild(link1Button);
           linkSelectorDiv.appendChild(link2Button);
           
-          // 插入到iframe-footer前面
           document.querySelector(".iframe-footer").insertAdjacentElement("beforebegin", linkSelectorDiv);
         }
 
@@ -626,23 +884,19 @@
         const contactLink = contactId ? `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/` : ""
         const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${cleanDealId}/`
 
-        // 设置iframe源
         orderFrame.src = orderLink === "無可用連結" ? "about:blank" : orderLink;
         updateOrderLink(orderLink);
 
-        // 将备注显示在result-container
         resultPre.textContent = `【備註】\n${notes}`;
 
-        // 于左侧链接区块产生按钮
         linksContainer.innerHTML = ""
-        // 交易連結按鈕
         const tradeButton = document.createElement("button")
         tradeButton.textContent = `交編 #${cleanDealId}`
         tradeButton.onclick = function () {
           window.open(dealLink, "_blank")
         }
         linksContainer.appendChild(tradeButton)
-        // BX聯絡人按鈕（若有 contactId 則產生）
+        
         if (contactId) {
           const contactButton = document.createElement("button")
           contactButton.textContent = `聯絡人 ${contactId}`
@@ -652,7 +906,6 @@
           linksContainer.appendChild(contactButton)
         }
 
-        // 处理初始选择的链接
         if (activeOrderLink !== "無可用連結") {
           const match = activeOrderLink.match(/order\/(\w+)/);
           const orderId = match ? match[1] : "";
@@ -668,24 +921,40 @@
     }
 
     async function fetchOrderData(orderId, bitrixDealId, contactLink) {
-      const orderApi = `https://api.oneclass.co/product/open/orders/${orderId}/`
-    
       try {
-        const res = await fetch(orderApi)
-        if (!res.ok) {
-          throw new Error(`OneClass訂單API錯誤: ${res.status}`)
+        const response = await fetch(API_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${window.userToken}`
+          },
+          body: JSON.stringify({ 
+            action: 'getOrderData', 
+            orderId,
+            token: window.userToken 
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error(`Order API 錯誤: ${response.status}`);
         }
-    
-        const jsonData = await res.json()
-        const data = jsonData.data || {}
-    
+
+        const result = await response.json();
+        
+        if (!result.success) {
+          throw new Error(result.error || 'Order API 回傳失敗');
+        }
+
+        const data = result.orderData;
+        const quotationDataRaw = result.quotationData;
+
         // 儲存學生資料
         studentData = data.students?.map(s => ({
           name: s.name,
           education: s.education,
           grade: s.grade
         })) || [];
-    
+
         // 判斷合約學制
         let contractSchoolType = '';
         if (data.commodities && Array.isArray(data.commodities)) {
@@ -705,9 +974,9 @@
             }
           }
         }
-    
+
         const newSheetData = { ...sheetData }
-    
+
         // A：使用 payAt 時間戳記轉換為台北時區的日期 (mm/dd)
         if (data.payAt) {
           const payAtTimestamp = parseInt(data.payAt, 10)
@@ -719,17 +988,17 @@
         } else {
           newSheetData.colA = ""
         }
-    
+
         // B：比對 crmNo，前方加上 "#"
         const crmNo = data.crmNo ? String(data.crmNo) : ""
         newSheetData.colB = `#${crmNo === bitrixDealId ? crmNo : `${bitrixDealId}【需核對】`}`
-    
+
         // C：聯絡人頁面
         newSheetData.colC = contactLink
-    
+
         // D：留空
         newSheetData.colD = ""
-    
+
         // E：顧問組別-姓名
         let advisorName = ""
         if (data.managers && data.managers.length > 0) {
@@ -750,17 +1019,17 @@
             newSheetData.colE = advisorName
           }
         }
-    
+
         // F：學生名單
         if (data.students && Array.isArray(data.students)) {
           const names = data.students.map((s) => s.name).join("＆")
           newSheetData.colF = names
         }
-    
+
         // G：客戶名稱
         const customerName = (data.customerInfo && data.customerInfo.name) || ""
         newSheetData.colG = customerName
-    
+
         // H, I, J, K, L 留空（I 欄稍後填入 quotation 整理資訊）
         newSheetData.colH = ""
         newSheetData.colI = contractSchoolType;
@@ -769,10 +1038,10 @@
         newSheetData.colL = ""
         // M：金額
         newSheetData.colM = data.amt || ""
-    
+
         // 更新基本資料
         updateSheetData(newSheetData)
-    
+
         // 處理 OneClub ID
         if (customerName) {
           const customers = await searchOneClubCustomers(customerName)
@@ -780,29 +1049,28 @@
         } else {
           updateOneClubCustomers([])
         }
-    
+
         // 將學制資訊儲存到 colI
         newSheetData.colI = contractSchoolType
-    
+
         // 處理 quotation 資料
-        const quotationData = await fetchQuotationData(orderId)
-        const quotationFormatted = formatQuotationData(quotationData)
+        const quotationFormatted = formatQuotationData(quotationDataRaw)
         
         // 合併數量資訊到 colI
         if (quotationFormatted) {
           newSheetData.colI = `${contractSchoolType}${quotationFormatted}`
         }
-    
+
         // 最終更新表單
         updateSheetData(newSheetData)
-    
+
         // 儲存先前資料以便復原
         previousData = {
           sheetData: { ...newSheetData },
           oneClubCustomers,
           selectedOneClubId,
         }
-    
+
         // 如果有 OCID，嘗試獲取 tutor 資料
         if (selectedOneClubId) {
           try {
@@ -812,24 +1080,17 @@
               const tutorData = await tutorRes.json();
               if (tutorData.status === "success" && tutorData.data?.tutor?.name) {
                 newSheetData.colK = tutorData.data.tutor.name;
+                updateSheetData(newSheetData);
               }
             }
           } catch (tutorErr) {
             console.warn("獲取 tutor 資料失敗:", tutorErr);
           }
         }
-    
+
       } catch (err) {
         resultPre.textContent += "\n錯誤：" + err.message
       }
-    }
-    
-    async function fetchQuotationData(orderId) {
-      const quotationApi = `https://api.oneclass.co/product/open/orders/${orderId}/quotation`
-      const res = await fetch(quotationApi)
-      if (!res.ok) throw new Error(`Quotation API 錯誤: ${res.status}`)
-      const jsonData = await res.json()
-      return jsonData.data || []
     }
     
     // quotation 資料整理：
