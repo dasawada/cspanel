@@ -143,7 +143,7 @@ exports.handler = async (event) => {
 
         // === 獲取團隊資料 ===
         if (action === 'getTeamSheet') {
-            const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GSHEET_ID}/values/wtf?key=${process.env.GSHEET_API_KEY}`;
+            const sheetUrl = `https://sheets.googleapis.com/v4/spreadsheets/${process.env.GOOGLE_SHEET_ID}/values/wtf?key=${process.env.GSHEET_API_KEY}`;
             
             const response = await fetch(sheetUrl);
             if (!response.ok) {
