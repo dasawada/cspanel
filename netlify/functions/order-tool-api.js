@@ -31,44 +31,10 @@ exports.handler = async (event) => {
     }
 
     try {
-        const { action, email, password, dealId, orderId, token } = JSON.parse(event.body);
+        const authHeader = event.headers.authorization || event.headers.Authorization;
+        const token = authHeader ? authHeader.split(' ')[1] : null;
 
-        // === 登入 Action ===
-        if (action === 'login') {
-            if (!email || !password) {
-                return {
-                    statusCode: 400,
-                    headers,
-                    body: JSON.stringify({ success: false, error: '請提供 email 和 password' })
-                };
-            }
-
-            try {
-                const user = await admin.auth().getUserByEmail(email);
-                const customToken = await admin.auth().createCustomToken(user.uid);
-                
-                return {
-                    statusCode: 200,
-                    headers,
-                    body: JSON.stringify({ success: true, token: customToken })
-                };
-            } catch (error) {
-                let errorMessage = '登入失敗';
-                if (error.code === 'auth/user-not-found') {
-                    errorMessage = '找不到此使用者';
-                } else if (error.code === 'auth/invalid-email') {
-                    errorMessage = 'Email 格式錯誤';
-                }
-                
-                return {
-                    statusCode: 401,
-                    headers,
-                    body: JSON.stringify({ success: false, error: errorMessage })
-                };
-            }
-        }
-
-        // === 驗證 Token (其他 Actions) ===
+        // === 驗證 Token (所有 Actions 都需要) ===
         if (!token) {
             return {
                 statusCode: 401,
@@ -77,10 +43,56 @@ exports.handler = async (event) => {
             };
         }
 
-        await admin.auth().verifyIdToken(token);
+        try {
+            await admin.auth().verifyIdToken(token);
+        } catch (error) {
+            return {
+                statusCode: 401,
+                headers,
+                body: JSON.stringify({ success: false, error: 'Token 無效或已過期' })
+            };
+        }
+
+        const { action } = JSON.parse(event.body);
+
+        // === 獲取家長資訊 (新) ===
+        if (action === 'getParentInfo') {
+            const { parentOneClubId } = JSON.parse(event.body);
+            if (!parentOneClubId) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: '請提供 parentOneClubId' })
+                };
+            }
+
+            if (!process.env.ONECLASS_STAFF_API_KEY) {
+                throw new Error('後端未設定 ONECLASS_STAFF_API_KEY');
+            }
+
+            const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
+            const response = await fetch(parentApiUrl, {
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer ${process.env.ONECLASS_STAFF_API_KEY}`
+                }
+            });
+
+            if (!response.ok) {
+                throw new Error(`OneClass Parent API 錯誤: ${response.status}`);
+            }
+
+            const data = await response.json();
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ success: true, status: 'success', data: data })
+            };
+        }
 
         // === 獲取 Deal 資訊 ===
         if (action === 'getDealInfo') {
+            const { dealId } = JSON.parse(event.body);
             if (!dealId) {
                 return {
                     statusCode: 400,
@@ -107,6 +119,7 @@ exports.handler = async (event) => {
 
         // === 獲取訂單資訊 ===
         if (action === 'getOrderData') {
+            const { orderId } = JSON.parse(event.body);
             if (!orderId) {
                 return {
                     statusCode: 400,
