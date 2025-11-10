@@ -15,14 +15,6 @@ const PANEL_CONFIG = {
     'DT_toggleCheckbox': {
         containerClass: '.DT_panel',
         contentId: 'content'
-    },
-    'assist_toggleCheckbox': {
-        containerClass: '.assist_googlesheet',
-        contentId: 'content'
-    },
-    'assist-issue-toggleCheckbox': {
-        containerClass: '.assist-issue',
-        contentId: 'assist-issue-content'
     }
 };
 

@@ -4,7 +4,7 @@ body, button, textarea {
     font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
     font-size: 13px;
     position: relative;
-    background: linear-gradient(135deg, #ecf3f6 0%, #f7e0e0 100%);
+    background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%);
     letter-spacing: 0.01em;
     z-index: 1;
     font-weight: 500;
@@ -91,7 +91,7 @@ b, h1, h2, h3, h4, h5, h6 {
     left: 0px;
 }
 
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet,.assist-issue {
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet {
     background-color: white;
     border: 1px solid #ccc;
     border-radius: 10px;
@@ -112,15 +112,18 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
-.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.assist-issue:hover,.optitlepanel:hover,
+.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
 .tool_zip_dl:hover{
     background:#f7f7f7;
 }
 
 .small-size {
-    width: 110px !important;
+    position: absolute !important;
+    width: 105px !important;
     height: 30px !important;
+    min-width: 0px !important;
+    flex-basis: 110px !important;
     overflow: hidden !important;
     z-index: 1000;
 }
@@ -152,11 +155,6 @@ b, h1, h2, h3, h4, h5, h6 {
     height: 600px;
 }
 
-.assist-issue:not(.small-size) {
-    width: 300px;
-    height: auto;
-}
-
 .idsearchpanel {
     width: 560px;
     height: 600px;
@@ -173,14 +171,6 @@ b, h1, h2, h3, h4, h5, h6 {
     left: 0px;
     top: 300px;
 }
-/* 移除這裡的 DT_panel 寬度設置 */
-.DT_panel {
-    position: absolute;
-    top: 0;
-    left: 640px;      /* 固定左側位置 */
-    z-index: 994 !important;
-    transition: all 0.3s ease;
-}
 
 .assist_googlesheet {
     position: absolute; 
@@ -191,15 +181,15 @@ b, h1, h2, h3, h4, h5, h6 {
     width: 800px;
     vertical-align: middle; /* 垂直對齊方式 */
 }
-.assist-issue {
-    position: absolute; 
-    left: 525px; 
-    top: 0px;
-    z-index: 996;
-    height:auto;
-    width: 300px;
-    vertical-align: middle; /* 垂直對齊方式 */
+
+.DT_panel {
+    position: absolute;
+    top: 0;
+    left: 523px;
+    z-index: 994 !important;
+    transition: all 0.3s ease;
 }
+
 .consultantlistgooglesheet {
     position: absolute; 
     height: 700px;
@@ -207,7 +197,7 @@ b, h1, h2, h3, h4, h5, h6 {
     right: 20px; /* 緊貼右側 */
     z-index: 993;
     top: 0px;
-    left: 760px;
+    left: 636px;
 }
 
 .IPsearch_in_panelALL {
@@ -238,7 +228,7 @@ b, h1, h2, h3, h4, h5, h6 {
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     top: 40px;
-    left: 410px;
+    left: 420px;
     display: flex;
     flex-direction: column;
     justify-content: center;
@@ -883,15 +873,6 @@ textarea {
 
 .fudausearch-suggestion-item:hover {
     background-color: #f0f0f0;
-}
-
-.idsearchpanel.small-size,
-.DT_panel.small-size {
-    position: absolute !important;
-    width: 110px !important;
-    height: 30px !important;
-    min-width: 0px !important;
-    flex-basis: 110px !important;
 }
 
 /* 新的panel tabs樣式 */
