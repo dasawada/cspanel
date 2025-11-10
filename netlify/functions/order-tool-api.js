@@ -66,15 +66,15 @@ exports.handler = async (event) => {
                 };
             }
 
-            if (!process.env.ONECLASS_STAFF_API_KEY) {
-                throw new Error('後端未設定 ONECLASS_STAFF_API_KEY');
+            if (!process.env.ONE_CLUB_JWT) {
+                throw new Error('後端未設定 ONE_CLUB_JWT');
             }
 
             const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
             const response = await fetch(parentApiUrl, {
                 headers: {
                     'Accept': 'application/json',
-                    'Authorization': `Bearer ${process.env.ONECLASS_STAFF_API_KEY}`
+                    'Authorization': `Bearer ${process.env.ONE_CLUB_JWT}`
                 }
             });
 
