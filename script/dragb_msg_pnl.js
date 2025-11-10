@@ -200,11 +200,11 @@ const defaultTexts = {
 export function createCannedMessagesPanel(options = {}) {
   injectStyle();
 
-  // 固定 id，讓 localStorage 能記住位置
   const panelId = options.id || 'canned-panel-main';
   const panel = document.createElement('section');
   panel.className = 'canned-panel';
   panel.id = panelId;
+  panel.style.display = 'none'; // 預設隱藏，直到登入成功
 
   panel.innerHTML = `
     <div class="canned-panel-handle">代課罐頭生成器</div>
@@ -317,6 +317,30 @@ export function createCannedMessagesPanel(options = {}) {
 
   // 工具函數：帶重試的 fetch（專門處理 500 錯誤）
   async function fetchWithRetry(url, options, retries = 3) {
+    // ===== 自動附加 Token 邏輯 =====
+    const token = localStorage.getItem('firebase_id_token');
+    const isInternalApi = url.includes('stirring-pothos-28253d.netlify.app');
+
+    if (isInternalApi) {
+      if (!token) {
+        throw new Error('未登入，無法執行安全請求');
+      }
+
+      if (!options.headers) options.headers = {};
+      options.headers['Authorization'] = `Bearer ${token}`;
+
+      // 如果是 POST 且有 body，也在 body 中加入 token
+      if (options.body && options.method === 'POST') {
+        try {
+          const bodyData = JSON.parse(options.body);
+          bodyData.token = token;
+          options.body = JSON.stringify(bodyData);
+        } catch (e) {
+          // body 不是 JSON，忽略
+        }
+      }
+    }
+
     for (let i = 0; i < retries; i++) {
       try {
         const response = await fetch(url, options);
@@ -324,15 +348,13 @@ export function createCannedMessagesPanel(options = {}) {
           if (i === retries - 1) {
             throw new Error(`500 錯誤，重試 ${retries} 次後仍失敗`);
           }
-          // 等待一段時間後重試（可選，增加延遲避免頻繁請求）
           await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
           continue;
         }
         return response;
       } catch (error) {
-        if (error.name === 'AbortError') throw error; // 尊重中止信號
+        if (error.name === 'AbortError') throw error;
         if (i === retries - 1) throw error;
-        // 等待後重試
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
       }
     }
@@ -489,20 +511,29 @@ export function createCannedMessagesPanel(options = {}) {
       throw new DOMException('stale request', 'AbortError');
     }
 
-    // 第二個 API 請求（使用帶重試的 fetch）
-    const parentApiUrl = `https://api.oneclass.co/staff/customers/${parentOneClubId}`;
-    const parentResponse = await fetchWithRetry(parentApiUrl, {
-      method: 'GET',
-      headers: { 'Accept': 'application/json, text/plain, */*' },
+    // 第二個 API 請求（改為呼叫安全後端）
+    const secureApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`;
+
+    const parentResponse = await fetchWithRetry(secureApiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'getParentInfo',
+        parentOneClubId: parentOneClubId
+      }),
       signal
     });
 
+    if (!parentResponse.ok) {
+      throw new Error('家長 API 代理錯誤: ' + parentResponse.status);
+    }
+
     const parentJson = await parentResponse.json();
-    if (!parentJson || typeof parentJson !== 'object' || parentJson.status !== 'success') {
+    if (!parentJson || typeof parentJson !== 'object' || parentJson.status !== 'success' || !parentJson.data) {
       throw new Error('家長 API 查詢失敗，請確認學生資料完整或稍後再試。');
     }
 
-    const parentData = parentJson.data;
+    const parentData = parentJson.data.data;
     const contactId = parentData && parentData.contactId;
     if (!contactId) {
       throw new Error('查無家長聯絡資訊，請確認學生資料。');
@@ -513,32 +544,39 @@ export function createCannedMessagesPanel(options = {}) {
       throw new DOMException('stale request', 'AbortError');
     }
 
-    // Chat API 請求（使用帶重試的 fetch）
+    // Chat API 請求（改為透過後端代理）
     try {
-      const chatResponse = await fetchWithRetry(
-        `https://stirring-pothos-28253d.netlify.app/classbxopchfetch?id=${encodeURIComponent(contactId)}`,
-        { signal }
-      );
+        const secureApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`;
+        
+        const chatResponse = await fetchWithRetry(secureApiUrl, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                action: 'getChatInfo',
+                contactId: contactId
+            }),
+            signal
+        });
 
-      if (chatResponse.ok) {
-        const chatData = await chatResponse.json();
-        if (chatData.chats && chatData.portal) {
-          const chatCards = chatData.chats.map(chat => `
-            <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatData.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
-              ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
-            </div>
-          `).join('');
-          
-          courseResultDiv.innerHTML = `
-            <div><strong>BX對話入口：</strong></div>
-            <div>${chatCards}</div>
-          `;
+        if (chatResponse.ok) {
+            const chatResult = await chatResponse.json();
+            if (chatResult.success && chatResult.data.chats && chatResult.data.portal) {
+                const chatCards = chatResult.data.chats.map(chat => `
+                    <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatResult.data.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+                        ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
+                    </div>
+                `).join('');
+                
+                courseResultDiv.innerHTML = `
+                    <div><strong>BX對話入口：</strong></div>
+                    <div>${chatCards}</div>
+                `;
+            }
         }
-      }
     } catch (e) {
-      if (e.name !== 'AbortError') {
-        courseResultDiv.innerHTML = `<p style="color:red;">查詢 chat 失敗：${e.message}</p>`;
-      }
+        if (e.name !== 'AbortError') {
+            courseResultDiv.innerHTML = `<p style="color:red;">查詢 chat 失敗：${e.message}</p>`;
+        }
     }
 
     // 檢查是否仍為最新請求
@@ -898,7 +936,15 @@ export function createCannedMessagesPanel(options = {}) {
     top: options.top !== undefined ? options.top : 75
   });
 
-  // ===== 3.8. 回傳面板節點 (可選) =====
+  // ===== 3.8. 監聽登入/登出事件 =====
+  window.addEventListener('firework-login-success', () => {
+    panel.style.display = 'block';
+  });
+  window.addEventListener('firework-logout-success', () => {
+    panel.style.display = 'none';
+  });
+
+  // ===== 3.9. 回傳面板節點 =====
   return panel;
 }
 
@@ -961,7 +1007,3 @@ async function getMinimalCourseInfo({ courseId }) {
     return { success: false, error: e.message || 'unknown error' };
   }
 }
-
-// 範例使用：
-// const result = await getMinimalCourseInfo({ courseId: '64e5d5e4c3c9b0c1d2e3f4a5' });
-// if (result.success) console.log(result.data);
