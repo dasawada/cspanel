@@ -55,6 +55,34 @@ exports.handler = async (event) => {
 
         const { action } = JSON.parse(event.body);
 
+        // === 獲取 Chat 資訊 (新增) ===
+        if (action === 'getChatInfo') {
+            const { contactId } = JSON.parse(event.body);
+            if (!contactId) {
+                return {
+                    statusCode: 400,
+                    headers,
+                    body: JSON.stringify({ success: false, error: '請提供 contactId' })
+                };
+            }
+
+            const chatUrl = `https://stirring-pothos-28253d.netlify.app/classbxopchfetch?id=${encodeURIComponent(contactId)}`;
+            
+            const response = await fetch(chatUrl);
+            
+            if (!response.ok) {
+                throw new Error(`Chat API 錯誤: ${response.status}`);
+            }
+
+            const data = await response.json();
+            
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ success: true, data })
+            };
+        }
+
         // === 獲取家長資訊 (新) ===
         if (action === 'getParentInfo') {
             const { parentOneClubId } = JSON.parse(event.body);
