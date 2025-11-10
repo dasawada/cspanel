@@ -55,6 +55,47 @@ exports.handler = async (event) => {
 
         const { action } = JSON.parse(event.body);
 
+        // === 獲取受保護的 Tabs 和 IP 內容 (新增) ===
+        if (action === 'getProtectedTabs') {
+            try {
+                const docRef = admin.firestore().collection('protectedContent').doc('tabsAndIP');
+                const docSnap = await docRef.get();
+                
+                if (!docSnap.exists) {
+                    return {
+                        statusCode: 404,
+                        headers,
+                        body: JSON.stringify({ 
+                            success: false, 
+                            error: '受保護內容不存在' 
+                        })
+                    };
+                }
+
+                const data = docSnap.data();
+                
+                return {
+                    statusCode: 200,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: true, 
+                        tabsHTML: data.tabsHTML || '',
+                        ipHTML: data.ipHTML || ''
+                    })
+                };
+            } catch (firestoreError) {
+                console.error('Firestore error:', firestoreError);
+                return {
+                    statusCode: 500,
+                    headers,
+                    body: JSON.stringify({ 
+                        success: false, 
+                        error: '無法讀取受保護內容' 
+                    })
+                };
+            }
+        }
+
         // === 獲取 Chat 資訊 (新增) ===
         if (action === 'getChatInfo') {
             const { contactId } = JSON.parse(event.body);
