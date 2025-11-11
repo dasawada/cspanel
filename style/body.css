@@ -13,6 +13,26 @@ body, button, textarea {
 b, h1, h2, h3, h4, h5, h6 {
     font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Segoe UI', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
 }
+
+/* 統一面板樣式 */
+.roofbutton,
+.tool_zip_dl,
+.optitlepanel,
+.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet,
+.linkout,
+.temp2,
+.board,
+.meeting-now-search,
+.meeting-check-search,
+nav,
+.fudausearch-container,
+.panel-tab-content {
+    background-color: white;
+    border: 1px solid #00a1ff30;
+    border-radius: 10px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgb(184 205 215 / 61%);
+}
+
 .update-header {
     position: fixed;
     top: 0;
@@ -48,11 +68,7 @@ b, h1, h2, h3, h4, h5, h6 {
     height: auto; 
     font-size: 12px;
     color: #4d4d4d;
-    border: 1px solid #ccc; 
     padding: 10px;
-    border-radius: 10px; /* 設定圓角半徑為 10px */
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 確保容器為相對定位 */
     left: 0px;
@@ -66,11 +82,7 @@ b, h1, h2, h3, h4, h5, h6 {
     width: 400px;
     height: 55px;
     color: #4d4d4d;
-    border: 1px solid #ccc;
     padding: 5px 10px 5px 10px;
-    border-radius: 10px;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
     position: absolute;  /* 正確的定位方式 */
     left: 1290px;  /* 更改位置對齊 linkout */
@@ -78,11 +90,7 @@ b, h1, h2, h3, h4, h5, h6 {
     z-index: 993; /* 添加合適的 z-index */
 }
 .optitlepanel {
-    background-color: white;
     padding: 10px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     width: 400px;
     height: 120px;
     box-sizing: border-box;
@@ -92,10 +100,6 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 
 .idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet {
-    background-color: white;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     display: flex;
     flex-direction: column;
     position: absolute;  /* 改為 absolute 以確保定位一致 */
@@ -114,8 +118,8 @@ b, h1, h2, h3, h4, h5, h6 {
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
-.tool_zip_dl:hover{
-    background:#f7f7f7;
+.meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover{
+    border: 1px solid #00a2ff91;
 }
 
 .small-size {
@@ -218,11 +222,7 @@ b, h1, h2, h3, h4, h5, h6 {
 
 
 .linkout {
-    background-color: white;
     padding: 5px 8px; 
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     height: auto; /* 固定高度 */
     width: auto;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
@@ -240,9 +240,6 @@ b, h1, h2, h3, h4, h5, h6 {
     align-items: center;
     justify-content: center;
 }
-.linkout:hover {
-    background-color: #f7f7f7;
-}
 .appicon {
     background-color: white;
     padding: 10px; 
@@ -251,11 +248,7 @@ b, h1, h2, h3, h4, h5, h6 {
 .temp2 {
     grid-column: 2 / 3;
     grid-row: 1 / 2;
-    background-color: white;
     padding: 20px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box; 
 }
 /* 檔次提示語樣式 */
@@ -319,7 +312,6 @@ b, h1, h2, h3, h4, h5, h6 {
 }
 .board {
     padding: 3px;
-    border: 1px solid #ccc;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     z-index: 900;
@@ -327,30 +319,20 @@ b, h1, h2, h3, h4, h5, h6 {
     height: 600px;
     left: 0px;
     top: 410px;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     transition: width 0.3s ease, height 0.3s ease;
 }
 .meeting-now-search{
     padding: 10px; 
-    border: 1px solid #ccc;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     width:100%;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    background-color: white;
 }
 .meeting-check-search{
     padding: 10px; 
-    border: 1px solid #ccc;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 固定位置 */
     width:100%;
     height: auto;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
-    background-color: white;
 }
 /* 搜尋按鈕面板的絕對定位 */
 #all-meeting-search-panel {
@@ -473,9 +455,6 @@ nav {
     position: relative;
     width: 100%;
     height: 30px;
-    border: 1px solid #ccc;
-    border-radius: 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     display: flex;
     background-color: fff;
 }
@@ -489,7 +468,7 @@ nav a {
     text-decoration: none;
     text-transform: uppercase;
     text-align: center;
-    color: #b5b5b5;
+    color: #90a8b680;
     cursor: pointer;
     transition: color 0.3s ease;
 }
@@ -842,11 +821,7 @@ textarea {
     height: 105px;
     font-size: 12px;
     color: #4d4d4d;
-    border: 1px solid #ccc;
     padding: 10px 5px 10px 5px;
-    border-radius: 10px;
-    background-color: white;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     box-sizing: border-box;
     position: absolute;
     gap: 10px;
@@ -902,30 +877,26 @@ textarea {
     display: none;
     width: 100%;
     height: calc(100% - 33px);
-    background-color: white;
     padding: 3px;
-    border: 1px solid #ccc;
     
     border-radius: 0px 10px 10px 10px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
     order: 1;
     overflow: hidden;
 }
 
 .panel-tabs label {
     padding: 5px 10px;
-    color: #bcbcbc;
-    background-color: #f5f5f5;
-    border: 1px solid #ccc;
+    color: rgba(90, 90, 90, 0.35);
+    background-color: rgba(231, 247, 255, 0.341);
+    border: 1px solid #00a1ff30;
     border-bottom: none; /* Remove top border to connect with label */
     border-radius: 10px 10px 0px 0px;
     cursor: pointer;
     order: 0;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgb(184 205 215 / 61%);}
 
 .panel-tabs label:hover {
-    background-color: white;
+    background-color: rgba(255, 255, 255, 0.5);
 }
 
 .panel-tabs input[type="radio"] {
@@ -935,6 +906,7 @@ textarea {
 .panel-tabs input[type="radio"]:checked + label {
     color: black;
     background-color: white;
+    border: 1px solid #ffffff;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
 }
 
