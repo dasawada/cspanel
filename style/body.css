@@ -8,10 +8,6 @@ body, button, textarea {
     z-index: 1;
     font-weight: 500;
 }
-html, body{
-    background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%); 
-    min-width: 1680px; /* 可調：例如 1600/1680/1700 依實際佈局需要 */
-}
 
 b, h1, h2, h3, h4, h5, h6 {
     font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Segoe UI', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
