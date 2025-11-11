@@ -77,24 +77,33 @@ export function makeDraggable(panel, handle, options = {}) {
   const BOUNCE_DURATION = 300;
   let viewportWidth, viewportHeight;
   let boundaryElement = options.boundaryElement;
+  let boundaryOffsetX = 0, boundaryOffsetY = 0; // 新增：邊界位移
 
   function updateBoundary() {
     if (boundaryElement) {
       const boundaryRect = boundaryElement.getBoundingClientRect();
+      // 考慮頁面捲動，計算邊界元素的絕對位置
+      boundaryOffsetX = boundaryRect.left + window.scrollX;
+      boundaryOffsetY = boundaryRect.top + window.scrollY;
       viewportWidth = boundaryRect.width;
       viewportHeight = boundaryRect.height;
     } else {
-      viewportWidth = options.width || window.innerWidth;
-      viewportHeight = options.height || window.innerHeight;
+      // 當沒有指定 boundaryElement 時，邊界從 (0,0) 開始
+      boundaryOffsetX = 0;
+      boundaryOffsetY = 0;
+      // 使用 options.width/height 或整個文件的可捲動區域作為邊界
+      viewportWidth = options.width || Math.max(document.documentElement.scrollWidth, window.innerWidth);
+      viewportHeight = options.height || Math.max(document.documentElement.scrollHeight, window.innerHeight);
     }
   }
 
   // 初始化邊界 (即使 disableBoundary 為 true，也先計算一次，以防後續動態切換)
   updateBoundary();
 
-  // 如果設置了 updateBoundary 選項，則監聽視窗大小變化
+  // 如果設置了 updateBoundary 選項，則監聽視窗大小變化和捲動
   if (options.updateBoundary) {
     window.addEventListener('resize', updateBoundary);
+    document.addEventListener('scroll', updateBoundary, true); // 監聽捲動事件
   }
 
   let dragOverlay = null; // 新增遮罩變數
@@ -168,8 +177,12 @@ export function makeDraggable(panel, handle, options = {}) {
 
     if (!options.disableBoundary) { // <<< MODIFICATION: Conditional boundary check
       const elementRect = panel.getBoundingClientRect();
-      const minLeft = 0 - BOUNDARY_BUFFER, maxLeft = viewportWidth - elementRect.width + BOUNDARY_BUFFER;
-      const minTop = 0 - BOUNDARY_BUFFER, maxTop = viewportHeight - elementRect.height + BOUNDARY_BUFFER;
+      // 邊界檢查時，要考慮邊界的位移
+      const minLeft = boundaryOffsetX - BOUNDARY_BUFFER;
+      const maxLeft = boundaryOffsetX + viewportWidth - elementRect.width + BOUNDARY_BUFFER;
+      const minTop = boundaryOffsetY - BOUNDARY_BUFFER;
+      const maxTop = boundaryOffsetY + viewportHeight - elementRect.height + BOUNDARY_BUFFER;
+
       if (newLeft < minLeft) newLeft = minLeft - (minLeft - newLeft) * 0.3;
       else if (newLeft > maxLeft) newLeft = maxLeft + (newLeft - maxLeft) * 0.3;
       if (newTop < minTop) newTop = minTop - (minTop - newTop) * 0.3;
@@ -211,10 +224,19 @@ export function makeDraggable(panel, handle, options = {}) {
 
     if (!options.disableBoundary) { // <<< MODIFICATION: Conditional boundary check and bounce
       const elementRect = panel.getBoundingClientRect();
-      if (finalX < 0) { finalX = 0; needsBounce = true; }
-      else if (finalX + elementRect.width > viewportWidth) { finalX = viewportWidth - elementRect.width; needsBounce = true; }
-      if (finalY < 0) { finalY = 0; needsBounce = true; }
-      else if (finalY + elementRect.height > viewportHeight) { finalY = viewportHeight - elementRect.height; needsBounce = true; }
+      const currentElementWidth = elementRect.width;
+      const currentElementHeight = elementRect.height;
+
+      // 回彈計算也要考慮邊界位移
+      const boundaryLeft = boundaryOffsetX;
+      const boundaryRight = boundaryOffsetX + viewportWidth;
+      const boundaryTop = boundaryOffsetY;
+      const boundaryBottom = boundaryOffsetY + viewportHeight;
+
+      if (finalX < boundaryLeft) { finalX = boundaryLeft; needsBounce = true; }
+      else if (finalX + currentElementWidth > boundaryRight) { finalX = boundaryRight - currentElementWidth; needsBounce = true; }
+      if (finalY < boundaryTop) { finalY = boundaryTop; needsBounce = true; }
+      else if (finalY + currentElementHeight > boundaryBottom) { finalY = boundaryBottom - currentElementHeight; needsBounce = true; }
     }
 
     if (needsBounce) { // This will only be true if !options.disableBoundary and a boundary was hit
@@ -270,6 +292,7 @@ export function makeDraggable(panel, handle, options = {}) {
     // 移除添加到 window 和 document 的持久性事件監聽器
     if (options.updateBoundary) {
       window.removeEventListener('resize', updateBoundary);
+      document.removeEventListener('scroll', updateBoundary, true); // 移除捲動監聽
     }
     window.removeEventListener('blur', handleDragEnd);
     document.removeEventListener('visibilitychange', onVisibilityChange);

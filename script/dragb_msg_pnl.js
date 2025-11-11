@@ -932,8 +932,13 @@ export function createCannedMessagesPanel(options = {}) {
   // ===== 3.7. 拖曳功能（改用 makeDraggable） =====
   const dragHandle = panel.querySelector('.canned-panel-handle');
   makeDraggable(panel, dragHandle, {
-    left: options.left !== undefined ? options.left : 1300,
-    top: options.top !== undefined ? options.top : 75
+    // 在此設定此面板的預設值
+    left: 1300,
+    top: 75,
+    color: '#a2c6de', // 您也可以在這裡設定預設顏色
+    // 使用展開語法，將外部傳入的 options 覆蓋並擴充預設值
+    // 這樣 panel_all.html 中的 left, top, disableBoundary, width, height 等設定都能生效
+    ...options
   });
 
   // ===== 3.8. 監聽登入/登出事件 =====

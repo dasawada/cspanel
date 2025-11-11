@@ -8,8 +8,9 @@ body, button, textarea {
     z-index: 1;
     font-weight: 500;
 }
-body{
+html, body{
     background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%); 
+    min-width: 1680px; /* 可調：例如 1600/1680/1700 依實際佈局需要 */
 }
 
 b, h1, h2, h3, h4, h5, h6 {
@@ -79,10 +80,9 @@ nav,
     display: flex;
     flex-wrap: nowrap;
     flex-direction: column;
+    z-index: 996;
 }
 .tool_zip_dl {
-    width: 400px;
-    height: 55px;
     color: #4d4d4d;
     padding: 5px 10px 5px 10px;
     box-sizing: border-box;
