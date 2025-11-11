@@ -12,29 +12,40 @@ if (!admin.apps.length) {
 }
 
 exports.handler = async (event) => {
+    // 重要：CORS headers 必須包含所有可能的 headers
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Headers': 'Content-Type, Authorization',
-        'Access-Control-Allow-Methods': 'POST, OPTIONS'
+        'Access-Control-Allow-Methods': 'POST, OPTIONS',
+        'Access-Control-Max-Age': '86400' // 24小時緩存預檢請求
     };
 
+    // 處理 CORS 預檢請求
     if (event.httpMethod === 'OPTIONS') {
-        return { statusCode: 200, headers, body: '' };
+        return { 
+            statusCode: 200, 
+            headers, 
+            body: '' 
+        };
     }
 
+    // 只允許 POST 請求
     if (event.httpMethod !== 'POST') {
         return {
             statusCode: 405,
             headers,
-            body: JSON.stringify({ success: false, error: 'Method not allowed' })
+            body: JSON.stringify({ 
+                success: false, 
+                error: `Method ${event.httpMethod} not allowed. Only POST is accepted.` 
+            })
         };
     }
 
     try {
+        // 提取並驗證 Authorization header
         const authHeader = event.headers.authorization || event.headers.Authorization;
         const token = authHeader ? authHeader.split(' ')[1] : null;
 
-        // === 驗證 Token (所有 Actions 都需要) ===
         if (!token) {
             return {
                 statusCode: 401,
@@ -43,9 +54,11 @@ exports.handler = async (event) => {
             };
         }
 
+        // 驗證 Firebase ID Token
         try {
             await admin.auth().verifyIdToken(token);
         } catch (error) {
+            console.error('Token verification failed:', error);
             return {
                 statusCode: 401,
                 headers,
@@ -53,11 +66,12 @@ exports.handler = async (event) => {
             };
         }
 
-        // 重要：確保正確解析 body
+        // 解析請求 body
         let body;
         try {
             body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
         } catch (parseError) {
+            console.error('Body parse error:', parseError);
             return {
                 statusCode: 400,
                 headers,
@@ -66,14 +80,17 @@ exports.handler = async (event) => {
         }
 
         const { action } = body;
+        console.log('Received action:', action); // Debug log
 
-        // === 獲取受保護的 Tabs 和 IP 內容 (新增) ===
+        // === 獲取受保護的 Tabs 和 IP 內容 ===
         if (action === 'getProtectedTabs') {
             try {
+                console.log('Fetching protected tabs from Firestore...'); // Debug log
                 const docRef = admin.firestore().collection('protectedContent').doc('tabsAndIP');
                 const docSnap = await docRef.get();
                 
                 if (!docSnap.exists) {
+                    console.log('Document not found'); // Debug log
                     return {
                         statusCode: 404,
                         headers,
@@ -85,6 +102,7 @@ exports.handler = async (event) => {
                 }
 
                 const data = docSnap.data();
+                console.log('Document data retrieved successfully'); // Debug log
                 
                 return {
                     statusCode: 200,
@@ -102,7 +120,7 @@ exports.handler = async (event) => {
                     headers,
                     body: JSON.stringify({ 
                         success: false, 
-                        error: '無法讀取受保護內容' 
+                        error: '無法讀取受保護內容: ' + firestoreError.message 
                     })
                 };
             }
@@ -260,7 +278,7 @@ exports.handler = async (event) => {
         };
 
     } catch (error) {
-        console.error('Error:', error);
+        console.error('Handler error:', error);
         return {
             statusCode: 500,
             headers,
