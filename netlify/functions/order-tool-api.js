@@ -53,7 +53,19 @@ exports.handler = async (event) => {
             };
         }
 
-        const { action } = JSON.parse(event.body);
+        // 重要：確保正確解析 body
+        let body;
+        try {
+            body = typeof event.body === 'string' ? JSON.parse(event.body) : event.body;
+        } catch (parseError) {
+            return {
+                statusCode: 400,
+                headers,
+                body: JSON.stringify({ success: false, error: '無效的請求格式' })
+            };
+        }
+
+        const { action } = body;
 
         // === 獲取受保護的 Tabs 和 IP 內容 (新增) ===
         if (action === 'getProtectedTabs') {
@@ -98,7 +110,7 @@ exports.handler = async (event) => {
 
         // === 獲取 Chat 資訊 (新增) ===
         if (action === 'getChatInfo') {
-            const { contactId } = JSON.parse(event.body);
+            const { contactId } = body;
             if (!contactId) {
                 return {
                     statusCode: 400,
@@ -126,7 +138,7 @@ exports.handler = async (event) => {
 
         // === 獲取家長資訊 (新) ===
         if (action === 'getParentInfo') {
-            const { parentOneClubId } = JSON.parse(event.body);
+            const { parentOneClubId } = body;
             if (!parentOneClubId) {
                 return {
                     statusCode: 400,
@@ -161,7 +173,7 @@ exports.handler = async (event) => {
 
         // === 獲取 Deal 資訊 ===
         if (action === 'getDealInfo') {
-            const { dealId } = JSON.parse(event.body);
+            const { dealId } = body;
             if (!dealId) {
                 return {
                     statusCode: 400,
@@ -188,7 +200,7 @@ exports.handler = async (event) => {
 
         // === 獲取訂單資訊 ===
         if (action === 'getOrderData') {
-            const { orderId } = JSON.parse(event.body);
+            const { orderId } = body;
             if (!orderId) {
                 return {
                     statusCode: 400,
