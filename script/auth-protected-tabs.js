@@ -14,7 +14,7 @@ window.addEventListener('firework-login-success', async () => {
 
     // 呼叫後端 API 獲取受保護內容
     console.log('📡 Fetching protected content...');
-    const response = await fetch('/.netlify/functions/order-tool-api', {
+    const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/order-tool-api', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
