@@ -2,7 +2,7 @@ button {
     background-color: #f0f0f0;
     color: #000000;
     padding: 3px 8px;
-    border: 1px solid #bfbfbf;
+    border: 1px solid #00a1ff30;
     border-radius: 8px;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
