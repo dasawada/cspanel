@@ -6,8 +6,8 @@
 
 const fetch = require('node-fetch');
 
-// Bitrix Webhook URL
-const BITRIX_WEBHOOK_URL = 'https://oneclass.bitrix24.com/rest/112707/9f69cv00y4xkrx87/crm.deal.get';
+// Bitrix Webhook URL - 從環境變數讀取
+const BITRIX_WEBHOOK_URL = process.env.BITRIX24_WEBHOOK_URL;
 
 // CacheManager: 直接用 API 取得 tutor group，並做記憶體快取
 let _tutorGroupCache = null;
@@ -135,7 +135,15 @@ exports.handler = async (event) => {
 
   try {
     // 1. 取得 Bitrix deal 資料
-    const bitrixUrl = `${BITRIX_WEBHOOK_URL}?ID=${dealId}`;
+    if (!BITRIX_WEBHOOK_URL) {
+      return {
+        statusCode: 500,
+        headers,
+        body: JSON.stringify({ error: 'Bitrix webhook URL not configured' })
+      };
+    }
+    
+    const bitrixUrl = `${BITRIX_WEBHOOK_URL}/crm.deal.get?ID=${dealId}`;
     const dealResp = await fetchWithRetry(bitrixUrl);
     const dealData = await dealResp.json();
 

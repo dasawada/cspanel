@@ -1,0 +1,171 @@
+{
+    "categories": [
+      {
+        "label": "請假與補課",
+        "style": {
+          "background": "#d4f4dd",
+          "color": "#229954"
+        }
+      },
+      {
+        "label": "課程討論",
+        "style": {
+          "background": "#fff5d1",
+          "color": "#b47d00"
+        }
+      },
+      {
+        "label": "考卷/作業相關",
+        "style": {
+          "background": "#fff5d1",
+          "color": "#b47d00"
+        }
+      },
+      {
+        "label": "紙本講義相關",
+        "style": {
+          "background": "#fff5d1",
+          "color": "#b47d00"
+        }
+      },
+      {
+        "label": "合約內容相關",
+        "style": {
+          "background": "#ffdddd",
+          "color": "#c0392b"
+        }
+      },
+      {
+        "label": "課程通訊問題",
+        "style": {
+          "background": "#d6eaf8",
+          "color": "#2471a3"
+        }
+      },
+      {
+        "label": "系統操作",
+        "style": {
+          "background": "#d6eaf8",
+          "color": "#2471a3"
+        }
+      },
+      {
+        "label": "推薦親友",
+        "style": {
+          "background": "#d6eaf8",
+          "color": "#2471a3"
+        }
+      },
+      {
+        "label": "其他",
+        "style": {
+          "background": "#f7f7fb",
+          "color": "#3a3366"
+        }
+      }
+    ],
+    "考卷/作業相關": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[課程[^\\[\\]]*\\]\\s*|\\[教材講解\\]\\s*",
+      "adminTagPattern": "^已查課表、並轉傳綠Line，老師：[^：]*：?\\s*",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "考卷檢討", "label": "考卷檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程考卷檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
+        { "value": "作業檢討", "label": "作業檢討", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長", "parentTag": "[課程作業檢討] ", "adminTag": "已查課表、並轉傳綠Line，老師：" },
+        { "value": "教材講解", "label": "教材講解", "desc": "查看學員課表找到該科目老師，綠色頻道轉傳後回覆家長\n＊客制教材轉輔導", "parentTag": "[教材講解] ", "adminTag": "已查課表、並轉傳綠Line，老師：" }
+      ]
+    },
+    "課程通訊問題": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[教材錯誤\\]\\s*|^\\[老師曠課\\]\\s*|\\[課程[^\\[\\]]*\\]\\s*|\\[教材講解\\]\\s*",
+      "adminTagPattern": "^老師One客服反映:|^老師曠課，致電 通均響底未接，已於 : 請學生下課，再麻煩輔導協助安排補課事宜。?",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "教材錯誤", "label": "教材錯誤", "parentTag": "[教材錯誤] ", "adminTag": "老師One客服反映:" },
+        { "value": "老師曠課", "label": "老師曠課", "parentTag": "[老師曠課] ", "adminTag": "老師曠課，致電 通均響底未接，已於 : 請學生下課，再麻煩輔導協助安排補課事宜。" }
+      ]
+    },
+    "課程討論": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[排課異動\\]\\s*|^\\[師資異動\\]\\s*|\\[學生狀況反應\\]\\s*|\\[家長反映授課師狀況\\]\\s*|\\[教材與進度問題\\]\\s*",
+      "adminTagPattern": "",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "排課異動", "label": "排課異動", "desc": "", "parentTag": "[排課異動] ", "adminTag": "" },
+        { "value": "師資異動", "label": "師資異動", "desc": "", "parentTag": "[師資異動] ", "adminTag": "" },
+        { "value": "學生狀況反應", "label": "學生狀況反應", "desc": "", "parentTag": "[學生狀況反應] ", "adminTag": "" },
+        { "value": "家長反映授課師狀況", "label": "家長反映授課師狀況", "desc": "", "parentTag": "[家長反映授課師狀況] ", "adminTag": "" },
+        { "value": "教材與進度問題", "label": "教材與進度問題", "desc": "", "parentTag": "[教材與進度問題] ", "adminTag": "" }
+      ]
+    },
+    "合約內容相關": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[申請退費\\]\\s*|^\\[退費後續扣款問題\\]\\s*|\\[繳費查詢/繳款疑問\\]\\s*|\\[換卡\\]\\s*|\\[分期問題\\]\\s*|\\[原學生學制轉換\\]\\s*|\\[原學生課程轉給另一學制學生使用\\]\\s*|\\[確認堂數\\]\\s*|\\[續約\\]\\s*|\\[團課轉換\\]\\s*|\\[合約諮詢\\]\\s*|\\[合約展延\\]\\s*|\\[學習獎章兌換\\]\\s*",
+      "adminTagPattern": "",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "申請退費", "label": "申請退費", "desc": "", "parentTag": "[申請退費] ", "adminTag": "" },
+        { "value": "退費後續扣款問題", "label": "退費後續扣款問題", "desc": "", "parentTag": "[退費後續扣款問題] ", "adminTag": "" },
+        { "value": "繳費查詢/繳款疑問", "label": "繳費查詢/繳款疑問", "desc": "", "parentTag": "[繳費查詢/繳款疑問] ", "adminTag": "" },
+        { "value": "換卡", "label": "換卡", "desc": "", "parentTag": "[換卡] ", "adminTag": "" },
+        { "value": "分期問題", "label": "分期問題", "desc": "", "parentTag": "[分期問題] ", "adminTag": "" },
+        { "value": "原學生學制轉換", "label": "原學生學制轉換", "desc": "", "parentTag": "[原學生學制轉換] ", "adminTag": "" },
+        { "value": "原學生課程轉給另一學制學生使用", "label": "原學生課程轉給另一學制學生使用", "desc": "", "parentTag": "[原學生課程轉給另一學制學生使用] ", "adminTag": "" },
+        { "value": "確認堂數", "label": "確認堂數", "desc": "", "parentTag": "[確認堂數] ", "adminTag": "" },
+        { "value": "續約", "label": "續約", "desc": "", "parentTag": "[續約] ", "adminTag": "" },
+        { "value": "團課轉換", "label": "團課轉換", "desc": "", "parentTag": "[團課轉換] ", "adminTag": "" },
+        { "value": "合約諮詢", "label": "合約諮詢", "desc": "", "parentTag": "[合約諮詢] ", "adminTag": "" },
+        { "value": "合約展延", "label": "合約展延", "desc": "", "parentTag": "[合約展延] ", "adminTag": "" },
+        { "value": "學習獎章兌換", "label": "學習獎章兌換", "desc": "", "parentTag": "[學習獎章兌換] ", "adminTag": "" }
+      ]
+    },
+    "請假與補課": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[請假\\]\\s*|^\\[順延\\]\\s*|^\\[補課\\]\\s*",
+      "adminTagPattern": "",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "請假", "label": "請假", "desc": "", "parentTag": "[請假] ", "adminTag": "" },
+        { "value": "順延", "label": "順延", "desc": "", "parentTag": "[順延] ", "adminTag": "" },
+        { "value": "補課", "label": "補課", "desc": "", "parentTag": "[補課] ", "adminTag": "" }
+      ]
+    },
+    "紙本講義/教具相關": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[講義配送相關\\]\\s*|^\\[講義版本資訊\\]\\s*|\\[教具寄送問題\\]\\s*|\\[講義申請方式\\]\\s*|\\[教材內容\\]\\s*",
+      "adminTagPattern": "",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "講義配送相關", "label": "講義配送相關", "desc": "", "parentTag": "[講義配送相關] ", "adminTag": "" },
+        { "value": "講義版本資訊", "label": "講義版本資訊", "desc": "", "parentTag": "[講義版本資訊] ", "adminTag": "" },
+        { "value": "教具寄送問題", "label": "教具寄送問題", "desc": "", "parentTag": "[教具寄送問題] ", "adminTag": "" },
+        { "value": "講義申請方式", "label": "講義申請方式", "desc": "", "parentTag": "[講義申請方式] ", "adminTag": "" },
+        { "value": "教材內容", "label": "教材內容", "desc": "", "parentTag": "[教材內容] ", "adminTag": "" }
+      ]
+    },
+    "系統操作": {
+      "enabled": true,
+      "requireSelection": true,
+      "parentTagPattern": "^\\[忘記帳密\\]\\s*|^\\[操作問題\\]\\s*|\\[系統建議\\]\\s*",
+      "adminTagPattern": "",
+      "subTypes": [
+        { "value": "", "label": "請選擇子分類", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "_empty", "label": "", "desc": "", "parentTag": "", "adminTag": "" },
+        { "value": "忘記帳密", "label": "忘記帳密", "desc": "", "parentTag": "[忘記帳密] ", "adminTag": "" },
+        { "value": "操作問題", "label": "操作問題", "desc": "", "parentTag": "[操作問題] ", "adminTag": "" },
+        { "value": "系統建議", "label": "系統建議", "desc": "", "parentTag": "[系統建議] ", "adminTag": "" }
+      ]
+    }
+  }
