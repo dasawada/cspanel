@@ -215,18 +215,34 @@ function fudausearch_updateSuggestions() {
   suggestionsContainer.style.display = suggestions.length > 0 ? "block" : "none";
 }
 
+// 在文件開頭添加按鈕顯示配置
+const fudausearch_buttonConfig = {
+  "學務部": true,
+  "排課組": false,        // 設為 false 即隱藏
+  "客服工程師": true,
+  "組長": true,
+  "輔導本人": true,
+  "顧問本人": true,
+  "職代一": true,
+  "職代二": true,
+  "公帳號": true,
+  "數字組": false
+};
+
 // 渲染按鈕
 function fudausearch_renderButtons(fudausearch_results) {
   const resultsContainer = document.getElementById("fudausearch-results");
-  resultsContainer.innerHTML = ""; // 確保每次渲染時清空容器
+  resultsContainer.innerHTML = "";
 
-  fudausearch_results.forEach((result) => {
+  // 過濾掉配置中設為 false 的按鈕
+  const filteredResults = fudausearch_results.filter(result => 
+    fudausearch_buttonConfig[result.type] !== false
+  );
+
+  filteredResults.forEach((result) => {
     const button = document.createElement("button");
-    
-    // 預設樣式
     button.className = "fudausearch-button";
 
-    // 根據類型應用特殊樣式
     if (result.type === "學務部") {
       button.classList.add("fudausearch-button-special");
     } else if (result.type === "排課組") {
@@ -237,8 +253,8 @@ function fudausearch_renderButtons(fudausearch_results) {
       button.classList.add("fudausearch-button-groupnumber");
     }
 
-    button.textContent = result.text; // 按鈕只顯示結果
-    button.dataset.type = result.type; // 保存類型
+    button.textContent = result.text;
+    button.dataset.type = result.type;
     button.onclick = () => fudausearch_copyToClipboard(result.fullName || result.text, button);
 
     resultsContainer.appendChild(button);
