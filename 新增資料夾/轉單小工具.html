@@ -601,6 +601,39 @@ html,body { margin:0; height:100%; }
   </div>
 
   <script>
+    // ===== Token 處理函式 =====
+    async function fetchWithTokenRetry(url, options = {}, retryCount = 1) {
+      try {
+        let token = window.userToken;
+        if (!token && window.auth?.currentUser) {
+          token = await window.auth.currentUser.getIdToken();
+          window.userToken = token;
+        }
+
+        const headers = {
+          ...options.headers,
+          'Authorization': `Bearer ${token}`
+        };
+
+        const response = await fetch(url, {
+          ...options,
+          headers
+        });
+
+        if (response.status === 401 && retryCount > 0 && window.auth?.currentUser) {
+          console.log('Token 可能過期，嘗試更新...');
+          const newToken = await window.auth.currentUser.getIdToken(true);
+          window.userToken = newToken;
+          return fetchWithTokenRetry(url, options, retryCount - 1);
+        }
+
+        return response;
+      } catch (error) {
+        console.error('fetchWithTokenRetry 錯誤:', error);
+        throw error;
+      }
+    }
+
     // State management
     let sheetData = {
       colA: "",
