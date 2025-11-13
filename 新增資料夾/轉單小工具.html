@@ -358,9 +358,30 @@ html,body { margin:0; height:100%; }
           user.getIdToken().then(token => {
             window.userToken = token;
           });
+          
+          // ===== 新增: 背景自動更新 token (每 50 分鐘) =====
+          if (window.tokenRefreshInterval) {
+            clearInterval(window.tokenRefreshInterval);
+          }
+          
+          window.tokenRefreshInterval = setInterval(async () => {
+            try {
+              const newToken = await user.getIdToken(true);
+              window.userToken = newToken;
+              console.log('✅ Token 已自動更新');
+            } catch (error) {
+              console.error('❌ 背景更新 token 失敗:', error);
+            }
+          }, 50 * 60 * 1000); // 50 分鐘
+          
         } else {
           loginContainer.style.display = 'block';
           appContainer.style.display = 'none';
+          
+          // 登出時清除定時器
+          if (window.tokenRefreshInterval) {
+            clearInterval(window.tokenRefreshInterval);
+          }
         }
       });
 
@@ -807,19 +828,15 @@ html,body { margin:0; height:100%; }
       linksContainer.innerHTML = ""
 
       try {
-        const response = await fetch(API_ENDPOINT, {
+        const response = await fetchWithTokenRetry(API_ENDPOINT, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${window.userToken}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             action: 'getDealInfo', 
-            dealId: cleanDealId,
-            token: window.userToken 
+            dealId: cleanDealId
           })
         });
-
+        
         if (!response.ok) {
           throw new Error(`API 錯誤: ${response.status}`);
         }
@@ -940,19 +957,15 @@ html,body { margin:0; height:100%; }
 
     async function fetchOrderData(orderId, bitrixDealId, contactLink) {
       try {
-        const response = await fetch(API_ENDPOINT, {
+        const response = await fetchWithTokenRetry(API_ENDPOINT, {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${window.userToken}`
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ 
             action: 'getOrderData', 
-            orderId,
-            token: window.userToken 
+            orderId
           })
         });
-
+        
         if (!response.ok) {
           throw new Error(`Order API 錯誤: ${response.status}`);
         }

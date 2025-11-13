@@ -1,39 +1,60 @@
 window.addEventListener('firework-login-success', async () => {
+  // ===== 新增重試機制 =====
+  async function fetchProtectedContentWithRetry(retries = 3) {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const token = localStorage.getItem('firebase_id_token');
+        
+        if (!token) {
+          // 嘗試從 Firebase 取得新 token
+          const user = window.firebase.auth().currentUser;
+          if (user) {
+            const newToken = await user.getIdToken(true);
+            localStorage.setItem('firebase_id_token', newToken);
+            return fetchProtectedContentWithRetry(retries - i - 1);
+          }
+          throw new Error('Token 不存在');
+        }
+
+        const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/order-tool-api', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action: 'getProtectedTabs'
+          })
+        });
+
+        // 401 錯誤,嘗試更新 token
+        if (response.status === 401 && i < retries - 1) {
+          console.log('🔄 Token 過期,嘗試更新...');
+          const user = window.firebase.auth().currentUser;
+          if (user) {
+            const newToken = await user.getIdToken(true);
+            localStorage.setItem('firebase_id_token', newToken);
+            continue; // 重試
+          }
+        }
+
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        console.log(`⚠️ 重試 ${i + 1}/${retries}...`);
+        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+      }
+    }
+  }
+
   try {
     console.log('🔐 Login success event triggered');
     
-    // 改為使用 localStorage 中的 token（與 dragb_msg_pnl.js 一致）
-    const token = localStorage.getItem('firebase_id_token');
-    
-    if (!token) {
-      console.error('❌ Token 不存在於 localStorage');
-      return;
-    }
-
-    console.log('🎫 Token obtained from localStorage:', token.substring(0, 20) + '...');
-
-    // 呼叫後端 API 獲取受保護內容
-    console.log('📡 Fetching protected content...');
-    const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/order-tool-api', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        action: 'getProtectedTabs'
-      })
-    });
-
-    console.log('📥 Response status:', response.status);
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('❌ Response error:', errorText);
-      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-    }
-
-    const data = await response.json();
+    const data = await fetchProtectedContentWithRetry();
     console.log('✅ Received data:', data);
     
     if (data.success) {

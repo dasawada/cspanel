@@ -317,46 +317,30 @@ export function createCannedMessagesPanel(options = {}) {
 
   // 工具函數：帶重試的 fetch（專門處理 500 錯誤）
   async function fetchWithRetry(url, options, retries = 3) {
-    // ===== 自動附加 Token 邏輯 =====
-    const token = localStorage.getItem('firebase_id_token');
     const isInternalApi = url.includes('stirring-pothos-28253d.netlify.app');
 
     if (isInternalApi) {
-      if (!token) {
-        throw new Error('未登入，無法執行安全請求');
-      }
-
-      if (!options.headers) options.headers = {};
-      options.headers['Authorization'] = `Bearer ${token}`;
-
-      // 如果是 POST 且有 body，也在 body 中加入 token
-      if (options.body && options.method === 'POST') {
-        try {
-          const bodyData = JSON.parse(options.body);
-          bodyData.token = token;
-          options.body = JSON.stringify(bodyData);
-        } catch (e) {
-          // body 不是 JSON，忽略
-        }
-      }
+        // 使用 TokenManager 處理內部 API
+        return await tokenManager.fetchWithAuth(url, options, retries);
     }
 
+    // 外部 API 保持原邏輯
     for (let i = 0; i < retries; i++) {
-      try {
-        const response = await fetch(url, options);
-        if (response.status === 500) {
-          if (i === retries - 1) {
-            throw new Error(`500 錯誤，重試 ${retries} 次後仍失敗`);
-          }
-          await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-          continue;
+        try {
+            const response = await fetch(url, options);
+            if (response.status === 500) {
+                if (i === retries - 1) {
+                    throw new Error(`500 錯誤，重試 ${retries} 次後仍失敗`);
+                }
+                await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
+                continue;
+            }
+            return response;
+        } catch (error) {
+            if (error.name === 'AbortError') throw error;
+            if (i === retries - 1) throw error;
+            await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
         }
-        return response;
-      } catch (error) {
-        if (error.name === 'AbortError') throw error;
-        if (i === retries - 1) throw error;
-        await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-      }
     }
   }
 
@@ -691,7 +675,7 @@ export function createCannedMessagesPanel(options = {}) {
         minute: '2-digit',
         hourCycle: 'h23'
       });
-      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
+      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-Taipei', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
@@ -936,7 +920,7 @@ export function createCannedMessagesPanel(options = {}) {
     left: 1300,
     top: 75,
     color: '#a2c6de', // 您也可以在這裡設定預設顏色
-    // 使用展開語法，將外部傳入的 options 覆蓋並擴充預設值
+    // 使用展開語法，將外部傳入的 options 覆盖並擴充預設值
     // 這樣 panel_all.html 中的 left, top, disableBoundary, width, height 等設定都能生效
     ...options
   });
@@ -1012,3 +996,60 @@ async function getMinimalCourseInfo({ courseId }) {
     return { success: false, error: e.message || 'unknown error' };
   }
 }
+
+// ===== 在檔案開頭新增 Token 管理工具 =====
+class TokenManager {
+    async getValidToken() {
+        if (!window.firebase?.auth) {
+            throw new Error('Firebase 未初始化');
+        }
+        
+        const user = window.firebase.auth().currentUser;
+        if (!user) {
+            throw new Error('用戶未登入');
+        }
+
+        try {
+            // false = 使用緩存,除非過期
+            return await user.getIdToken(false);
+        } catch (error) {
+            console.error('Token 取得失敗,嘗試強制更新:', error);
+            return await user.getIdToken(true);
+        }
+    }
+
+    async fetchWithAuth(url, options = {}, retries = 3) {
+        const token = await this.getValidToken();
+        
+        const makeRequest = async (currentToken, attempt = 0) => {
+            const response = await fetch(url, {
+                ...options,
+                headers: {
+                    ...options.headers,
+                    'Authorization': `Bearer ${currentToken}`,
+                    'Content-Type': 'application/json'
+                }
+            });
+
+            // 401 錯誤且不是最後一次重試
+            if (response.status === 401 && attempt < retries - 1) {
+                console.log('Token 可能過期,嘗試更新...');
+                const newToken = await window.firebase.auth().currentUser.getIdToken(true);
+                localStorage.setItem('firebase_id_token', newToken);
+                return makeRequest(newToken, attempt + 1);
+            }
+
+            // 500 錯誤重試
+            if (response.status === 500 && attempt < retries - 1) {
+                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
+                return makeRequest(currentToken, attempt + 1);
+            }
+
+            return response;
+        };
+
+        return await makeRequest(token);
+    }
+}
+
+const tokenManager = new TokenManager();

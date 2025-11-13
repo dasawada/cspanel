@@ -1,4 +1,4 @@
 html, body{
     background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%); 
-    min-width: 1600px; /* 可調：例如 1600/1680/1700 依實際佈局需要 */
+    min-width: 1700px; /* 可調：例如 1600/1680/1700 依實際佈局需要 */
 }
