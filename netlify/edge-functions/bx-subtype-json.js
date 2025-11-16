@@ -27,13 +27,16 @@ export default async (request, context) => {
         return [];
       }
       
-      // 提取表頭 - 使用 label，如果沒有則使用 id
-      const headers = data.table.cols.map(col => col.label || col.id || '');
-      console.log(`[${sheetName}] Headers:`, JSON.stringify(headers));
+      // Google Sheets API 使用 A, B, C 作為欄位 ID
+      // 第一行是實際的表頭
+      const firstRow = data.table.rows[0];
+      const headers = firstRow.c.map(cell => cell?.v || '');
       
-      // 轉換為物件陣列，跳過第一行（表頭行）
+      console.log(`[${sheetName}] Actual headers from first row:`, JSON.stringify(headers));
+      
+      // 從第二行開始處理實際資料
       const rows = [];
-      for (let i = 0; i < data.table.rows.length; i++) {
+      for (let i = 1; i < data.table.rows.length; i++) {
         const row = data.table.rows[i];
         const obj = {};
         let hasData = false;
@@ -48,16 +51,14 @@ export default async (request, context) => {
           }
         });
         
-        // 只添加有資料的行
         if (hasData) {
           rows.push(obj);
         }
       }
       
-      console.log(`[${sheetName}] Processed ${rows.length} non-empty rows`);
+      console.log(`[${sheetName}] Processed ${rows.length} data rows`);
       if (rows.length > 0) {
-        console.log(`[${sheetName}] First row:`, JSON.stringify(rows[0]));
-        console.log(`[${sheetName}] Keys in first row:`, Object.keys(rows[0]));
+        console.log(`[${sheetName}] First data row:`, JSON.stringify(rows[0]));
       }
       
       return rows;
@@ -81,7 +82,7 @@ export default async (request, context) => {
     console.log('adminTagsData rows:', adminTagsData.length);
 
     if (mainData.length === 0) {
-      throw new Error('No data in main sheet (分類項目)');
+      throw new Error('No data in main sheet');
     }
 
     // 建立樣式映射表
@@ -114,7 +115,7 @@ export default async (request, context) => {
       const categoryLabel = row['問題類別'];
       
       if (index === 0) {
-        console.log('First data row example:', JSON.stringify(row));
+        console.log('First data row:', JSON.stringify(row));
       }
       
       if (!categoryLabel) {
@@ -132,7 +133,6 @@ export default async (request, context) => {
             { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '' }
           ]
         };
-        console.log(`Created category: ${categoryLabel}`);
       }
 
       const value = row['細項'] || row['子類別'];
@@ -154,7 +154,7 @@ export default async (request, context) => {
       });
     });
 
-    console.log('Total categories created:', Object.keys(categoriesData).length);
+    console.log('Total categories:', Object.keys(categoriesData).length);
     console.log('Category names:', Object.keys(categoriesData));
 
     // 生成最終輸出
