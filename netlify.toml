@@ -20,3 +20,7 @@
 [[edge_functions]]
   function = "classbxopchfetch-edge"
   path = "/classbxopchfetch"
+
+[[edge_functions]]
+  function = "bx-subtype-json"
+  path = "/bx-subtype-json"
