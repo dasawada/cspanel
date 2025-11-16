@@ -12,16 +12,24 @@ export default async (request, context) => {
         throw new Error(`Google Sheet fetch failed with status: ${response.status}`);
       }
       const text = await response.text();
-      // 移除 Google 的 JSONP 包裝，取得純 JSON 字串
       const jsonString = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s)[1];
       const data = JSON.parse(jsonString);
-      
-      // 將 Google Sheet 的資料格式轉換為物件陣列
+
+      if (!data.table || !data.table.cols || !data.table.rows) {
+        return [];
+      }
+
+      // 使用 API 回傳的 header labels
       const headers = data.table.cols.map(col => col.label);
+
+      // 將 Google Sheet 的資料格式轉換為物件陣列
       return data.table.rows.map(row => {
         const rowData = {};
         row.c.forEach((cell, index) => {
-          rowData[headers[index]] = cell ? cell.v : null;
+          const header = headers[index];
+          if (header) { // 只處理有標頭的欄位
+            rowData[header] = cell ? cell.v : null;
+          }
         });
         return rowData;
       });
