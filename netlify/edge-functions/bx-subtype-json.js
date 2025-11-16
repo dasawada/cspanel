@@ -64,10 +64,10 @@ export default async (request, context) => {
     // 處理 Admin Tags
     const adminTagsMap = new Map();
     for (const tag of adminTagsData) {
-        // 使用 細項 或 子類別 作為 key
-        const key = tag['SubTypeValue'] || tag['子類別'];
-        if (key && tag['SubTypeAdminTag']) {
-            adminTagsMap.set(key, tag['SubTypeAdminTag']);
+        // SubTypeValue 欄位是唯一的 key
+        const key = tag['SubTypeValue'];
+        if (key) { // 即使 SubTypeAdminTag 是空的也要存，以表示有這個 key
+            adminTagsMap.set(key, tag['SubTypeAdminTag'] || "");
         }
     }
 
@@ -92,6 +92,8 @@ export default async (request, context) => {
 
       const subCategory = row['子類別'];
       const detailItem = row['細項'];
+      
+      // '細項' 優先作為 value，若無則用 '子類別'
       const value = detailItem || subCategory;
       if (!value) continue;
 
@@ -101,6 +103,7 @@ export default async (request, context) => {
       }
 
       const parentTag = `[${value}] `;
+      // 直接使用 value (細項或子類別) 去 adminTagsMap 查找
       const adminTag = adminTagsMap.get(value) || "";
       const desc = row['處理方式'] || "";
 
