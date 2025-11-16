@@ -12,8 +12,14 @@ export default async (request, context) => {
         throw new Error(`Google Sheet fetch failed with status: ${response.status}`);
       }
       const text = await response.text();
-      const jsonString = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s)[1];
+      console.log(`Fetched text for gid ${gid} (first 500 chars):`, text.substring(0, 500));
+      const match = text.match(/google\.visualization\.Query\.setResponse\((.*)\);/s);
+      if (!match) {
+        throw new Error(`JSONP match failed for gid ${gid}`);
+      }
+      const jsonString = match[1];
       const data = JSON.parse(jsonString);
+      console.log(`Parsed data for gid ${gid}:`, { cols: data.table?.cols?.length, rows: data.table?.rows?.length });
 
       if (!data.table || !data.table.cols || !data.table.rows) {
         return [];
@@ -45,6 +51,10 @@ export default async (request, context) => {
       fetchData(GID_CATEGORIES),
       fetchData(GID_ADMIN_TAGS)
     ]);
+
+    console.log('mainData length:', mainData.length);
+    console.log('categoryStyles length:', categoryStyles.length);
+    console.log('adminTagsData length:', adminTagsData.length);
 
     const output = {
       categories: [],
@@ -116,6 +126,8 @@ export default async (request, context) => {
       });
     }
 
+    console.log('Categories keys:', Object.keys(categories));
+
     // 生成最終 JSON
     for (const label in categories) {
       // 1. 添加 category 列表
@@ -152,6 +164,7 @@ export default async (request, context) => {
     });
 
   } catch (error) {
+    console.error('Main error:', error);
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
       headers: { "Content-Type": "application/json" },
