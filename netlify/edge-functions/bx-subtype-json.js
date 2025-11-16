@@ -4,70 +4,71 @@ export default async (request, context) => {
   const GID_CATEGORIES = '233597564';
   const GID_ADMIN_TAGS = '1081096339';
 
-  // 簡化的 fetchData 函數，增加錯誤處理
   const fetchData = async (gid, sheetName) => {
     const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
     
     try {
-      console.log(`[${sheetName}] Fetching from: ${url}`);
       const response = await fetch(url);
       const text = await response.text();
       
-      console.log(`[${sheetName}] Response status: ${response.status}`);
-      console.log(`[${sheetName}] Response length: ${text.length}`);
-      console.log(`[${sheetName}] First 200 chars: ${text.substring(0, 200)}`);
-      
-      // 檢查是否是 HTML 錯誤頁面
       if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
-        throw new Error(`Sheet ${sheetName} (gid:${gid}) returned HTML instead of JSON. Sheet might be private or GID incorrect.`);
+        throw new Error(`Sheet ${sheetName} returned HTML. Check if sheet is public.`);
       }
       
-      // 提取 JSONP 包裹的 JSON
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
       if (!match) {
-        throw new Error(`Failed to parse JSONP from sheet ${sheetName} (gid:${gid}). Response preview: ${text.substring(0, 500)}`);
+        throw new Error(`Failed to parse JSONP from ${sheetName}`);
       }
       
       const data = JSON.parse(match[1]);
       
-      console.log(`[${sheetName}] Parsed cols: ${data.table?.cols?.length || 0}`);
-      console.log(`[${sheetName}] Parsed rows: ${data.table?.rows?.length || 0}`);
-      
-      if (!data.table || !data.table.rows) {
-        console.log(`[${sheetName}] No table or rows found`);
+      if (!data.table || !data.table.rows || data.table.rows.length === 0) {
+        console.log(`[${sheetName}] No data rows found`);
         return [];
       }
       
-      // 提取表頭
-      const headers = data.table.cols.map(col => col.label || '');
-      console.log(`[${sheetName}] Headers:`, headers);
+      // 提取表頭 - 使用 label，如果沒有則使用 id
+      const headers = data.table.cols.map(col => col.label || col.id || '');
+      console.log(`[${sheetName}] Headers:`, JSON.stringify(headers));
       
-      // 轉換為物件陣列
-      const rows = data.table.rows.map(row => {
+      // 轉換為物件陣列，跳過第一行（表頭行）
+      const rows = [];
+      for (let i = 0; i < data.table.rows.length; i++) {
+        const row = data.table.rows[i];
         const obj = {};
+        let hasData = false;
+        
         headers.forEach((header, index) => {
           if (header) {
-            obj[header] = row.c[index]?.v ?? null;
+            const cellValue = row.c[index]?.v ?? null;
+            obj[header] = cellValue;
+            if (cellValue !== null && cellValue !== '') {
+              hasData = true;
+            }
           }
         });
-        return obj;
-      });
+        
+        // 只添加有資料的行
+        if (hasData) {
+          rows.push(obj);
+        }
+      }
       
-      console.log(`[${sheetName}] Processed ${rows.length} rows`);
+      console.log(`[${sheetName}] Processed ${rows.length} non-empty rows`);
       if (rows.length > 0) {
-        console.log(`[${sheetName}] First row:`, rows[0]);
+        console.log(`[${sheetName}] First row:`, JSON.stringify(rows[0]));
+        console.log(`[${sheetName}] Keys in first row:`, Object.keys(rows[0]));
       }
       
       return rows;
       
     } catch (error) {
-      console.error(`Error fetching ${sheetName}:`, error.message);
-      throw new Error(`Failed to fetch ${sheetName}: ${error.message}`);
+      console.error(`Error in ${sheetName}:`, error.message);
+      throw error;
     }
   };
 
   try {
-    // 並行獲取所有工作表資料
     const [mainData, categoryStyles, adminTagsData] = await Promise.all([
       fetchData(GID_MAIN, '分類項目'),
       fetchData(GID_CATEGORIES, 'SubTypeJsonColor'),
@@ -79,17 +80,22 @@ export default async (request, context) => {
     console.log('categoryStyles rows:', categoryStyles.length);
     console.log('adminTagsData rows:', adminTagsData.length);
 
+    if (mainData.length === 0) {
+      throw new Error('No data in main sheet (分類項目)');
+    }
+
     // 建立樣式映射表
     const stylesMap = new Map();
     categoryStyles.forEach(row => {
-      if (row['問題類別']) {
-        stylesMap.set(row['問題類別'], {
+      const category = row['問題類別'];
+      if (category) {
+        stylesMap.set(category, {
           background: row['CategoryBg'] || '#f7f7fb',
           color: row['CategoryColor'] || '#3a3366'
         });
       }
     });
-    console.log('stylesMap size:', stylesMap.size);
+    console.log('stylesMap entries:', Array.from(stylesMap.keys()));
 
     // 建立 AdminTag 映射表
     const adminTagsMap = new Map();
@@ -101,17 +107,20 @@ export default async (request, context) => {
     });
     console.log('adminTagsMap size:', adminTagsMap.size);
 
-    // 處理主要資料，建立分類結構
+    // 處理主要資料
     const categoriesData = {};
     
     mainData.forEach((row, index) => {
       const categoryLabel = row['問題類別'];
+      
+      if (index === 0) {
+        console.log('First data row example:', JSON.stringify(row));
+      }
+      
       if (!categoryLabel) {
-        console.log(`Row ${index} skipped: no categoryLabel`);
         return;
       }
 
-      // 初始化分類
       if (!categoriesData[categoryLabel]) {
         categoriesData[categoryLabel] = {
           enabled: true,
@@ -123,24 +132,19 @@ export default async (request, context) => {
             { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '' }
           ]
         };
-        console.log(`Initialized category: ${categoryLabel}`);
+        console.log(`Created category: ${categoryLabel}`);
       }
 
-      // 優先使用細項,否則使用子類別
       const value = row['細項'] || row['子類別'];
       if (!value) {
-        console.log(`Row ${index} in ${categoryLabel} skipped: no value`);
         return;
       }
 
-      // 避免重複
       const exists = categoriesData[categoryLabel].subTypes.some(st => st.value === value);
       if (exists) {
-        console.log(`Row ${index} in ${categoryLabel} skipped: duplicate value ${value}`);
         return;
       }
 
-      // 添加子類型
       categoriesData[categoryLabel].subTypes.push({
         value: value,
         label: value,
@@ -148,38 +152,30 @@ export default async (request, context) => {
         parentTag: `[${value}] `,
         adminTag: adminTagsMap.get(value) || ''
       });
-      console.log(`Added subtype ${value} to ${categoryLabel}`);
     });
 
-    console.log('Categories created:', Object.keys(categoriesData));
+    console.log('Total categories created:', Object.keys(categoriesData).length);
+    console.log('Category names:', Object.keys(categoriesData));
 
-    // 生成最終輸出結構
+    // 生成最終輸出
     const output = {
       categories: []
     };
 
-    // 按照原本 categories 的順序添加
     Object.keys(categoriesData).forEach(categoryLabel => {
-      // 添加到 categories 列表
       output.categories.push({
         label: categoryLabel,
         style: stylesMap.get(categoryLabel) || { background: '#f7f7fb', color: '#3a3366' }
       });
 
-      // 處理該分類的詳細設定
       const categoryData = categoriesData[categoryLabel];
       const validSubTypes = categoryData.subTypes.filter(st => st.value && st.value !== '_empty');
 
-      // 生成 parentTagPattern
       if (validSubTypes.length > 0) {
-        const parentTags = validSubTypes.map(st => {
-          const escaped = st.parentTag.trim().replace(/[[\]]/g, '\\$&');
-          return escaped;
-        });
+        const parentTags = validSubTypes.map(st => st.parentTag.trim().replace(/[[\]]/g, '\\$&'));
         categoryData.parentTagPattern = `^(${parentTags.join('|')})\\s*`;
       }
 
-      // 生成 adminTagPattern
       const adminTags = [...new Set(validSubTypes.map(st => st.adminTag).filter(Boolean))];
       if (adminTags.length > 0) {
         categoryData.adminTagPattern = adminTags
@@ -187,13 +183,9 @@ export default async (request, context) => {
           .join('|');
       }
 
-      // 添加到輸出
       output[categoryLabel] = categoryData;
     });
 
-    console.log('Final output categories:', output.categories.length);
-
-    // 返回 JSON 響應
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
       headers: {
@@ -204,14 +196,11 @@ export default async (request, context) => {
     });
 
   } catch (error) {
-    console.error('Edge Function Error:', error);
+    console.error('Main Error:', error);
     
     return new Response(JSON.stringify({
       error: error.message,
-      stack: error.stack,
-      timestamp: new Date().toISOString(),
-      spreadsheetId: SPREADSHEET_ID,
-      gids: { main: GID_MAIN, categories: GID_CATEGORIES, adminTags: GID_ADMIN_TAGS }
+      timestamp: new Date().toISOString()
     }, null, 2), {
       status: 500,
       headers: {
