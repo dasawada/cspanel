@@ -644,7 +644,7 @@ export function createCannedMessagesPanel(options = {}) {
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
       // 首課專用格式
-      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
+      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
       
       return; // 首課處理完畢，直接返回
@@ -702,7 +702,7 @@ export function createCannedMessagesPanel(options = {}) {
       const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
-      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
+      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
 
       ['tab2', 'tab3'].forEach(tab => {
