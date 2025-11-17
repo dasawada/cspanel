@@ -1,8 +1,3 @@
-const GROUP_API_URL = Deno.env.get("GROUP_API_URL");
-if (!GROUP_API_URL) {
-  throw new Error('Missing GROUP_API_URL environment variable');
-}
-
 // ===== fetch with timeout & retry 工具 =====
 async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
   const controller = new AbortController();
@@ -52,23 +47,18 @@ const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
   return resp.json();
 };
 
-let cachedTutorToGroup = null;
-let lastFetchTime = 0;
-
-async function fetchTutorToGroup() {
-  // 每3小時更新一次
-  if (cachedTutorToGroup && Date.now() - lastFetchTime < 3 * 60 * 60 * 1000) {
-    return cachedTutorToGroup;
+// 硬編碼 tutor 與 group 的對應關係
+function getTutorGroup(tutor) {
+  if (!tutor) return null;
+  const tutorTrimmed = tutor.trim();
+  
+  // 輔導固定為 "行政"
+  if (tutorTrimmed === '輔導') {
+    return '行政';
   }
-  const res = await fetch(GROUP_API_URL);
-  const data = await res.json();
-  const map = {};
-  data.forEach((row) => {
-    if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
-  });
-  cachedTutorToGroup = map;
-  lastFetchTime = Date.now();
-  return map;
+  
+  // 其他 tutor 的 group 留空
+  return null;
 }
 
 export default async (request, context) => {
@@ -99,15 +89,13 @@ export default async (request, context) => {
     });
   }
 
-  // 檢查環境變數
-  const GROUP_API_URL = Deno.env.get("GROUP_API_URL");
+  // 檢查環境變數 - 移除 GROUP_API_URL 檢查
   const jwt = Deno.env.get('ONE_CLUB_JWT');
   
-  if (!GROUP_API_URL || !jwt) {
+  if (!jwt) {
     return new Response(JSON.stringify({ 
       error: 'Missing environment variables',
       details: {
-        hasGroupApiUrl: !!GROUP_API_URL,
         hasJwt: !!jwt
       }
     }), {
@@ -142,10 +130,9 @@ export default async (request, context) => {
       }
       courseData = courseJson.data;
 
-      // 取得組別對照表，並加進 courseData
-      const tutorToGroupMap = await fetchTutorToGroup();
+      // 使用硬編碼的 group 對應
       if (courseData.tutor) {
-        courseData.group = tutorToGroupMap[courseData.tutor.trim()] || null;
+        courseData.group = getTutorGroup(courseData.tutor);
       }
 
       // 查家長
@@ -190,8 +177,7 @@ export default async (request, context) => {
       status: 'success',
       data: courseData,
       parent: parentJson,
-      preparingCourses,
-      tutorToGroupMap: await fetchTutorToGroup()
+      preparingCourses
     }), {
       status: 200,
       headers: {
