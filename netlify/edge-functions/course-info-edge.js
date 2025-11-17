@@ -61,6 +61,30 @@ function getTutorGroup(tutor) {
   return null;
 }
 
+// 新增：處理課程物件的 group 欄位
+function processCourseGroup(course, useTutorApi) {
+  if (!useTutorApi && course && course.tutor) {
+    course.group = getTutorGroup(course.tutor);
+  }
+  return course;
+}
+
+// 新增：處理課程陣列的 group 欄位
+function processCoursesGroup(courses, useTutorApi) {
+  if (!courses) return courses;
+  
+  if (Array.isArray(courses)) {
+    return courses.map(course => processCourseGroup(course, useTutorApi));
+  }
+  
+  // 處理 preparingCourses 的結構 (可能有 data 陣列)
+  if (courses.data && Array.isArray(courses.data)) {
+    courses.data = courses.data.map(course => processCourseGroup(course, useTutorApi));
+  }
+  
+  return courses;
+}
+
 export default async (request, context) => {
   // 統一的 CORS 標頭
   const corsHeaders = {
@@ -131,10 +155,8 @@ export default async (request, context) => {
       }
       courseData = courseJson.data;
 
-      // 根據開關決定使用硬編碼或 API
-      if (!useTutorApi && courseData.tutor) {
-        courseData.group = getTutorGroup(courseData.tutor);
-      }
+      // 處理單一課程的 group
+      processCourseGroup(courseData, useTutorApi);
 
       // 查家長
       if (courseData.students && courseData.students.length > 0) {
@@ -160,7 +182,9 @@ export default async (request, context) => {
         }
       });
       const preparingJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/findAllUseAggregate?${params.toString()}`, jwt);
-      preparingCourses = preparingJson;
+      
+      // 處理準備中課程陣列的 group
+      preparingCourses = processCoursesGroup(preparingJson, useTutorApi);
     }
 
     // 若兩者皆無，回傳錯誤
