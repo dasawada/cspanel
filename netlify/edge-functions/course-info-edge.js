@@ -1,3 +1,8 @@
+const GROUP_API_URL = Deno.env.get("GROUP_API_URL");
+if (!GROUP_API_URL) {
+  throw new Error('Missing GROUP_API_URL environment variable');
+}
+
 // ===== fetch with timeout & retry 工具 =====
 async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
   const controller = new AbortController();
@@ -47,42 +52,23 @@ const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
   return resp.json();
 };
 
-// 硬編碼 tutor 與 group 的對應關係
-function getTutorGroup(tutor) {
-  if (!tutor) return null;
-  const tutorTrimmed = tutor.trim();
-  
-  // 輔導固定為 "行政"
-  if (tutorTrimmed === '輔導') {
-    return '行政';
-  }
-  
-  // 其他 tutor 的 group 留空
-  return null;
-}
+let cachedTutorToGroup = null;
+let lastFetchTime = 0;
 
-// 新增：處理課程物件的 group 欄位
-function processCourseGroup(course, useTutorApi) {
-  if (!useTutorApi && course && course.tutor) {
-    course.group = getTutorGroup(course.tutor);
+async function fetchTutorToGroup() {
+  // 每3小時更新一次
+  if (cachedTutorToGroup && Date.now() - lastFetchTime < 3 * 60 * 60 * 1000) {
+    return cachedTutorToGroup;
   }
-  return course;
-}
-
-// 新增：處理課程陣列的 group 欄位
-function processCoursesGroup(courses, useTutorApi) {
-  if (!courses) return courses;
-  
-  if (Array.isArray(courses)) {
-    return courses.map(course => processCourseGroup(course, useTutorApi));
-  }
-  
-  // 處理 preparingCourses 的結構 (可能有 data 陣列)
-  if (courses.data && Array.isArray(courses.data)) {
-    courses.data = courses.data.map(course => processCourseGroup(course, useTutorApi));
-  }
-  
-  return courses;
+  const res = await fetch(GROUP_API_URL);
+  const data = await res.json();
+  const map = {};
+  data.forEach((row) => {
+    if (row.tutor && row.group) map[row.tutor.trim()] = row.group.trim();
+  });
+  cachedTutorToGroup = map;
+  lastFetchTime = Date.now();
+  return map;
 }
 
 export default async (request, context) => {
@@ -114,13 +100,14 @@ export default async (request, context) => {
   }
 
   // 檢查環境變數
+  const GROUP_API_URL = Deno.env.get("GROUP_API_URL");
   const jwt = Deno.env.get('ONE_CLUB_JWT');
-  const useTutorApi = Deno.env.get('USE_TUTOR_API') === 'true'; // 新增開關，預設為 false
   
-  if (!jwt) {
+  if (!GROUP_API_URL || !jwt) {
     return new Response(JSON.stringify({ 
       error: 'Missing environment variables',
       details: {
+        hasGroupApiUrl: !!GROUP_API_URL,
         hasJwt: !!jwt
       }
     }), {
@@ -155,8 +142,11 @@ export default async (request, context) => {
       }
       courseData = courseJson.data;
 
-      // 處理單一課程的 group
-      processCourseGroup(courseData, useTutorApi);
+      // 取得組別對照表，並加進 courseData
+      const tutorToGroupMap = await fetchTutorToGroup();
+      if (courseData.tutor) {
+        courseData.group = tutorToGroupMap[courseData.tutor.trim()] || null;
+      }
 
       // 查家長
       if (courseData.students && courseData.students.length > 0) {
@@ -182,9 +172,7 @@ export default async (request, context) => {
         }
       });
       const preparingJson = await fetchWithJwt(`https://api-new.oneclass.co/mms/course/findAllUseAggregate?${params.toString()}`, jwt);
-      
-      // 處理準備中課程陣列的 group
-      preparingCourses = processCoursesGroup(preparingJson, useTutorApi);
+      preparingCourses = preparingJson;
     }
 
     // 若兩者皆無，回傳錯誤
@@ -202,7 +190,8 @@ export default async (request, context) => {
       status: 'success',
       data: courseData,
       parent: parentJson,
-      preparingCourses
+      preparingCourses,
+      tutorToGroupMap: await fetchTutorToGroup()
     }), {
       status: 200,
       headers: {

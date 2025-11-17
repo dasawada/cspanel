@@ -477,7 +477,7 @@ export function createCannedMessagesPanel(options = {}) {
     }
 
     courseData = json.data;
-    tutorToGroupMap = json.tutorToGroupMap || {};
+
     studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
     tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
     courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
@@ -618,7 +618,8 @@ export function createCannedMessagesPanel(options = {}) {
         const name = parentData.tutor.name.trim();
         let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
         tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-        groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+        // 硬編碼：輔導 -> 行政，其他為空
+        groupName = tutorNameWithoutSurname === '輔導' ? '行政' : '';
       }
 
       // 取得時間資訊（保留原邏輯）
@@ -630,7 +631,7 @@ export function createCannedMessagesPanel(options = {}) {
         minute: '2-digit',
         hourCycle: 'h23'
       });
-      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
+      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-Taipei', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
@@ -695,7 +696,8 @@ export function createCannedMessagesPanel(options = {}) {
         const name = parentData.tutor.name.trim();
         let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
         tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-        groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+        // 硬編碼：輔導 -> 行政，其他為空
+        groupName = tutorNameWithoutSurname === '輔導' ? '行政' : '';
       }
 
       const localDate = new Date();
