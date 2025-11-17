@@ -606,18 +606,19 @@ export function createCannedMessagesPanel(options = {}) {
       
       // 取得輔導老師名字（保留原邏輯）
       let tutorNameWithoutSurname = '';
-      let groupName = '';
+      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+        const name = parentData.tutor.name.trim();
+        tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+      }
 
-      if (shouldUseTutorAPI()) {
-        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-          const name = parentData.tutor.name.trim();
-          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
-        }
-      } else {
-        tutorNameWithoutSurname = '行政';
-        groupName = '';
+      // 取得組別（保留原邏輯）
+      let groupName = '';
+      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+        const name = parentData.tutor.name.trim();
+        let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+        groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
       }
 
       // 取得時間資訊（保留原邏輯）
@@ -629,7 +630,7 @@ export function createCannedMessagesPanel(options = {}) {
         minute: '2-digit',
         hourCycle: 'h23'
       });
-      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
+      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-Taipei', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
@@ -643,7 +644,7 @@ export function createCannedMessagesPanel(options = {}) {
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
       // 首課專用格式
-      apiTexts.tab4 = `${tutorNameWithoutSurname}\t${groupName}\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
+      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
       
       return; // 首課處理完畢，直接返回
@@ -683,21 +684,25 @@ export function createCannedMessagesPanel(options = {}) {
       const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
 
       let tutorNameWithoutSurname = '';
-      let groupName = '';
-
-      if (shouldUseTutorAPI()) {
-        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-          const name = parentData.tutor.name.trim();
-          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
-        }
-      } else {
-        tutorNameWithoutSurname = '行政';
-        groupName = '';
+      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+        const name = parentData.tutor.name.trim();
+        tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
       }
 
-      apiTexts.tab4 = `${tutorNameWithoutSurname}\t${groupName}\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
+      let groupName = '';
+      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+        const name = parentData.tutor.name.trim();
+        let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+        groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+      }
+
+      const localDate = new Date();
+      const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
+
+      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
 
       ['tab2', 'tab3'].forEach(tab => {
@@ -1048,8 +1053,3 @@ class TokenManager {
 }
 
 const tokenManager = new TokenManager();
-
-// 在文件開頭添加環境變數檢查函數
-function shouldUseTutorAPI() {
-  return typeof USE_TUTOR_API !== 'undefined' && USE_TUTOR_API === true;
-}
