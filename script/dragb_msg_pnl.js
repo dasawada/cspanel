@@ -477,7 +477,7 @@ export function createCannedMessagesPanel(options = {}) {
     }
 
     courseData = json.data;
-
+    tutorToGroupMap = json.tutorToGroupMap || {};
     studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
     tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
     courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
@@ -606,20 +606,18 @@ export function createCannedMessagesPanel(options = {}) {
       
       // 取得輔導老師名字（保留原邏輯）
       let tutorNameWithoutSurname = '';
-      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-        const name = parentData.tutor.name.trim();
-        tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-      }
-
-      // 取得組別（保留原邏輯）
       let groupName = '';
-      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-        const name = parentData.tutor.name.trim();
-        let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-        // 硬編碼：輔導 -> 行政，其他為空
-        groupName = tutorNameWithoutSurname === '輔導' ? '行政' : '';
+
+      if (shouldUseTutorAPI()) {
+        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+          const name = parentData.tutor.name.trim();
+          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+        }
+      } else {
+        tutorNameWithoutSurname = '行政';
+        groupName = '';
       }
 
       // 取得時間資訊（保留原邏輯）
@@ -631,7 +629,7 @@ export function createCannedMessagesPanel(options = {}) {
         minute: '2-digit',
         hourCycle: 'h23'
       });
-      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-Taipei', {
+      const endTime = new Date(courseData.endAt).toLocaleTimeString('zh-TW', {
         timeZone: 'Asia/Taipei',
         hour: '2-digit',
         minute: '2-digit',
@@ -685,24 +683,19 @@ export function createCannedMessagesPanel(options = {}) {
       const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
 
       let tutorNameWithoutSurname = '';
-      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-        const name = parentData.tutor.name.trim();
-        tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-      }
-
       let groupName = '';
-      if (parentData.tutor && typeof parentData.tutor.name === 'string') {
-        const name = parentData.tutor.name.trim();
-        let tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
-        tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
-        // 硬編碼：輔導 -> 行政，其他為空
-        groupName = tutorNameWithoutSurname === '輔導' ? '行政' : '';
-      }
 
-      const localDate = new Date();
-      const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
-      const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
+      if (shouldUseTutorAPI()) {
+        if (parentData.tutor && typeof parentData.tutor.name === 'string') {
+          const name = parentData.tutor.name.trim();
+          tutorNameWithoutSurname = name.length === 2 ? name : name.slice(1);
+          tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
+          groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
+        }
+      } else {
+        tutorNameWithoutSurname = '行政';
+        groupName = '';
+      }
 
       apiTexts.tab4 = `${tutorNameWithoutSurname}\t${groupName}\t${taipeiMMDD}\t請假與補課\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
@@ -1055,3 +1048,8 @@ class TokenManager {
 }
 
 const tokenManager = new TokenManager();
+
+// 在文件開頭添加環境變數檢查函數
+function shouldUseTutorAPI() {
+  return typeof USE_TUTOR_API !== 'undefined' && USE_TUTOR_API === true;
+}
