@@ -89,8 +89,9 @@ export default async (request, context) => {
     });
   }
 
-  // 檢查環境變數 - 移除 GROUP_API_URL 檢查
+  // 檢查環境變數
   const jwt = Deno.env.get('ONE_CLUB_JWT');
+  const useTutorApi = Deno.env.get('USE_TUTOR_API') === 'true'; // 新增開關，預設為 false
   
   if (!jwt) {
     return new Response(JSON.stringify({ 
@@ -130,8 +131,8 @@ export default async (request, context) => {
       }
       courseData = courseJson.data;
 
-      // 使用硬編碼的 group 對應
-      if (courseData.tutor) {
+      // 根據開關決定使用硬編碼或 API
+      if (!useTutorApi && courseData.tutor) {
         courseData.group = getTutorGroup(courseData.tutor);
       }
 
