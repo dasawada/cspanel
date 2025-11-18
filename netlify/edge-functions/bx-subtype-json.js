@@ -129,8 +129,8 @@ export default async (request, context) => {
           parentTagPattern: '',
           adminTagPattern: '',
           subTypes: [
-            { value: '', label: '請選擇子分類', desc: '', parentTag: '', adminTag: '' },
-            { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '' }
+            { value: '', label: '請選擇子分類', desc: '', parentTag: '', adminTag: '', aiHint: '' },
+            { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '', aiHint: '' }
           ]
         };
       }
@@ -149,6 +149,7 @@ export default async (request, context) => {
         value: value,
         label: value,
         desc: row['處理方式'] || '',
+        aiHint: row['分類定義'] || '',
         parentTag: `[${value}] `,
         adminTag: adminTagsMap.get(value) || ''
       });
