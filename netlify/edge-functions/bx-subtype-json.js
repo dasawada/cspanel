@@ -1,10 +1,10 @@
 export default async (request, context) => {
   // 1. 更新 SPREADSHEET_ID 並填入所有新的 GIDs
   const SPREADSHEET_ID = '1OM4p_cDIBFkN8bGcYSElOOym9EiX_Z71MKhwVu2gVNs';
-  const GID_MAIN = '1587792512';
-  const GID_CATEGORIES = '233597564'; // <-- 填入 "SubTypeJsonColor" 的新 GID
-  const GID_ADMIN_TAGS = '1081096339'; // <-- 填入 "SubTypeJson" 的新 GID
-  const GID_CONFIG = '1587792512';     // <-- 【新增】填入 "Config" 的新 GID
+  const GID_MAIN = '876429352';
+  const GID_CATEGORIES = '233597564';
+  const GID_ADMIN_TAGS = '1081096339';
+  const GID_CONFIG = '1587792512';
 
   const fetchData = async (gid, sheetName) => {
     const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
