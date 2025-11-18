@@ -1,6 +1,6 @@
 export default async (request, context) => {
   // 1. 更新 SPREADSHEET_ID 並填入所有新的 GIDs
-  const SPREADSHEET_ID = '1OM4p_cDIBFkN8bGcYSElOOym9EiX_Z71MKhwVu2gVNs';
+  const SPREADSHEET_ID = '1X6bGi2snEyRHOCPPrbU-uEw4X9YF5daURkESkGRGnMk';
   const GID_MAIN = '876429352';
   const GID_CATEGORIES = '233597564';
   const GID_ADMIN_TAGS = '1081096339';
