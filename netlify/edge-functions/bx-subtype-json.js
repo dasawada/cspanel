@@ -1,8 +1,10 @@
 export default async (request, context) => {
-  const SPREADSHEET_ID = '1X6bGi2snEyRHOCPPrbU-uEw4X9YF5daURkESkGRGnMk';
-  const GID_MAIN = '876429352';
-  const GID_CATEGORIES = '233597564';
-  const GID_ADMIN_TAGS = '1081096339';
+  // 1. 更新 SPREADSHEET_ID 並填入所有新的 GIDs
+  const SPREADSHEET_ID = '1OM4p_cDIBFkN8bGcYSElOOym9EiX_Z71MKhwVu2gVNs';
+  const GID_MAIN = '1587792512';
+  const GID_CATEGORIES = '233597564'; // <-- 填入 "SubTypeJsonColor" 的新 GID
+  const GID_ADMIN_TAGS = '1081096339'; // <-- 填入 "SubTypeJson" 的新 GID
+  const GID_CONFIG = '1587792512';     // <-- 【新增】填入 "Config" 的新 GID
 
   const fetchData = async (gid, sheetName) => {
     const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
@@ -70,19 +72,31 @@ export default async (request, context) => {
   };
 
   try {
-    const [mainData, categoryStyles, adminTagsData] = await Promise.all([
+    // 2. 在 Promise.all 中增加 GID_CONFIG 的讀取
+    const [mainData, categoryStyles, adminTagsData, configData] = await Promise.all([
       fetchData(GID_MAIN, '分類項目'),
       fetchData(GID_CATEGORIES, 'SubTypeJsonColor'),
-      fetchData(GID_ADMIN_TAGS, 'SubTypeJson')
+      fetchData(GID_ADMIN_TAGS, 'SubTypeJson'),
+      fetchData(GID_CONFIG, 'Config') // 【新增】
     ]);
 
     console.log('=== Data Summary ===');
     console.log('mainData rows:', mainData.length);
     console.log('categoryStyles rows:', categoryStyles.length);
     console.log('adminTagsData rows:', adminTagsData.length);
+    console.log('configData rows:', configData.length); // 【新增】
 
     if (mainData.length === 0) {
       throw new Error('No data in main sheet');
+    }
+
+    // 3. 【新增】在處理資料前，先提取 Prompt
+    // (configData[0] 是 A2 儲存格所在的資料行)
+    const promptTemplate = configData[0]?.PromptTemplate || '';
+    if (promptTemplate) {
+      console.log('Successfully loaded classificationPromptTemplate.');
+    } else {
+      console.warn('classificationPromptTemplate not found in Config sheet.');
     }
 
     // 建立樣式映射表
@@ -186,6 +200,9 @@ export default async (request, context) => {
 
       output[categoryLabel] = categoryData;
     });
+
+    // 4. 【新增】將 promptTemplate 附加到最終的 output 物件
+    output.classificationPromptTemplate = promptTemplate;
 
     return new Response(JSON.stringify(output, null, 2), {
       status: 200,
