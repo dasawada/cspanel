@@ -3,108 +3,170 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>正在跳轉...</title>
+    <title>請切換瀏覽器</title>
     <style>
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background-color: #f0f2f5;
             display: flex;
             justify-content: center;
             align-items: center;
             height: 100vh;
             margin: 0;
-            background-color: #f5f5f5;
             color: #333;
-            text-align: center;
         }
         .card {
             background: white;
-            padding: 30px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
-            max-width: 80%;
-            width: 300px;
+            width: 90%;
+            max-width: 360px;
+            padding: 24px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+            text-align: center;
         }
-        .icon { font-size: 48px; margin-bottom: 20px; }
-        .browser-name { font-weight: bold; color: #007AFF; }
-        .sub-text { font-size: 14px; color: #666; margin-top: 15px; line-height: 1.5;}
+        .icon-area { font-size: 40px; margin-bottom: 16px; }
+        h2 { font-size: 18px; margin: 0 0 12px 0; color: #1a1a1a; }
+        p { font-size: 14px; color: #666; margin: 0 0 20px 0; line-height: 1.5; }
+        
+        /* 複製按鈕樣式 */
+        .btn-copy {
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 8px;
+            width: 100%;
+            cursor: pointer;
+            transition: background 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+        .btn-copy:active { transform: scale(0.98); }
+        .btn-copy.copied { background-color: #34C759; } /* 複製成功變綠色 */
+
+        /* 指引區塊 */
+        .guide-box {
+            margin-top: 24px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 16px;
+            text-align: left;
+            font-size: 13px;
+        }
+        .guide-step {
+            display: flex;
+            align-items: start;
+            margin-bottom: 12px;
+        }
+        .guide-step:last-child { margin-bottom: 0; }
+        .step-num {
+            background: #e9ecef;
+            color: #495057;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            font-weight: bold;
+        }
+        .highlight { color: #007AFF; font-weight: bold; }
     </style>
 </head>
 <body>
 
-    <div id="message-card" class="card" style="display: none;">
-        <div class="icon">⚠️</div>
-        <p>偵測到您目前使用 <span id="app-name">App</span> 開啟</p>
-        <p>將為您跳轉至其他預設 App</p>
-        <div class="sub-text">
-            如無法跳轉，請透過 <span id="browser-name" class="browser-name">瀏覽器</span> 開啟本連結
+    <div id="main-card" class="card" style="display: none;">
+        <div class="icon-area">⚠️</div>
+        <h2>瀏覽器不支援</h2>
+        <p>您目前使用 <span id="app-name" style="font-weight:bold;">App</span> 開啟連結。<br>視訊功能需在系統瀏覽器執行。</p>
+
+        <button id="copy-btn" class="btn-copy" onclick="copyLink()">
+            <span>📋 點此複製網址</span>
+        </button>
+
+        <div class="guide-box">
+            <div class="guide-step">
+                <div class="step-num">1</div>
+                <div>點擊上方按鈕複製網址</div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">2</div>
+                <div>回到手機主畫面，開啟 <span id="browser-name" class="highlight">瀏覽器</span></div>
+            </div>
+            <div class="guide-step">
+                <div class="step-num">3</div>
+                <div>在網址列貼上並前往</div>
+            </div>
         </div>
     </div>
 
     <script>
+        // ==============================
+        // 設定區
+        // ==============================
+        const TARGET_URL = "https://onelinkplus.oneclass.com.tw/"; // ★ 請替換為您的目標網址
+
         (function() {
-            // ==============================
-            // 1. 設定目標網址
-            // ==============================
-            var targetUrl = "https://onelinkplus.oneclass.com.tw/"; // ★ 請在此替換您的目標 WebRTC 網址
+            const ua = navigator.userAgent;
+            const isLine = ua.includes("Line/");
+            const isGSA = ua.includes("GSA/");
+            const isInApp = isLine || isGSA;
 
-            // ==============================
-            // 2. 偵測環境
-            // ==============================
-            var ua = navigator.userAgent;
-            var isLine = ua.includes("Line/");
-            var isGSA = ua.includes("GSA/"); // Google Search App
-            var isInApp = isLine || isGSA;
+            // 如果不是 In-App 瀏覽器，直接跳轉
+            if (!isInApp) {
+                window.location.replace(TARGET_URL);
+                return;
+            }
 
-            var isAndroid = /Android/i.test(ua);
-            var isIOS = /iPhone|iPad|iPod/i.test(ua);
-
-            // ==============================
-            // 3. 邏輯判斷
-            // ==============================
+            // --- 渲染介面邏輯 ---
+            document.getElementById("main-card").style.display = "block";
             
-            if (isInApp) {
-                // --- A. 命中 In-App 瀏覽器 (Line 或 Google App) ---
-                
-                // A-1. 顯示提示介面
-                var appNameSpan = document.getElementById("app-name");
-                var browserNameSpan = document.getElementById("browser-name");
-                var card = document.getElementById("message-card");
+            // 1. 設定 App 名稱
+            document.getElementById("app-name").innerText = isLine ? "LINE" : "Google";
 
-                // 設定 App 名稱
-                appNameSpan.innerText = isLine ? "LINE" : "Google 搜尋 App";
+            // 2. 偵測 OS 並設定建議瀏覽器
+            const isAndroid = /Android/i.test(ua);
+            const browserName = isAndroid ? "Chrome" : "Safari";
+            document.getElementById("browser-name").innerText = browserName;
 
-                // 設定建議瀏覽器 (Android -> Chrome, iOS -> Safari)
-                if (isAndroid) {
-                    browserNameSpan.innerText = "Chrome";
-                } else if (isIOS) {
-                    browserNameSpan.innerText = "Safari";
-                } else {
-                    browserNameSpan.innerText = "系統瀏覽器";
-                }
-
-                // 顯示卡片
-                card.style.display = "block";
-
-                // A-2. 嘗試自動跳轉 (僅限 Android)
-                if (isAndroid) {
-                    // 構建 Android Intent Scheme
-                    // 這會嘗試呼叫系統預設瀏覽器開啟連結
-                    var intentUrl = "intent://" + targetUrl.replace(/^https?:\/\//, '') + "#Intent;scheme=https;action=android.intent.action.VIEW;end;";
-                    
-                    // 延遲 1 秒執行，讓使用者先看到提示文字，避免畫面閃爍或誤以為當機
-                    setTimeout(function() {
-                        window.location.href = intentUrl;
-                    }, 1000);
-                }
-                
-                // A-3. iOS 無法自動跳轉，停留在畫面並顯示上述提示，等待使用者手動操作
-
-            } else {
-                // --- B. 正常的瀏覽器環境 (Chrome/Safari/Desktop) ---
-                // 直接無縫轉址
-                window.location.replace(targetUrl);
+            // 3. (Android 僅供參考) 嘗試自動 Intent 跳轉
+            if (isAndroid) {
+                const intentUrl = "intent://" + TARGET_URL.replace(/^https?:\/\//, '') + "#Intent;scheme=https;action=android.intent.action.VIEW;end;";
+                setTimeout(() => { window.location.href = intentUrl; }, 500);
             }
         })();
+
+        // ==============================
+        // 複製功能邏輯
+        // ==============================
+        function copyLink() {
+            const btn = document.getElementById("copy-btn");
+            const originalText = btn.innerHTML;
+
+            // 使用 Clipboard API 寫入剪貼簿
+            navigator.clipboard.writeText(TARGET_URL).then(() => {
+                // 成功回饋
+                btn.classList.add("copied");
+                btn.innerHTML = "<span>✅ 已複製！請切換瀏覽器貼上</span>";
+                
+                // 3秒後復原按鈕狀態 (可選)
+                setTimeout(() => {
+                    btn.classList.remove("copied");
+                    btn.innerHTML = originalText;
+                }, 3000);
+            }).catch(err => {
+                // 失敗處理 (極少數舊版 WebView)
+                console.error("複製失敗:", err);
+                alert("無法自動複製，請手動複製網址：" + TARGET_URL);
+            });
+        }
     </script>
 </body>
 </html>
