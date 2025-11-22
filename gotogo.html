@@ -3,60 +3,47 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>環境檢查</title>
+    <title>瀏覽器切換</title>
     <style>
-        /* 樣式設定 (保持簡潔美觀) */
-        body { font-family: -apple-system, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
-        .card { background: white; width: 100%; max-width: 420px; padding: 30px 25px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: none; /* JS 控制顯示 */ }
+        body { font-family: -apple-system, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: white; width: 100%; max-width: 400px; padding: 30px 20px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: none; }
         
-        .icon-warning { font-size: 40px; margin-bottom: 15px; display: block; }
-        h2 { margin: 0 0 15px 0; color: #2c3e50; font-size: 20px; font-weight: bold; }
+        h2 { margin: 0 0 15px 0; color: #2c3e50; font-size: 20px; }
+        p { font-size: 14px; color: #666; margin-bottom: 25px; line-height: 1.5; }
+
+        /* 按鈕樣式 */
+        .btn { display: flex; align-items: center; justify-content: center; width: 100%; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-bottom: 12px; box-sizing: border-box; border: none; cursor: pointer; font-size: 16px; transition: 0.2s; }
         
-        /* 重點提示區塊 */
-        .alert-box {
-            background-color: #fff3cd;
-            border: 1px solid #ffeeba;
-            color: #856404;
-            padding: 15px;
-            border-radius: 8px;
-            font-size: 14px;
-            text-align: left;
-            margin-bottom: 20px;
-            line-height: 1.6;
-        }
-        
-        .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-bottom: 12px; box-sizing: border-box; border: none; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        /* 主要按鈕：藍色 */
         .btn-primary { background: #007AFF; color: white; box-shadow: 0 2px 5px rgba(0,122,255,0.3); }
         .btn-primary:active { transform: scale(0.98); }
+
+        /* 次要按鈕：灰色 */
         .btn-secondary { background: #e9ecef; color: #555; }
 
-        /* 底部小字 */
-        .footer-note { font-size: 12px; color: #999; margin-top: 20px; }
+        /* 底部手動連結區 */
+        .manual-links { margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px; font-size: 13px; color: #888; }
+        .manual-links a { color: #007AFF; text-decoration: none; margin: 0 5px; display: inline-block; padding: 5px; }
     </style>
 </head>
 <body>
 
     <div id="card-android" class="card">
-        <span class="icon-warning">🛡️</span>
-        <h2>瀏覽器環境檢測</h2>
+        <h2>請切換瀏覽器</h2>
+        <p>為確保視訊功能正常，<br>請點擊下方按鈕切換至外部瀏覽器。</p>
         
-        <div class="alert-box">
-            <strong>⚠️ 請注意：</strong><br>
-            部分 <strong>Google 搜尋 App</strong> 或 <strong>LINE</strong> 無法支援視訊功能。
-            <br><br>
-            不管您現在使用何種瀏覽器，請務必<strong>點擊下方藍色按鈕</strong>，系統將強制切換至標準模式以確保連線。
-        </div>
-        
-        <a id="btn-default" href="#" class="btn btn-primary">
-            確保使用系統瀏覽器開啟 🚀
+        <a id="btn-smart" href="#" class="btn btn-primary">
+            開啟瀏覽器
         </a>
 
         <button class="btn btn-secondary" onclick="copyLink()">
             複製連結
         </button>
 
-        <div class="footer-note">
-            點擊按鈕後若無反應，請使用「複製連結」並手動開啟 Chrome 貼上。
+        <div class="manual-links">
+            找不到瀏覽器？試試手動選擇：<br>
+            <a id="link-force-chrome" href="#">Chrome</a> | 
+            <a id="link-force-samsung" href="#">三星瀏覽器</a>
         </div>
     </div>
 
@@ -67,37 +54,59 @@
     </div>
 
     <script>
-        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; // ★ 請替換
+        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; // ★ 請替換網址
 
         (function() {
             const ua = navigator.userAgent;
             const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
-            // 針對 iOS 仍需判斷是否為 In-App，因為 iOS Safari 是可以直通的
-            const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram/i.test(ua)); 
+            // 偵測 In-App (包含 GSA, LINE, FB)
+            const isInApp = /Line\/|FBAV|GSA\/|Instagram/i.test(ua) || (isAndroid && !ua.includes("Chrome/")); 
 
+            // ==========================================
+            // 核心邏輯：Android 智慧分流
+            // ==========================================
             if (isAndroid) {
-                // ======================================
-                // Android 策略：無差別攔截 (針對偽裝 GSA)
-                // ======================================
                 document.getElementById("card-android").style.display = "block";
-
+                
                 const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
-                
-                // 使用隱式 Intent + New Task Flag
-                // 這能有效穿透 GSA 的偽裝，強制喚醒外部瀏覽器
-                const intentUrl = "intent://" + cleanUrl + 
-                                  "#Intent;" + 
-                                  "scheme=https;" + 
-                                  "action=android.intent.action.VIEW;" + 
-                                  "category=android.intent.category.BROWSABLE;" + 
-                                  "launchFlags=0x10000000;" + 
-                                  "end;";
-                
-                document.getElementById("btn-default").href = intentUrl;
+                const btnSmart = document.getElementById("btn-smart");
 
-            } else if (isIOSInApp) {
-                // iOS In-App
+                // 定義目標 Intent 字串
+                // 1. Chrome (使用 scheme 協議，穿透力最強)
+                //    注意：googlechrome:// 是非標準協議，但在 GSA 內通常比 intent:// 有效
+                const chromeUrl = TARGET_URL.replace(/^https?/, 'googlechrome');
+
+                // 2. Samsung Internet (使用 Explicit Intent)
+                const samsungIntent = "intent://" + cleanUrl + 
+                                      "#Intent;" + 
+                                      "scheme=https;" + 
+                                      "package=com.sec.android.app.sbrowser;" + // ★ 指定三星
+                                      "action=android.intent.action.VIEW;" + 
+                                      "category=android.intent.category.BROWSABLE;" + 
+                                      "launchFlags=0x10000000;" + 
+                                      "end;";
+
+                // 3. 偵測邏輯
+                // 檢查 UA 是否包含 "Samsung" 或 "SM-" (常見型號前綴)
+                const isSamsungDevice = /Samsung|SM-|SEC/i.test(ua);
+
+                if (isSamsungDevice) {
+                    // --- 情境 A：偵測到三星特徵 ---
+                    btnSmart.innerText = "開啟 Samsung 瀏覽器";
+                    btnSmart.href = samsungIntent;
+                } else {
+                    // --- 情境 B：其他 Android 或 無法識別廠商 (您的 UA 屬於此類) ---
+                    // 策略：優先賭 Chrome，因為市佔率最高
+                    btnSmart.innerText = "開啟 Chrome 瀏覽器";
+                    btnSmart.href = chromeUrl; 
+                }
+
+                // --- 設定底部的手動連結 (作為備用) ---
+                document.getElementById("link-force-chrome").href = chromeUrl;
+                document.getElementById("link-force-samsung").href = samsungIntent;
+
+            } else if (isIOS && isInApp) {
                 document.getElementById("card-ios").style.display = "block";
             } else {
                 // PC 或 純 iOS Safari -> 放行
@@ -107,7 +116,7 @@
 
         function copyLink() {
             navigator.clipboard.writeText(TARGET_URL)
-                .then(() => alert("網址已複製！請開啟 Chrome/Safari 貼上"))
+                .then(() => alert("已複製！請開啟瀏覽器貼上"))
                 .catch(() => prompt("請手動複製：", TARGET_URL));
         }
     </script>
