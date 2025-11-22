@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UA 診斷工具</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f5f5f5;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            background: white;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            width: 100%;
+            max-width: 600px;
+            box-sizing: border-box;
+        }
+        h2 {
+            margin-top: 0;
+            color: #333;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+        /* User-Agent 顯示區塊樣式 */
+        .ua-box {
+            background-color: #e9ecef;
+            border: 1px solid #ced4da;
+            padding: 15px;
+            border-radius: 8px;
+            font-family: 'Courier New', Courier, monospace; /* 使用等寬字體方便閱讀 */
+            font-size: 0.9rem;
+            color: #212529;
+            word-break: break-all; /* 重要：確保長字串會自動換行 */
+            white-space: pre-wrap; /* 保留空白和換行 */
+            margin: 20px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        /* 複製按鈕 */
+        .btn-copy {
+            width: 100%;
+            padding: 12px;
+            background-color: #007bff;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .btn-copy:active { background-color: #0056b3; }
+        .status {
+            text-align: center;
+            margin-top: 10px;
+            font-size: 0.9rem;
+            color: #28a745;
+            min-height: 1.2em;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        .status.show { opacity: 1; }
+        .info-text {
+             margin-top: 20px;
+             font-size: 0.85rem;
+             color: #666;
+             line-height: 1.5;
+             background: #fff3cd;
+             padding: 10px;
+             border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h2>目前的 User-Agent</h2>
+        
+        <div id="ua-display" class="ua-box">正在讀取...</div>
+
+        <button id="copy-btn" class="btn-copy">複製完整字串</button>
+        <div id="copy-status" class="status">已複製到剪貼簿！</div>
+
+        <div class="info-text">
+            <strong>診斷說明：</strong><br>
+            請查看字串中是否包含 "Line/" 或 "GSA/" (Google Search App)。<br>
+            此字串反映了當前瀏覽器環境如何向伺服器表明自己的身分。
+        </div>
+    </div>
+
+    <script>
+        // 1. 獲取 UA
+        const uaString = navigator.userAgent;
+        
+        // 2. 顯示在畫面上
+        const displayBox = document.getElementById('ua-display');
+        displayBox.textContent = uaString;
+
+        // 3. 複製功能
+        const copyBtn = document.getElementById('copy-btn');
+        const statusText = document.getElementById('copy-status');
+        let hideTimeout;
+
+        copyBtn.addEventListener('click', function() {
+            // 使用較新的 Clipboard API，需在 HTTPS 下運作 (但在 localhost 或 file:// 也通常可行)
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(uaString)
+                    .then(() => showStatus())
+                    .catch(err => {
+                        // fallback: 如果 clipboard API 失敗
+                        fallbackCopyText(uaString);
+                    });
+            } else {
+                 // fallback 對於舊版瀏覽器
+                 fallbackCopyText(uaString);
+            }
+        });
+
+        function showStatus() {
+            statusText.classList.add('show');
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                statusText.classList.remove('show');
+            }, 2000);
+        }
+
+        // 舊版複製方法備援
+        function fallbackCopyText(text) {
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            document.body.appendChild(textArea);
+            textArea.select();
+            try {
+                document.execCommand('copy');
+                showStatus();
+            } catch (err) {
+                alert('複製失敗，請長按文字區域手動複製。');
+            }
+            document.body.removeChild(textArea);
+        }
+    </script>
+
+</body>
+</html>
