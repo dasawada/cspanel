@@ -138,20 +138,18 @@
 
             // 3. [針對 Android 的修正邏輯] 強制指定 Chrome 跳轉
             if (isAndroid) {
-                // 移除 https:// 前綴，準備放入 Intent
                 var cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
 
-                // ★ 關鍵修改：加入 package=com.android.chrome
-                // 這會指定由 Chrome App 處理，而非呼叫者的內部瀏覽器
                 var intentUrl = "intent://" + cleanUrl + 
                                 "#Intent;" + 
                                 "scheme=https;" + 
-                                "package=com.android.chrome;" +
+                                "package=com.android.chrome;" + 
                                 "action=android.intent.action.VIEW;" + 
-                                "S.browser_fallback_url=" + TARGET_URL + ";" +
+                                "category=android.intent.category.BROWSABLE;" + 
+                                // ★ 關鍵修改：強制開啟新任務，突破 Custom Tabs 限制
+                                "launchFlags=0x10000000;" + 
                                 "end;";
 
-                // 執行跳轉
                 setTimeout(() => { window.location.href = intentUrl; }, 500);
             }
         })();
