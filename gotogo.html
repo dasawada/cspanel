@@ -136,9 +136,22 @@
             const browserName = isAndroid ? "Chrome" : "Safari";
             document.getElementById("browser-name").innerText = browserName;
 
-            // 3. (Android 僅供參考) 嘗試自動 Intent 跳轉
+            // 3. [針對 Android 的修正邏輯] 強制指定 Chrome 跳轉
             if (isAndroid) {
-                const intentUrl = "intent://" + TARGET_URL.replace(/^https?:\/\//, '') + "#Intent;scheme=https;action=android.intent.action.VIEW;end;";
+                // 移除 https:// 前綴，準備放入 Intent
+                var cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
+
+                // ★ 關鍵修改：加入 package=com.android.chrome
+                // 這會指定由 Chrome App 處理，而非呼叫者的內部瀏覽器
+                var intentUrl = "intent://" + cleanUrl + 
+                                "#Intent;" + 
+                                "scheme=https;" + 
+                                "package=com.android.chrome;" +
+                                "action=android.intent.action.VIEW;" + 
+                                "S.browser_fallback_url=" + TARGET_URL + ";" +
+                                "end;";
+
+                // 執行跳轉
                 setTimeout(() => { window.location.href = intentUrl; }, 500);
             }
         })();
