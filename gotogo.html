@@ -3,190 +3,112 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>準備進入視訊</title>
+    <title>環境檢查</title>
     <style>
-        body {
-            font-family: -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
-            background-color: #f0f2f5;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            color: #333;
-            padding: 20px;
-            box-sizing: border-box;
-        }
-        .card {
-            background: white;
-            width: 100%;
-            max-width: 400px;
-            padding: 30px 24px;
-            border-radius: 16px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.08);
-            text-align: center;
-            display: none; /* 預設隱藏，由 JS 決定顯示 */
-        }
-        .icon { font-size: 48px; margin-bottom: 16px; display: block; }
-        h2 { margin: 0 0 10px 0; color: #1a1a1a; font-size: 20px;}
-        p { font-size: 15px; color: #666; margin: 0 0 24px 0; line-height: 1.6; }
+        /* 樣式設定 (保持簡潔美觀) */
+        body { font-family: -apple-system, sans-serif; background: #f5f5f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; }
+        .card { background: white; width: 100%; max-width: 420px; padding: 30px 25px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); display: none; /* JS 控制顯示 */ }
         
-        /* 按鈕通用樣式 */
-        .btn {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            width: 100%;
-            padding: 14px;
-            border: none;
-            border-radius: 10px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            margin-bottom: 12px;
-            transition: transform 0.1s, opacity 0.2s;
-            text-decoration: none; /* 針對 a 標籤 */
-            box-sizing: border-box;
-        }
-        .btn:active { transform: scale(0.98); }
-
-        /* 主要按鈕 (Android 啟動用) */
-        .btn-primary {
-            background-color: #007AFF;
-            color: white;
-        }
-        .btn-primary:hover { background-color: #0062cc; }
-
-        /* 次要按鈕 (複製用) */
-        .btn-secondary {
-            background-color: #e9ecef;
-            color: #495057;
-        }
-        .btn-secondary.copied { background-color: #28a745; color: white; }
-
-        /* iOS 指引區塊 */
-        .ios-guide {
-            background: #f8f9fa;
+        .icon-warning { font-size: 40px; margin-bottom: 15px; display: block; }
+        h2 { margin: 0 0 15px 0; color: #2c3e50; font-size: 20px; font-weight: bold; }
+        
+        /* 重點提示區塊 */
+        .alert-box {
+            background-color: #fff3cd;
+            border: 1px solid #ffeeba;
+            color: #856404;
             padding: 15px;
             border-radius: 8px;
-            text-align: left;
             font-size: 14px;
-            margin-top: 10px;
-            border: 1px solid #eee;
+            text-align: left;
+            margin-bottom: 20px;
+            line-height: 1.6;
         }
-        .ios-step { margin: 8px 0; display: flex; align-items: center; }
-        .ios-icon { margin: 0 8px; font-size: 18px; }
+        
+        .btn { display: block; width: 100%; padding: 14px; border-radius: 10px; text-decoration: none; font-weight: bold; margin-bottom: 12px; box-sizing: border-box; border: none; cursor: pointer; font-size: 16px; transition: 0.2s; }
+        .btn-primary { background: #007AFF; color: white; box-shadow: 0 2px 5px rgba(0,122,255,0.3); }
+        .btn-primary:active { transform: scale(0.98); }
+        .btn-secondary { background: #e9ecef; color: #555; }
 
-        /* 除錯資訊 (可選，設為 display:none 隱藏) */
-        .debug-info { margin-top: 30px; font-size: 12px; color: #ccc; word-break: break-all;}
+        /* 底部小字 */
+        .footer-note { font-size: 12px; color: #999; margin-top: 20px; }
     </style>
 </head>
 <body>
 
     <div id="card-android" class="card">
-        <span class="icon">🚀</span>
-        <h2>準備進入會議</h2>
-        <p>為確保視訊連線穩定，<br>請點擊下方按鈕以 Chrome 開啟。</p>
+        <span class="icon-warning">🛡️</span>
+        <h2>瀏覽器環境檢測</h2>
         
-        <a id="android-intent-btn" href="#" class="btn btn-primary">
-            開啟 Chrome 瀏覽器
+        <div class="alert-box">
+            <strong>⚠️ 請注意：</strong><br>
+            部分 <strong>Google 搜尋 App</strong> 或 <strong>LINE</strong> 無法支援視訊功能。
+            <br><br>
+            不管您現在使用何種瀏覽器，請務必<strong>點擊下方藍色按鈕</strong>，系統將強制切換至標準模式以確保連線。
+        </div>
+        
+        <a id="btn-default" href="#" class="btn btn-primary">
+            確保使用系統瀏覽器開啟 🚀
         </a>
-        
+
         <button class="btn btn-secondary" onclick="copyLink()">
-            <span id="copy-text">或是複製連結</span>
-        </button>
-    </div>
-
-    <div id="card-ios" class="card">
-        <span class="icon">⚠️</span>
-        <h2>瀏覽器不支援</h2>
-        <p>您目前正在使用 App 內建瀏覽器，<br>請切換至 <strong>Safari</strong> 以進行視訊。</p>
-        
-        <button class="btn btn-secondary" onclick="copyLink()" style="background:#007AFF; color:white;">
-            <span id="copy-text-ios">📋 點此複製連結</span>
+            複製連結
         </button>
 
-        <div class="ios-guide">
-            <div class="ios-step">1. 點擊右下角 <span class="ios-icon">🧭</span> 或 <span class="ios-icon">🔗</span></div>
-            <div class="ios-step">2. 選擇「在瀏覽器中開啟」</div>
+        <div class="footer-note">
+            點擊按鈕後若無反應，請使用「複製連結」並手動開啟 Chrome 貼上。
         </div>
     </div>
 
-    <div class="debug-info" id="debug-ua"></div>
+    <div id="card-ios" class="card">
+        <h2>不支援的瀏覽器</h2>
+        <p>請點擊右下角選單，選擇「在瀏覽器中開啟」。</p>
+        <button class="btn btn-secondary" onclick="copyLink()">複製連結</button>
+    </div>
 
     <script>
-        // ==========================================
-        // 設定區
-        // ==========================================
-        const TARGET_URL = "https://onelinkplus.oneclass.com.tw/"; // ★ 請在此替換目標網址
+        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; // ★ 請替換
 
         (function() {
             const ua = navigator.userAgent;
             const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
-            
-            // 簡易判斷 In-App (Line/FB/GoogleApp)
-            // 注意：Android 因為採用全面攔截策略，此處僅供 iOS 判斷使用
-            const isInApp = /Line\/|FBAV|FBAN|GSA\//i.test(ua); 
-
-            // 顯示 UA 供除錯 (可移除)
-            // document.getElementById("debug-ua").innerText = ua;
+            // 針對 iOS 仍需判斷是否為 In-App，因為 iOS Safari 是可以直通的
+            const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram/i.test(ua)); 
 
             if (isAndroid) {
-                // ==========================================
-                // 策略 A：Android 裝置 (全面攔截，不自動跳轉)
-                // ==========================================
-                const card = document.getElementById("card-android");
-                const btn = document.getElementById("android-intent-btn");
-                
-                card.style.display = "block";
+                // ======================================
+                // Android 策略：無差別攔截 (針對偽裝 GSA)
+                // ======================================
+                document.getElementById("card-android").style.display = "block";
 
-                // 建構強力 Intent
-                // 使用 user_gesture (點擊) 觸發，成功率遠高於自動轉址
                 const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
+                
+                // 使用隱式 Intent + New Task Flag
+                // 這能有效穿透 GSA 的偽裝，強制喚醒外部瀏覽器
                 const intentUrl = "intent://" + cleanUrl + 
                                   "#Intent;" + 
                                   "scheme=https;" + 
                                   "action=android.intent.action.VIEW;" + 
                                   "category=android.intent.category.BROWSABLE;" + 
-                                  "launchFlags=0x10000000;" + // FLAG_ACTIVITY_NEW_TASK
+                                  "launchFlags=0x10000000;" + 
                                   "end;";
                 
-                // 將按鈕連結設為 Intent
-                btn.href = intentUrl;
+                document.getElementById("btn-default").href = intentUrl;
 
-            } else if (isIOS && isInApp) {
-                // ==========================================
-                // 策略 B：iOS In-App (顯示引導)
-                // ==========================================
+            } else if (isIOSInApp) {
+                // iOS In-App
                 document.getElementById("card-ios").style.display = "block";
-
             } else {
-                // ==========================================
-                // 策略 C：桌面 或 iOS Safari (正常放行)
-                // ==========================================
+                // PC 或 純 iOS Safari -> 放行
                 window.location.replace(TARGET_URL);
             }
         })();
 
-        // 複製功能
         function copyLink() {
-            navigator.clipboard.writeText(TARGET_URL).then(() => {
-                const textSpans = ["copy-text", "copy-text-ios"];
-                textSpans.forEach(id => {
-                    const el = document.getElementById(id);
-                    if(el) el.innerText = "✅ 已複製！請手動開啟瀏覽器貼上";
-                });
-                
-                // 視覺回饋
-                document.querySelectorAll('.btn-secondary').forEach(btn => {
-                    btn.classList.add('copied');
-                    // iOS 的按鈕原本是藍色，這裡簡單處理樣式覆蓋
-                    if(btn.parentElement.id === 'card-ios') btn.style.backgroundColor = '#34C759';
-                });
-            }).catch(err => {
-                alert("複製失敗，請手動選取網址：" + TARGET_URL);
-            });
+            navigator.clipboard.writeText(TARGET_URL)
+                .then(() => alert("網址已複製！請開啟 Chrome/Safari 貼上"))
+                .catch(() => prompt("請手動複製：", TARGET_URL));
         }
     </script>
 </body>
