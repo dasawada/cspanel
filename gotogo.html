@@ -136,21 +136,31 @@
             const browserName = isAndroid ? "Chrome" : "Safari";
             document.getElementById("browser-name").innerText = browserName;
 
-            // 3. [針對 Android 的修正邏輯] 強制指定 Chrome 跳轉
+            // 3. [針對 Android 的修正邏輯 - Version 2] 強制指定 Chrome + 新任務堆疊
             if (isAndroid) {
+                // 移除 https:// 前綴，準備放入 Intent
                 var cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
 
+                // ★ 關鍵修改：
+                // 1. package=com.android.chrome 強制指定 Chrome
+                // 2. category=android.intent.category.BROWSABLE 宣告瀏覽行為
+                // 3. launchFlags=0x10000000 (FLAG_ACTIVITY_NEW_TASK) 建立新任務堆疊，突破 GSA 的 Custom Tabs 限制
                 var intentUrl = "intent://" + cleanUrl + 
                                 "#Intent;" + 
                                 "scheme=https;" + 
-                                "package=com.android.chrome;" + 
+                                "package=com.android.chrome;" +
                                 "action=android.intent.action.VIEW;" + 
-                                "category=android.intent.category.BROWSABLE;" + 
-                                // ★ 關鍵修改：強制開啟新任務，突破 Custom Tabs 限制
-                                "launchFlags=0x10000000;" + 
+                                "category=android.intent.category.BROWSABLE;" +
+                                "launchFlags=0x10000000;" +
+                                "S.browser_fallback_url=" + TARGET_URL + ";" +
                                 "end;";
 
+                // 執行跳轉
                 setTimeout(() => { window.location.href = intentUrl; }, 500);
+
+                // ★ Version 3 備用方案（若 Version 2 失效，可改用此協定）：
+                // var chromeSchemeUrl = TARGET_URL.replace(/^https?/, 'googlechrome');
+                // setTimeout(() => { window.location.href = chromeSchemeUrl; }, 500);
             }
         })();
 
