@@ -3,111 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>跳轉確認</title>
+    <title>連線環境檢查</title>
     <style>
-        /* 樣式保持簡潔 */
-        body { font-family: system-ui, -apple-system, sans-serif; background: #f2f2f7; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; }
-        .card { background: white; width: 100%; max-width: 400px; padding: 32px 24px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: none; }
-        h2 { margin: 0 0 12px 0; font-size: 20px; color: #1c1c1e; }
-        p { color: #636366; font-size: 15px; margin-bottom: 24px; line-height: 1.5; }
-        
-        /* 按鈕樣式 */
-        .btn { display: block; width: 100%; padding: 16px; border-radius: 12px; text-decoration: none; font-weight: 600; font-size: 16px; margin-bottom: 12px; border: none; cursor: pointer; box-sizing: border-box; transition: opacity 0.2s; }
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; color: #333; }
+        .card { background: white; width: 100%; max-width: 400px; padding: 30px 24px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: none; }
+        h2 { margin: 0 0 15px 0; font-size: 20px; font-weight: 700; }
+        p { font-size: 15px; color: #666; margin: 0 0 25px 0; line-height: 1.6; }
+        .btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-bottom: 12px; cursor: pointer; border: none; font-size: 16px; box-sizing: border-box; transition: opacity 0.2s; }
         .btn:active { opacity: 0.8; }
-        
-        /* Chrome 專用色 */
-        .btn-chrome { background-color: #1a73e8; color: white; }
-        
-        /* 三星 / 備用選項 */
-        .link-secondary { display: inline-block; margin-top: 12px; color: #007AFF; font-size: 14px; text-decoration: none; padding: 8px; }
-        .divider { margin: 15px 0; border-top: 1px solid #eee; }
+        .btn-primary { background: #007AFF; color: white; }
+        .btn-outline { background: white; border: 2px solid #007AFF; color: #007AFF; }
+        .btn-secondary { background: #e9ecef; color: #555; }
+        .check-box { background: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 20px; font-size: 14px; color: #0d47a1; }
+        .check-list { text-align: left; font-size: 14px; color: #555; margin-bottom: 20px; padding-left: 20px; }
+        .check-list li { margin-bottom: 8px; }
     </style>
 </head>
 <body>
 
-    <div id="card-android" class="card">
-        <h2>🔒 解除瀏覽器限制</h2>
-        <p>Google 搜尋 App 無法支援此視訊功能。<br>請點擊下方按鈕切換至 Chrome。</p>
-        
-        <a id="btn-chrome" href="#" class="btn btn-chrome">
-            開啟 Chrome 瀏覽器
-        </a>
-
-        <div style="margin-top: 10px;">
-            <a id="link-samsung" href="#" class="link-secondary">
-                使用 Samsung Internet 開啟
-            </a>
+    <div id="card-ios-inapp" class="card">
+        <h2>瀏覽器不支援</h2>
+        <p>偵測到您正在使用 App 內建瀏覽器。<br>iOS 系統限制，請依照以下步驟操作：</p>
+        <div class="check-box" style="background:#fff3cd; border-color:#ffeeba; color:#856404;">
+            點擊右上/右下選單 <span style="font-size:1.2em">🧭</span> <br>選擇 <strong>「在瀏覽器中開啟」</strong>
         </div>
-
-        <div class="divider"></div>
-
-        <button class="btn" style="background:#e5e5ea; color:#000;" onclick="copyLink()">
-            複製連結
-        </button>
+        <button class="btn btn-secondary" onclick="copyLink()">複製連結</button>
     </div>
 
-    <div id="card-ios" class="card">
-        <h2>瀏覽器不支援</h2>
-        <p>請點擊右下角選單，選擇「在瀏覽器中開啟」。</p>
-        <button class="btn" style="background:#007AFF; color:white;" onclick="copyLink()">複製連結</button>
+    <div id="card-android-line" class="card">
+        <h2>正在切換瀏覽器...</h2>
+        <p>若沒有自動跳轉，請點擊下方按鈕</p>
+        <a id="btn-line-jump" href="#" class="btn btn-primary">手動開啟</a>
+    </div>
+
+    <div id="card-android-gateway" class="card">
+        <h2>🔒 環境安全檢查</h2>
+        <p>為確保視訊功能正常，請確認您使用的是正確的瀏覽器 App。</p>
+        
+        <ul class="check-list">
+            <li>📱 <strong>三星手機</strong>：請使用「三星網際網路」</li>
+            <li>🤖 <strong>其他安卓</strong>：請使用「Chrome」</li>
+            <li>🚫 <strong>請勿使用</strong>：Google App / 搜尋列</li>
+        </ul>
+
+        <a id="btn-gateway-enter" href="#" class="btn btn-primary">確認並進入</a>
+        <button class="btn btn-outline" onclick="copyLink()">複製連結 (手動貼上)</button>
     </div>
 
     <script>
-        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; // ★ 請替換
+        // 設定您的目標網址
+        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; 
 
         (function() {
             const ua = navigator.userAgent;
             const isAndroid = /Android/i.test(ua);
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
-            // 針對 iOS 判斷 In-App
-            const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram/i.test(ua)); 
+            
+            // iOS In-App 偵測 (Line, FB, IG, Google App, GSA)
+            // 注意：iOS 上的 Chrome/Firefox 也算是 "In-App" 類型的 WebKit，但通常能支援 WebRTC，
+            // 這裡主要針對無法開啟權限的 WebView 進行阻擋。
+            const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram|GSA\/|Google\//i.test(ua));
+            
+            // Android Line 偵測
+            const isAndroidLine = isAndroid && ua.includes("Line/");
 
             if (isAndroid) {
-                // ============================================
-                // Android 邏輯：強制指定 Package
-                // ============================================
-                document.getElementById("card-android").style.display = "block";
-                
-                const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
-                const flags = "launchFlags=0x10000000;"; // 等同於 target="_blank" 的強制力
-
-                // A. Chrome Intent (明確指定 com.android.chrome)
-                // 這能解決 GSA 攔截問題
-                const chromeIntent = "intent://" + cleanUrl + 
-                                     "#Intent;" + 
-                                     "scheme=https;" + 
-                                     "package=com.android.chrome;" + // ★ 關鍵：鎖定 Chrome
-                                     "action=android.intent.action.VIEW;" + 
-                                     "category=android.intent.category.BROWSABLE;" + 
-                                     flags + 
-                                     "end;";
-                
-                document.getElementById("btn-chrome").href = chromeIntent;
-
-                // B. Samsung Intent (明確指定 com.sec.android.app.sbrowser)
-                // 給三星使用者的手動選項
-                const samsungIntent = "intent://" + cleanUrl + 
-                                      "#Intent;" + 
-                                      "scheme=https;" + 
-                                      "package=com.sec.android.app.sbrowser;" + // ★ 關鍵：鎖定 Samsung
-                                      "action=android.intent.action.VIEW;" + 
-                                      "category=android.intent.category.BROWSABLE;" + 
-                                      flags + 
-                                      "end;";
-
-                document.getElementById("link-samsung").href = samsungIntent;
-
-            } else if (isIOSInApp) {
-                document.getElementById("card-ios").style.display = "block";
+                if (isAndroidLine) {
+                    // === Android Case 1: Line ===
+                    // 使用 Line 專用參數 openExternalBrowser=1 強制跳轉
+                    document.getElementById("card-android-line").style.display = "block";
+                    const separator = TARGET_URL.includes('?') ? "&" : "?";
+                    const lineUrl = TARGET_URL + separator + "openExternalBrowser=1";
+                    
+                    document.getElementById("btn-line-jump").href = lineUrl;
+                    window.location.href = lineUrl;
+                } else {
+                    // === Android Case 2: 非 Line (含 Chrome, Samsung, FB, GSA 等) ===
+                    // 依照需求：強制顯示閘道，引導使用者確認環境
+                    document.getElementById("card-android-gateway").style.display = "block";
+                    
+                    // 建構 Intent URL
+                    // 使用 Intent 可以 "甩開" Google Search App 的 WebView，強制喚起預設瀏覽器
+                    const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
+                    const intentUrl = "intent://" + cleanUrl + 
+                                      "#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;";
+                    
+                    document.getElementById("btn-gateway-enter").href = intentUrl;
+                }
+            } else if (isIOS) {
+                if (isIOSInApp) {
+                    // === iOS Case 1: In-App Browser ===
+                    // 顯示教學，不跳轉
+                    document.getElementById("card-ios-inapp").style.display = "block";
+                } else {
+                    // === iOS Case 2: Safari (主流瀏覽器) ===
+                    // 直接放行
+                    window.location.replace(TARGET_URL);
+                }
             } else {
+                // === PC / 其他 ===
                 window.location.replace(TARGET_URL);
             }
         })();
 
         function copyLink() {
             navigator.clipboard.writeText(TARGET_URL)
-                .then(() => alert("連結已複製！請手動開啟瀏覽器貼上"))
-                .catch(() => prompt("請手動複製：", TARGET_URL));
+                .then(() => alert("連結已複製，請開啟瀏覽器貼上使用"))
+                .catch(() => prompt("請手動複製連結：", TARGET_URL));
         }
     </script>
 </body>
