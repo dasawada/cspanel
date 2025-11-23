@@ -2,53 +2,238 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>連線環境檢查</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>行動網頁小幫手</title>
     <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background: #f0f2f5; display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0; padding: 20px; box-sizing: border-box; color: #333; }
-        .card { background: white; width: 100%; max-width: 400px; padding: 30px 24px; border-radius: 16px; text-align: center; box-shadow: 0 4px 20px rgba(0,0,0,0.08); display: none; }
-        h2 { margin: 0 0 15px 0; font-size: 20px; font-weight: 700; }
-        p { font-size: 15px; color: #666; margin: 0 0 25px 0; line-height: 1.6; }
-        .btn { display: block; width: 100%; padding: 14px; border-radius: 12px; text-decoration: none; font-weight: bold; margin-bottom: 12px; cursor: pointer; border: none; font-size: 16px; box-sizing: border-box; transition: opacity 0.2s; }
-        .btn:active { opacity: 0.8; }
-        .btn-primary { background: #007AFF; color: white; }
-        .btn-outline { background: white; border: 2px solid #007AFF; color: #007AFF; }
-        .btn-secondary { background: #e9ecef; color: #555; }
-        .check-box { background: #e3f2fd; border: 1px solid #bbdefb; padding: 15px; border-radius: 8px; text-align: left; margin-bottom: 20px; font-size: 14px; color: #0d47a1; }
-        .check-list { text-align: left; font-size: 14px; color: #555; margin-bottom: 20px; padding-left: 20px; }
-        .check-list li { margin-bottom: 8px; }
+        :root {
+            --color-purple: #8a6cb8;
+            --color-purple-dark: #6a4c98;
+            --color-orange: #e68a5e;
+            --color-orange-dark: #c97348;
+            --color-bg: #fdfbf5;
+            --color-text: #333;
+            --card-shadow: 0 8px 24px rgba(138, 108, 184, 0.15);
+            --balloon-shadow-inset: inset 0 -6px 12px rgba(0,0,0,0.2), inset 0 4px 8px rgba(255,255,255,0.5);
+        }
+
+        body {
+            font-family: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
+            background-color: var(--color-bg);
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            box-sizing: border-box;
+            overflow-x: hidden;
+            /* 模擬背景模糊氣球效果 */
+            background-image: 
+                radial-gradient(circle at 10% 20%, rgba(230, 138, 94, 0.2) 0%, transparent 30%),
+                radial-gradient(circle at 90% 80%, rgba(138, 108, 184, 0.2) 0%, transparent 30%),
+                radial-gradient(circle at 80% 10%, rgba(138, 108, 184, 0.15) 0%, transparent 20%);
+        }
+
+        /* --- Typography & Decor --- */
+        h1.balloon-title {
+            color: var(--color-purple);
+            font-size: 32px;
+            font-weight: 900;
+            text-align: center;
+            margin-bottom: 10px;
+            /* 模擬氣球文字效果 */
+            text-shadow: 2px 2px 0px var(--color-purple-dark), 4px 4px 10px rgba(0,0,0,0.2);
+            letter-spacing: 1px;
+        }
+
+        .decor-dashes {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 30px;
+        }
+        .decor-dash {
+            width: 25px;
+            height: 12px;
+            background-color: var(--color-purple);
+            border-radius: 10px;
+            box-shadow: var(--balloon-shadow-inset);
+            transform: rotate(-15deg);
+        }
+        .decor-dash:nth-child(2) { transform: rotate(0deg); margin-top: -5px; }
+        .decor-dash:nth-child(3) { transform: rotate(15deg); }
+
+        /* --- Card Styles --- */
+        .card-container {
+            width: 100%;
+            max-width: 380px;
+            display: none; /* 預設隱藏，由 JS 控制顯示 */
+            flex-direction: column;
+            gap: 25px;
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .card {
+            background: white;
+            border-radius: 24px;
+            padding: 25px;
+            box-shadow: var(--card-shadow);
+            position: relative;
+        }
+
+        .card-row {
+            display: flex;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .card-text {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--color-text);
+            line-height: 1.5;
+            flex: 1;
+        }
+
+        /* --- Visual Elements Placeholders (模擬圖中的角色和圖標) --- */
+        .visual-char-container {
+            position: relative;
+            width: 80px;
+            height: 80px;
+            flex-shrink: 0;
+        }
+        /* 這裡用 CSS 簡單模擬紫色角色和橘色指南針的色塊位置 */
+        .mock-char-purple {
+            width: 70px; height: 70px; background: var(--color-purple); border-radius: 50%; 
+            box-shadow: var(--balloon-shadow-inset); position: absolute; left:0; top:0;
+        }
+        .mock-compass-orange {
+            width: 40px; height: 40px; background: var(--color-orange); border-radius: 50%; 
+            box-shadow: var(--balloon-shadow-inset); position: absolute; right:-5px; bottom:-5px;
+            display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;
+        }
+        
+        .visual-checkbox-container {
+            width: 50px; height: 50px; flex-shrink: 0; position: relative;
+        }
+        .mock-checkbox-purple {
+            width: 50px; height: 50px; background: var(--color-purple); border-radius: 14px;
+            box-shadow: var(--balloon-shadow-inset); display: flex; align-items: center; justify-content: center;
+        }
+        .mock-check-mark {
+             color: var(--color-orange); font-size: 28px; font-weight: bold;
+        }
+        .decor-ball-orange {
+            position: absolute; right: -10px; top: -15px;
+            width: 30px; height: 30px; background: var(--color-orange); border-radius: 50%;
+            box-shadow: var(--balloon-shadow-inset);
+        }
+
+        /* --- Balloon Buttons --- */
+        .btn-balloon {
+            display: block;
+            width: 100%;
+            padding: 16px;
+            border-radius: 50px;
+            text-decoration: none;
+            font-weight: 800;
+            font-size: 18px;
+            text-align: center;
+            color: white;
+            border: none;
+            cursor: pointer;
+            background-color: var(--color-orange);
+            /* 核心：3D 皮革氣球按鈕效果 */
+            box-shadow: 
+                inset 0 -6px 10px rgba(0,0,0,0.15), /* 底部內陰影 */
+                inset 0 6px 10px rgba(255,255,255,0.4), /* 頂部高光 */
+                0 6px 15px rgba(230, 138, 94, 0.4); /* 外部投影 */
+            transition: all 0.1s ease;
+            position: relative;
+            top: 0;
+        }
+
+        .btn-balloon:active {
+            /* 點擊時的壓扁效果 */
+            transform: scale(0.98);
+            box-shadow: 
+                inset 0 -2px 5px rgba(0,0,0,0.15),
+                inset 0 2px 5px rgba(255,255,255,0.4),
+                0 2px 5px rgba(230, 138, 94, 0.4);
+            top: 2px;
+            background-color: var(--color-orange-dark);
+        }
+
+        /* --- Helper Classes --- */
+        .text-highlight { color: var(--color-orange); }
+
+        @keyframes popIn {
+            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
+            100% { opacity: 1; transform: scale(1) translateY(0); }
+        }
     </style>
 </head>
 <body>
 
-    <div id="card-ios-inapp" class="card">
-        <h2>瀏覽器不支援</h2>
-        <p>偵測到您正在使用 App 內建瀏覽器。<br>iOS 系統限制，請依照以下步驟操作：</p>
-        <div class="check-box" style="background:#fff3cd; border-color:#ffeeba; color:#856404;">
-            點擊右上/右下選單 <span style="font-size:1.2em">🧭</span> <br>選擇 <strong>「在瀏覽器中開啟」</strong>
+    <h1 class="balloon-title">行動網頁小幫手</h1>
+    
+    <div class="decor-dashes">
+        <div class="decor-dash"></div>
+        <div class="decor-dash"></div>
+        <div class="decor-dash"></div>
+    </div>
+
+    <div id="view-ios-guide" class="card-container">
+        <div class="card">
+            <div class="card-row">
+                <div class="visual-char-container">
+                    <div class="mock-char-purple"></div>
+                    <div class="mock-compass-orange">🧭</div>
+                </div>
+                <p class="card-text">
+                    嗨！請點擊選單<br>在<span class="text-highlight">瀏覽器</span>中開啟喔！
+                </p>
+            </div>
         </div>
-        <button class="btn btn-secondary" onclick="copyLink()">複製連結</button>
+        <button class="btn-balloon" onclick="copyLink()">複製連結</button>
     </div>
 
-    <div id="card-android-line" class="card">
-        <h2>正在切換瀏覽器...</h2>
-        <p>若沒有自動跳轉，請點擊下方按鈕</p>
-        <a id="btn-line-jump" href="#" class="btn btn-primary">手動開啟</a>
+
+    <div id="view-android-line" class="card-container">
+        <div class="card">
+            <div class="card-row">
+                 <div class="visual-char-container">
+                    <div class="mock-char-purple" style="background:var(--color-orange)"></div>
+                    <div class="mock-compass-orange" style="background:var(--color-purple)">⏳</div>
+                </div>
+                <p class="card-text">
+                    正在準備跳轉至<br>預設瀏覽器...
+                </p>
+            </div>
+        </div>
+        <a id="btn-line-jump-action" href="#" class="btn-balloon">如果沒反應，請點我手動開啟</a>
     </div>
 
-    <div id="card-android-gateway" class="card">
-        <h2>🔒 環境安全檢查</h2>
-        <p>為確保視訊功能正常，請確認您使用的是正確的瀏覽器 App。</p>
-        
-        <ul class="check-list">
-            <li>📱 <strong>三星手機</strong>：請使用「三星網際網路」</li>
-            <li>🤖 <strong>其他安卓</strong>：請使用「Chrome」</li>
-            <li>🚫 <strong>請勿使用</strong>：Google App / 搜尋列</li>
-        </ul>
 
-        <a id="btn-gateway-enter" href="#" class="btn btn-primary">確認並進入</a>
-        <button class="btn btn-outline" onclick="copyLink()">複製連結 (手動貼上)</button>
+    <div id="view-android-gateway" class="card-container">
+        <div class="card">
+            <div class="decor-ball-orange"></div>
+            <div class="card-row">
+                <div class="visual-checkbox-container">
+                    <div class="mock-checkbox-purple">
+                        <span class="mock-check-mark">✓</span>
+                    </div>
+                </div>
+                <p class="card-text">
+                    請確認：不是 <span class="text-highlight">Google App</span>！<br>
+                    <span style="font-size: 0.8em; font-weight: normal;">(請使用 Chrome 或三星瀏覽器)</span>
+                </p>
+            </div>
+        </div>
+        <a id="btn-gateway-action" href="#" class="btn-balloon">我是正確瀏覽器 (進入)</a>
+        <button class="btn-balloon" style="background-color: var(--color-purple); margin-top: -15px; transform: scale(0.9);" onclick="copyLink()">或是：複製連結手動貼上</button>
     </div>
+
 
     <script>
         // 設定您的目標網址
@@ -60,56 +245,58 @@
             const isIOS = /iPhone|iPad|iPod/i.test(ua);
             
             // iOS In-App 偵測 (Line, FB, IG, Google App, GSA)
-            // 注意：iOS 上的 Chrome/Firefox 也算是 "In-App" 類型的 WebKit，但通常能支援 WebRTC，
-            // 這裡主要針對無法開啟權限的 WebView 進行阻擋。
             const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram|GSA\/|Google\//i.test(ua));
             
             // Android Line 偵測
             const isAndroidLine = isAndroid && ua.includes("Line/");
 
+            // 輔助函數：顯示特定視圖
+            function showView(viewId) {
+                document.getElementById(viewId).style.display = "flex";
+            }
+
             if (isAndroid) {
                 if (isAndroidLine) {
-                    // === Android Case 1: Line ===
-                    // 使用 Line 專用參數 openExternalBrowser=1 強制跳轉
-                    document.getElementById("card-android-line").style.display = "block";
+                    // === Android Case 1: Line (自動跳轉) ===
+                    showView("view-android-line");
                     const separator = TARGET_URL.includes('?') ? "&" : "?";
                     const lineUrl = TARGET_URL + separator + "openExternalBrowser=1";
                     
-                    document.getElementById("btn-line-jump").href = lineUrl;
-                    window.location.href = lineUrl;
+                    document.getElementById("btn-line-jump-action").href = lineUrl;
+                    // 嘗試自動跳轉
+                    setTimeout(() => {
+                         window.location.href = lineUrl;
+                    }, 1000);
+                   
                 } else {
-                    // === Android Case 2: 非 Line (含 Chrome, Samsung, FB, GSA 等) ===
-                    // 依照需求：強制顯示閘道，引導使用者確認環境
-                    document.getElementById("card-android-gateway").style.display = "block";
+                    // === Android Case 2: 非 Line (Gateway 強制檢查) ===
+                    showView("view-android-gateway");
                     
-                    // 建構 Intent URL
-                    // 使用 Intent 可以 "甩開" Google Search App 的 WebView，強制喚起預設瀏覽器
+                    // Intent URL 建構
                     const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
                     const intentUrl = "intent://" + cleanUrl + 
                                       "#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;";
                     
-                    document.getElementById("btn-gateway-enter").href = intentUrl;
+                    document.getElementById("btn-gateway-action").href = intentUrl;
                 }
             } else if (isIOS) {
                 if (isIOSInApp) {
-                    // === iOS Case 1: In-App Browser ===
-                    // 顯示教學，不跳轉
-                    document.getElementById("card-ios-inapp").style.display = "block";
+                    // === iOS Case 1: In-App Browser (顯示引導) ===
+                    showView("view-ios-guide");
                 } else {
-                    // === iOS Case 2: Safari (主流瀏覽器) ===
-                    // 直接放行
+                    // === iOS Case 2: Safari (直接放行) ===
                     window.location.replace(TARGET_URL);
                 }
             } else {
-                // === PC / 其他 ===
+                // === PC / 其他 (直接放行) ===
                 window.location.replace(TARGET_URL);
             }
         })();
 
         function copyLink() {
             navigator.clipboard.writeText(TARGET_URL)
-                .then(() => alert("連結已複製，請開啟瀏覽器貼上使用"))
-                .catch(() => prompt("請手動複製連結：", TARGET_URL));
+                .then(() => alert("連結已複製！\n請打開瀏覽器貼上網址。"))
+                .catch(() => prompt("長按複製下方連結，並在瀏覽器中開啟：", TARGET_URL));
         }
     </script>
 </body>
