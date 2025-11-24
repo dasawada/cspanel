@@ -3,300 +3,304 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>行動網頁小幫手</title>
+    <title>準備連線</title>
     <style>
         :root {
-            --color-purple: #8a6cb8;
-            --color-purple-dark: #6a4c98;
-            --color-orange: #e68a5e;
-            --color-orange-dark: #c97348;
-            --color-bg: #fdfbf5;
-            --color-text: #333;
-            --card-shadow: 0 8px 24px rgba(138, 108, 184, 0.15);
-            --balloon-shadow-inset: inset 0 -6px 12px rgba(0,0,0,0.2), inset 0 4px 8px rgba(255,255,255,0.5);
+            --primary-color: #007AFF; /* 通用系統藍 */
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-main: #1c1c1e;
+            --text-sub: #6c6c70;
+            --border-radius: 12px;
         }
 
         body {
-            font-family: 'Nunito', 'PingFang TC', 'Microsoft JhengHei', sans-serif;
-            background-color: var(--color-bg);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
             margin: 0;
             padding: 20px;
-            min-height: 100vh;
             display: flex;
-            flex-direction: column;
-            align-items: center;
             justify-content: center;
-            box-sizing: border-box;
-            overflow-x: hidden;
-            /* 模擬背景模糊氣球效果 */
-            background-image: 
-                radial-gradient(circle at 10% 20%, rgba(230, 138, 94, 0.2) 0%, transparent 30%),
-                radial-gradient(circle at 90% 80%, rgba(138, 108, 184, 0.2) 0%, transparent 30%),
-                radial-gradient(circle at 80% 10%, rgba(138, 108, 184, 0.15) 0%, transparent 20%);
-        }
-
-        /* --- Typography & Decor --- */
-        h1.balloon-title {
-            color: var(--color-purple);
-            font-size: 32px;
-            font-weight: 900;
-            text-align: center;
-            margin-bottom: 10px;
-            /* 模擬氣球文字效果 */
-            text-shadow: 2px 2px 0px var(--color-purple-dark), 4px 4px 10px rgba(0,0,0,0.2);
-            letter-spacing: 1px;
-        }
-
-        .decor-dashes {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-        .decor-dash {
-            width: 25px;
-            height: 12px;
-            background-color: var(--color-purple);
-            border-radius: 10px;
-            box-shadow: var(--balloon-shadow-inset);
-            transform: rotate(-15deg);
-        }
-        .decor-dash:nth-child(2) { transform: rotate(0deg); margin-top: -5px; }
-        .decor-dash:nth-child(3) { transform: rotate(15deg); }
-
-        /* --- Card Styles --- */
-        .card-container {
-            width: 100%;
-            max-width: 380px;
-            display: none; /* 預設隱藏，由 JS 控制顯示 */
-            flex-direction: column;
-            gap: 25px;
-            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-        }
-
-        .card {
-            background: white;
-            border-radius: 24px;
-            padding: 25px;
-            box-shadow: var(--card-shadow);
-            position: relative;
-        }
-
-        .card-row {
-            display: flex;
             align-items: center;
-            gap: 20px;
-        }
-
-        .card-text {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--color-text);
+            min-height: 100vh;
             line-height: 1.5;
-            flex: 1;
         }
 
-        /* --- Visual Elements Placeholders (模擬圖中的角色和圖標) --- */
-        .visual-char-container {
-            position: relative;
-            width: 80px;
-            height: 80px;
-            flex-shrink: 0;
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            padding: 32px 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: center;
+            display: none; /* JS 控制顯示 */
         }
-        /* 這裡用 CSS 簡單模擬紫色角色和橘色指南針的色塊位置 */
-        .mock-char-purple {
-            width: 70px; height: 70px; background: var(--color-purple); border-radius: 50%; 
-            box-shadow: var(--balloon-shadow-inset); position: absolute; left:0; top:0;
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            color: var(--text-main);
         }
-        .mock-compass-orange {
-            width: 40px; height: 40px; background: var(--color-orange); border-radius: 50%; 
-            box-shadow: var(--balloon-shadow-inset); position: absolute; right:-5px; bottom:-5px;
-            display: flex; align-items: center; justify-content: center; color: white; font-size: 20px;
+
+        p {
+            font-size: 15px;
+            color: var(--text-sub);
+            margin: 0 0 24px 0;
+        }
+
+        .instruction-box {
+            background-color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .instruction-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .instruction-step:last-child { margin-bottom: 0; }
+        .icon { margin-right: 10px; font-size: 16px; }
+
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 14px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.7; }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            margin-top: 12px;
         }
         
-        .visual-checkbox-container {
-            width: 50px; height: 50px; flex-shrink: 0; position: relative;
-        }
-        .mock-checkbox-purple {
-            width: 50px; height: 50px; background: var(--color-purple); border-radius: 14px;
-            box-shadow: var(--balloon-shadow-inset); display: flex; align-items: center; justify-content: center;
-        }
-        .mock-check-mark {
-             color: var(--color-orange); font-size: 28px; font-weight: bold;
-        }
-        .decor-ball-orange {
-            position: absolute; right: -10px; top: -15px;
-            width: 30px; height: 30px; background: var(--color-orange); border-radius: 50%;
-            box-shadow: var(--balloon-shadow-inset);
+        .highlight {
+            font-weight: 600;
+            color: var(--text-main);
         }
 
-        /* --- Balloon Buttons --- */
-        .btn-balloon {
-            display: block;
-            width: 100%;
-            padding: 16px;
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: 800;
-            font-size: 18px;
-            text-align: center;
-            color: white;
-            border: none;
-            cursor: pointer;
-            background-color: var(--color-orange);
-            /* 核心：3D 皮革氣球按鈕效果 */
-            box-shadow: 
-                inset 0 -6px 10px rgba(0,0,0,0.15), /* 底部內陰影 */
-                inset 0 6px 10px rgba(255,255,255,0.4), /* 頂部高光 */
-                0 6px 15px rgba(230, 138, 94, 0.4); /* 外部投影 */
-            transition: all 0.1s ease;
-            position: relative;
-            top: 0;
+        /* 新增載入動畫 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
         }
-
-        .btn-balloon:active {
-            /* 點擊時的壓扁效果 */
-            transform: scale(0.98);
-            box-shadow: 
-                inset 0 -2px 5px rgba(0,0,0,0.15),
-                inset 0 2px 5px rgba(255,255,255,0.4),
-                0 2px 5px rgba(230, 138, 94, 0.4);
-            top: 2px;
-            background-color: var(--color-orange-dark);
-        }
-
-        /* --- Helper Classes --- */
-        .text-highlight { color: var(--color-orange); }
-
-        @keyframes popIn {
-            0% { opacity: 0; transform: scale(0.8) translateY(20px); }
-            100% { opacity: 1; transform: scale(1) translateY(0); }
+        #view-loading h1::before {
+            content: "🔄";
+            display: inline-block;
+            animation: spin 1s linear infinite;
         }
     </style>
 </head>
 <body>
 
-    <h1 class="balloon-title">行動網頁小幫手</h1>
-    
-    <div class="decor-dashes">
-        <div class="decor-dash"></div>
-        <div class="decor-dash"></div>
-        <div class="decor-dash"></div>
+    <div id="view-loading" class="container" style="display: block;">
+        <h1>🔄 正在準備...</h1>
+        <p>請稍候</p>
     </div>
 
-    <div id="view-ios-guide" class="card-container">
-        <div class="card">
-            <div class="card-row">
-                <div class="visual-char-container">
-                    <div class="mock-char-purple"></div>
-                    <div class="mock-compass-orange">🧭</div>
-                </div>
-                <p class="card-text">
-                    嗨！請點擊選單<br>在<span class="text-highlight">瀏覽器</span>中開啟喔！
-                </p>
+    <div id="view-ios" class="container">
+        <h1>👋 我們換個地方連線吧</h1>
+        <p>目前的 App 視窗無法開啟相機與麥克風<br>請切換到瀏覽器，通話更順暢。</p>
+        
+        <div class="instruction-box">
+            <div class="instruction-step">
+                <span class="icon">1️⃣</span>
+                <span>點擊螢幕角落的選單符號 (⋯ 或 🧭)</span>
+            </div>
+            <div class="instruction-step">
+                <span class="icon">2️⃣</span>
+                <span>選擇 <span class="highlight">在瀏覽器中開啟</span></span>
+            </div>
+            <div class="instruction-step" style="margin-top:8px; color:#888; font-size:13px;">
+                <span class="icon">💡</span>
+                <span>推薦使用 <strong>Safari</strong> 或 <strong>Chrome</strong></span>
             </div>
         </div>
-        <button class="btn-balloon" onclick="copyLink()">複製連結</button>
+
+        <button class="btn btn-secondary" onclick="copyLink(this)">複製連結 (手動開啟)</button>
     </div>
 
-
-    <div id="view-android-line" class="card-container">
-        <div class="card">
-            <div class="card-row">
-                 <div class="visual-char-container">
-                    <div class="mock-char-purple" style="background:var(--color-orange)"></div>
-                    <div class="mock-compass-orange" style="background:var(--color-purple)">⏳</div>
-                </div>
-                <p class="card-text">
-                    正在準備跳轉至<br>預設瀏覽器...
-                </p>
-            </div>
+    <div id="view-android" class="container">
+        <h1>🚀 準備進入會議</h1>
+        <p>為了確保連線穩定，<br>請選擇合適的瀏覽器開啟。</p>
+        
+        <div class="instruction-box" style="text-align: center;">
+            <span class="icon">✅</span>
+            請選擇：<span id="android-browser-suggestion" class="highlight">Chrome</span>
         </div>
-        <a id="btn-line-jump-action" href="#" class="btn-balloon">如果沒反應，請點我手動開啟</a>
+
+        <a id="btn-android-enter" href="#" class="btn btn-primary">開啟瀏覽器</a>
+        <button class="btn btn-secondary" onclick="copyLink(this)">複製連結</button>
     </div>
-
-
-    <div id="view-android-gateway" class="card-container">
-        <div class="card">
-            <div class="decor-ball-orange"></div>
-            <div class="card-row">
-                <div class="visual-checkbox-container">
-                    <div class="mock-checkbox-purple">
-                        <span class="mock-check-mark">✓</span>
-                    </div>
-                </div>
-                <p class="card-text">
-                    請確認：不是 <span class="text-highlight">Google App</span>！<br>
-                    <span style="font-size: 0.8em; font-weight: normal;">(請使用 Chrome 或三星瀏覽器)</span>
-                </p>
-            </div>
-        </div>
-        <a id="btn-gateway-action" href="#" class="btn-balloon">我是正確瀏覽器 (進入)</a>
-        <button class="btn-balloon" style="background-color: var(--color-purple); margin-top: -15px; transform: scale(0.9);" onclick="copyLink()">或是：複製連結手動貼上</button>
-    </div>
-
 
     <script>
-        // 設定您的目標網址
-        const TARGET_URL = "https://onelinkplus.oneclass.com.tw"; 
+        // 設定目標網址
+        const TARGET_URL = "https://example.com/webrtc"; 
+
+        // 提升變數作用域
+        let isIOS = false;
+        let isSamsung = false;
+        let isAndroid = false;
 
         (function() {
             const ua = navigator.userAgent;
-            const isAndroid = /Android/i.test(ua);
-            const isIOS = /iPhone|iPad|iPod/i.test(ua);
-            
-            // iOS In-App 偵測 (Line, FB, IG, Google App, GSA)
+            isAndroid = /Android/i.test(ua);
+            isIOS = /iPhone|iPad|iPod/i.test(ua);
+            isSamsung = /SamsungBrowser|SAMSUNG|SM-/i.test(ua);
+
+            // iOS In-App 簡單判斷 (Line/FB/IG/Google/GSA)
             const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram|GSA\/|Google\//i.test(ua));
-            
-            // Android Line 偵測
+
+            // Android Line 判斷
             const isAndroidLine = isAndroid && ua.includes("Line/");
 
-            // 輔助函數：顯示特定視圖
-            function showView(viewId) {
-                document.getElementById(viewId).style.display = "flex";
+            // 輔助函式:顯示區塊
+            function show(id) { 
+                document.getElementById("view-loading").style.display = "none";
+                document.getElementById(id).style.display = "block"; 
             }
 
             if (isAndroid) {
+                // === Android 處理邏輯 ===
+                show("view-android");
+
+                // 1. 文案客製化：如果是三星，建議顯示 Chrome 與 三星瀏覽器
+                if (isSamsung) {
+                    document.getElementById("android-browser-suggestion").innerText = "Chrome 或 三星瀏覽器";
+                }
+
+                // 2. 設定跳轉連結
+                let finalUrl = "#";
                 if (isAndroidLine) {
-                    // === Android Case 1: Line (自動跳轉) ===
-                    showView("view-android-line");
+                    // Line 環境：使用 Line 專屬參數
                     const separator = TARGET_URL.includes('?') ? "&" : "?";
-                    const lineUrl = TARGET_URL + separator + "openExternalBrowser=1";
-                    
-                    document.getElementById("btn-line-jump-action").href = lineUrl;
-                    // 嘗試自動跳轉
+                    finalUrl = TARGET_URL + separator + "openExternalBrowser=1";
+
+                    // 延遲跳轉，確保畫面已渲染
                     setTimeout(() => {
-                         window.location.href = lineUrl;
-                    }, 1000);
-                   
+                        window.location.href = finalUrl;
+                    }, 100);
+
+                    // 顯示提示文字
+                    document.querySelector("#view-android p").innerHTML = 
+                        "正在為您開啟瀏覽器...<br><small style='color:#888'>若未自動跳轉,請點擊下方按鈕</small>";
                 } else {
-                    // === Android Case 2: 非 Line (Gateway 強制檢查) ===
-                    showView("view-android-gateway");
-                    
-                    // Intent URL 建構
+                    // 其他環境 (含 Google App WebView)：使用 Intent 強制喚起選擇器
                     const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
-                    const intentUrl = "intent://" + cleanUrl + 
-                                      "#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;";
-                    
-                    document.getElementById("btn-gateway-action").href = intentUrl;
+                    finalUrl = "intent://" + cleanUrl + 
+                               "#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;";
                 }
-            } else if (isIOS) {
-                if (isIOSInApp) {
-                    // === iOS Case 1: In-App Browser (顯示引導) ===
-                    showView("view-ios-guide");
-                } else {
-                    // === iOS Case 2: Safari (直接放行) ===
-                    window.location.replace(TARGET_URL);
-                }
+                document.getElementById("btn-android-enter").href = finalUrl;
+
+            } else if (isIOSInApp) {
+                // === iOS In-App 處理邏輯 ===
+                show("view-ios");
+
             } else {
-                // === PC / 其他 (直接放行) ===
-                window.location.replace(TARGET_URL);
+                // === 正常瀏覽器 ===
+                document.getElementById("view-loading").style.display = "none";
+                try {
+                    window.location.replace(TARGET_URL);
+                } catch (e) {
+                    show("view-android");
+                    document.querySelector("#view-android h1").innerText = "⚠️ 無法自動跳轉";
+                    document.querySelector("#view-android p").innerHTML = 
+                        "請點擊下方按鈕手動開啟<br><small style='color:#888'>或複製連結至瀏覽器</small>";
+                    document.getElementById("btn-android-enter").href = TARGET_URL;
+                }
             }
         })();
 
-        function copyLink() {
+        const GUIDANCE_MAP = {
+            ios: { 
+                app: "Safari", 
+                icon: "🧭",
+                detail: "點擊右下角分享按鈕 → 在 Safari 中開啟"
+            },
+            samsung: { 
+                app: "三星瀏覽器", 
+                icon: "🌐",
+                detail: "長按連結 → 選擇三星瀏覽器開啟"
+            },
+            android: { 
+                app: "Chrome", 
+                icon: "🌏",
+                detail: "長按連結 → 選擇 Chrome 開啟"
+            },
+            default: { 
+                app: "瀏覽器", 
+                icon: "🌐",
+                detail: "貼上至瀏覽器網址列"
+            }
+        };
+
+        function getCurrentGuidance() {
+            if (isIOS) return GUIDANCE_MAP.ios;
+            if (isSamsung) return GUIDANCE_MAP.samsung; 
+            if (isAndroid) return GUIDANCE_MAP.android;
+            return GUIDANCE_MAP.default;
+        }
+
+        function copyLink(btnElement) {
+            const guidance = getCurrentGuidance();
+            const originalHTML = btnElement.innerHTML;
+
+            // 避免重複點擊
+            if (btnElement.disabled) return;
+            btnElement.disabled = true;
+
             navigator.clipboard.writeText(TARGET_URL)
-                .then(() => alert("連結已複製！\n請打開瀏覽器貼上網址。"))
-                .catch(() => prompt("長按複製下方連結，並在瀏覽器中開啟：", TARGET_URL));
+                .then(() => {
+                    btnElement.style.backgroundColor = "#34C759";
+                    btnElement.style.color = "#fff";
+                    btnElement.innerHTML = `
+                        <div style="line-height:1.4">
+                            <div style="font-weight:600">✅ 已複製連結</div>
+                            <div style="font-size:13px;margin-top:4px;opacity:0.9">
+                                ${guidance.icon} 請在 ${guidance.app} 貼上
+                            </div>
+                        </div>
+                    `;
+
+                    // 觸發震動反饋 (支援的裝置)
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalHTML;
+                        btnElement.style.backgroundColor = "";
+                        btnElement.style.color = "";
+                        btnElement.disabled = false;
+                    }, 4000);
+                })
+                .catch(() => {
+                    btnElement.disabled = false;
+                    // 降級方案：直接顯示可選取的連結
+                    const fallbackMsg = `請手動複製並在 ${guidance.app} 貼上：\n\n${TARGET_URL}\n\n${guidance.detail}`;
+                    prompt(fallbackMsg, TARGET_URL);
+                });
         }
     </script>
 </body>
