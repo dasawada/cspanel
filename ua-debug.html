@@ -71,6 +71,28 @@
                 evidence.push("❌ 命中已知 In-App 關鍵字黑名單");
             }
 
+            // === CCT (Chrome Custom Tab) 深度偵測 ===
+            // 這是唯一能區分 "Chrome App" 與 "Google App 呼叫的 Chrome" 的方法
+            const referrer = document.referrer || "";
+            const isAndroidAppSource = referrer.startsWith("android-app://");
+
+            // 特例：Google App 的 Referrer 特徵
+            // 常見值：android-app://com.google.android.googlequicksearchbox/
+            const isGoogleApp = referrer.includes("com.google.android.googlequicksearchbox");
+
+            if (isAndroidAppSource) {
+                // 即使 UA 說是 Chrome，但來源是 App，判定為 In-App 環境
+                isCleanBrowser = false;
+                rejectReason = `Detected Chrome Custom Tab launched by: ${referrer}`;
+                evidence.push(`❌ 來源異常 (Referrer): ${referrer}`);
+            }
+
+            // === 輔助判定：歷史紀錄孤島 ===
+            // 標準 Chrome 使用者通常會有瀏覽紀錄，In-App 開啟通常是 1 或 2
+            if (history.length <= 1 && isAndroidAppSource) {
+                evidence.push("❌ History Length 極短，符合 In-App 行為");
+            }
+
             // === 5. 判決邏輯 (Decision Matrix) ===
             
             if (isHintWebView || hasWVToken || isKnownApp) {
