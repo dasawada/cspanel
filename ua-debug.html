@@ -2,174 +2,145 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Environment Fingerprint Probe</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deep Environment Forensics</title>
     <style>
-        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #00E676; }
-        body {
-            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-            background-color: var(--bg);
-            color: var(--text);
-            margin: 0;
-            padding: 20px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            min-height: 100vh;
-        }
-        .container {
-            width: 100%;
-            max-width: 800px;
-        }
-        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; color: var(--accent); }
-        
-        .data-box {
-            background-color: var(--card);
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 15px;
-            margin-bottom: 20px;
-            overflow-x: auto;
-            white-space: pre-wrap;
-            word-break: break-all;
-            font-size: 13px;
-            line-height: 1.4;
-            color: #b0b0b0;
-        }
-
-        .highlight-key { color: #82aaff; }
-        .highlight-val { color: #c3e88d; }
-        .highlight-warn { color: #ff5370; }
-
-        .btn {
-            width: 100%;
-            padding: 15px;
-            background-color: var(--accent);
-            color: #000;
-            border: none;
-            border-radius: 6px;
-            font-size: 16px;
-            font-weight: 700;
-            cursor: pointer;
-            margin-bottom: 10px;
-        }
-        .btn:active { opacity: 0.8; }
-        .status { text-align: center; color: var(--accent); opacity: 0; transition: 0.3s; height: 20px;}
-        .status.show { opacity: 1; }
+        body { font-family: monospace; background: #1a1a1a; color: #0f0; padding: 20px; word-break: break-all; }
+        .critical { color: #ff3333; font-weight: bold; }
+        .safe { color: #33ff33; }
+        .data-block { background: #2a2a2a; border: 1px solid #444; padding: 10px; margin-bottom: 10px; border-radius: 4px; }
+        h3 { border-bottom: 1px solid #555; padding-bottom: 5px; margin-top: 0; }
     </style>
 </head>
 <body>
-
-    <div class="container">
-        <h2>🔍 環境指紋診斷報告</h2>
-        
-        <div id="json-display" class="data-box">正在採樣環境特徵...</div>
-
-        <button id="copy-btn" class="btn">複製完整 JSON 報告</button>
-        <div id="copy-status" class="status">✅ 已複製至剪貼簿</div>
-    </div>
+    <h2>🕵️ 深度環境鑑識報告</h2>
+    <div id="report">正在進行深度掃描...</div>
 
     <script>
         (function() {
-            // === 1. 基礎 UA 採集 ===
-            const ua = navigator.userAgent;
-            
-            // === 2. 視窗幾何分析 (Mock: 偵測 UI 遮擋) ===
-            // In-App Browser 經常會壓縮 innerHeight
-            const screenW = window.screen.width;
-            const screenH = window.screen.height;
-            const windowW = window.innerWidth;
-            const windowH = window.innerHeight;
-            // 視窗佔用率：若顯著小於 1 (例如 < 0.85)，極可能被上下廣告欄遮擋
-            const heightRatio = (windowH / window.screen.availHeight).toFixed(3);
-
-            // === 3. 功能偽裝偵測 (Mock: 檢查 API 斷層) ===
-            const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
-            const hasWebRTC = !!(window.RTCPeerConnection);
-            const isStandalone = ('standalone' in navigator) && navigator.standalone; // iOS PWA
-
-            // === 4. Client Hints (Android/Chrome 進階指紋) ===
-            let branding = "Not Supported";
-            if (navigator.userAgentData && navigator.userAgentData.brands) {
-                branding = navigator.userAgentData.brands.map(b => `${b.brand} (${b.version})`).join(', ');
-            }
-
-            // === 5. In-App 關鍵字正則匹配 (您的黑名單邏輯) ===
-            const inAppRegex = /Line\/|FBAV|Instagram|GSA\/|Google\/|FBAN|Twitter|Telegram/i;
-            const isInAppSignature = inAppRegex.test(ua);
-
-            // === 6. 綜合診斷物件 ===
-            const diagnosticData = {
-                timestamp: new Date().toISOString(),
-                risk_assessment: {
-                    is_in_app_signature: isInAppSignature, // 是否命中黑名單
-                    is_ui_obstructed: heightRatio < 0.88,  // 視窗高度是否異常 (經驗值)
-                    is_webrtc_missing: !hasMediaDevices,   // 關鍵功能缺失
-                    is_ios_fake_chrome: /CriOS/.test(ua) && !('userAgentData' in navigator) // 判斷是否為 iOS 上的 Chrome (其實是 Webview)
-                },
-                geometry: {
-                    screen_size: `${screenW}x${screenH}`,
-                    window_size: `${windowW}x${windowH}`,
-                    height_utilization_ratio: heightRatio, // 關鍵指標：佔用率
-                    orientation: window.screen.orientation ? window.screen.orientation.type : 'unknown'
-                },
-                identity: {
-                    user_agent: ua,
-                    vendor: navigator.vendor || "N/A",
-                    platform: navigator.platform || "N/A",
-                    client_hints: branding,
-                    touch_points: navigator.maxTouchPoints
-                },
-                capabilities: {
-                    media_devices_api: hasMediaDevices,
-                    rtc_peer_connection: hasWebRTC,
-                    cookie_enabled: navigator.cookieEnabled,
-                    ios_standalone: isStandalone
-                },
-                history_length: history.length // 異常低的歷史紀錄通常代表新開的 Webview
+            const result = {
+                verdict: "Unknown", // 最終判決
+                risk_score: 0,      // 風險分數 (0-100)
+                evidence: []        // 證據鏈
             };
 
-            // === 渲染 ===
-            const displayBox = document.getElementById('json-display');
-            // 將 JSON 轉為易讀字串，並簡單上色 (HTML)
-            const jsonString = JSON.stringify(diagnosticData, null, 4);
-            
-            // 簡單語法高亮 (僅供視覺辨識)
-            const highlightedHtml = jsonString
-                .replace(/"key":/g, '<span class="highlight-key">"key":</span>')
-                .replace(/true/g, '<span class="highlight-val">true</span>')
-                .replace(/false/g, '<span class="highlight-warn">false</span>');
-            
-            displayBox.innerHTML = highlightedHtml; // 注意：這裡為了 demo 簡單用 innerHTML，實際應用純文字即可
+            // === 1. JS Bridge / 注入物探測 (Injection Probe) ===
+            // 這是最強的證據，直接證明被特定的 App 包覆
+            const knownBridges = [
+                { key: 'Line', risk: 100, id: 'Line App' },
+                { key: '_LINE_Icon', risk: 100, id: 'Line App' },
+                { key: 'facebookConnectPlugin', risk: 100, id: 'Facebook App' },
+                { key: '__fbNative', risk: 100, id: 'Facebook App' },
+                { key: 'TelegramWebview', risk: 100, id: 'Telegram' },
+                { key: 'micromessenger', risk: 100, id: 'WeChat' },
+                { key: 'gsa', risk: 90, id: 'Google Search App' },
+                { key: 'webkit', risk: 50, id: 'Generic WebKit WebView' } // 一般 WebView 常見
+            ];
 
-            // === 複製功能 ===
-            document.getElementById('copy-btn').addEventListener('click', () => {
-                const textToCopy = JSON.stringify(diagnosticData, null, 4);
-                
-                if (navigator.clipboard && navigator.clipboard.writeText) {
-                    navigator.clipboard.writeText(textToCopy)
-                        .then(showStatus)
-                        .catch(() => fallbackCopy(textToCopy));
-                } else {
-                    fallbackCopy(textToCopy);
+            let bridgesFound = [];
+            knownBridges.forEach(bridge => {
+                // 檢查 window 下是否存在該屬性
+                if (window[bridge.key] !== undefined || (window.webkit && window.webkit.messageHandlers && window.webkit.messageHandlers[bridge.key])) {
+                    bridgesFound.push(bridge.id);
+                    result.risk_score += bridge.risk;
+                    result.evidence.push(`[Injection] Found bridge: ${bridge.key}`);
                 }
             });
 
-            function showStatus() {
-                const s = document.getElementById('copy-status');
-                s.classList.add('show');
-                setTimeout(() => s.classList.remove('show'), 2000);
+            // === 2. 錯誤堆疊鑑識 (Stack Trace Forensics) ===
+            // 許多 App 在執行 JS 時，錯誤堆疊會包含 App 的 Bundle ID
+            try {
+                throw new Error("Probe");
+            } catch (e) {
+                const stack = e.stack || "";
+                // 常見的 WebView 關鍵字
+                if (/FBAV|Line|GSA|IAB|WebView/i.test(stack)) {
+                    result.risk_score += 80;
+                    result.evidence.push(`[Stack] Trace reveals App signature`);
+                }
             }
 
-            function fallbackCopy(text) {
-                const ta = document.createElement("textarea");
-                ta.value = text;
-                document.body.appendChild(ta);
-                ta.select();
-                document.execCommand('copy');
-                document.body.removeChild(ta);
-                showStatus();
+            // === 3. Safari 完整性檢查 (Safari Integrity Check) ===
+            // iOS Safari 有特定的 window.safari 物件，而 WebView 通常沒有，或結構不同
+            const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+            if (isIOS) {
+                const isSafariObj = typeof window.safari === 'object';
+                const isStandalone = window.navigator.standalone === true;
+                
+                // PWA (Standalone) 也是一種 WebView，需要區分
+                if (isStandalone) {
+                    result.evidence.push(`[Mode] iOS Standalone Mode (PWA)`);
+                    // PWA 雖然不是 Safari，但通常是使用者主動行為，風險較低，但無網址列
+                } else if (!isSafariObj) {
+                    // 在 iOS 上卻沒有 window.safari，極大機率是 UIWebView/WKWebView
+                    result.risk_score += 60;
+                    result.evidence.push(`[Integrity] Missing 'window.safari' object on iOS`);
+                } else if (isSafariObj && !window.safari.pushNotification) {
+                    // 有 safari 物件但功能殘缺 (常見於較高階的偽裝 WebView)
+                    result.risk_score += 40;
+                    result.evidence.push(`[Integrity] 'window.safari' exists but incomplete`);
+                }
             }
+
+            // === 4. 功能限制行為 (Behavioral Restrictions) ===
+            // 檢測是否被「沙盒化」
+            
+            // 測試 4.1: Iframe 注入測試 (某些 WebView 禁止 iframe 或對其有特殊限制)
+            // (此處僅為邏輯示範，實際執行可能會影響 DOM)
+            
+            // 測試 4.2: Session Storage 易失性測試的推論
+            // 如果 history.length 為 1 且 referer 為空，且在 Mobile 環境，高度可疑
+            if (history.length === 1 && document.referrer === "" && /Mobile/.test(navigator.userAgent)) {
+                 result.risk_score += 20;
+                 result.evidence.push(`[Heuristic] Single history entry without referrer`);
+            }
+
+            // === 5. 幾何視覺視口 (Visual Viewport) ===
+            // 比 window.innerHeight 更準確，能反映鍵盤或特定 UI 的擠壓
+            if (window.visualViewport) {
+                const vvScale = window.visualViewport.scale;
+                // WebView 預設 scale 行為可能與瀏覽器不同，但需更多樣本對比
+                // 這裡主要紀錄高度比
+                const heightRatio = (window.innerHeight / window.screen.availHeight);
+                if (heightRatio < 0.75) {
+                    result.risk_score += 30;
+                    result.evidence.push(`[Geometry] Viewport heavily obstructed (Ratio: ${heightRatio.toFixed(2)})`);
+                }
+            }
+
+            // === 綜合判決 ===
+            if (bridgesFound.length > 0) {
+                result.verdict = `Confirmed In-App Browser (${bridgesFound.join(', ')})`;
+            } else if (result.risk_score >= 60) {
+                result.verdict = "Highly Suspicious WebView";
+            } else if (result.risk_score >= 30) {
+                result.verdict = "Potential Non-Standard Environment";
+            } else {
+                result.verdict = "Likely Standard Browser";
+            }
+
+            // === 輸出 ===
+            const outputHTML = `
+                <div class="data-block">
+                    <h3>⚖️ 最終判決 (Verdict)</h3>
+                    <div class="${result.risk_score > 50 ? 'critical' : 'safe'}">
+                        ${result.verdict} (Risk Score: ${result.risk_score})
+                    </div>
+                </div>
+                <div class="data-block">
+                    <h3>🔍 證據鏈 (Evidence Chain)</h3>
+                    ${result.evidence.length > 0 ? 
+                        `<ul>${result.evidence.map(e => `<li>${e}</li>`).join('')}</ul>` : 
+                        "<div>No anomaly detected.</div>"}
+                </div>
+                <div class="data-block">
+                    <h3>🧬 原始特徵 (Raw Signals)</h3>
+                    <div>UA: ${navigator.userAgent}</div>
+                    <div>Ref: ${document.referrer || "None"}</div>
+                </div>
+            `;
+            
+            document.getElementById('report').innerHTML = outputHTML;
         })();
     </script>
 </body>
