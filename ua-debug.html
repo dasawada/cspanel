@@ -2,151 +2,175 @@
 <html lang="zh-TW">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>UA 診斷工具</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Environment Fingerprint Probe</title>
     <style>
+        :root { --bg: #121212; --card: #1e1e1e; --text: #e0e0e0; --accent: #00E676; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            background-color: #f5f5f5;
+            font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
+            min-height: 100vh;
         }
         .container {
-            background: white;
-            padding: 25px;
-            border-radius: 12px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
             width: 100%;
-            max-width: 600px;
-            box-sizing: border-box;
+            max-width: 800px;
         }
-        h2 {
-            margin-top: 0;
-            color: #333;
-            font-size: 1.2rem;
-            text-align: center;
-        }
-        /* User-Agent 顯示區塊樣式 */
-        .ua-box {
-            background-color: #e9ecef;
-            border: 1px solid #ced4da;
-            padding: 15px;
-            border-radius: 8px;
-            font-family: 'Courier New', Courier, monospace; /* 使用等寬字體方便閱讀 */
-            font-size: 0.9rem;
-            color: #212529;
-            word-break: break-all; /* 重要：確保長字串會自動換行 */
-            white-space: pre-wrap; /* 保留空白和換行 */
-            margin: 20px 0;
-            max-height: 300px;
-            overflow-y: auto;
-        }
+        h2 { border-bottom: 1px solid #333; padding-bottom: 10px; margin-bottom: 20px; color: var(--accent); }
         
-        /* 複製按鈕 */
-        .btn-copy {
+        .data-box {
+            background-color: var(--card);
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            font-size: 13px;
+            line-height: 1.4;
+            color: #b0b0b0;
+        }
+
+        .highlight-key { color: #82aaff; }
+        .highlight-val { color: #c3e88d; }
+        .highlight-warn { color: #ff5370; }
+
+        .btn {
             width: 100%;
-            padding: 12px;
-            background-color: #007bff;
-            color: white;
+            padding: 15px;
+            background-color: var(--accent);
+            color: #000;
             border: none;
             border-radius: 6px;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 16px;
+            font-weight: 700;
             cursor: pointer;
-            transition: background-color 0.2s;
+            margin-bottom: 10px;
         }
-        .btn-copy:active { background-color: #0056b3; }
-        .status {
-            text-align: center;
-            margin-top: 10px;
-            font-size: 0.9rem;
-            color: #28a745;
-            min-height: 1.2em;
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
+        .btn:active { opacity: 0.8; }
+        .status { text-align: center; color: var(--accent); opacity: 0; transition: 0.3s; height: 20px;}
         .status.show { opacity: 1; }
-        .info-text {
-             margin-top: 20px;
-             font-size: 0.85rem;
-             color: #666;
-             line-height: 1.5;
-             background: #fff3cd;
-             padding: 10px;
-             border-radius: 6px;
-        }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <h2>目前的 User-Agent</h2>
+        <h2>🔍 環境指紋診斷報告</h2>
         
-        <div id="ua-display" class="ua-box">正在讀取...</div>
+        <div id="json-display" class="data-box">正在採樣環境特徵...</div>
 
-        <button id="copy-btn" class="btn-copy">複製完整字串</button>
-        <div id="copy-status" class="status">已複製到剪貼簿！</div>
-
-        <div class="info-text">
-            <strong>診斷說明：</strong><br>
-            請查看字串中是否包含 "Line/" 或 "GSA/" (Google Search App)。<br>
-            此字串反映了當前瀏覽器環境如何向伺服器表明自己的身分。
-        </div>
+        <button id="copy-btn" class="btn">複製完整 JSON 報告</button>
+        <div id="copy-status" class="status">✅ 已複製至剪貼簿</div>
     </div>
 
     <script>
-        // 1. 獲取 UA
-        const uaString = navigator.userAgent;
-        
-        // 2. 顯示在畫面上
-        const displayBox = document.getElementById('ua-display');
-        displayBox.textContent = uaString;
+        (function() {
+            // === 1. 基礎 UA 採集 ===
+            const ua = navigator.userAgent;
+            
+            // === 2. 視窗幾何分析 (Mock: 偵測 UI 遮擋) ===
+            // In-App Browser 經常會壓縮 innerHeight
+            const screenW = window.screen.width;
+            const screenH = window.screen.height;
+            const windowW = window.innerWidth;
+            const windowH = window.innerHeight;
+            // 視窗佔用率：若顯著小於 1 (例如 < 0.85)，極可能被上下廣告欄遮擋
+            const heightRatio = (windowH / window.screen.availHeight).toFixed(3);
 
-        // 3. 複製功能
-        const copyBtn = document.getElementById('copy-btn');
-        const statusText = document.getElementById('copy-status');
-        let hideTimeout;
+            // === 3. 功能偽裝偵測 (Mock: 檢查 API 斷層) ===
+            const hasMediaDevices = !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia);
+            const hasWebRTC = !!(window.RTCPeerConnection);
+            const isStandalone = ('standalone' in navigator) && navigator.standalone; // iOS PWA
 
-        copyBtn.addEventListener('click', function() {
-            // 使用較新的 Clipboard API，需在 HTTPS 下運作 (但在 localhost 或 file:// 也通常可行)
-            if (navigator.clipboard && navigator.clipboard.writeText) {
-                navigator.clipboard.writeText(uaString)
-                    .then(() => showStatus())
-                    .catch(err => {
-                        // fallback: 如果 clipboard API 失敗
-                        fallbackCopyText(uaString);
-                    });
-            } else {
-                 // fallback 對於舊版瀏覽器
-                 fallbackCopyText(uaString);
+            // === 4. Client Hints (Android/Chrome 進階指紋) ===
+            let branding = "Not Supported";
+            if (navigator.userAgentData && navigator.userAgentData.brands) {
+                branding = navigator.userAgentData.brands.map(b => `${b.brand} (${b.version})`).join(', ');
             }
-        });
 
-        function showStatus() {
-            statusText.classList.add('show');
-            clearTimeout(hideTimeout);
-            hideTimeout = setTimeout(() => {
-                statusText.classList.remove('show');
-            }, 2000);
-        }
+            // === 5. In-App 關鍵字正則匹配 (您的黑名單邏輯) ===
+            const inAppRegex = /Line\/|FBAV|Instagram|GSA\/|Google\/|FBAN|Twitter|Telegram/i;
+            const isInAppSignature = inAppRegex.test(ua);
 
-        // 舊版複製方法備援
-        function fallbackCopyText(text) {
-            const textArea = document.createElement("textarea");
-            textArea.value = text;
-            document.body.appendChild(textArea);
-            textArea.select();
-            try {
+            // === 6. 綜合診斷物件 ===
+            const diagnosticData = {
+                timestamp: new Date().toISOString(),
+                risk_assessment: {
+                    is_in_app_signature: isInAppSignature, // 是否命中黑名單
+                    is_ui_obstructed: heightRatio < 0.88,  // 視窗高度是否異常 (經驗值)
+                    is_webrtc_missing: !hasMediaDevices,   // 關鍵功能缺失
+                    is_ios_fake_chrome: /CriOS/.test(ua) && !('userAgentData' in navigator) // 判斷是否為 iOS 上的 Chrome (其實是 Webview)
+                },
+                geometry: {
+                    screen_size: `${screenW}x${screenH}`,
+                    window_size: `${windowW}x${windowH}`,
+                    height_utilization_ratio: heightRatio, // 關鍵指標：佔用率
+                    orientation: window.screen.orientation ? window.screen.orientation.type : 'unknown'
+                },
+                identity: {
+                    user_agent: ua,
+                    vendor: navigator.vendor || "N/A",
+                    platform: navigator.platform || "N/A",
+                    client_hints: branding,
+                    touch_points: navigator.maxTouchPoints
+                },
+                capabilities: {
+                    media_devices_api: hasMediaDevices,
+                    rtc_peer_connection: hasWebRTC,
+                    cookie_enabled: navigator.cookieEnabled,
+                    ios_standalone: isStandalone
+                },
+                history_length: history.length // 異常低的歷史紀錄通常代表新開的 Webview
+            };
+
+            // === 渲染 ===
+            const displayBox = document.getElementById('json-display');
+            // 將 JSON 轉為易讀字串，並簡單上色 (HTML)
+            const jsonString = JSON.stringify(diagnosticData, null, 4);
+            
+            // 簡單語法高亮 (僅供視覺辨識)
+            const highlightedHtml = jsonString
+                .replace(/"key":/g, '<span class="highlight-key">"key":</span>')
+                .replace(/true/g, '<span class="highlight-val">true</span>')
+                .replace(/false/g, '<span class="highlight-warn">false</span>');
+            
+            displayBox.innerHTML = highlightedHtml; // 注意：這裡為了 demo 簡單用 innerHTML，實際應用純文字即可
+
+            // === 複製功能 ===
+            document.getElementById('copy-btn').addEventListener('click', () => {
+                const textToCopy = JSON.stringify(diagnosticData, null, 4);
+                
+                if (navigator.clipboard && navigator.clipboard.writeText) {
+                    navigator.clipboard.writeText(textToCopy)
+                        .then(showStatus)
+                        .catch(() => fallbackCopy(textToCopy));
+                } else {
+                    fallbackCopy(textToCopy);
+                }
+            });
+
+            function showStatus() {
+                const s = document.getElementById('copy-status');
+                s.classList.add('show');
+                setTimeout(() => s.classList.remove('show'), 2000);
+            }
+
+            function fallbackCopy(text) {
+                const ta = document.createElement("textarea");
+                ta.value = text;
+                document.body.appendChild(ta);
+                ta.select();
                 document.execCommand('copy');
+                document.body.removeChild(ta);
                 showStatus();
-            } catch (err) {
-                alert('複製失敗，請長按文字區域手動複製。');
             }
-            document.body.removeChild(textArea);
-        }
+        })();
     </script>
-
 </body>
 </html>
