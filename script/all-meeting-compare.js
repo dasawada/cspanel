@@ -1,6 +1,10 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 import { ConflictChecker } from './ConflictChecker.js';
 
+let conflictCheckerInstance = null;
+let settingsButtonHandler = null;
+let modalCloseHandler = null;
+
 // 從 Google Sheets 中讀取數據
 async function getSheetData(sheetName) {
     const range = `${sheetName}!A:K`;
@@ -295,40 +299,67 @@ function formatDateToLocal(date) {
     return `${year}-${month}-${day}`;
 }
 
-// 當點擊按鈕時，顯示模態框並執行比對
-document.getElementById('settings-button').addEventListener('click', async function() {
-    const modal = document.getElementById('results-modal');
-    modal.style.display = "block";
-
-    // 清除之前的結果
-    document.getElementById('modal-meeting-results').innerHTML = '';
-
-    // 處理會議並檢查衝突
-    await processMeetingsAndCheckConflicts();
-});
-
-// 點擊 "x" 按鈕時關閉模態框
-document.querySelector('.close').addEventListener('click', function() {
-    const modal = document.getElementById('results-modal');
-    modal.style.display = "none";
-});
-
-// 點擊模態框外部時關閉
-window.onclick = function(event) {
-    const modal = document.getElementById('results-modal');
-    if (event.target === modal) {
-        modal.style.display = "none";
-    }
-};
-
-// 從 Google Sheets 中讀取數據
+// 從 Google Sheets 中讀取數據 (供 ConflictChecker 使用)
 export async function getAccountResultsFromSheet() {
     const meetingData = await getCombinedMeetingData();
     return allMeetingCompareProcessMeetingData(meetingData);
 }
 
-// 當頁面載入時，自動檢查會議衝突，並開始定時檢查
-window.addEventListener('DOMContentLoaded', async function() {
-    const conflictChecker = new ConflictChecker();
-    await conflictChecker.start();
-});
+// 初始化函數 - 供 mediator 呼叫
+export async function initAllMeetingCompare() {
+    // 初始化 ConflictChecker
+    conflictCheckerInstance = new ConflictChecker();
+    await conflictCheckerInstance.start();
+    
+    // 綁定 settings-button 事件
+    const settingsButton = document.getElementById('settings-button');
+    if (settingsButton) {
+        settingsButtonHandler = async function() {
+            const modal = document.getElementById('results-modal');
+            modal.style.display = "block";
+            document.getElementById('modal-meeting-results').innerHTML = '';
+            await processMeetingsAndCheckConflicts();
+        };
+        settingsButton.addEventListener('click', settingsButtonHandler);
+    }
+    
+    // 綁定 modal close 事件
+    const closeBtn = document.querySelector('.close');
+    if (closeBtn) {
+        modalCloseHandler = function() {
+            document.getElementById('results-modal').style.display = "none";
+        };
+        closeBtn.addEventListener('click', modalCloseHandler);
+    }
+    
+    console.log('AllMeetingCompare: 初始化完成 ✅');
+}
+
+// 清理函數 - 供 mediator 呼叫
+export function clearAllMeetingCompare() {
+    // 停止 ConflictChecker
+    if (conflictCheckerInstance) {
+        conflictCheckerInstance.stop(); // 需要在 ConflictChecker 加入 stop 方法
+        conflictCheckerInstance = null;
+    }
+    
+    // 移除事件監聽器
+    const settingsButton = document.getElementById('settings-button');
+    if (settingsButton && settingsButtonHandler) {
+        settingsButton.removeEventListener('click', settingsButtonHandler);
+        settingsButtonHandler = null;
+    }
+    
+    const closeBtn = document.querySelector('.close');
+    if (closeBtn && modalCloseHandler) {
+        closeBtn.removeEventListener('click', modalCloseHandler);
+        modalCloseHandler = null;
+    }
+    
+    // 隱藏 warning icon
+    if (settingsButton) {
+        settingsButton.style.display = 'none';
+    }
+    
+    console.log('AllMeetingCompare: 已清理 🧹');
+}

@@ -6,91 +6,145 @@ let upcomingMeetings = [];
 let waitingMeetings = [];
 let endedMeetings = [];
 
-// 移除原有的按鈕事件監聽器，改為頁面載入時自動執行
-document.addEventListener('DOMContentLoaded', async function() {
-    const now = new Date();
-    const taiwanOffset = 8 * 60;
-    const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
-    const currentDate = localTime.toISOString().split('T')[0];
-    const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
+// ===== 模組內部變數 =====
+let listModalBtnHandler = null;
+let refreshBtnHandler = null;
+let filterInputHandler = null;
 
-    await meetingsearchFetchMeetings(currentDate, currentTime, localTime);
-});
+// ===== 初始化函數 - 供 mediator 呼叫 =====
+export async function initMeetingNowPanel() {
+    // 綁定事件
+    bindMeetingNowEvents();
+    
+    // 執行初始查詢
+    await refreshMeetingPanel();
+    
+    console.log('MeetingNowPanel: 初始化完成 ✅');
+}
 
-// 修改清單圖示按鈕事件
-document.getElementById('zv-metting-list-modal-btn').addEventListener('click', async function() {
-    try {
-        const { startAt, endAt } = getTodayUTCTimeRange();
-
-        // 獲取所有課程
-        const [processingCourses, preparingCourses, overCourses] = await Promise.all([
-            fetchCourses('processing', startAt, endAt),
-            fetchCourses('preparing', startAt, endAt),
-            fetchCourses('over', startAt, endAt)
-        ]);
-
-        const allCourses = [...processingCourses, ...preparingCourses, ...overCourses];
-
-        // 格式化課程資訊
-        const formattedMeetings = allCourses
-            .map(course => {
-                const studentName = course.students?.[0]?.name;
-                if (!studentName) return null;
-                const startTime = new Date(course.startAt);
-                const formattedTime = startTime.toLocaleTimeString('zh-TW', {
-                    timeZone: 'Asia/Taipei',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                    hour12: false
-                });
-                return `${formattedTime} ${studentName}`;
-            })
-            .filter(Boolean) // 移除空值
-            .sort() // 按時間排序
-            .join('\n');
-
-        // 更新並顯示 Modal
-        const outputTextarea = document.getElementById('zv-metting-list-output');
-        outputTextarea.value = formattedMeetings;
-
-        // 顯示 Modal
-        document.getElementById('zv-metting-list-results-modal').style.display = 'block';
-    } catch (error) {
-        console.error('獲取會議列表失敗:', error);
+// ===== 清理函數 - 供 mediator 呼叫 =====
+export function clearMeetingNowPanel() {
+    // 移除事件監聽器
+    const listModalBtn = document.getElementById('zv-metting-list-modal-btn');
+    if (listModalBtn && listModalBtnHandler) {
+        listModalBtn.removeEventListener('click', listModalBtnHandler);
+        listModalBtnHandler = null;
     }
-});
-
-// 綁定刷新按鈕事件
-document.getElementById('meetingsearch-refresh-btn').addEventListener('click', async function() {
-    const now = new Date();
-    const taiwanOffset = 8 * 60;
-    const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
-    const currentDate = localTime.toISOString().split('T')[0];
-    const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
-
-    // 清空搜尋框
+    
+    const refreshBtn = document.getElementById('meetingsearch-refresh-btn');
+    if (refreshBtn && refreshBtnHandler) {
+        refreshBtn.removeEventListener('click', refreshBtnHandler);
+        refreshBtnHandler = null;
+    }
+    
     const filterInput = document.getElementById('meetingsearch-filter-input');
-    if (filterInput) filterInput.value = '';
+    if (filterInput && filterInputHandler) {
+        filterInput.removeEventListener('input', filterInputHandler);
+        filterInputHandler = null;
+    }
+    
+    // 清空結果區域
+    const resultDiv = document.getElementById('meetingsearch-result');
+    const errorDiv = document.getElementById('meetingsearch-error');
+    const accountResultsDiv = document.getElementById('meetingsearch-account-results');
+    if (resultDiv) resultDiv.innerHTML = '';
+    if (errorDiv) errorDiv.innerHTML = '';
+    if (accountResultsDiv) accountResultsDiv.innerHTML = '';
+    
+    // 清空會議分類數組
+    ongoingMeetings = [];
+    upcomingMeetings = [];
+    waitingMeetings = [];
+    endedMeetings = [];
+    
+    console.log('MeetingNowPanel: 已清理 🧹');
+}
 
-    // 重新撈取會議
-    await meetingsearchFetchMeetings(currentDate, currentTime, localTime);
-});
+// ===== 綁定事件 =====
+function bindMeetingNowEvents() {
+    // 清單圖示按鈕事件
+    const listModalBtn = document.getElementById('zv-metting-list-modal-btn');
+    if (listModalBtn) {
+        listModalBtnHandler = async function() {
+            try {
+                const { startAt, endAt } = getTodayUTCTimeRange();
 
-// 自動監聽輸入框的值，並根據輸入的值篩選會議
-document.getElementById('meetingsearch-filter-input').addEventListener('input', function() {
-    const filterText = document.getElementById('meetingsearch-filter-input').value.toLowerCase();
-    const now = new Date();
+                // 獲取所有課程
+                const [processingCourses, preparingCourses, overCourses] = await Promise.all([
+                    fetchCourses('processing', startAt, endAt),
+                    fetchCourses('preparing', startAt, endAt),
+                    fetchCourses('over', startAt, endAt)
+                ]);
 
-    // 將時間轉換為台灣時區
-    const taiwanOffset = 8 * 60; // 台灣時區的時差，單位為分鐘 (UTC+8)
-    const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000)); // 調整為台灣時間
+                const allCourses = [...processingCourses, ...preparingCourses, ...overCourses];
 
-    // 獲取台灣時區的日期和時間
-    const currentDate = localTime.toISOString().split('T')[0]; // 獲取當前日期 yyyy-mm-dd
-    const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5); // 獲取當前時間 hh:mm
+                // 格式化課程資訊
+                const formattedMeetings = allCourses
+                    .map(course => {
+                        const studentName = course.students?.[0]?.name;
+                        if (!studentName) return null;
+                        const startTime = new Date(course.startAt);
+                        const formattedTime = startTime.toLocaleTimeString('zh-TW', {
+                            timeZone: 'Asia/Taipei',
+                            hour: '2-digit',
+                            minute: '2-digit',
+                            hour12: false
+                        });
+                        return `${formattedTime} ${studentName}`;
+                    })
+                    .filter(Boolean)
+                    .sort()
+                    .join('\n');
 
-    meetingsearchFetchMeetings(currentDate, currentTime, localTime, filterText);
-});
+                // 更新並顯示 Modal
+                const outputTextarea = document.getElementById('zv-metting-list-output');
+                if (outputTextarea) outputTextarea.value = formattedMeetings;
+
+                // 顯示 Modal
+                const modal = document.getElementById('zv-metting-list-results-modal');
+                if (modal) modal.style.display = 'block';
+            } catch (error) {
+                console.error('獲取會議列表失敗:', error);
+            }
+        };
+        listModalBtn.addEventListener('click', listModalBtnHandler);
+    }
+
+    // 刷新按鈕事件
+    const refreshBtn = document.getElementById('meetingsearch-refresh-btn');
+    if (refreshBtn) {
+        refreshBtnHandler = async function() {
+            const now = new Date();
+            const taiwanOffset = 8 * 60;
+            const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
+            const currentDate = localTime.toISOString().split('T')[0];
+            const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
+
+            // 清空搜尋框
+            const filterInput = document.getElementById('meetingsearch-filter-input');
+            if (filterInput) filterInput.value = '';
+
+            // 重新撈取會議
+            await meetingsearchFetchMeetings(currentDate, currentTime, localTime);
+        };
+        refreshBtn.addEventListener('click', refreshBtnHandler);
+    }
+
+    // 自動監聽輸入框
+    const filterInput = document.getElementById('meetingsearch-filter-input');
+    if (filterInput) {
+        filterInputHandler = function() {
+            const filterText = this.value.toLowerCase();
+            const now = new Date();
+            const taiwanOffset = 8 * 60;
+            const localTime = new Date(now.getTime() + (taiwanOffset * 60 * 1000));
+            const currentDate = localTime.toISOString().split('T')[0];
+            const currentTime = localTime.toTimeString().split(' ')[0].slice(0, 5);
+            meetingsearchFetchMeetings(currentDate, currentTime, localTime, filterText);
+        };
+        filterInput.addEventListener('input', filterInputHandler);
+    }
+}
 
 // 更新時間解析函數，加入更嚴格的驗證
 function parseTime(input, currentDate) {

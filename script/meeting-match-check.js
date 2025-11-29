@@ -1,33 +1,67 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 
-document.getElementById('meeting-check-form').addEventListener('submit', function(event) {
-    event.preventDefault();
+let formEventHandler = null;
 
-    const meetingType = document.getElementById('meeting-type').value; // 修改為從下拉選單提取值
-
-    // 其他邏輯保持不變
-    const startDateInput = document.getElementById('meeting-check-date').value;
-    const endDateInput = document.getElementById('meeting-check-end-date').value;
-    const startTimeInput = document.getElementById('meeting-check-start-time').value;
-    const endTimeInput = document.getElementById('meeting-check-end-time').value;
-
-    if (!startDateInput || !endDateInput || !startTimeInput || !endTimeInput) {
-        document.getElementById('meeting-check-error').textContent = '請輸入有效的日期和時間範圍。';
-        return;
+// 初始化函數 - 供 mediator 呼叫
+export function initMeetingMatchCheck() {
+    const form = document.getElementById('meeting-check-form');
+    if (!form) return;
+    
+    // 移除舊的事件監聯（如有）
+    if (formEventHandler) {
+        form.removeEventListener('submit', formEventHandler);
     }
+    
+    // 定義並綁定新的事件處理器
+    formEventHandler = function(event) {
+        event.preventDefault();
 
-    const queryStartDate = new Date(startDateInput);
-    const queryEndDate = new Date(endDateInput);
-    const startTime = meetingCheckParseTime(startTimeInput);
-    const endTime = meetingCheckParseTime(endTimeInput);
+        const meetingType = document.getElementById('meeting-type').value; // 修改為從下拉選單提取值
 
-    if (queryStartDate > queryEndDate) {
-        document.getElementById('meeting-check-error').textContent = '開始日期不能晚於結束日期。';
-        return;
+        // 其他邏輯保持不變
+        const startDateInput = document.getElementById('meeting-check-date').value;
+        const endDateInput = document.getElementById('meeting-check-end-date').value;
+        const startTimeInput = document.getElementById('meeting-check-start-time').value;
+        const endTimeInput = document.getElementById('meeting-check-end-time').value;
+
+        if (!startDateInput || !endDateInput || !startTimeInput || !endTimeInput) {
+            document.getElementById('meeting-check-error').textContent = '請輸入有效的日期和時間範圍。';
+            return;
+        }
+
+        const queryStartDate = new Date(startDateInput);
+        const queryEndDate = new Date(endDateInput);
+        const startTime = meetingCheckParseTime(startTimeInput);
+        const endTime = meetingCheckParseTime(endTimeInput);
+
+        if (queryStartDate > queryEndDate) {
+            document.getElementById('meeting-check-error').textContent = '開始日期不能晚於結束日期。';
+            return;
+        }
+
+        checkMeetingRange(queryStartDate, queryEndDate, startTime, endTime, meetingType);
+    };
+    
+    form.addEventListener('submit', formEventHandler);
+    console.log('MeetingMatchCheck: 初始化完成 ✅');
+}
+
+// 清理函數 - 供 mediator 呼叫
+export function clearMeetingMatchCheck() {
+    const form = document.getElementById('meeting-check-form');
+    if (form && formEventHandler) {
+        form.removeEventListener('submit', formEventHandler);
+        formEventHandler = null;
     }
-
-    checkMeetingRange(queryStartDate, queryEndDate, startTime, endTime, meetingType);
-});
+    
+    // 清空結果區域
+    const resultDiv = document.getElementById('meeting-check-result');
+    const accountResultsDiv = document.getElementById('meeting-check-account-results');
+    if (resultDiv) resultDiv.innerHTML = '';
+    if (accountResultsDiv) accountResultsDiv.innerHTML = '';
+    
+    console.log('MeetingMatchCheck: 已清理 🧹');
+}
 
 function meetingCheckParseTime(input) {
     if (!input) {
@@ -352,84 +386,10 @@ function createCopyableAccountElement(accountid) {
     }
 
     const accountSpan = document.createElement('span');
-    accountSpan.textContent = accountid;  // 顯示帳號名稱
-    accountSpan.className = 'meeting-now-account-span';  // 使用該 class
+    accountSpan.textContent = accountid;
+    accountSpan.className = 'meeting-now-account-span';
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray';  // 初始顏色設置為灰色
+    accountSpan.style.color = 'gray';
 
-    return accountSpan; // 不顯示 Email，只返回帳號元素
+    return accountSpan;
 }
-
-// 使用事件委託處理所有點擊事件
-document.getElementById('meeting-check-account-results').addEventListener('click', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-now-account-span'); // 確保使用的是 .meeting-now-account-span
-
-    if (targetAccountSpan) {
-        const accountName = targetAccountSpan.textContent.trim(); // 獲取點擊的帳號名稱
-        const email = accountEmailMap[accountName]; // 根據帳號名稱查找對應的 Email
-
-        if (email) {
-            // 處理點擊帳號的複製事件
-            navigator.clipboard.writeText(email)
-            .then(function() {
-                const originalColor = targetAccountSpan.style.color;
-                targetAccountSpan.style.color = 'green'; // 複製後變綠色
-                setTimeout(function() {
-                    targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
-                }, 1000);
-                console.log(`已複製: ${email}`); // 打印複製的 Email
-            })
-            .catch(function(error) {
-                console.error('複製失敗', error);
-                targetAccountSpan.style.color = 'red'; // 複製失敗變紅色
-                setTimeout(function() {
-                    targetAccountSpan.style.color = 'gray'; // 1秒後恢復原顏色
-                }, 1000);
-            });
-        } else {
-            console.error('無法找到對應的 Email');
-        }
-    }
-});
-
-// 懸停變色效果
-document.getElementById('meeting-check-account-results').addEventListener('mouseover', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-now-account-span');
-    if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'blue';
-    }
-});
-
-// 移開時恢復顏色
-document.getElementById('meeting-check-account-results').addEventListener('mouseout', function(event) {
-    const targetAccountSpan = event.target.closest('.meeting-now-account-span');
-    if (targetAccountSpan) {
-        targetAccountSpan.style.color = 'gray';
-    }
-});
-
-document.querySelectorAll('.meeting-check-info').forEach(function(infoDiv) {
-    infoDiv.addEventListener('click', function() {
-        // 移除其他元素的 "selected" 類
-        document.querySelectorAll('.meeting-check-info').forEach(function(div) {
-            div.classList.remove('selected');
-        });
-        // 為當前選取的元素增加 "selected" 類
-        infoDiv.classList.add('selected');
-    });
-});
-
-// 帳號與 Email 的對應關係
-const accountEmailMap = {
-    "Zoom 01": "oneclasszoomit01@gmail.com",
-    "Zoom 02": "oneclasszoomit02@gmail.com",
-    "Zoom 03": "oneclasszoomit03@gmail.com",
-    "Zoom 04": "oneclasszoomit04@oneclass.tw",
-    "VooV 05": "oneclassservice05@gmail.com",
-    "VooV 06": "oneclassservice06@gmail.com",
-    "VooV it01": "oneclassit01@gmail.com",
-    "VooV 客服用": "service@oneclass.tw",
-    "VooV 客服用01": "service01@oneclass.tw",
-    "VooV 客服用02": "service02@oneclass.tw",
-    "VooV 客服用03": "service03@oneclass.tw"
-};

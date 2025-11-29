@@ -90,4 +90,13 @@ export class ConflictChecker {
         }
         return false;
     }
+
+    stop() {
+        if (this.checkTimer) {
+            clearTimeout(this.checkTimer);
+            this.checkTimer = null;
+        }
+        // 清除 visibilitychange 事件（需要保存 handler 參考）
+        console.log('ConflictChecker: 已停止');
+    }
 }

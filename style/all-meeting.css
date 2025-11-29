@@ -28,7 +28,7 @@
     position: relative;
     top: -35px;
     left: 1px;
-	width: calc(auto- 5px);
+	width: 99%;
     background-color: #fff;
     border: 1px solid #ddd;
     border-radius: 0 0 10px 10px;

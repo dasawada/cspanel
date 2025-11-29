@@ -1,4 +1,16 @@
-import { makeDraggable } from './draggable.js'; // ← 修正路徑
+import { makeDraggable } from './draggable.js';
+
+// ===== 認證檢查工具函數 =====
+async function checkAuthBeforeAction() {
+  if (typeof window.verifyFireworkAuth === 'function') {
+    const isValid = await window.verifyFireworkAuth();
+    if (!isValid) {
+      console.log('⛔ [CannedPanel] 帳號已失效，操作被阻止');
+      return false;
+    }
+  }
+  return true;
+}
 
 // ===== 1. CSS 動態插入 =====
 const PANEL_CSS = `
@@ -196,6 +208,9 @@ const defaultTexts = {
 3、`
 };
 
+// ===== 面板實例管理 =====
+let cannedPanelInstance = null;
+
 // ===== 3. 主函數 =====
 export function createCannedMessagesPanel(options = {}) {
   injectStyle();
@@ -210,7 +225,7 @@ export function createCannedMessagesPanel(options = {}) {
     <div class="canned-panel-handle">代課罐頭生成器</div>
     <div style="padding:0px 10px 10px 10px">
       <div class="canned-panel-search-bar">
-          <input type="text" class="canned-panel-search-input" placeholder="輸入課程ID" />
+          <input type="text" class="canned-panel-search-input" placeholder="輸入課程ID" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" />
           <span class="canned-panel-search-spinner" id="canned-panel-search-spinner" style="display:none"></span>
           <span class="canned-panel-clear-btn"></span>
       </div>
@@ -264,11 +279,14 @@ export function createCannedMessagesPanel(options = {}) {
   // ===== 3.2. 狀態管理 =====
   let apiTexts = Object.assign({}, defaultTexts);
 
-  // ===== 3.3. Tab 切換 =====
+  // ===== 3.3. Tab 切換（加入認證檢查）=====
   const tabMenuLis = panel.querySelectorAll('.canned-panel-tab-menu li');
   const tabItems = panel.querySelectorAll('.canned-panel-tab-item');
   tabMenuLis.forEach(li => {
-    li.addEventListener('click', function() {
+    li.addEventListener('click', async function() {
+      // 認證檢查
+      if (!(await checkAuthBeforeAction())) return;
+      
       tabMenuLis.forEach(item => item.classList.remove('active'));
       tabItems.forEach(item => item.classList.remove('active'));
       this.classList.add('active');
@@ -276,9 +294,12 @@ export function createCannedMessagesPanel(options = {}) {
     });
   });
 
-  // ===== 3.4. 複製/還原功能 =====
+  // ===== 3.4. 複製/還原功能（加入認證檢查）=====
   panel.querySelectorAll('button[data-copy]').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', async function() {
+      // 認證檢查
+      if (!(await checkAuthBeforeAction())) return;
+      
       const tab = btn.getAttribute('data-copy');
       const textarea = panel.querySelector(`#${panelId}-${tab} textarea`);
       textarea.removeAttribute('disabled');
@@ -295,7 +316,10 @@ export function createCannedMessagesPanel(options = {}) {
     });
   });
   panel.querySelectorAll('button[data-restore]').forEach(btn => {
-    btn.addEventListener('click', function() {
+    btn.addEventListener('click', async function() {
+      // 認證檢查
+      if (!(await checkAuthBeforeAction())) return;
+      
       const tab = btn.getAttribute('data-restore');
       const textarea = panel.querySelector(`#${panelId}-${tab} textarea`);
       textarea.value = apiTexts[tab] || defaultTexts[tab];
@@ -355,10 +379,12 @@ export function createCannedMessagesPanel(options = {}) {
   // 工具函數保持不變
   function debounce(func, delay) {
     let timeoutId;
-    return function (...args) {
+    const debouncedFn = function (...args) {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(() => func.apply(this, args), delay);
     };
+    debouncedFn.cancel = () => clearTimeout(timeoutId);
+    return debouncedFn;
   }
 
   function isValidCourseIdFormat(text) {
@@ -397,8 +423,11 @@ export function createCannedMessagesPanel(options = {}) {
     return `${formattedStart} - ${formattedEnd}`;
   }
 
-  // 查詢入口（統一）
-  function dispatchSearchIfValid() {
+  // 查詢入口（統一）- 加入認證檢查
+  async function dispatchSearchIfValid() {
+    // 認證檢查
+    if (!(await checkAuthBeforeAction())) return;
+    
     const q = searchInput.value.trim();
     if (!isValidCourseIdFormat(q)) return;
 
@@ -584,9 +613,8 @@ export function createCannedMessagesPanel(options = {}) {
     // 預設所有 tab 內容
     apiTexts = Object.assign({}, defaultTexts);
 
-    // 首課特殊處理（完全保留）
+    // 首課特殊處理
     if (teacherLeave && isFirstCourse) {
-      // ... 完全保留原有的首課處理邏輯 ...
       ['tab1', 'tab2', 'tab3'].forEach(tab => {
         const tabMenuItem = panel.querySelector(`.canned-panel-tab-menu li[data-tab="${tab}"]`);
         const tabContent = panel.querySelector(`#${panelId}-${tab}`);
@@ -604,7 +632,6 @@ export function createCannedMessagesPanel(options = {}) {
       
       panel.querySelector(`#${panelId}-tab4`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning" style="font-weight: bold;">此堂為首課，老師請假先不通知家長，<br>請於LINE主表登記通報🥸</p>');
       
-      // 取得輔導老師名字（保留原邏輯）
       let tutorNameWithoutSurname = '';
       if (parentData.tutor && typeof parentData.tutor.name === 'string') {
         const name = parentData.tutor.name.trim();
@@ -612,7 +639,6 @@ export function createCannedMessagesPanel(options = {}) {
         tutorNameWithoutSurname = tutorNameWithoutSurname.trim();
       }
 
-      // 取得組別（保留原邏輯）
       let groupName = '';
       if (parentData.tutor && typeof parentData.tutor.name === 'string') {
         const name = parentData.tutor.name.trim();
@@ -621,7 +647,6 @@ export function createCannedMessagesPanel(options = {}) {
         groupName = tutorToGroupMap[tutorNameWithoutSurname] || tutorToGroupMap[name] || '';
       }
 
-      // 取得時間資訊（保留原邏輯）
       const date = new Date(courseData.startAt);
       const mmdd = `${date.getMonth() + 1}`.padStart(2, '0') + '/' + `${date.getDate()}`.padStart(2, '0');
       const startTime = date.toLocaleTimeString('zh-TW', {
@@ -638,16 +663,14 @@ export function createCannedMessagesPanel(options = {}) {
       });
       const mmddTime = `【${mmdd}】 ${startTime} - ${endTime}`;
 
-      // 台灣時區日期
       const localDate = new Date();
       const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
-      // 首課專用格式
       apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE\tFALSE\t老師假單`;
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
       
-      return; // 首課處理完畢，直接返回
+      return;
     }
 
     // 恢復所有tab顯示（非首課時）
@@ -656,7 +679,7 @@ export function createCannedMessagesPanel(options = {}) {
       if (tabMenuItem) tabMenuItem.style.display = 'block';
     });
 
-    // 1. 老師沒請假（完全保留原邏輯）
+    // 1. 老師沒請假
     if (!teacherLeave) {
       apiTexts.tab1 = `親愛的家長您好：
 
@@ -709,7 +732,7 @@ export function createCannedMessagesPanel(options = {}) {
         panel.querySelector(`#${panelId}-${tab}`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">課程未請假</p>');
       });
     }
-    // 2. 老師有請假（完全保留原邏輯）
+    // 2. 老師有請假
     else {
       if (isNongXiao) {
         apiTexts.tab2 = `親愛的家長您好：
@@ -726,7 +749,6 @@ export function createCannedMessagesPanel(options = {}) {
           panel.querySelector(`#${panelId}-${tab}`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">國小自然實作要順延哦🥑</p>');
         });
       } else {
-        // 非自然實作（完全保留原邏輯）
         apiTexts.tab2 = `親愛的家長您好：
     以下課程老師因故無法授課，課程將取消，
     如需安排代課，請您聯繫輔導老師為您服務，
@@ -749,7 +771,6 @@ export function createCannedMessagesPanel(options = {}) {
           panel.querySelector(`#${panelId}-${tab}`).insertAdjacentHTML('afterbegin', '<p class="canned-panel-warning">請注意：本課程老師已請假</p>');
         });
 
-        // 查詢準備中課程（保留完整原邏輯，但加入 signal）
         const startAt = courseData.startAt;
         const endAt = courseData.endAt;
         const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
@@ -794,13 +815,15 @@ export function createCannedMessagesPanel(options = {}) {
           }
 
           if (preparingJson && preparingJson.status === 'success' && total === 0) {
-            // 無課，顯示「複製搶課」按鈕
             ['tab1', 'tab4'].forEach(tab => {
               const warning = panel.querySelector(`#${panelId}-${tab} .canned-panel-warning`);
               if (warning && !panel.querySelector(`#${panelId}-${tab}-copy-preparing`)) {
                 warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-${tab}-copy-preparing" style="margin-left:8px;padding:2px 8px;font-size:12px;cursor:pointer;">複製搶課</button>`);
                 const copyBtn = panel.querySelector(`#${panelId}-${tab}-copy-preparing`);
-                copyBtn.addEventListener('click', () => {
+                // 複製搶課按鈕也加入認證檢查
+                copyBtn.addEventListener('click', async () => {
+                  if (!(await checkAuthBeforeAction())) return;
+                  
                   const url = `https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseData.id}`;
                   navigator.clipboard.writeText(url).then(() => {
                     copyBtn.textContent = '已複製';
@@ -814,7 +837,6 @@ export function createCannedMessagesPanel(options = {}) {
               }
             });
           } else if (preparingJson && preparingJson.status === 'success' && total > 0) {
-            // 有課，紅字提示
             ['tab1', 'tab4'].forEach(tab => {
               let warning = panel.querySelector(`#${panelId}-${tab} .canned-panel-warning`);
               if (warning && !warning.textContent.includes('請輸入最新代課網址')) {
@@ -840,7 +862,7 @@ export function createCannedMessagesPanel(options = {}) {
   const debouncedDispatch = debounce(dispatchSearchIfValid, 300);
 
   // 替換原有的 input 事件處理
-  searchInput.addEventListener('input', () => {
+  searchInput.addEventListener('input', async () => {
     const currentValue = searchInput.value.trim();
     clearBtn.style.display = currentValue ? 'block' : 'none';
     
@@ -867,7 +889,7 @@ export function createCannedMessagesPanel(options = {}) {
 
   // 替換原有的 paste 事件處理
   searchInput.addEventListener('paste', () => {
-    setTimeout(() => {
+    setTimeout(async () => {
       const pastedValue = searchInput.value.trim();
       clearBtn.style.display = pastedValue ? 'block' : 'none';
       
@@ -879,7 +901,7 @@ export function createCannedMessagesPanel(options = {}) {
   });
 
   // 替換原有的 keyup 事件處理
-  searchInput.addEventListener('keydown', (e) => {
+  searchInput.addEventListener('keydown', async (e) => {
     if (!e.isComposing && e.key === 'Enter') {
       e.preventDefault();
       debouncedDispatch.cancel?.();
@@ -887,8 +909,9 @@ export function createCannedMessagesPanel(options = {}) {
     }
   });
 
-  // 替換原有的 clear 事件處理
-  clearBtn.addEventListener('click', () => {
+  // 替換原有的 clear 事件處理（加入認證檢查）
+  clearBtn.addEventListener('click', async () => {
+    // 清除操作不需要認證檢查，因為這是重置操作
     searchInput.value = '';
     clearBtn.style.display = 'none';
     latestQuery = '';
@@ -916,25 +939,69 @@ export function createCannedMessagesPanel(options = {}) {
   // ===== 3.7. 拖曳功能（改用 makeDraggable） =====
   const dragHandle = panel.querySelector('.canned-panel-handle');
   makeDraggable(panel, dragHandle, {
-    // 在此設定此面板的預設值
     left: 1300,
     top: 75,
-    color: '#a2c6de', // 您也可以在這裡設定預設顏色
-    // 使用展開語法，將外部傳入的 options 覆盖並擴充預設值
-    // 這樣 panel_all.html 中的 left, top, disableBoundary, width, height 等設定都能生效
+    color: '#a2c6de',
     ...options
   });
 
-  // ===== 3.8. 監聽登入/登出事件 =====
-  window.addEventListener('firework-login-success', () => {
-    panel.style.display = 'block';
-  });
-  window.addEventListener('firework-logout-success', () => {
-    panel.style.display = 'none';
-  });
+  // ===== 3.8. 不再自行監聽登入/登出事件，改由 mediator 管理 =====
+  // 移除原有的事件監聽器
 
-  // ===== 3.9. 回傳面板節點 =====
+  // ===== 3.9. 儲存面板實例並回傳 =====
+  cannedPanelInstance = panel;
   return panel;
+}
+
+// ===== 供 mediator 使用的 init/clear 函數 =====
+export function initCannedMessagesPanel(containerId, options = {}) {
+  // 檢查是否已存在
+  if (cannedPanelInstance && document.body.contains(cannedPanelInstance)) {
+    cannedPanelInstance.style.display = 'block';
+    console.log('CannedMessagesPanel 已顯示 ✅');
+    return cannedPanelInstance;
+  }
+  
+  const container = containerId ? document.getElementById(containerId) : null;
+  
+  const panel = createCannedMessagesPanel({
+    container: container ? `#${containerId}` : null,
+    ...options
+  });
+  
+  panel.style.display = 'block';
+  console.log('CannedMessagesPanel 已初始化 ✅');
+  return panel;
+}
+
+export function clearCannedMessagesPanel() {
+  if (cannedPanelInstance) {
+    // 隱藏面板
+    cannedPanelInstance.style.display = 'none';
+    
+    // 清空搜尋欄位和結果
+    const searchInput = cannedPanelInstance.querySelector('.canned-panel-search-input');
+    const courseResultDiv = cannedPanelInstance.querySelector('.canned-panel-course-result');
+    const clearBtn = cannedPanelInstance.querySelector('.canned-panel-clear-btn');
+    
+    if (searchInput) searchInput.value = '';
+    if (courseResultDiv) courseResultDiv.innerHTML = '';
+    if (clearBtn) clearBtn.style.display = 'none';
+    
+    // 重置所有 textarea 為預設值
+    ['tab1', 'tab2', 'tab3', 'tab4'].forEach(tab => {
+      const textarea = cannedPanelInstance.querySelector(`#canned-panel-main-${tab} textarea`);
+      if (textarea) textarea.value = defaultTexts[tab];
+      
+      // 清除警告和按鈕
+      const warning = cannedPanelInstance.querySelector(`#canned-panel-main-${tab} .canned-panel-warning`);
+      if (warning) warning.remove();
+      const copyBtn = cannedPanelInstance.querySelector(`#canned-panel-main-${tab}-copy-preparing`);
+      if (copyBtn) copyBtn.remove();
+    });
+    
+    console.log('CannedMessagesPanel 已清理 🧹');
+  }
 }
 
 // 取得精簡課程資訊 (依賴既有 fetchCompleteClassInfo / formatCustomDateRange)
@@ -997,7 +1064,7 @@ async function getMinimalCourseInfo({ courseId }) {
   }
 }
 
-// ===== 在檔案開頭新增 Token 管理工具 =====
+// ===== Token 管理工具 =====
 class TokenManager {
     async getValidToken() {
         if (!window.firebase?.auth) {
@@ -1010,7 +1077,6 @@ class TokenManager {
         }
 
         try {
-            // false = 使用緩存,除非過期
             return await user.getIdToken(false);
         } catch (error) {
             console.error('Token 取得失敗,嘗試強制更新:', error);
@@ -1031,7 +1097,6 @@ class TokenManager {
                 }
             });
 
-            // 401 錯誤且不是最後一次重試
             if (response.status === 401 && attempt < retries - 1) {
                 console.log('Token 可能過期,嘗試更新...');
                 const newToken = await window.firebase.auth().currentUser.getIdToken(true);
@@ -1039,7 +1104,6 @@ class TokenManager {
                 return makeRequest(newToken, attempt + 1);
             }
 
-            // 500 錯誤重試
             if (response.status === 500 && attempt < retries - 1) {
                 await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
                 return makeRequest(currentToken, attempt + 1);

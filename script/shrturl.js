@@ -1,109 +1,61 @@
-// 短網址生成 (同時生成 is.gd 和 reurl.cc)
-function ShrtURL_generateShortUrls() {
-    const longUrl = document.getElementById('ShrtURL_longUrl').value;
+// ===== HTML 模板 =====
+const shrtUrlPanelHTML = `
+<div class="linkout">
+    <div class="input-container">
+        <input type="text" id="ShrtURL_longUrl" placeholder="輸入網址">
+        <button id="ShrtURL_shortenButton" disabled>製作短網址</button>
+    </div>
+    <div id="ShrtURL_isGdContainer">
+        <input type="text" id="ShrtURL_isGdOutput" placeholder="此處將顯示【is.gd】短網址" readonly>
+        <div style="width:85px">
+            <button id="ShrtURL_isGdCopyButton">複製</button>
+        </div>
+    </div>
 
-    // 如果未輸入網址，直接結束函數
-    if (!longUrl) return;
+    <div id="ShrtURL_reurlContainer">
+        <input type="text" id="ShrtURL_reurlOutput" placeholder="此處將顯示【reurl.cc】短網址" readonly>
+        <div style="width:85px">
+            <button id="ShrtURL_reurlCopyButton">複製</button>
+        </div>
+    </div>
 
-    // 呼叫 is.gd 短網址 API
-    ShrtURL_shortenIsGd(longUrl);
+    <div id="ShrtURL_clearButton">
+        <i class="fas fa-trash"></i>
+    </div>
+</div>
+`;
 
-    // 呼叫 reurl.cc 短網址 API
-    ShrtURL_shortenReurl(longUrl);
+// ===== 初始化函數 =====
+export function initShrtUrlPanel(containerId = 'shrturl-placeholder') {
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`initShrtUrlPanel: 找不到容器 #${containerId}`);
+        return;
+    }
+
+    // 注入 HTML
+    container.innerHTML = shrtUrlPanelHTML;
+
+    // 綁定事件
+    bindShrtUrlEvents();
+
+    // 初始化按鈕狀態
+    ShrtURL_checkInputValue();
+
+    console.log('✅ ShrtUrlPanel 已初始化');
 }
 
-
-// 呼叫 is.gd 短網址 API
-function ShrtURL_shortenIsGd(longUrl) {
-    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
-
-    fetch(apiUrl)
-        .then(response => response.json())
-        .then(data => {
-            const outputField = document.getElementById('ShrtURL_isGdOutput');
-            if (data.shorturl) {
-                outputField.value = data.shorturl;
-                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', true);
-            } else {
-                outputField.value = 'is.gd 短網址生成失敗';
-                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            const outputField = document.getElementById('ShrtURL_isGdOutput');
-            outputField.value = 'is.gd 短網址生成失敗';
-            ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
-        });
+// ===== 清除面板函數 (登出時呼叫) =====
+export function clearShrtUrlPanel(containerId = 'shrturl-placeholder') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
+    }
+    console.log('🧹 ShrtUrlPanel 已清除');
 }
 
-// 呼叫 reurl.cc 短網址 API
-function ShrtURL_shortenReurl(longUrl) {
-    const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/shorten';
-
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: longUrl }),
-    })
-        .then(response => response.json())
-        .then(data => {
-            const outputField = document.getElementById('ShrtURL_reurlOutput');
-            if (data.res === 'success') {
-                outputField.value = data.short_url;
-                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', true);
-            } else {
-                outputField.value = 'reurl.cc 短網址生成失敗';
-                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            const outputField = document.getElementById('ShrtURL_reurlOutput');
-            outputField.value = 'reurl.cc 短網址生成失敗';
-            ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
-        });
-}
-
-// 動態切換複製按鈕的顯示
-function ShrtURL_toggleCopyButton(buttonId, isVisible) {
-    const button = document.getElementById(buttonId);
-    button.style.visibility = isVisible ? 'visible' : 'hidden';
-}
-
-// 檢查輸入值並動態控制生成按鈕和複製按鈕
-function ShrtURL_checkInputValue() {
-    const longUrl = document.getElementById('ShrtURL_longUrl').value.trim();
-    const shortenButton = document.getElementById('ShrtURL_shortenButton');
-
-    // 控制生成按鈕的狀態
-    shortenButton.disabled = longUrl === '';
-
-    // 如果輸出框無值，隱藏複製按鈕
-    ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', !!document.getElementById('ShrtURL_isGdOutput').value.trim());
-    ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', !!document.getElementById('ShrtURL_reurlOutput').value.trim());
-}
-
-// 複製短網址到剪貼板
-function ShrtURL_copyUrl(outputId) {
-    const outputElement = document.getElementById(outputId);
-    const buttonId = outputId === 'ShrtURL_isGdOutput' ? 'ShrtURL_isGdCopyButton' : 'ShrtURL_reurlCopyButton';
-    const copyButton = document.getElementById(buttonId);
-
-    outputElement.select();
-    document.execCommand('copy');
-
-    // 切換按鈕文字為「已複製」
-    copyButton.textContent = '已複製';
-
-    // 2 秒後還原按鈕文字
-    setTimeout(() => {
-        copyButton.textContent = '複製';
-    }, 2000);
-}
-
-// 綁定 input 事件，當輸入框內容變動時觸發檢查
-document.addEventListener("DOMContentLoaded", () => {
+// ===== 綁定事件 =====
+function bindShrtUrlEvents() {
     // 綁定輸入框 input 事件
     const inputField = document.getElementById("ShrtURL_longUrl");
     if (inputField) {
@@ -132,15 +84,136 @@ document.addEventListener("DOMContentLoaded", () => {
     if (clearButton) {
         clearButton.addEventListener("click", ShrtURL_clearInputs);
     }
-});
+}
 
+// ===== 短網址生成 (同時生成 is.gd 和 reurl.cc) =====
+function ShrtURL_generateShortUrls() {
+    const longUrl = document.getElementById('ShrtURL_longUrl').value;
 
-// 清除所有輸入和輸出欄位
+    // 如果未輸入網址，直接結束函數
+    if (!longUrl) return;
+
+    // 呼叫 is.gd 短網址 API
+    ShrtURL_shortenIsGd(longUrl);
+
+    // 呼叫 reurl.cc 短網址 API
+    ShrtURL_shortenReurl(longUrl);
+}
+
+// ===== 呼叫 is.gd 短網址 API =====
+function ShrtURL_shortenIsGd(longUrl) {
+    const apiUrl = `https://is.gd/create.php?format=json&url=${encodeURIComponent(longUrl)}`;
+
+    fetch(apiUrl)
+        .then(response => response.json())
+        .then(data => {
+            const outputField = document.getElementById('ShrtURL_isGdOutput');
+            if (data.shorturl) {
+                outputField.value = data.shorturl;
+                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', true);
+            } else {
+                outputField.value = 'is.gd 短網址生成失敗';
+                ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const outputField = document.getElementById('ShrtURL_isGdOutput');
+            outputField.value = 'is.gd 短網址生成失敗';
+            ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
+        });
+}
+
+// ===== 呼叫 reurl.cc 短網址 API =====
+function ShrtURL_shortenReurl(longUrl) {
+    const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/shorten';
+
+    fetch(apiUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: longUrl }),
+    })
+        .then(response => response.json())
+        .then(data => {
+            const outputField = document.getElementById('ShrtURL_reurlOutput');
+            if (data.res === 'success') {
+                outputField.value = data.short_url;
+                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', true);
+            } else {
+                outputField.value = 'reurl.cc 短網址生成失敗';
+                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            const outputField = document.getElementById('ShrtURL_reurlOutput');
+            outputField.value = 'reurl.cc 短網址生成失敗';
+            ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
+        });
+}
+
+// ===== 動態切換複製按鈕的顯示 =====
+function ShrtURL_toggleCopyButton(buttonId, isVisible) {
+    const button = document.getElementById(buttonId);
+    if (button) {
+        button.style.visibility = isVisible ? 'visible' : 'hidden';
+    }
+}
+
+// ===== 檢查輸入值並動態控制生成按鈕和複製按鈕 =====
+function ShrtURL_checkInputValue() {
+    const longUrlInput = document.getElementById('ShrtURL_longUrl');
+    const shortenButton = document.getElementById('ShrtURL_shortenButton');
+
+    if (!longUrlInput || !shortenButton) return;
+
+    const longUrl = longUrlInput.value.trim();
+
+    // 控制生成按鈕的狀態
+    shortenButton.disabled = longUrl === '';
+
+    // 如果輸出框無值，隱藏複製按鈕
+    const isGdOutput = document.getElementById('ShrtURL_isGdOutput');
+    const reurlOutput = document.getElementById('ShrtURL_reurlOutput');
+    
+    if (isGdOutput) {
+        ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', !!isGdOutput.value.trim());
+    }
+    if (reurlOutput) {
+        ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', !!reurlOutput.value.trim());
+    }
+}
+
+// ===== 複製短網址到剪貼板 =====
+function ShrtURL_copyUrl(outputId) {
+    const outputElement = document.getElementById(outputId);
+    const buttonId = outputId === 'ShrtURL_isGdOutput' ? 'ShrtURL_isGdCopyButton' : 'ShrtURL_reurlCopyButton';
+    const copyButton = document.getElementById(buttonId);
+
+    if (!outputElement || !copyButton) return;
+
+    outputElement.select();
+    document.execCommand('copy');
+
+    // 切換按鈕文字為「已複製」
+    copyButton.textContent = '已複製';
+
+    // 2 秒後還原按鈕文字
+    setTimeout(() => {
+        copyButton.textContent = '複製';
+    }, 2000);
+}
+
+// ===== 清除所有輸入和輸出欄位 =====
 function ShrtURL_clearInputs() {
+    const longUrlInput = document.getElementById('ShrtURL_longUrl');
+    const isGdOutput = document.getElementById('ShrtURL_isGdOutput');
+    const reurlOutput = document.getElementById('ShrtURL_reurlOutput');
+
     // 清空輸入框和輸出框
-    document.getElementById('ShrtURL_longUrl').value = '';
-    document.getElementById('ShrtURL_isGdOutput').value = '';
-    document.getElementById('ShrtURL_reurlOutput').value = '';
+    if (longUrlInput) longUrlInput.value = '';
+    if (isGdOutput) isGdOutput.value = '';
+    if (reurlOutput) reurlOutput.value = '';
 
     // 隱藏複製按鈕
     ShrtURL_toggleCopyButton('ShrtURL_isGdCopyButton', false);
@@ -158,6 +231,3 @@ function ShrtURL_clearInputs() {
     // 更新按鈕狀態
     ShrtURL_checkInputValue();
 }
-
-// 初始化檢查按鈕狀態
-document.addEventListener('DOMContentLoaded', ShrtURL_checkInputValue);
