@@ -1,16 +1,7 @@
 import { makeDraggable } from './draggable.js';
 
-// ===== 認證檢查工具函數 =====
-async function checkAuthBeforeAction() {
-  if (typeof window.verifyFireworkAuth === 'function') {
-    const isValid = await window.verifyFireworkAuth();
-    if (!isValid) {
-      console.log('⛔ [CannedPanel] 帳號已失效，操作被阻止');
-      return false;
-    }
-  }
-  return true;
-}
+// ===== 移除 checkAuthBeforeAction 函數 =====
+// 驗證已由 API 層的 TokenManager 處理，前端不需要重複檢查
 
 // ===== 1. CSS 動態插入 =====
 const PANEL_CSS = `
@@ -279,14 +270,12 @@ export function createCannedMessagesPanel(options = {}) {
   // ===== 3.2. 狀態管理 =====
   let apiTexts = Object.assign({}, defaultTexts);
 
-  // ===== 3.3. Tab 切換（加入認證檢查）=====
+  // ===== 3.3. Tab 切換 =====
   const tabMenuLis = panel.querySelectorAll('.canned-panel-tab-menu li');
   const tabItems = panel.querySelectorAll('.canned-panel-tab-item');
   tabMenuLis.forEach(li => {
-    li.addEventListener('click', async function() {
-      // 認證檢查
-      if (!(await checkAuthBeforeAction())) return;
-      
+    li.addEventListener('click', function() {
+      // 移除認證檢查 - 純 UI 操作不需要
       tabMenuLis.forEach(item => item.classList.remove('active'));
       tabItems.forEach(item => item.classList.remove('active'));
       this.classList.add('active');
@@ -294,12 +283,10 @@ export function createCannedMessagesPanel(options = {}) {
     });
   });
 
-  // ===== 3.4. 複製/還原功能（加入認證檢查）=====
+  // ===== 3.4. 複製/還原功能 =====
   panel.querySelectorAll('button[data-copy]').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      // 認證檢查
-      if (!(await checkAuthBeforeAction())) return;
-      
+    btn.addEventListener('click', function() {
+      // 移除認證檢查 - 純本地剪貼簿操作
       const tab = btn.getAttribute('data-copy');
       const textarea = panel.querySelector(`#${panelId}-${tab} textarea`);
       textarea.removeAttribute('disabled');
@@ -316,10 +303,8 @@ export function createCannedMessagesPanel(options = {}) {
     });
   });
   panel.querySelectorAll('button[data-restore]').forEach(btn => {
-    btn.addEventListener('click', async function() {
-      // 認證檢查
-      if (!(await checkAuthBeforeAction())) return;
-      
+    btn.addEventListener('click', function() {
+      // 移除認證檢查 - 純本地還原操作
       const tab = btn.getAttribute('data-restore');
       const textarea = panel.querySelector(`#${panelId}-${tab} textarea`);
       textarea.value = apiTexts[tab] || defaultTexts[tab];
@@ -423,10 +408,9 @@ export function createCannedMessagesPanel(options = {}) {
     return `${formattedStart} - ${formattedEnd}`;
   }
 
-  // 查詢入口（統一）- 加入認證檢查
+  // 查詢入口（統一）- 移除前端認證檢查，API 層已處理
   async function dispatchSearchIfValid() {
-    // 認證檢查
-    if (!(await checkAuthBeforeAction())) return;
+    // 移除 checkAuthBeforeAction - API 透過 TokenManager 處理驗證
     
     const q = searchInput.value.trim();
     if (!isValidCourseIdFormat(q)) return;
@@ -820,10 +804,7 @@ export function createCannedMessagesPanel(options = {}) {
               if (warning && !panel.querySelector(`#${panelId}-${tab}-copy-preparing`)) {
                 warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-${tab}-copy-preparing" style="margin-left:8px;padding:2px 8px;font-size:12px;cursor:pointer;">複製搶課</button>`);
                 const copyBtn = panel.querySelector(`#${panelId}-${tab}-copy-preparing`);
-                // 複製搶課按鈕也加入認證檢查
-                copyBtn.addEventListener('click', async () => {
-                  if (!(await checkAuthBeforeAction())) return;
-                  
+                copyBtn.addEventListener('click', () => {
                   const url = `https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseData.id}`;
                   navigator.clipboard.writeText(url).then(() => {
                     copyBtn.textContent = '已複製';

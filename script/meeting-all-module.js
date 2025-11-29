@@ -8,19 +8,6 @@ const dayMapping = {
     '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '日': 7
 };
 
-// ===== 身分驗證輔助函數 =====
-async function verifyAuthAndLogoutIfInvalid() {
-    if (typeof window.verifyFireworkAuth === 'function') {
-        const isValid = await window.verifyFireworkAuth();
-        if (!isValid) {
-            console.log('⛔ [MeetingAll] 身分無效，強制登出');
-            // verifyFireworkAuth 內部已經會觸發 firework-force-logout
-            return false;
-        }
-    }
-    return true;
-}
-
 // ===== 初始化函數 =====
 export function initMeetingAll() {
     bindMeetingAllEvents();
@@ -53,11 +40,7 @@ export function clearMeetingAll() {
 function bindMeetingAllEvents() {
     const searchInput = document.getElementById('all-meeting-search-input');
     if (searchInput) {
-        searchInputHandler = async function() {
-            // 驗證身分
-            const isValid = await verifyAuthAndLogoutIfInvalid();
-            if (!isValid) return;
-            
+        searchInputHandler = function() {
             const query = this.value.trim();
             if (query !== '') {
                 fetchAllMeetings(query);
@@ -72,18 +55,10 @@ function bindMeetingAllEvents() {
     
     const resultContainer = document.getElementById('all-meeting-result-container');
     if (resultContainer) {
-        resultContainerHandler = async function(event) {
+        resultContainerHandler = function(event) {
             // 檢查是否點擊了可互動元素
             const isInteractive = event.target.closest('.all-meeting-title, .all-meeting-repeat, .all-meeting-time-range');
             if (!isInteractive) return;
-            
-            // 驗證身分
-            const isValid = await verifyAuthAndLogoutIfInvalid();
-            if (!isValid) {
-                event.preventDefault();
-                event.stopPropagation();
-                return;
-            }
 
             if (event.target.closest('.all-meeting-title')) {
                 const mainToggleBtn = event.target.closest('.all-meeting-title').querySelector('.all-meeting-main-toggle-btn');
