@@ -31,7 +31,9 @@
     import { loadLoginPanel } from './script/fireworkeffect.js';
     loadLoginPanel();
 </script>
-<script type="module" src="script/ui-conductor.js"></script> <!-- 新增：必須在 mediator 之前 -->
+<script type="module" src="script/ui-conductor.js"></script> 
+<script type="module" src="script/firework-mediator.js"></script>
+
 </head>
 <body>
 <div class="update-header">※版本更新：
@@ -43,10 +45,6 @@
 <div id="fudausearch-placeholder"></div>
 <div id="auth-protected-tabs-placeholder"></div>
 <div id="dt-panel-placeholder"></div>
-<script type="module">
-    import { loadLoginPanel } from './script/fireworkeffect.js';
-    loadLoginPanel();
-</script>
 <div id="consultant-panel-placeholder"></div>
 <div id="assist-panel-placeholder"></div>
 <div id="shrturl-placeholder"></div>
@@ -55,6 +53,6 @@
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
     <script src="script/DT_test_copybutton_script.js"></script>
-    <script type="module" src="script/firework-mediator.js"></script>
+
 </body>
 </html>
