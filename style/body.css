@@ -30,6 +30,7 @@ nav,
     border: 1px solid #00a1ff30;
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgb(184 205 215 / 61%);
+    transition: border 0.3s ease, box-shadow 0.3s ease; 
 }
 
 .update-header {
@@ -113,11 +114,19 @@ nav,
     padding: 4px;
 }
 
+/* 定義呼吸燈動畫 */
+@keyframes border-breathe {
+    0% { border-color: #00a2ff50; }
+    50% { border-color: #00a2ff; }
+    100% { border-color: #00a2ff50; }
+}
+
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
-.meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover{
+.meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover,.canned-panel:hover{
     border: 1px solid #00a2ff91;
+    animation: border-breathe 1s infinite ease-in-out;
 }
 
 .small-size {
