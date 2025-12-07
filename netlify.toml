@@ -5,6 +5,13 @@
     Access-Control-Allow-Methods = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
     Access-Control-Allow-Headers = "Content-Type,Authorization,Accept"
 
+[[headers]]
+  for = "/.netlify/edge-functions/*"
+  [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET,POST,PUT,PATCH,DELETE,OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type,Authorization,Accept"
+
 [build]
   functions = "netlify/functions"
   edge_functions = "netlify/edge-functions"
@@ -24,3 +31,7 @@
 [[edge_functions]]
   function = "bx-subtype-json"
   path = "/bx-subtype-json"
+
+[[edge_functions]]
+  function = "extensionAPI"
+  path = "/extensionAPI"
