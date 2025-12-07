@@ -1,4 +1,5 @@
 // Deno 環境下，使用 Web Crypto API 和原生 fetch
+import { crypto as stdCrypto } from "https://deno.land/std@0.208.0/crypto/mod.ts";
 
 // Helper to read env in Deno
 const env = (key) => Deno.env.get(key);
@@ -114,7 +115,8 @@ async function deriveKeyAndIV(passphrase, salt) {
     data.set(passphraseBytes, prevHash.length);
     data.set(salt, prevHash.length + passphraseBytes.length);
     
-    const hash = await crypto.subtle.digest('MD5', data);
+    // 使用 Deno std library 的 MD5
+    const hash = await stdCrypto.subtle.digest("MD5", data);
     prevHash = new Uint8Array(hash);
     
     const copyLength = Math.min(prevHash.length, 48 - offset);
