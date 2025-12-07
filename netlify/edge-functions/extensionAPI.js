@@ -1,31 +1,134 @@
-import { initializeApp, cert, getApps } from 'firebase-admin/app';
-import { getAuth } from 'firebase-admin/auth';
-import CryptoJS from 'crypto-js';
-import qs from 'qs';
+// Deno 環境下，使用 Web Crypto API 和原生 fetch
 
-// Helper to read env in Edge (Deno) and fallback to Node
-const env = (key) =>
-  (typeof Deno !== 'undefined' && Deno.env?.get(key)) ||
-  (typeof process !== 'undefined' && process.env?.[key]);
+// Helper to read env in Deno
+const env = (key) => Deno.env.get(key);
 
-// Init Firebase Admin once
-function ensureFirebase() {
-  if (!getApps().length) {
-    const projectId = env('FIREBASE_PROJECT_ID');
-    const clientEmail = env('FIREBASE_CLIENT_EMAIL');
-    const privateKey = env('FIREBASE_PRIVATE_KEY');
-    if (!projectId || !clientEmail || !privateKey) {
-      throw new Error('Firebase environment variables are not set.');
-    }
-    initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey: privateKey.replace(/\\n/g, '\n'),
-      }),
-    });
+// ===== Firebase Admin 替代方案 =====
+// 由於 firebase-admin 無法在 Deno 運行，需要用 Firebase REST API 驗證 token
+async function verifyFirebaseToken(idToken) {
+  const projectId = env('FIREBASE_PROJECT_ID');
+  if (!projectId) {
+    throw new Error('FIREBASE_PROJECT_ID not set');
   }
-  return getAuth();
+  
+  // 使用 Firebase Auth REST API 驗證 token
+  const response = await fetch(
+    `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${env('FIREBASE_API_KEY')}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idToken }),
+    }
+  );
+  
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error?.message || 'Token verification failed');
+  }
+  
+  const data = await response.json();
+  if (!data.users || data.users.length === 0) {
+    throw new Error('Invalid token');
+  }
+  
+  return {
+    uid: data.users[0].localId,
+    email: data.users[0].email,
+    emailVerified: data.users[0].emailVerified,
+  };
+}
+
+// ===== AES 加密 (使用 Web Crypto API 替代 CryptoJS) =====
+function utf8ToBytes(str) {
+  return new TextEncoder().encode(str);
+}
+
+function bytesToBase64(bytes) {
+  let binary = '';
+  for (let i = 0; i < bytes.length; i++) {
+    binary += String.fromCharCode(bytes[i]);
+  }
+  return btoa(binary);
+}
+
+function base64ToBytes(base64) {
+  const binary = atob(base64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) {
+    bytes[i] = binary.charCodeAt(i);
+  }
+  return bytes;
+}
+
+// CryptoJS 相容的 AES 加密 (OpenSSL 格式)
+async function aesEncrypt(plaintext, passphrase) {
+  // 生成隨機 salt
+  const salt = crypto.getRandomValues(new Uint8Array(8));
+  
+  // 使用 PBKDF 派生 key 和 iv (CryptoJS 預設使用 MD5，這裡用簡化版本)
+  const keyMaterial = await deriveKeyAndIV(passphrase, salt);
+  const key = keyMaterial.slice(0, 32);
+  const iv = keyMaterial.slice(32, 48);
+  
+  // 導入 key
+  const cryptoKey = await crypto.subtle.importKey(
+    'raw',
+    key,
+    { name: 'AES-CBC' },
+    false,
+    ['encrypt']
+  );
+  
+  // 加密
+  const encrypted = await crypto.subtle.encrypt(
+    { name: 'AES-CBC', iv },
+    cryptoKey,
+    utf8ToBytes(plaintext)
+  );
+  
+  // 組合成 OpenSSL 格式: "Salted__" + salt + ciphertext
+  const prefix = utf8ToBytes('Salted__');
+  const result = new Uint8Array(prefix.length + salt.length + encrypted.byteLength);
+  result.set(prefix, 0);
+  result.set(salt, prefix.length);
+  result.set(new Uint8Array(encrypted), prefix.length + salt.length);
+  
+  return bytesToBase64(result);
+}
+
+// 簡化的 key 派生 (模擬 CryptoJS 的 EVP_BytesToKey)
+async function deriveKeyAndIV(passphrase, salt) {
+  const passphraseBytes = utf8ToBytes(passphrase);
+  const result = new Uint8Array(48); // 32 bytes key + 16 bytes iv
+  let prevHash = new Uint8Array(0);
+  let offset = 0;
+  
+  while (offset < 48) {
+    const data = new Uint8Array(prevHash.length + passphraseBytes.length + salt.length);
+    data.set(prevHash, 0);
+    data.set(passphraseBytes, prevHash.length);
+    data.set(salt, prevHash.length + passphraseBytes.length);
+    
+    const hash = await crypto.subtle.digest('MD5', data);
+    prevHash = new Uint8Array(hash);
+    
+    const copyLength = Math.min(prevHash.length, 48 - offset);
+    result.set(prevHash.slice(0, copyLength), offset);
+    offset += copyLength;
+  }
+  
+  return result;
+}
+
+// ===== qs.stringify 替代方案 =====
+function qsStringify(obj) {
+  const params = new URLSearchParams();
+  for (const [key, value] of Object.entries(obj)) {
+    if (value !== undefined && value !== null) {
+      params.append(key, String(value));
+    }
+  }
+  return params.toString();
 }
 
 // Alias map
@@ -76,8 +179,7 @@ export default async function handler(request) {
     if (!token) return json({ success: false, error: 'Firebase token is missing in request.' }, 401);
     if (!action) return json({ success: false, error: 'Action is missing in request.' }, 400);
 
-    const auth = ensureFirebase();
-    const decodedToken = await auth.verifyIdToken(token);
+    const decodedToken = await verifyFirebaseToken(token);
 
     let result;
     switch (action) {
@@ -115,7 +217,7 @@ export default async function handler(request) {
     return json(result, 200);
   } catch (error) {
     console.error('Handler Execution Error:', error.message, error.stack ? error.stack : error);
-    if (error.code && String(error.code).startsWith('auth/')) {
+    if (error.message && error.message.includes('TOKEN')) {
       return json({ success: false, error: `Authentication error: ${error.message}` }, 401);
     }
     return json({ success: false, error: 'Internal server error. Please check server logs for more details.' }, 500);
@@ -153,10 +255,18 @@ async function getJwtToken() {
 
 // ===== fetch with timeout & retry 工具 =====
 async function fetchWithTimeout(url, options = {}, timeoutMs = 3000) {
-  return Promise.race([
-    fetch(url, options),
-    new Promise((_, reject) => setTimeout(() => reject(new Error('Timeout')), timeoutMs)),
-  ]);
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), timeoutMs);
+  
+  try {
+    const response = await fetch(url, {
+      ...options,
+      signal: controller.signal,
+    });
+    return response;
+  } finally {
+    clearTimeout(timeoutId);
+  }
 }
 
 async function fetchWithRetry(url, options = {}, timeoutMs = 3000, maxRetry = 3, intervalMs = 300) {
@@ -167,7 +277,7 @@ async function fetchWithRetry(url, options = {}, timeoutMs = 3000, maxRetry = 3,
       if (response.ok) return response;
       lastError = new Error('Response not ok');
     } catch (err) {
-      lastError = err;
+      lastError = err instanceof Error ? err : new Error('Unknown error');
     }
     if (i < maxRetry - 1) await new Promise((r) => setTimeout(r, intervalMs));
   }
@@ -175,13 +285,13 @@ async function fetchWithRetry(url, options = {}, timeoutMs = 3000, maxRetry = 3,
 }
 
 // ===== OneBoard URL 產生器 =====
-function generateOneBoardUrl({ courseId, userId, userName, role = 'advisor', classType = 'sync-single' }) {
+async function generateOneBoardUrl({ courseId, userId, userName, role = 'advisor', classType = 'sync-single' }) {
   const SECRET = env('ONEBOARD_SECRET');
   const BASE = env('ONEBOARD_BASE_URL') || 'https://oneboard.oneclass.com.tw';
 
   const payloadObj = { role, userId, userName, autoRecord: 'false' };
-  const payloadStr = JSON.stringify(qs.stringify(payloadObj));
-  const token = CryptoJS.AES.encrypt(payloadStr, SECRET).toString();
+  const payloadStr = JSON.stringify(qsStringify(payloadObj));
+  const token = await aesEncrypt(payloadStr, SECRET);
   const encToken = encodeURIComponent(token);
 
   const pathSegment = role === 'observer' ? 'observer' : 'setup';
@@ -477,7 +587,7 @@ async function checkAndProcessCourseInfo(data = {}) {
         return { html };
       }
 
-      const boardUrlAdvisor = generateOneBoardUrl({
+      const boardUrlAdvisor = await generateOneBoardUrl({
         courseId: finalCourseIdToFetch,
         userId: data.alias,
         userName: '顧問',
@@ -485,7 +595,7 @@ async function checkAndProcessCourseInfo(data = {}) {
         classType,
       });
 
-      const boardUrlObserver = generateOneBoardUrl({
+      const boardUrlObserver = await generateOneBoardUrl({
         courseId: finalCourseIdToFetch,
         userId: data.alias,
         userName: '觀察者',
