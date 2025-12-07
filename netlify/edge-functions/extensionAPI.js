@@ -13,7 +13,7 @@ async function verifyFirebaseToken(idToken) {
   
   // 使用 Firebase Auth REST API 驗證 token
   const response = await fetch(
-    `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${env('FIREBASE_API_KEY')}`,
+    `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${env('FIREBASE_PRIVATE_KEY')}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
