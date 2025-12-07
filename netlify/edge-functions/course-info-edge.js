@@ -55,12 +55,12 @@ const fetchWithJwt = async (url, jwt, timeoutMs = 3000, maxRetry = 3) => {
 let cachedTutorToGroup = null;
 let lastFetchTime = 0;
 
-async function fetchTutorToGroup() {
+async function fetchTutorToGroup(groupApiUrl) {
   // 每3小時更新一次
   if (cachedTutorToGroup && Date.now() - lastFetchTime < 3 * 60 * 60 * 1000) {
     return cachedTutorToGroup;
   }
-  const res = await fetch(GROUP_API_URL);
+  const res = await fetch(groupApiUrl);
   const data = await res.json();
   const map = {};
   data.forEach((row) => {
@@ -143,7 +143,7 @@ export default async (request, context) => {
       courseData = courseJson.data;
 
       // 取得組別對照表，並加進 courseData
-      const tutorToGroupMap = await fetchTutorToGroup();
+      const tutorToGroupMap = await fetchTutorToGroup(GROUP_API_URL);
       if (courseData.tutor) {
         courseData.group = tutorToGroupMap[courseData.tutor.trim()] || null;
       }
@@ -191,7 +191,7 @@ export default async (request, context) => {
       data: courseData,
       parent: parentJson,
       preparingCourses,
-      tutorToGroupMap: await fetchTutorToGroup()
+      tutorToGroupMap: await fetchTutorToGroup(GROUP_API_URL)
     }), {
       status: 200,
       headers: {
