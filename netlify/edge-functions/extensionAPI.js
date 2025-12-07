@@ -11,9 +11,14 @@ async function verifyFirebaseToken(idToken) {
     throw new Error('FIREBASE_PROJECT_ID not set');
   }
   
+  const apiKey = env('FIREBASE_WEB_API_KEY');
+  if (!apiKey) {
+    throw new Error('FIREBASE_WEB_API_KEY not set');
+  }
+  
   // 使用 Firebase Auth REST API 驗證 token
   const response = await fetch(
-    `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${env('FIREBASE_PRIVATE_KEY')}`,
+    `https://www.googleapis.com/identitytoolkit/v3/relyingparty/getAccountInfo?key=${apiKey}`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
