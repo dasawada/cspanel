@@ -1,10 +1,3 @@
-/**
- * UI Conductor: Hollywood Dual-Core Edition
- * 視覺核心：雙層反應爐 (Dual-Core Reactor)
- * 語言設定：繁體中文 (Traditional Chinese)
- * 功能特性：物理慣性光束 + 逆向數據環 + 粒子氛圍 + 穩健狀態管理
- */
-
 // ===== 系統配置 =====
 const UI_CONFIG = {
   timing: {
