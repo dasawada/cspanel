@@ -8,41 +8,40 @@ export default async (request, context) => {
 
   const fetchData = async (gid, sheetName) => {
     const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&gid=${gid}`;
-    
+
     try {
       const response = await fetch(url);
       const text = await response.text();
-      
+
       if (text.includes('<!DOCTYPE html>') || text.includes('<html')) {
         throw new Error(`Sheet ${sheetName} returned HTML. Check if sheet is public.`);
       }
-      
+
       const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);?\s*$/);
       if (!match) {
         throw new Error(`Failed to parse JSONP from ${sheetName}`);
       }
-      
+
       const data = JSON.parse(match[1]);
-      
+
       if (!data.table || !data.table.rows || data.table.rows.length === 0) {
         console.log(`[${sheetName}] No data rows found`);
         return [];
       }
-      
-      // Google Sheets API 使用 A, B, C 作為欄位 ID
+
       // 第一行是實際的表頭
       const firstRow = data.table.rows[0];
       const headers = firstRow.c.map(cell => cell?.v || '');
-      
+
       console.log(`[${sheetName}] Actual headers from first row:`, JSON.stringify(headers));
-      
+
       // 從第二行開始處理實際資料
       const rows = [];
       for (let i = 1; i < data.table.rows.length; i++) {
         const row = data.table.rows[i];
         const obj = {};
         let hasData = false;
-        
+
         headers.forEach((header, index) => {
           if (header) {
             const cellValue = row.c[index]?.v ?? null;
@@ -52,19 +51,18 @@ export default async (request, context) => {
             }
           }
         });
-        
+
         if (hasData) {
           rows.push(obj);
         }
       }
-      
+
       console.log(`[${sheetName}] Processed ${rows.length} data rows`);
       if (rows.length > 0) {
         console.log(`[${sheetName}] First data row:`, JSON.stringify(rows[0]));
       }
-      
+
       return rows;
-      
     } catch (error) {
       console.error(`Error in ${sheetName}:`, error.message);
       throw error;
@@ -72,26 +70,24 @@ export default async (request, context) => {
   };
 
   try {
-    // 2. 在 Promise.all 中增加 GID_CONFIG 的讀取
     const [mainData, categoryStyles, adminTagsData, configData] = await Promise.all([
       fetchData(GID_MAIN, '分類項目'),
       fetchData(GID_CATEGORIES, 'SubTypeJsonColor'),
       fetchData(GID_ADMIN_TAGS, 'SubTypeJson'),
-      fetchData(GID_CONFIG, 'Config') // 【新增】
+      fetchData(GID_CONFIG, 'Config')
     ]);
 
     console.log('=== Data Summary ===');
     console.log('mainData rows:', mainData.length);
     console.log('categoryStyles rows:', categoryStyles.length);
     console.log('adminTagsData rows:', adminTagsData.length);
-    console.log('configData rows:', configData.length); // 【新增】
+    console.log('configData rows:', configData.length);
 
     if (mainData.length === 0) {
       throw new Error('No data in main sheet');
     }
 
-    // 3. 【新增】在處理資料前，先提取 Prompt
-    // (configData[0] 是 A2 儲存格所在的資料行)
+    // 提取 Prompt
     const promptTemplate = configData[0]?.PromptTemplate || '';
     if (promptTemplate) {
       console.log('Successfully loaded classificationPromptTemplate.');
@@ -124,14 +120,14 @@ export default async (request, context) => {
 
     // 處理主要資料
     const categoriesData = {};
-    
+
     mainData.forEach((row, index) => {
       const categoryLabel = row['問題類別'];
-      
+
       if (index === 0) {
         console.log('First data row:', JSON.stringify(row));
       }
-      
+
       if (!categoryLabel) {
         return;
       }
@@ -143,8 +139,8 @@ export default async (request, context) => {
           parentTagPattern: '',
           adminTagPattern: '',
           subTypes: [
-            { value: '', label: '請選擇子分類', desc: '', parentTag: '', adminTag: '', aiHint: '' },
-            { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '', aiHint: '' }
+            { value: '', label: '請選擇子分類', desc: '', parentTag: '', adminTag: '', aiHint: '', urgency: '', emotion: '' },
+            { value: '_empty', label: '', desc: '', parentTag: '', adminTag: '', aiHint: '', urgency: '', emotion: '' }
           ]
         };
       }
@@ -159,11 +155,14 @@ export default async (request, context) => {
         return;
       }
 
+      // ✅ 新增：H欄(急迫性)->urgency、I欄(客戶情緒)->emotion
       categoriesData[categoryLabel].subTypes.push({
         value: value,
         label: value,
         desc: row['處理方式'] || '',
         aiHint: row['分類定義'] || '',
+        urgency: row['急迫性'] || '',
+        emotion: row['客戶情緒'] || '',
         parentTag: `[${value}] `,
         adminTag: adminTagsMap.get(value) || ''
       });
@@ -201,7 +200,7 @@ export default async (request, context) => {
       output[categoryLabel] = categoryData;
     });
 
-    // 4. 【新增】將 promptTemplate 附加到最終的 output 物件
+    // 附加 promptTemplate
     output.classificationPromptTemplate = promptTemplate;
 
     return new Response(JSON.stringify(output, null, 2), {
@@ -212,19 +211,25 @@ export default async (request, context) => {
         'Cache-Control': 'public, max-age=300'
       }
     });
-
   } catch (error) {
     console.error('Main Error:', error);
-    
-    return new Response(JSON.stringify({
-      error: error.message,
-      timestamp: new Date().toISOString()
-    }, null, 2), {
-      status: 500,
-      headers: {
-        'Content-Type': 'application/json; charset=utf-8',
-        'Access-Control-Allow-Origin': '*'
+
+    return new Response(
+      JSON.stringify(
+        {
+          error: error.message,
+          timestamp: new Date().toISOString()
+        },
+        null,
+        2
+      ),
+      {
+        status: 500,
+        headers: {
+          'Content-Type': 'application/json; charset=utf-8',
+          'Access-Control-Allow-Origin': '*'
+        }
       }
-    });
+    );
   }
 };
