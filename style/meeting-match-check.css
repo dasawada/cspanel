@@ -1,0 +1,177 @@
+#meeting-check-form-container {
+    width: auto; /* 調整寬度以匹配結果區域 */
+    margin: 0;
+    height: auto;
+}
+
+#meeting-check-result-scrollbar {
+	max-height: 600px;
+    width: 320px; /* 調整寬度以匹配表單區域 */
+    margin: 0 auto;
+    overflow-y: auto;
+    scrollbar-width: thin; /* 對 Firefox 生效，設置滾動條寬度為細 */
+    scrollbar-color: #f5f5f5 #ffffff; /* 對 Firefox 生效，設置滾動條顏色和軌道顏色 */
+}
+
+/* Chrome、Edge、Safari 瀏覽器 */
+#meeting-check-result-scrollbar::-webkit-scrollbar {
+    width: 8px;
+}
+
+#meeting-check-result-scrollbar::-webkit-scrollbar-track {
+    background: #ffffff;
+}
+
+#meeting-check-result-scrollbar::-webkit-scrollbar-thumb {
+    background-color: #f5f5f5;
+    border-radius: 10px;
+    border: 2px solid #ffffff;
+}
+
+#meeting-check-result {
+    color: green;
+}
+
+#meeting-check-error {
+
+    color: red;
+}
+
+#meeting-check-account-results {
+    width: auto;
+}
+
+.meeting-check-result-group {
+    padding: 5px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+}
+
+.meeting-check-result-group h3 {
+    margin-top: 0;
+}
+
+.meeting-check-info {
+    margin-top: 10px;
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #fff;
+    overflow-y: auto;
+    max-height: 150px;
+}
+
+.meeting-check-no-meeting, .meeting-check-has-meeting {
+    margin-bottom: 20px;
+}
+
+.meeting-check-account-title {
+    font-weight: bold;
+}
+
+.meeting-check-card {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    background: linear-gradient(to top, #f0f0f0 5%, #ffffff 100%);
+    width: auto; /* 調整寬度以確保與其他元素對齊 */
+}
+.meeting-check-card:hover {
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 0px;
+    margin-bottom: 8px;
+    border-radius: 5px;
+    width: auto; /* 調整寬度以確保與其他元素對齊 */
+    background: #e0e0e0;
+}
+
+
+.meeting-check-title {
+    margin-top: 5px;
+	margin-left: 5px;
+    color: #333;
+    margin-bottom: 0;
+}
+.meeting-check-info:not(:last-child) {
+    border-bottom: 1px solid #ccc; /* 灰色分隔線 */
+}
+
+.meeting-check-info {
+    display: flex;
+    flex-wrap: wrap;
+    margin-top: 8px;
+    font-size: 12px;
+	max-height:330px;
+}
+
+.meeting-check-info div {
+    flex: 1 1 100%;
+    margin-bottom: 4px;
+}
+
+.meeting-check-info div i {
+    margin-right: 5px;
+}
+
+.meeting-check-details {
+    font-style: italic;
+    color: #666;
+    font-size: 10px;
+}
+
+#meeting-check-form {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+}
+
+#meeting-check-form input,
+#meeting-check-form select,
+#meeting-check-form button {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.meeting-check-form-group {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: flex-start;
+}
+.meeting-check-title .toggle-icon {
+    position: absolute;
+    right: 10px;
+    top: 50%;
+    transform: translateY(-50%); /* 垂直居中 */
+    cursor: pointer;
+}
+.meeting-check-info.selected {
+    border: 1px solid black;
+}
+.meeting-check-info:focus-within {
+    border: 1px solid black;
+}
+.meeting-check-info:hover {
+    border: 1px solid black;
+}
+.meeting-check-create-document {
+    text-decoration: none;
+    color: inherit;
+    cursor: pointer;
+}
+
+.meeting-check-create-document:hover {
+    color: #bdbdbd; /* 懸停時的顏色 */
+}
+.all-meeting-left-top-icon {
+    position: absolute;
+    top: 0;
+    right: 0;
+    margin: 10px;
+    display: flex;
+    gap: 10px;
+}

@@ -1,0 +1,338 @@
+
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>💡軟硬體測試💡</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+<link rel="stylesheet" href="style/font.css">
+<link rel="stylesheet" href="style/body.css">
+<link rel="stylesheet" href="style/button.css">
+<style>
+.device-group, .connection-group {
+    position: relative;
+}
+
+.close-button {
+    position: absolute;
+    top: 2px;
+    right: 0px;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+	opacity: .5;
+    text-shadow: 0 1px 0 #fff;
+    border: none;
+    background: none;
+	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-button:hover {
+    color: #aaa;
+    opacity: .7;
+    text-decoration: none;
+    cursor: pointer;
+}
+        .container {
+            display: flex;
+            flex-direction: row; /* 確保元素水平排列 */
+            height: 98vh; /* 98% 視窗高度，保持整個畫面盡量不產生捲軸 */
+            overflow: hidden;
+        }
+        .DTV_iframe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: calc(100% - 530px); /* 除去右側固定寬度 */
+            height: 100%;
+            overflow: hidden; /* 隱藏溢出部分 */
+            z-index: 900; /* 確保在最上層，避免元素遮擋無法點擊 */
+        }
+        .form_container {
+            position: absolute;
+            right: 0;
+            top: 0;
+            bottom: 0;
+            width: 530px; /* 固定寬度 */
+            height: 100%;
+            overflow-y: auto; /* 垂直卷軸 */
+            padding: 0 10px 0 10px;
+            box-sizing: border-box;
+        }
+        .form-group {
+            margin-bottom: 10px;
+            display: flex;
+            flex-direction: column;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .row div {
+            flex: 1;
+            text-align: center;
+            padding: 3px;
+        }
+        .row div label {
+            display: block;
+        }
+        .row div select,
+        .row div input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .error {
+            color: red;
+            display: none;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+	word-break: break-word;
+        }
+        .copy-feedback {
+            display: none;
+            position: absolute;
+            background: #4caf50;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        /* 自訂樣式 */
+        .DT_SON_BORDER {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+        /* 調整 #DT_devices 中 input 元素的寬度 */
+        #DT_devices select,
+        #DT_devices input[type="text"] {
+            width: 100%; /* 讓寬度響應父元素 */
+        }
+        /* 田字型佈局 */
+        .DTDV_grid-container {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            grid-gap: 10px;
+            align-items: start;
+        }
+        .DTDV_grid-item {
+            text-align: left; /* 保持單選按鈕跟文字同一行 */
+        }
+        /* DTYN 樣式 */
+        .DTYN {
+            display: flex;
+            flex-direction: row; /* 將內部元素由左至右排列 */
+            align-items: center; /* 垂直置中 */
+            text-align: left; /* 左對齊 */
+            white-space: nowrap; /* 禁止換行 */
+        }
+        .DTYN label {
+            margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
+        }
+        .DTYN input[type=radio] {
+            margin: 0 4px 0 4px; /* 調整間距 */
+        }
+        .DTYN .error {
+            margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
+            color: red; /* 設置錯誤消息顏色 */
+        }
+	.DV_sutable {
+            text-align: left; /* 保持單選按鈕跟文字同一行 */
+	}
+	.red-asterisk {
+            color: red;
+        }
+    </style>
+	
+</head>
+<body>
+
+<!-- 教室log確認 -->
+<div class="ClassLogpanel small-size" style="right: 20px; top: 10px; position: absolute;">
+        <div class="toggle-container" style="text-align:left;justify-content: center">
+        <input type="checkbox" id="logToggleCheckbox">
+        <label for="logToggleCheckbox">教室LOG</label>
+    </div>
+    <div id="content" style="display: none;">
+        <iframe class="responsive-iframe" src="userlogframe_right.html"></iframe>
+    </div>
+</div>
+<div class="container">
+
+<div class="DTV_iframe">
+    <iframe class="responsive-iframe" src="https://docs.google.com/spreadsheets/d/1v4ca32PaXniLRzdbORtlWtbH35uNm6OTg6_xlWjlhj0/edit?gid=1843767276#gid=1843767276"></iframe>
+</div>
+
+
+<div class="form_container">
+<div class="DT_top_panel">
+<div class="Mxmind">
+    <a href="https://www.maxmind.com/en/geoip-demo" target="_blank">
+        <img src="img/maxmind.png" alt="MAXMIND" />
+    </a>
+</div>
+    <form id="DT_form">
+        <div class="form-group">
+            <label for="DT_datetime">日期時間：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_datetime" name="datetime" placeholder="YYYY/MM/DD hh:mm">
+        </div>
+        <div class="form-group">
+            <label for="DT_name">學生姓名：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_name" name="name">
+            <label for="DT_phone">連絡電話：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_phone" name="phone" placeholder="可填家長姓名、電話">
+        </div>
+        <div class="form-group">
+            <label for="DT_project">測試工程師：<span class="red-asterisk">*</span></label>
+            <input type="text" id="DT_project" name="project">
+        </div>
+        <!-- 使用設備部分 -->
+        <div class="DT_SON_BORDER" style="background: white;">
+            <div id="DT_devices">
+                <h3>使用設備</h3>
+                <div class="device-group">
+                    <div class="row">
+                        <div><label for="DT_device_1">設備<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_brand_1">品牌<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_os_1">作業系統<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_os_version_1">版本/硬體<span class="red-asterisk">*</span></label></div>
+                        <div><label for="DT_browser_1">瀏覽器<span class="red-asterisk">*</span></label></div>
+                    </div>
+                    <div class="row">
+                        <div>
+                            <select id="DT_device_1" name="device" >
+                                <option value="-">-</option>
+                                <option value="筆電">筆電</option>
+                                <option value="桌上型電腦">桌上型電腦</option>
+                                <option value="平板">平板</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_brand_1" name="brand">
+                        </div>
+                        <div>
+                            <select id="DT_os_1" name="os">
+                                <option value="-">-</option>
+                                <option value="Windows">Windows</option>
+                                <option value="MacOS">MacOS</option>
+                                <option value="iOS">iOS</option>
+                                <option value="Android">Android</option>
+                                <option value="其他">其他</option>
+                            </select>
+                        </div>
+                        <div>
+                            <input type="text" id="DT_os_version_1" name="os_version">
+                        </div>
+                        <div>
+                            <input type="text" id="DT_browser_1" name="browser">
+                        </div>
+                    </div>
+                    <div class="DTDV_grid-container">
+                        <div class="DTDV_grid-item">
+                            <label>視訊規格：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_video_spec_internal_1" name="video_spec_1" value="內建"><label for="DT_video_spec_internal_1">內建</label>
+                            <input type="radio" id="DT_video_spec_external_1" name="video_spec_1" value="外接"><label for="DT_video_spec_external_1">外接</label>
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>視訊品質：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_video_quality_clear_1" name="video_quality_1" value="清晰"><label for="DT_video_quality_clear_1">清晰</label>
+                            <input type="radio" id="DT_video_quality_poor_1" name="video_quality_1" value="不佳"><label for="DT_video_quality_poor_1">不佳</label>
+                            <input type="radio" id="DT_video_quality_untested_1" name="video_quality_1" value="未測試"><label for="DT_video_quality_untested_1">未測試</label>
+							
+                        </div>
+						
+                        <div class="DTDV_grid-item">
+                            <label>耳麥規格：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_audio_spec_internal_1" name="audio_spec_1" value="內建"><label for="DT_audio_spec_internal_1">內建</label>
+                            <input type="radio" id="DT_audio_spec_external_1" name="audio_spec_1" value="外接"><label for="DT_audio_spec_external_1">外接</label>
+                        </div>
+                        <div class="DTDV_grid-item">
+                            <label>聲音品質：<span class="red-asterisk">*</span></label>
+                            <input type="radio" id="DT_audio_quality_clear_1" name="audio_quality_1" value="清晰" ><label for="DT_audio_quality_clear_1">清晰</label>
+                            <input type="radio" id="DT_audio_quality_poor_1" name="audio_quality_1" value="不佳" ><label for="DT_audio_quality_poor_1">不佳</label>
+                            <input type="radio" id="DT_audio_quality_untested_1" name="audio_quality_1" value="未測試" ><label for="DT_audio_quality_untested_1">未測試</label>
+							
+                        </div>
+						
+                    </div>
+                </div>
+            </div>
+	<div class="spacer"></div>
+            <button type="button" onclick="addDevice()">新增設備</button>
+        </div>
+        <div class="DT_SON_BORDER" style="background: white;">
+            <!-- 網路連線部分 -->
+            <div id="DT_connections">
+                <h3>網路連線</h3>
+                <div class="connection-group">
+                    <div class="form-group">
+                        <label for="DT_provider_1">電信業者：<span class="red-asterisk">*</span></label>
+                        <input type="text" id="DT_provider_1" name="provider" >
+                        <label for="DT_connection_1">連線方式：<span class="red-asterisk">*</span></label>
+                        <select id="DT_connection_1" name="connection" >
+                            <option value="-">-</option>
+                            <option value="Wi-Fi">Wi-Fi</option>
+                            <option value="有線網路">有線網路</option>
+                            <option value="Wi-Fi+有線網路">Wi-Fi+有線網路</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="DT_speed_1">當前網速：<span class="red-asterisk">*</span></label>
+                        <textarea id="DT_speed_1" name="speed" ></textarea>
+                    </div>
+                </div>
+            </div>
+	<div class="spacer"></div>
+            <button type="button" onclick="addConnection()">新增網路連線</button>
+        </div>
+        <!-- 檢測結果部分 -->
+        <div class="form-group">
+		<div class="DV_sutable">
+            <label for="DT_suitable">是否適合上課：<span class="red-asterisk">*</span></label>
+            <input type="radio" id="DT_suitable_yes" name="suitable" value="適合" >適合
+            <input type="radio" id="DT_suitable_no" name="suitable" value="不適合" >不適合
+			</div>
+        </div>
+        <div class="form-group">
+            <label for="DT_issues">測試問題：<span class="red-asterisk">*</span></label>
+            <textarea id="DT_issues" name="issues"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="DT_process">處理過程：<span class="red-asterisk">*</span></label>
+            <textarea id="DT_process" name="process" style="height:200px"></textarea>
+        </div>
+        <div class="form-group">
+            <label for="DT_boldbrief">想要粗體告訴輔導的最後一句話：</label>
+            <textarea id="DT_boldbrief" name="boldbrief" ></textarea>
+            
+        </div>
+        <button type="submit">生成</button>
+	<button type="button" id="copyReportButton">複製報告</button>
+    </form>
+    <div class="output" id="DT_output">
+        <div id="output_content">填寫表單後顯示此處A_A<br></div>
+        <div class="copy-feedback" id="copy_feedback">已複製!</div>
+    </div>
+</div>
+</div>
+    <script src="script/addforms.js"></script>
+    <script src="script/DT_form_output.js"></script>
+    <script src="script/DT_test_copybutton_script.js"></script>
+    <script src="script/DT_fuction_confirm.js"></script>
+<script src="script/GGapi.js"></script>
+<script src="script/togglelayer.js"></script>
+</body>
+</html>

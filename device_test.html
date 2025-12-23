@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>虛擬記憶體測試</title>
+    <style>
+        .warning {
+            color: red;
+        }
+    </style>
+</head>
+<body>
+    <h1>虛擬記憶體測試</h1>
+    <button onclick="testVirtualMemory()">開始測試</button>
+    <p id="virtualMemory"></p>
+    <p id="performanceWarning" class="warning" style="display:none;">效能不足</p>
+
+    <script>
+        // 虛擬記憶體測試
+        function testVirtualMemory() {
+            var memoryInfo = navigator.deviceMemory || '不支援';
+            document.getElementById('virtualMemory').innerText = '虛擬記憶體：' + memoryInfo + ' GB';
+            if (memoryInfo < 7) {
+                document.getElementById('performanceWarning').style.display = 'block';
+            }
+        }
+function isIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+}
+
+function isMacOS() {
+    return /Macintosh/.test(navigator.userAgent) && !/iPhone|iPod|iPad/.test(navigator.userAgent);
+}
+
+function getIOSMemoryEstimate() {
+    // 根據設備類型和操作系統版本估計內存
+    if (isIOS()) {
+        // 根據不同的 iOS 設備類型和操作系統版本進行估計
+        // 這裡可以根據實際需求定義不同的內存估計
+        // 例如，iPhone XS 可能有4GB RAM，iPhone 6 可能只有1GB RAM
+        return 4; // 以 GB 為單位
+    }
+    return null;
+}
+
+function getMacOSMemoryEstimate() {
+    // 根據設備類型和操作系統版本估計內存
+    if (isMacOS()) {
+        // 根據不同的 macOS 設備類型和操作系統版本進行估計
+        // 這裡可以根據實際需求定義不同的內存估計
+        // 例如，MacBook Pro 可能有16GB RAM，MacBook Air 可能只有8GB RAM
+        return 16; // 以 GB 為單位
+    }
+    return null;
+}
+
+// 獲取估計的設備內存
+function getMemoryEstimate() {
+    var memory = getIOSMemoryEstimate() || getMacOSMemoryEstimate();
+    if (memory) {
+        console.log('估計的內存：' + memory + ' GB');
+    } else {
+        console.log('無法估計設備內存');
+    }
+}
+
+// 在初始化時獲取內存估計
+getMemoryEstimate();
+
+    </script>
+</body>
+</html>

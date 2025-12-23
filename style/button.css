@@ -1,0 +1,393 @@
+button {
+    background-color: #f0f0f0;
+    color: #000000;
+    padding: 3px 8px;
+    border: 1px solid #00a1ff30;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
+    transition: background-color 0.1s ease;
+	line-height: 1.5; /* 統一行高 */
+    font-size: 13px;
+}
+
+/* 按鈕懸停時的效果 */
+button:hover {
+    background-color: #dbdbdb;
+}
+
+/* 按鈕點擊時的效果 */
+button:active {
+    background-color: #949494; 
+    color: #ffffff;
+}
+
+
+/* 輸入框樣式 */
+input[type=text], input[type=password], input[type=email] {
+    color: #8f8f8f;
+    width: 100%;
+    padding: 4px 8px;
+    margin: 0;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
+    line-height: 1.5; /* 統一行高 */
+    font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    font-size: 13px;
+}
+input[type=date] {
+    color: #8f8f8f;
+    width: 100%;
+    padding: 2px 4px;
+    margin: 0;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 改為內陰影 */
+    line-height: 1.5; /* 統一行高 */
+    font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+    font-size: 13px;
+}
+
+/* 聚焦時的效果 */
+input[type=text]:focus, input[type=password]:focus, input[type=email]:focus {
+    border: 1px solid #949494 !important;
+    color: #292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* select 樣式 */
+select {
+    color: #8f8f8f;
+    width: 100%;
+    padding: 2px 4px;
+    margin: 0;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 內陰影 */
+    line-height: 1.5; /* 統一行高 */
+    font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
+}
+
+/* 聚焦時的效果 */
+select:focus {
+    border: 1px solid #949494 !important;
+    color: #292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* textarea 樣式 */
+textarea {
+    color: #8f8f8f;
+    width: 100%;
+    padding: 2px 4px;
+    margin: 0;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 內陰影 */
+    line-height: 1.5; /* 統一行高 */
+    resize: vertical; /* 允許垂直調整大小 */
+}
+
+/* 聚焦時的效果 */
+textarea:focus {
+    border: 1px solid #949494 !important;
+    color: #292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* 點名鈕基本樣式 */
+.DienMing {
+    background-color: #daf5cc;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+    transition: background-color 0.1s ease;
+}
+
+/* 滑鼠懸停時的效果 */
+.deactiveDienMing:hover {
+    background-color: #f2b794; /* 懸停時的背景顏色 */
+}
+
+/* 按下時的效果 */
+.deactiveDienMing:active {
+    background-color: #c7a18b; /* 按下時的背景顏色 */
+}
+
+/* 點名鈕基本樣式 */
+.DienMing {
+	background-color: #daf5cc;
+	color: #000000;
+	padding: 2px 6px;
+	border: 1px solid #bfbfbf;
+	border-radius: 4px;
+	cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+	transition: background-color 0.1s ease;
+}
+
+/* 滑鼠懸停時的效果 */
+.DienMing:hover {
+	background-color: #93d470; /* 懸停時的背景顏色 */
+}
+
+/* 按下時的效果 */
+.DienMing:active {
+	background-color: #9cba8c; /* 按下時的背景顏色 */
+}
+
+/* 解除點名鈕基本樣式 */
+.deactiveDienMing {
+	background-color: #ffe6d7;
+	color: #000000;
+	padding: 2px 6px;
+	border: 1px solid #bfbfbf;
+	border-radius: 4px;
+	cursor: pointer;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+	transition: background-color 0.1s ease;
+}
+
+/* 滑鼠懸停時的效果 */
+.deactiveDienMing:hover {
+	background-color: #f2b794; /* 懸停時的背景顏色 */
+}
+
+/* 按下時的效果 */
+.deactiveDienMing:active {
+	background-color: #c7a18b; /* 按下時的背景顏色 */
+}
+
+/* datetime-local 樣式 */
+input[type=datetime-local] {
+    color: #8f8f8f;
+    width: 100%;
+	margin: 6px;
+    display: inline-block;
+    border: 1px solid #e6e6e6;
+    border-radius: 4px;
+    box-sizing: border-box;
+    box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.1); /* 內陰影 */
+    line-height: 1.5; /* 統一行高 */
+}
+
+/* 聚焦時的效果 */
+input[type=datetime-local]:focus {
+    border: 1px solid #949494 !important;
+    color: #292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* 改變選擇器的樣式（僅限於某些瀏覽器，如 Chrome） */
+input[type=datetime-local]::-webkit-datetime-edit {
+    color: #8f8f8f; /* 更改文本顏色 */
+}
+
+input[type=datetime-local]::-webkit-datetime-edit-fields-wrapper {
+    background: #fff; /* 更改背景顏色 */
+}
+
+input[type=datetime-local]::-webkit-inner-spin-button,
+input[type=datetime-local]::-webkit-calendar-picker-indicator {
+    filter: invert(0.5); /* 更改選擇器的顏色，適合於某些瀏覽器 */
+}
+
+.OPtitle_unclickable {
+    pointer-events: none;
+}
+
+.OPtitle_unclickable img {
+    opacity: 0.3;
+    transition: opacity 0.3s ease;
+    cursor: not-allowed;
+}
+
+#OPtitle_copyButton img {
+    transition: all 0.3s ease;
+}
+
+/* 丟垃圾按鈕效果 */
+        .clearIcon {
+            width: 20px;
+            height: 20px;
+            border: none;
+            background: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0.4;
+            position: absolute;
+            bottom: 10px; /* 確保距離父元素底部一定距離 */
+            right: 10px; /* 確保距離父元素右側一定距離 */
+        }
+	.clearIcon:hover {
+		opacity: 0.6;
+	}
+        .clearIcon i {
+            font-size: 20px;
+        }
+
+@keyframes trashAnimation {
+    0% { transform: translateY(0); opacity: 0.9; }
+    50% { transform: translateY(-20px); opacity: 0.5; }
+    100% { transform: translateY(15px); opacity: 0; }
+}
+
+.trash-animated {
+    animation: trashAnimation 1s forwards;
+}
+.IP_info-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 15px;
+    height: 15px;
+    background-color: #949494;
+    color: white;
+    border-radius: 50%;
+    text-decoration: none;
+    font-size: 12px;
+    text-align: center;
+    position: absolute;
+    bottom: 5px;
+    right: 5px;
+}
+
+.IP_info-button:hover {
+    background-color: #5c5c5c;
+}
+
+        .hover-container {
+            position: relative;
+            display: inline-block;
+        }
+
+
+
+        .hover-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(255, 255, 255, 0.5);
+            color: black;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 1; /* 默認為可見 */
+            transition: opacity 0.1s ease;
+            font-size: 12px;
+            pointer-events: none; /* 確保遮罩層不攔截點擊事件 */
+            text-align: center;
+            flex-direction: column; /* 使內部元素縱向排列 */
+            line-height: 1.2;
+            border-radius: 15px; /* 圓角 */
+            backdrop-filter: blur(20px); /* 背景模糊 */
+            overflow: hidden; /* 確保圓角內部內容不溢出 */
+        }
+
+        .hover-container:hover .hover-overlay {
+            opacity: 0; /* 懸停時隱藏 overlay */
+        }
+
+        .hover-overlay br {
+            line-height: 0; /* 確保 <br> 不會增加多餘的間距 */
+        }
+		
+		#appClassDefer {
+			display: block; /* 確保圖片作為塊級元素 */
+			width: 70px; /* 固定寬度 */
+			height: 70px; /* 與寬度一致，實現正方形 */
+			object-fit: cover; /* 保持圖片比例，填充容器 */
+			border-radius: 15px; /* 添加圓角（如果需要） */
+		}
+
+		
+  /* 已複製樣式 */
+  .fudausearch-button.copied {
+    color: white;
+    background-color: #28a745;
+    border-color: #28a745;
+  }
+  
+    /* 學務部按鈕特殊樣式 */
+  .fudausearch-button-special {
+    background-color: #df532d; 
+    color: white;             
+  }
+
+  .fudausearch-button-special:hover {
+    background-color: #B53A18;
+    color: white;
+  }
+
+  .fudausearch-button-paikezu {
+    background-color: #211898; 
+    color: white;             
+  }
+
+  .fudausearch-button-paikezu:hover {
+    background-color: #312B7A;
+    color: white;
+  }
+  
+  .fudausearch-button-kefugon {
+    background-color: #484661; 
+    color: white;             
+  }
+
+  .fudausearch-button-kefugon:hover {
+    background-color: #2A292E;
+    color: white;
+  }
+  .fudausearch-button-groupnumber {
+    background-color: #078eda;
+    color: white;
+  }
+  .fudausearch-button-groupnumber:hover {
+    background-color: #163c94;
+    color: white;
+  }
+/* 包裹輸入框與按鈕的容器 */
+.fudausearch-input-wrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+#fudausearch-input {
+  flex: 1;
+}
+
+/* 清除按鈕樣式 */
+.fudausearch-clear-btn {
+  position: absolute;
+  right: 5px;
+  background-color: transparent;
+  border: none;
+  font-size: 12px;
+  color: #aaa;
+  cursor: pointer;
+}
+
+.fudausearch-clear-btn:hover {
+  color: #000;
+}
+#meetingsearch-refresh-btn:hover {
+    color: #bdbdbd;
+  }

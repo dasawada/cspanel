@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>準備連線</title>
+    <style>
+        :root {
+            --primary-color: #007AFF; /* 通用系統藍 */
+            --bg-color: #f2f2f7;
+            --card-bg: #ffffff;
+            --text-main: #1c1c1e;
+            --text-sub: #6c6c70;
+            --border-radius: 12px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+
+        .container {
+            background: var(--card-bg);
+            width: 100%;
+            max-width: 400px;
+            padding: 32px 24px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+            text-align: center;
+            display: none; /* JS 控制顯示 */
+        }
+
+        h1 {
+            font-size: 20px;
+            font-weight: 600;
+            margin: 0 0 12px 0;
+            color: var(--text-main);
+        }
+
+        p {
+            font-size: 15px;
+            color: var(--text-sub);
+            margin: 0 0 24px 0;
+        }
+
+        .instruction-box {
+            background-color: #f5f5f7;
+            padding: 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            text-align: left;
+            font-size: 14px;
+        }
+
+        .instruction-step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 8px;
+        }
+        .instruction-step:last-child { margin-bottom: 0; }
+        .icon { margin-right: 10px; font-size: 16px; }
+
+        .btn {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            padding: 14px;
+            border-radius: var(--border-radius);
+            font-size: 16px;
+            font-weight: 500;
+            text-decoration: none;
+            cursor: pointer;
+            box-sizing: border-box;
+            border: none;
+            transition: opacity 0.2s;
+        }
+        .btn:active { opacity: 0.7; }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-secondary {
+            background-color: transparent;
+            color: var(--primary-color);
+            margin-top: 12px;
+        }
+        
+        .highlight {
+            font-weight: 600;
+            color: var(--text-main);
+        }
+
+        /* 新增載入動畫 */
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        #view-loading h1::before {
+            content: "🔄";
+            display: inline-block;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="view-loading" class="container" style="display: block;">
+        <h1>🔄 正在準備...</h1>
+        <p>請稍候</p>
+    </div>
+
+    <div id="view-ios" class="container">
+        <h1>👋 我們換個地方連線吧</h1>
+        <p>目前的 App 視窗無法開啟相機與麥克風<br>請切換到瀏覽器，通話更順暢。</p>
+        
+        <div class="instruction-box">
+            <div class="instruction-step">
+                <span class="icon">1️⃣</span>
+                <span>點擊螢幕角落的選單符號 (⋯ 或 🧭)</span>
+            </div>
+            <div class="instruction-step">
+                <span class="icon">2️⃣</span>
+                <span>選擇 <span class="highlight">在瀏覽器中開啟</span></span>
+            </div>
+            <div class="instruction-step" style="margin-top:8px; color:#888; font-size:13px;">
+                <span class="icon">💡</span>
+                <span>推薦使用 <strong>Safari</strong> 或 <strong>Chrome</strong></span>
+            </div>
+        </div>
+
+        <button class="btn btn-secondary" onclick="copyLink(this)">複製連結 (手動開啟)</button>
+    </div>
+
+    <div id="view-android" class="container">
+        <h1>🚀 準備進入會議</h1>
+        <p>為了確保連線穩定，<br>請選擇合適的瀏覽器開啟。</p>
+        
+        <div class="instruction-box" style="text-align: center;">
+            <span class="icon">✅</span>
+            請選擇：<span id="android-browser-suggestion" class="highlight">Chrome</span>
+        </div>
+
+        <a id="btn-android-enter" href="#" class="btn btn-primary">開啟瀏覽器</a>
+        <button class="btn btn-secondary" onclick="copyLink(this)">複製連結</button>
+    </div>
+
+    <script>
+        // 設定目標網址
+        const TARGET_URL = "https://example.com/webrtc"; 
+
+        // 提升變數作用域
+        let isIOS = false;
+        let isSamsung = false;
+        let isAndroid = false;
+
+        (function() {
+            const ua = navigator.userAgent;
+            isAndroid = /Android/i.test(ua);
+            isIOS = /iPhone|iPad|iPod/i.test(ua);
+            isSamsung = /SamsungBrowser|SAMSUNG|SM-/i.test(ua);
+
+            // iOS In-App 簡單判斷 (Line/FB/IG/Google/GSA)
+            const isIOSInApp = isIOS && (/Line\/|FBAV|Instagram|GSA\/|Google\//i.test(ua));
+
+            // Android Line 判斷
+            const isAndroidLine = isAndroid && ua.includes("Line/");
+
+            // 輔助函式:顯示區塊
+            function show(id) { 
+                document.getElementById("view-loading").style.display = "none";
+                document.getElementById(id).style.display = "block"; 
+            }
+
+            if (isAndroid) {
+                // === Android 處理邏輯 ===
+                show("view-android");
+
+                // 1. 文案客製化：如果是三星，建議顯示 Chrome 與 三星瀏覽器
+                if (isSamsung) {
+                    document.getElementById("android-browser-suggestion").innerText = "Chrome 或 三星瀏覽器";
+                }
+
+                // 2. 設定跳轉連結
+                let finalUrl = "#";
+                if (isAndroidLine) {
+                    // Line 環境：使用 Line 專屬參數
+                    const separator = TARGET_URL.includes('?') ? "&" : "?";
+                    finalUrl = TARGET_URL + separator + "openExternalBrowser=1";
+
+                    // 延遲跳轉，確保畫面已渲染
+                    setTimeout(() => {
+                        window.location.href = finalUrl;
+                    }, 100);
+
+                    // 顯示提示文字
+                    document.querySelector("#view-android p").innerHTML = 
+                        "正在為您開啟瀏覽器...<br><small style='color:#888'>若未自動跳轉,請點擊下方按鈕</small>";
+                } else {
+                    // 其他環境 (含 Google App WebView)：使用 Intent 強制喚起選擇器
+                    const cleanUrl = TARGET_URL.replace(/^https?:\/\//, '');
+                    finalUrl = "intent://" + cleanUrl + 
+                               "#Intent;scheme=https;action=android.intent.action.VIEW;category=android.intent.category.BROWSABLE;end;";
+                }
+                document.getElementById("btn-android-enter").href = finalUrl;
+
+            } else if (isIOSInApp) {
+                // === iOS In-App 處理邏輯 ===
+                show("view-ios");
+
+            } else {
+                // === 正常瀏覽器 ===
+                document.getElementById("view-loading").style.display = "none";
+                try {
+                    window.location.replace(TARGET_URL);
+                } catch (e) {
+                    show("view-android");
+                    document.querySelector("#view-android h1").innerText = "⚠️ 無法自動跳轉";
+                    document.querySelector("#view-android p").innerHTML = 
+                        "請點擊下方按鈕手動開啟<br><small style='color:#888'>或複製連結至瀏覽器</small>";
+                    document.getElementById("btn-android-enter").href = TARGET_URL;
+                }
+            }
+        })();
+
+        const GUIDANCE_MAP = {
+            ios: { 
+                app: "Safari", 
+                icon: "🧭",
+                detail: "點擊右下角分享按鈕 → 在 Safari 中開啟"
+            },
+            samsung: { 
+                app: "三星瀏覽器", 
+                icon: "🌐",
+                detail: "長按連結 → 選擇三星瀏覽器開啟"
+            },
+            android: { 
+                app: "Chrome", 
+                icon: "🌏",
+                detail: "長按連結 → 選擇 Chrome 開啟"
+            },
+            default: { 
+                app: "瀏覽器", 
+                icon: "🌐",
+                detail: "貼上至瀏覽器網址列"
+            }
+        };
+
+        function getCurrentGuidance() {
+            if (isIOS) return GUIDANCE_MAP.ios;
+            if (isSamsung) return GUIDANCE_MAP.samsung; 
+            if (isAndroid) return GUIDANCE_MAP.android;
+            return GUIDANCE_MAP.default;
+        }
+
+        function copyLink(btnElement) {
+            const guidance = getCurrentGuidance();
+            const originalHTML = btnElement.innerHTML;
+
+            // 避免重複點擊
+            if (btnElement.disabled) return;
+            btnElement.disabled = true;
+
+            navigator.clipboard.writeText(TARGET_URL)
+                .then(() => {
+                    btnElement.style.backgroundColor = "#34C759";
+                    btnElement.style.color = "#fff";
+                    btnElement.innerHTML = `
+                        <div style="line-height:1.4">
+                            <div style="font-weight:600">✅ 已複製連結</div>
+                            <div style="font-size:13px;margin-top:4px;opacity:0.9">
+                                ${guidance.icon} 請在 ${guidance.app} 貼上
+                            </div>
+                        </div>
+                    `;
+
+                    // 觸發震動反饋 (支援的裝置)
+                    if (navigator.vibrate) {
+                        navigator.vibrate(50);
+                    }
+
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalHTML;
+                        btnElement.style.backgroundColor = "";
+                        btnElement.style.color = "";
+                        btnElement.disabled = false;
+                    }, 4000);
+                })
+                .catch(() => {
+                    btnElement.disabled = false;
+                    // 降級方案：直接顯示可選取的連結
+                    const fallbackMsg = `請手動複製並在 ${guidance.app} 貼上：\n\n${TARGET_URL}\n\n${guidance.detail}`;
+                    prompt(fallbackMsg, TARGET_URL);
+                });
+        }
+    </script>
+</body>
+</html>

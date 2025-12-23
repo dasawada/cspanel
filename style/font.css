@@ -1,0 +1,79 @@
+        /* 苹方字體 */
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Regular.otf') format('opentype');
+            font-weight: normal;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Semibold.otf') format('opentype');
+            font-weight: bold;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Light.otf') format('opentype');
+            font-weight: 300;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Medium.otf') format('opentype');
+            font-weight: 500;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Ultralight.otf') format('opentype');
+            font-weight: 200;
+            font-style: normal;
+        }
+
+        @font-face {
+            font-family: 'PingFangHK';
+            src: url('fonts/PingFangHK-Thin.otf') format('opentype');
+            font-weight: 100;
+            font-style: normal;
+        }
+
+        /* San Francisco 字體 */
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Regular.otf') format('opentype');
+            font-weight: normal;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Bold.otf') format('opentype');
+            font-weight: bold;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Light.otf') format('opentype');
+            font-weight: 300;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Medium.otf') format('opentype');
+            font-weight: 500;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Heavy.otf') format('opentype');
+            font-weight: 900;
+        }
+
+        @font-face {
+            font-family: 'SanFrancisco';
+            src: url('fonts/SFNSDisplay-Semibold.otf') format('opentype');
+            font-weight: 600;
+        }

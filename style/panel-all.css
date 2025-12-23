@@ -1,0 +1,46 @@
+html, body {
+    min-width: 1700px; /* 可調：例如 1600/1680/1700 依實際佈局需要 */
+    background-color: #ffffff; /* 預設白色背景，防止閃爍 */
+    transition: background 0.8s ease-in-out;
+}
+
+/* 登入狀態的背景 - 由 ui-conductor.js 控制 class 切換 */
+html.auth-active, body.auth-active {
+    background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%) !important;
+    background-attachment: fixed !important;
+}
+
+/* ===== 防閃爍：預設隱藏所有需認證的面板 ===== */
+#roof-buttons-placeholder,
+#tool-download-placeholder,
+#optitle-placeholder,
+#fudausearch-placeholder,
+#auth-protected-tabs-placeholder,
+#dt-panel-placeholder,
+#consultant-panel-placeholder,
+#assist-panel-placeholder,
+#shrturl-placeholder,
+#auth-protected-ip-placeholder,
+#meeting-search-panel-placeholder,
+.canned-panel {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+/* 登入後顯示面板 */
+html.auth-active #roof-buttons-placeholder,
+html.auth-active #tool-download-placeholder,
+html.auth-active #optitle-placeholder,
+html.auth-active #fudausearch-placeholder,
+html.auth-active #auth-protected-tabs-placeholder,
+html.auth-active #dt-panel-placeholder,
+html.auth-active #consultant-panel-placeholder,
+html.auth-active #assist-panel-placeholder,
+html.auth-active #shrturl-placeholder,
+html.auth-active #auth-protected-ip-placeholder,
+html.auth-active #meeting-search-panel-placeholder,
+html.auth-active .canned-panel {
+    opacity: 1;
+    visibility: visible;
+}

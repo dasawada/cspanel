@@ -1,0 +1,275 @@
+#meetingsearch-filter-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+		#meetingsearchnow-form-container{
+			margin-top: 6px;
+		}
+
+        #meetingsearch-filter-input {
+            width: 55%; /* 输入框宽度 */
+            box-sizing: border-box;
+        }
+
+        #meetingsearch-fetch-meetings {
+            width: 40%; /* 按钮宽度 */
+            box-sizing: border-box;
+        }
+        
+        #meetingsearch-result, #meetingsearch-error, #meetingsearch-account-results {
+            margin-top: 10px;
+        }
+        .meeting-now-result-flow {
+            height: auto;
+            max-height: 450px;
+            overflow-y: auto;
+            padding-right: 6px; /* Add padding to compensate for scrollbar */
+            scrollbar-width: thin;
+            scrollbar-color: #f5f5f5 #ffffff;
+            /* Prevent content shift in modern browsers */
+            scrollbar-gutter: stable;
+        }
+
+        /* 针对Webkit引擎（Chrome, Safari, Edge） */
+        .meeting-now-result-flow::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .meeting-now-result-flow::-webkit-scrollbar-track {
+            background: #ffffff;
+        }
+
+        .meeting-now-result-flow::-webkit-scrollbar-thumb {
+            background-color: #f5f5f5;
+            border-radius: 10px;
+        }
+        .meetingsearch-meeting-item {
+            margin-bottom: 5px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+            padding: 5px;
+            border-radius: 5px;
+            background-color: #f5f5f5;
+        }
+        .meetingsearch-separator {
+            border-bottom: 1px solid #ccc;
+            margin-top: 10px;
+            margin-bottom: 10px;
+            color: #999;
+        }
+        .meetingsearch-info {
+            padding: 10px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            margin-top: 5px;
+            margin-bottom: 10px;
+            display: none; /* 初始状态下隐藏会议信息 */
+            overflow-y: auto;
+            font-size: 11px;
+            position: relative; /* 相对于父元素定位 */
+            z-index: 10; /* 设置较高的 z-index 以确保在图层上方 */
+            cursor: default;
+            box-shadow: inset 0 0px 6px rgba(0, 0, 0, 0.2);
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
+        }
+
+        .meetingsearch-info::-webkit-scrollbar {
+            display: none;  /* Chrome, Safari and Opera */
+        }
+
+        .meetingsearch-ongoing {
+            color: red;
+        }
+        .meetingsearch-upcoming {
+            color: blue;
+        }
+        .meetingsearch-waiting {
+            color: orange;
+        }
+        .meetingsearch-ended {
+            color: #A9A9A9;
+        }
+		
+.meeting-icon {
+    width: 16px;                 /* 設置圖標大小 */
+    height: auto;                /* 保持圖標的比例 */
+}
+
+.meeting-now-account-span {
+    cursor: pointer;
+	color: gray; /* 默认显示灰色 */
+    transition: color 0.3s; /* 添加过渡效果 */
+}
+.meeting-now-row {
+    display: flex;
+    align-items: center;
+    padding: 5px 0;
+    justify-content: space-between; /* 讓 div1, div2, div3 之間保持適當的距離 */
+}
+.meeting-now-div1{width:auto;}
+.meeting-now-div2{width:100%;}
+.meeting-now-div3{width:20px;}
+
+/* 會議資訊容器 */
+.meeting-info-container {
+    padding: 8px;
+    border-radius: 4px;
+    background-color: #f8f9fa;
+    font-size: 11px;
+    font-family: 'Consolas', monospace;
+}
+
+/* 會議時間行樣式 */
+.meeting-time-row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 8px;
+    align-items: center;
+    padding: 2px 0;
+    line-height: 1.4;
+}
+
+/* 標籤樣式 */
+.meeting-label {
+    color: #666;
+    font-size: 11px;
+}
+
+/* 時間值樣式 */
+.meeting-time-value {
+    font-family: 'Consolas', monospace;
+    color: #333;
+}
+
+/* 分隔線 */
+.meeting-separator {
+    margin: 4px 0;
+    border-bottom: 1px solid #eee;
+}
+
+/* 會議資訊表格樣式 */
+.meeting-info-table {
+    width: 100%;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-family: 'Consolas', monospace;
+    border-collapse: collapse;
+}
+
+.meeting-info-table td {
+    padding: 4px 6px;
+    vertical-align: top;
+    line-height: 1.4;
+}
+
+.meeting-info-table td:first-child {
+    width: 85px;
+    color: #666;
+    white-space: nowrap;
+}
+
+.meeting-info-table td:last-child {
+    color: #333;
+}
+
+/* 分隔線 */
+.meeting-info-divider {
+    margin: 8px 0;
+    border-bottom: 1px solid #eee;
+}
+
+.meeting-toggle-btn {
+    cursor: pointer;
+    background: none;
+    border: none;
+    font-size: 16px;
+    padding: 0 8px;
+    margin-right: 10px;
+    width: 28px;
+    height: 28px;
+}
+
+.meeting-toggle-btn:hover {
+    color: #666;
+}
+
+.meeting-section {
+    margin-bottom: 15px;
+}
+
+/* 會議狀態標題基本樣式 */
+.meeting-section strong {
+    display: block;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 13px;
+    position: relative;
+    padding-left: 32px;
+}
+
+/* 進行中 - 使用綠色系 */
+.meetingsearch-進行中 strong {
+    background-color: rgba(46, 204, 113, 0.1);
+    color: #27ae60;
+    border-left: 3px solid #27ae60;
+}
+
+.meetingsearch-進行中 strong::before {
+    content: '●';
+    position: absolute;
+    left: 12px;
+    animation: blink 1.5s infinite;
+}
+
+/* 即將開始 - 使用橙色系 */
+.meetingsearch-即將開始-半小時內 strong {
+    background-color: rgba(243, 156, 18, 0.1);
+    color: #f39c12;
+    border-left: 3px solid #f39c12;
+}
+
+.meetingsearch-即將開始-半小時內 strong::before {
+    content: '⚡';
+    position: absolute;
+    left: 12px;
+    font-size: 12px;
+}
+
+/* 等待中 - 使用藍色系 */
+.meetingsearch-等待中 strong {
+    background-color: rgba(52, 152, 219, 0.1);
+    color: #3498db;
+    border-left: 3px solid #3498db;
+}
+
+.meetingsearch-等待中 strong::before {
+    content: '⏳';
+    position: absolute;
+    left: 12px;
+    font-size: 12px;
+}
+
+/* 已結束 - 使用灰色系 */
+.meetingsearch-已結束 strong {
+    background-color: rgba(149, 165, 166, 0.1);
+    color: #95a5a6;
+    border-left: 3px solid #95a5a6;
+}
+
+.meetingsearch-已結束 strong::before {
+    content: '✓';
+    position: absolute;
+    left: 12px;
+}
+
+/* 閃爍動畫 */
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}

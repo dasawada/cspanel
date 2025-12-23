@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<title>CRM Chat Finder</title>
+<style>
+ body{font-family:system-ui,sans-serif;margin:0;padding:2rem;background:#f3f4f6}
+ .crm-chat-tool-container{max-width:480px;margin:auto;display:flex;flex-direction:column;gap:1rem}
+ input,select,button{padding:0.5rem 0.75rem;font-size:1rem;border:1px solid #ccc;border-radius:6px}
+ button{cursor:pointer;background:#2563eb;color:#fff;border:none;border-radius:6px}
+ pre{background:#fff;border:1px solid #e5e7eb;border-radius:6px;padding:1rem;white-space:pre-wrap;word-break:break-all}
+</style>
+</head>
+<body>
+<div class="crm-chat-tool-container">
+ <label>Webhook URL
+  <input type="text" id="crm-chat-tool-webhook" placeholder="https://example.bitrix24.com/rest/1/abcdef123456/">
+ </label>
+ <label>CRM 類型
+   <select id="crm-chat-tool-entity-type">
+      <option value="DEAL">DEAL</option>
+      <option value="LEAD">LEAD</option>
+      <option value="CONTACT">CONTACT</option>
+      <option value="COMPANY">COMPANY</option>
+   </select>
+ </label>
+ <label>CRM ID
+  <input type="number" id="crm-chat-tool-entity-id" placeholder="123">
+ </label>
+ <button id="crm-chat-tool-run">取得 Chat</button>
+ <pre id="crm-chat-tool-output"></pre>
+</div>
+<script>
+async function callApi(base, method, params){
+  const url = base.replace(/\/+$/,'') + '/' + method + '?' + (new URLSearchParams(params)).toString();
+  const res = await fetch(url);
+
+  // 嘗試解析回傳 JSON（Bitrix 會在錯誤時也送回 JSON）
+  let data = {};
+  try{
+    data = await res.json();
+  }catch(e){
+    // 非 JSON 回應，保持 data 為空物件
+  }
+
+  // 若 HTTP status 不是 2xx，或回傳包含 error 欄位，統一丟出易讀錯誤
+  if(!res.ok || data.error){
+    const desc = data.error_description || data.error || ('HTTP ' + res.status);
+    throw new Error(desc);
+  }
+  return data;
+}
+
+document.getElementById('crm-chat-tool-run').addEventListener('click', async ()=>{
+  const output=document.getElementById('crm-chat-tool-output');
+  output.textContent='處理中…';
+  const webhook=document.getElementById('crm-chat-tool-webhook').value.trim();
+  const type=document.getElementById('crm-chat-tool-entity-type').value;
+  const id=document.getElementById('crm-chat-tool-entity-id').value.trim();
+  if(!webhook||!type||!id){output.textContent='請完整填寫欄位';return;}
+  try{
+    // 1️⃣ 先取得 CRM 對應的所有 Chat 資訊
+    const chatData = await callApi(
+      webhook,
+      'imopenlines.crm.chat.get.json',
+      { CRM_ENTITY_TYPE: type, CRM_ENTITY: id }
+    );
+
+    const rawRes = chatData?.result;
+    const chatItems = [];
+
+    // 支援 result 為陣列或單物件
+    const pushItem = (obj)=>{
+      const cid = obj?.CHAT_ID ?? obj?.ID ?? obj?.CHAT?.ID;
+      if(cid){
+        chatItems.push({
+          chatId: cid,
+          connectorTitle: obj?.CONNECTOR_TITLE ?? null
+        });
+      }
+    };
+    if(Array.isArray(rawRes)){
+      rawRes.forEach(pushItem);
+    }else if(rawRes){
+      pushItem(rawRes);
+    }
+
+    if(chatItems.length === 0){
+      throw new Error('找不到任何聊天室，API 回傳: ' + JSON.stringify(chatData));
+    }
+
+    // 2️⃣ 逐一查詢每個 Chat 的標題
+    const results = [];
+    for(const item of chatItems){
+      let dialogData;
+      try{
+        dialogData = await callApi(
+          webhook,
+          'imopenlines.dialog.get.json',
+          { DIALOG_ID: 'chat' + item.chatId }
+        );
+      }catch(err){
+        dialogData = await callApi(
+          webhook,
+          'im.dialog.get.json',
+          { DIALOG_ID: 'chat' + item.chatId }
+        );
+      }
+
+      const title =
+            dialogData?.result?.TITLE        // imopenlines.dialog.get
+         ?? dialogData?.result?.title        // im.dialog.get
+         ?? dialogData?.result?.name         // 其他版本
+         ?? dialogData?.result?.NAME
+         ?? dialogData?.result?.lines_title
+         ?? dialogData?.result?.LINES_TITLE
+         ?? item.connectorTitle              // Fallback: OpenLine 來源名
+         ?? '未知';
+
+      results.push({chatId: item.chatId, title});
+    }
+
+    // 3️⃣ 輸出所有結果
+    output.textContent = results
+      .map(r => `CHAT_ID: ${r.chatId}\nTITLE: ${r.title}`)
+      .join('\n\n');
+  }catch(e){output.textContent='錯誤: '+e.message;}
+});
+</script>
+</body>
+</html>

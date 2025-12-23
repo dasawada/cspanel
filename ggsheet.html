@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>騰訊會議轉換</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: #f3f3f3;
+      color: #333;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+      transform: scale(0.85);
+    }
+    h1 {
+      color: #0078d4;
+      font-size: 1.8rem;
+    }
+    textarea {
+      width: 90%;
+      max-width: 340px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      font-size: 14px;
+    }
+    button {
+      background-color: #0078d4;
+      color: white;
+      border: none;
+      padding: 8px 16px;
+      font-size: 14px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-top: 20px;
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    button:hover {
+      background-color: #005a9e;
+    }
+    button:active {
+      background-color: #004578;
+    }
+  </style>
+</head>
+<body>
+  <h1>騰訊會議轉換</h1>
+  <textarea id="meetingContentTextarea" rows="10" placeholder="貼上完整的【複製全部資訊】"></textarea><br>
+  <textarea id="taskLinkTextarea" rows="1" placeholder="BX工單連結"></textarea>
+  <br>
+<div style="display: flex; gap: 10px;">
+    <button id="generateButton">轉換並複製</button>
+    <button id="clearButton">清除</button>
+</div>
+
+  <script>
+    // 獲取網頁中的 textarea 並提取內容
+    const meetingTextarea = document.getElementById('meetingContentTextarea');
+    const taskLinkTextarea = document.getElementById('taskLinkTextarea');
+    const generateButton = document.getElementById('generateButton');
+
+    generateButton.addEventListener('click', () => {
+      const meetingContent = meetingTextarea ? meetingTextarea.value.trim() : '';
+      const taskLink = taskLinkTextarea ? taskLinkTextarea.value.trim() : '';
+
+  if (!meetingContent) {
+    generateButton.innerText = '請輸入會議內容'; // 在按鈕上顯示提示
+    return;
+  }
+
+      // 解析會議內容
+      const meetingData = parseMeetingContent(meetingContent);
+
+      // 計算週期長短
+      const durationLabel = getDurationLabel(meetingData.startDate, meetingData.endDate, meetingData.isOneTime);
+
+      // 定義 Google Sheets 的欄位
+      const sheetData = {
+        "學生姓名": meetingData.name,
+        "開課日期": meetingData.startDate,
+        "重複日": meetingData.weekDay,
+        "時長標籤": durationLabel,
+        "時間範圍": meetingData.timeRange,
+        "帳號": meetingData.account,
+        "課程訊息": `OneClass 真人Live家教 ${meetingData.name}的課程教室\n${meetingData.link}\n#腾讯会议：${meetingData.meetingNumber || "無"}\n會議密碼：${meetingData.password || "無"}`,
+        "課程截止日": meetingData.endDate,
+        "備註": "",
+        "BX工單連結": taskLink,
+        "教室連結": meetingData.link
+      };
+
+      // 生成可直接複製的字串，按順序排列各個欄位，並使用制表符分隔以便貼入不同儲存格
+      const outputString = `${sheetData["學生姓名"]}	${sheetData["開課日期"]}	${sheetData["重複日"]}	${sheetData["時長標籤"]}	${sheetData["時間範圍"]}	${sheetData["帳號"]}	"${sheetData["課程訊息"]}"	${sheetData["課程截止日"]}	${sheetData["備註"]}	${sheetData["BX工單連結"]}	${sheetData["教室連結"]}`;
+
+      // 將生成的字串複製到剪貼簿
+  copyToClipboard(outputString);
+  
+  // 更新按鈕的文字以顯示成功訊息，稍後恢復原始文字
+  generateButton.innerText = '已生成並複製';
+  setTimeout(() => {
+    generateButton.innerText = '生成';
+  }, 2000); // 2秒後恢復為原本的文字
+});
+
+    // 複製內容到剪貼簿的函數
+function copyToClipboard(text) {
+  const textarea = document.createElement('textarea');
+  textarea.value = text;
+  document.body.appendChild(textarea);
+  textarea.select();
+  document.execCommand('copy');
+  document.body.removeChild(textarea);
+}
+
+    // 更新解析會議內容的函數，應用帳號轉換
+    function parseMeetingContent(content) {
+      const accountMatch = content.match(/^(.*?) 邀請您參加VooV Meeting/);
+      const nameMatch = content.match(/家教(.+?)的課程教室/);
+      const timeMatch = content.match(/會議時間：(\d{4}\/\d{2}\/\d{2}) (\d{2}:\d{2})-(\d{2}:\d{2})/);
+      const repeatMatch = content.match(/重複週期：(.+)/);
+      const linkMatch = content.match(/(https?:\/\/\S+)/);
+      const meetingNumberMatch = content.match(/#腾讯会议：([\s\S]*?)會議密碼/);
+      const passwordMatch = content.match(/會議密碼：(\d{6})/);
+
+      const isOneTime = !repeatMatch;
+
+      const startDate = isOneTime
+        ? timeMatch ? timeMatch[1].trim() : ''
+        : repeatMatch[1].split('-')[0].trim();
+
+      const endDate = isOneTime
+        ? startDate
+        : repeatMatch[1].split('-')[1].split(' ')[0].trim();
+
+      const timeRange = timeMatch ? `${timeMatch[2]}-${timeMatch[3]}`.replace(/:/g, '') : '';
+      const weekDay = getWeekDay(startDate);
+      const name = nameMatch ? nameMatch[1].trim() : '';
+      const account = accountMatch ? accountMatch[1].trim() : '';
+
+      // 應用帳號轉換邏輯
+      const mappedAccount = getAccountName(account);
+
+      return {
+        account: mappedAccount,
+        name: name,
+        startDate: startDate,
+        weekDay: weekDay,
+        timeRange: timeRange,
+        endDate: endDate,
+        link: linkMatch ? linkMatch[1] : '',
+        meetingNumber: meetingNumberMatch ? meetingNumberMatch[1].trim() : '',
+        password: passwordMatch ? passwordMatch[1] : '',
+        isOneTime: isOneTime,
+      };
+    }
+
+    // 根據賬號名替換為對應的名稱
+    function getAccountName(account) {
+      const accountMapping = {
+        "oneclassservice05": "VooV 05",
+        "oneclassservice06": "VooV 06",
+        "oneclassit01": "VooV it01",
+        "OneClassSupport": "VooV 客服用",
+        "OneClass01(客服用)": "VooV 客服用01",
+        "OneClass02(客服用)": "VooV 客服用02",
+        "OneClass03(客服用)": "VooV 客服用03"
+      };
+      return accountMapping[account] || account;
+    }
+
+    // 根據日期獲取星期幾
+    function getWeekDay(dateString) {
+      if (!dateString) return '';
+      const date = new Date(dateString);
+      if (isNaN(date)) return '';
+      const weekDays = ['日', '一', '二', '三', '四', '五', '六'];
+      return weekDays[date.getDay()];
+    }
+
+    // 計算週期標籤
+    function getDurationLabel(startDate, endDate, isOneTime) {
+      if (isOneTime) return "一次性";
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      return (end - start) / (1000 * 60 * 60 * 24) <= 100 ? "短週期" : "長週期";
+    }
+    
+    document.getElementById('clearButton').addEventListener('click', function() {
+        document.getElementById('meetingContentTextarea').value = '';
+        document.getElementById('taskLinkTextarea').value = '';
+    });
+
+  </script>
+</body>
+</html>

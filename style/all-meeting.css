@@ -1,0 +1,245 @@
+/* 搜尋框樣式 */
+#all-meeting-search-container {
+    display: flex;
+    align-items: center;
+    background-color: #f1f1f1;
+    border-radius: 20px;
+    padding: 5px;
+    width: auto;
+    position: relative; /* 讓結果框能夠依附在搜尋框下方 */
+    margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
+    z-index: 897;
+}
+
+#all-meeting-search-container i {
+    margin-right: 10px;
+    color: #333;
+}
+
+#all-meeting-search-input {
+    border: none;
+    outline: none;
+    background: none;
+    flex-grow: 1;
+    padding-left: 10px;
+}
+
+#all-meeting-result-container {
+    position: relative;
+    top: -35px;
+    left: 1px;
+	width: 99%;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 0 0 10px 10px;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    max-height: 600px;
+    z-index: 896;
+    margin-top: 0px;
+    padding-top: 20px;
+    overflow-y: scroll; /* 始終顯示垂直捲軸 */
+    overflow-x: hidden; /* 隱藏水平捲軸（如果需要） */
+}
+
+/* 自定義捲動條 */
+#all-meeting-result-container::-webkit-scrollbar {
+    width: 5px; /* 設置垂直捲動條的寬度 */
+}
+
+/* 捲動條軌道 */
+#all-meeting-result-container::-webkit-scrollbar-track {
+    background: #f1f1f1; /* 捲動條軌道背景色 */
+}
+
+/* 捲動條滑塊 */
+#all-meeting-result-container::-webkit-scrollbar-thumb {
+    background: #888; /* 滑塊顏色 */
+    border-radius: 10px; /* 滑塊圓角 */
+}
+
+/* 滑塊懸停效果 */
+#all-meeting-result-container::-webkit-scrollbar-thumb:hover {
+    background: #555; /* 滑塊在懸停時的顏色 */
+}
+
+#all-meeting-result-container div {
+    padding: 5px;
+}
+
+
+/* 錯誤顯示區域樣式 */
+#all-meeting-error {
+    margin-top: 20px;
+    color: red;
+    font-size: 14px;
+    width: auto; /* 與搜尋框寬度一致 */
+    text-align: left;
+    padding-left: 10px;
+}
+
+/* 沒有結果的樣式 */
+.all-no-results {
+    color: #999;
+    font-size: 14px;
+    text-align: center;
+}
+
+.all-meeting-result-item {
+    margin-bottom: 4px; /* 縮小間隔 */
+    font-size: 12px; /* 縮小字體 */
+}
+
+.all-meeting-details {
+	white-space: pre-wrap;
+    word-wrap: break-word;
+    background-color: #ffffff !important;
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    color: #454545;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+/* 移除 hover 狀態下的背景顏色更改 */
+.all-meeting-details:hover {
+    background-color: #ffffff !important;
+    transition: all .5s ease 0s;
+}
+
+.all-meeting-summary:hover {
+    background-color: #e0e0e0 !important; /* 在 hover 時改變背景顏色 */
+    border-radius: 6px; /* 圓角 */
+    transition: all .5s ease 0s;
+}
+
+.all-meeting-details p {
+    margin: 2px 0; /* 縮小段落之間的間距 */
+    line-height: 1.2; /* 縮小行距 */
+}
+
+.all-meeting-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 14px;
+    font-weight: bold;
+    margin-bottom: 4px;
+    position: relative;
+	
+}
+.all-meeting-title:hover {
+	background-color: #f1f1f1;
+}
+.all-meeting-main-toggle-btn {
+    cursor: pointer;
+    position: relative;
+    left: 5px;
+}
+
+.all-meeting-summary {
+    position: relative; /* 讓內部的 detail-toggle-btn 能夠正確定位 */
+    padding: 0px;
+}
+
+.time-summary {
+    position: relative;
+}
+
+/* 第三層中的時間範圍摺疊按鈕調整到右側 */
+.all-meeting-detail-toggle-btn {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+}
+
+.all-time-background-div {
+    display: block; /* 保證內容垂直排列 */
+    grid-template-columns: 1fr auto; /* 1fr 為時間範圍，auto 用於放置按鈕 */
+    align-items: center;
+    position: relative;
+    padding: 5px;
+}
+
+/* 調整 .time-toggle-btn 在右側對齊 */
+.time-toggle-btn {
+    position: absolute;
+    top: 0;
+    right: 5px;
+    cursor: pointer;
+}
+/* 調整每層的按鈕位置（週期和時間範圍的按鈕位於右側） */
+.all-meeting-repeat-toggle-btn, .all-meeting-time-toggle-btn {
+    position: absolute;
+    right: 10px;
+    cursor: pointer;
+}
+/* 調整每一層內部的 grid 排列 */
+.all-meeting-repeat {
+    display: block; /* 保證每個項目換行垂直排列 */
+    position: relative;
+}
+.all-meeting-per-list {
+    border: 1px solid #cfcfcf;
+    transition: all .5s ease 0s;
+	margin-bottom: 10px;
+	border-radius: 10px;
+	background-color: #f1f1f1;
+}
+
+.all-meeting-per-list:hover {
+    border: 1px solid #858585;
+    transition: all .5s ease 0s;
+	border-radius: 10px;
+}
+/* 定義 grid 容器和列的布局 */
+.all-white-background-div {
+    display: grid;
+    grid-template-columns: 1fr; /* 每層占滿一列，垂直排列 */
+    gap: 10px; /* 每層之間的間隔 */
+	border-left: 1px dashed #c5c5c5;
+    margin-left: 13px;
+}
+/* 定義時間範圍及標籤的排列 */
+.all-meeting-time-range {
+    display: flex;
+    align-items: center;
+    position: relative;
+    padding: 5px;
+    flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
+    width: 100%; /* 強制佔滿父級寬度 */
+}
+.meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
+    background-color: #e0e0e0 !important;
+
+}
+.meeting-wrapper{
+	border-radius:10px;
+}
+
+/* 調整標籤元素的位置 */
+.all-meeting-time-range div {
+    margin-right: 8px;
+    justify-content: center;
+    display: grid;
+    width: fit-content;
+}
+.meeting-time-container {
+    display: flex;
+    justify-content: space-between; /* 確保時間範圍和 icon 在同一行的兩邊 */
+    align-items: center;
+    position: relative;
+}
+.icon-container {
+    margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
+}
+        /* 標籤顏色定義 */
+        .tag-group.no-tag { border-left: 4px solid #4a90e2; }
+        .tag-group.short-cycle { border-left: 4px solid #327d28; }
+        .tag-group.one-time { border-left: 4px solid #e24a4a; }
+		.tag-group.long-cycle { border-left: 4px solid #4a90e2;}

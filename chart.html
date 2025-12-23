@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>課程數量變化圖</title>
+  <style>
+    /* 使頁面背景為深色、Canvas 自適應寬度 */
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #1a1a1a;
+      font-family: sans-serif;
+      color: #fff;
+      /* 讓內容置中，可自行調整 */
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+    }
+
+    h1 {
+      color: #ff9900;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+
+    /* Canvas 在 RWD 下自適應，最大寬度 90% */
+    #myChart {
+      width: 90%;
+      max-width: 800px;
+      height: 400px; /* 可以固定高度，或用其他方式彈性設定 */
+      background: #1a1a1a; /* 深色背景 */
+      display: block;
+      margin: 0 auto;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+
+    /* Tooltip 的樣式：半透明黑底、白字 */
+    #tooltip {
+      position: absolute;
+      background-color: rgba(0, 0, 0, 0.7);
+      color: #fff;
+      padding: 6px 8px;
+      font-size: 12px;
+      border-radius: 4px;
+      pointer-events: none; /* 滑鼠不會影響此元素 */
+      opacity: 0;
+      transition: opacity 0.1s ease-in-out;
+      z-index: 999;
+    }
+
+    /* Grid lines style */
+    .grid-line {
+      stroke: rgba(255, 255, 255, 0.1);
+      stroke-dasharray: 4 4;
+    }
+
+    /* 增加圖例樣式 */
+    .legend {
+      display: flex;
+      justify-content: center;
+      gap: 20px;
+      margin: 10px 0;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+
+    .legend-color {
+      width: 20px;
+      height: 2px;
+    }
+
+    .legend-color.actual {
+      background: #fcd26b;
+    }
+  </style>
+</head>
+<body>
+  <h1>課程數量變化圖</h1>
+  
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-color actual"></div>
+      <span>實際數量</span>
+    </div>
+  </div>
+  <!-- Canvas 元素 -->
+  <canvas id="myChart"></canvas>
+  <!-- 用於顯示滑鼠提示 (Tooltip) 的元素 -->
+  <div id="tooltip"></div>
+
+  <script>
+    // -------------------------------
+    // 1. 定義資料
+    // -------------------------------
+    const dataPoints = [];
+    let yAxisRange = { max: 0, step: 0 };
+
+    // -------------------------------
+    // 2. 取得 Canvas & 設定畫布大小
+    // -------------------------------
+    const canvas = document.getElementById('myChart');
+    const ctx = canvas.getContext('2d');
+
+    // 根據裝置像素比修正，避免繪圖模糊
+    let devicePixelRatio = window.devicePixelRatio || 1;
+    function resizeCanvas() {
+      // 讓 Canvas 填滿容器寬度
+      const canvasStyle = window.getComputedStyle(canvas);
+      const width = parseFloat(canvasStyle.width);
+      const height = parseFloat(canvasStyle.height);
+
+      canvas.width = width * devicePixelRatio;
+      canvas.height = height * devicePixelRatio;
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+    }
+
+    // 初次執行時，先呼叫一次 resizeCanvas
+    resizeCanvas();
+
+    // 監聽視窗改變大小，動態調整
+    window.addEventListener('resize', () => {
+      resizeCanvas();
+      drawChart();
+    });
+
+    // -------------------------------
+    // 3. 計算資料的最大最小值
+    // -------------------------------
+    let minValue = 0;
+    let maxValue = 0;
+    let minIndex = 0;
+    let maxIndex = 0;
+
+    // -------------------------------
+    // 4. 繪製圖表
+    // -------------------------------
+    function timeToMinutes(timeStr) {
+      const [hours, minutes] = timeStr.split(':').map(Number);
+      return hours * 60 + minutes;
+    }
+
+    // 修改為取得台灣當前時間
+    function getCurrentTime() {
+      const now = new Date();
+      // 轉換為台灣時間
+      const twTime = new Date(now.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
+      const hours = String(twTime.getHours()).padStart(2, '0');
+      const minutes = String(twTime.getMinutes()).padStart(2, '0');
+      return `${hours}:${minutes}`;
+    }
+
+    // 更新 Y 軸範圍計算函數
+    function calculateYAxisRange(maxValue) {
+      // 最小值固定為 0
+      const minValue = 0;
+      
+      // 根據最大值計算合適的刻度
+      const orderOfMagnitude = Math.floor(Math.log10(maxValue));
+      const magnitude = Math.pow(10, orderOfMagnitude);
+      
+      // 計算最接近的上限值
+      let maxRange;
+      const normalized = maxValue / magnitude;
+      
+      if (normalized <= 1.2) maxRange = 1.2 * magnitude;
+      else if (normalized <= 2) maxRange = 2 * magnitude;
+      else if (normalized <= 2.5) maxRange = 2.5 * magnitude;
+      else if (normalized <= 3) maxRange = 3 * magnitude;
+      else if (normalized <= 4) maxRange = 4 * magnitude;
+      else if (normalized <= 5) maxRange = 5 * magnitude;
+      else if (normalized <= 6) maxRange = 6 * magnitude;
+      else if (normalized <= 8) maxRange = 8 * magnitude;
+      else maxRange = 10 * magnitude;
+      
+      // 計算刻度間距
+      const step = maxRange / 5;  // 固定5個刻度
+
+      return {
+        min: minValue,
+        max: maxRange,
+        step: step,
+        steps: 5
+      };
+    }
+
+    function drawChart() {
+      // 先清空畫布
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // 取得目前 CSS 寬高 (非像素比縮放後)
+      const styleWidth = parseFloat(getComputedStyle(canvas).width);
+      const styleHeight = parseFloat(getComputedStyle(canvas).height);
+
+      // 設定繪圖區域四邊的留白
+      const padding = 40;
+      const chartWidth = styleWidth - padding * 2;
+      const chartHeight = styleHeight - padding * 2;
+
+      // 依據 dataPoints 的數量，算出 X 軸每個點之間的距離
+      const stepX = chartWidth / (dataPoints.length - 1);
+
+      // 修改這部分：直接使用 yAxisRange 而不是重新計算
+      function getX(index) {
+        return padding + index * stepX;
+      }
+      
+      // 修改 Y 軸映射函數
+      function getY(value) {
+        // 確保使用正確的範圍值
+        return padding + ((yAxisRange.max - value) / yAxisRange.max) * chartHeight;
+      }
+
+      // ---------------------------
+      // 4-1. 繪製「曲線下方」漸層
+      // ---------------------------
+      // 建立線性漸層 (由上到下)
+      // 注意：Canvas 的漸層需要使用實際像素座標 (非 styleWidth)
+      let gradient = ctx.createLinearGradient(0, padding, 0, padding + chartHeight);
+      gradient.addColorStop(0, 'rgba(255, 153, 0, 0.5)'); // 橙色 50% 透明
+      gradient.addColorStop(1, 'rgba(255, 153, 0, 0)');   // 完全透明
+
+      // 開始繪製路徑
+      ctx.beginPath();
+      ctx.moveTo(getX(0), getY(dataPoints[0].actual));
+      for (let i = 1; i < dataPoints.length; i++) {
+        ctx.lineTo(getX(i), getY(dataPoints[i].actual));
+      }
+      // 收到最右下方、再到最左下方，形成封閉區域
+      ctx.lineTo(getX(dataPoints.length - 1), styleHeight - padding);
+      ctx.lineTo(getX(0), styleHeight - padding);
+      ctx.closePath();
+
+      // 填充漸層
+      ctx.fillStyle = gradient;
+      ctx.fill();
+
+      // ---------------------------
+      // 4-2. 繪製主折線(橙色)
+      // ---------------------------
+      ctx.beginPath();
+      ctx.strokeStyle = '#ff9900';
+      ctx.lineWidth = 2;
+      ctx.moveTo(getX(0), getY(dataPoints[0].actual));
+      for (let i = 1; i < dataPoints.length; i++) {
+        ctx.lineTo(getX(i), getY(dataPoints[i].actual));
+      }
+      ctx.stroke();
+
+      // ---------------------------
+      // 4-3. 繪製資料點 & 標示 H/L
+      // ---------------------------
+      ctx.fillStyle = '#ff9900';
+      for (let i = 0; i < dataPoints.length; i++) {
+        const x = getX(i);
+        const y = getY(dataPoints[i].actual);
+        // 畫出小圓點
+        ctx.beginPath();
+        ctx.arc(x, y, 4, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      // 繪製 H (最高點)
+      const xH = getX(maxIndex);
+      const yH = getY(maxValue);
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '14px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('H', xH, yH - 8); // 在點上方顯示
+
+      // 繪製 L (最低點)
+      const xL = getX(minIndex);
+      const yL = getY(minValue);
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText('L', xL, yL - 8);
+
+      // ---------------------------
+      // 4-4. 繪製 X 軸時間標籤 (可視需要繪製或省略)
+      // ---------------------------
+      ctx.fillStyle = '#ffffff';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      for (let i = 0; i < dataPoints.length; i++) {
+        const x = getX(i);
+        const y = styleHeight - padding + 15; // 放在下方
+        ctx.fillText(dataPoints[i].time, x, y);
+      }
+
+      // 繪製網格線和 Y 軸刻度
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.1)';
+      ctx.setLineDash([4, 4]);
+
+      for (let i = 0; i <= yAxisRange.steps; i++) {
+        const value = yAxisRange.max - (i * yAxisRange.step);
+        const y = padding + (i * (chartHeight / yAxisRange.steps));
+
+        // 繪製刻度文字，根據數值大小調整格式
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        
+        // 大數值使用 K 單位顯示
+        const displayValue = value >= 1000 
+          ? (value / 1000).toFixed(1) + 'K'
+          : Math.round(value).toString();
+          
+        ctx.fillText(displayValue, padding - 10, y);
+      }
+
+      // 垂直網格線
+      for (let i = 0; i < dataPoints.length; i++) {
+        const x = padding + i * stepX;
+        ctx.beginPath();
+        ctx.moveTo(x, padding);
+        ctx.lineTo(x, styleHeight - padding);
+        ctx.stroke();
+      }
+
+      // 修改現在時間線的繪製
+      const currentTime = getCurrentTime();
+      const currentMinutes = timeToMinutes(currentTime);
+      const startMinutes = timeToMinutes(dataPoints[0].time);
+      const endMinutes = timeToMinutes(dataPoints[dataPoints.length - 1].time);
+      const totalTimeRange = endMinutes - startMinutes;
+      
+      // Calculate current time line position
+      if (currentMinutes >= startMinutes && currentMinutes <= endMinutes) {
+        const timeX = padding + ((currentMinutes - startMinutes) / totalTimeRange) * chartWidth;
+        
+        // Draw dashed vertical line
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+        ctx.setLineDash([5, 3]);
+        ctx.beginPath();
+        ctx.moveTo(timeX, padding);
+        ctx.lineTo(timeX, styleHeight - padding);
+        ctx.stroke();
+        
+        // Draw "Now" label
+        ctx.fillStyle = '#ffffff';
+        ctx.font = '12px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(`現在時間 ${currentTime}`, timeX, padding - 10);
+        ctx.restore();
+      }
+    }
+
+    // -------------------------------
+    // 5. Tooltip 互動
+    // -------------------------------
+    const tooltip = document.getElementById('tooltip');
+
+    // 滑鼠移動事件：判斷是否靠近某個資料點
+    let rect; // Add global rect variable
+    canvas.addEventListener('mousemove', (e) => {
+      rect = canvas.getBoundingClientRect(); // Update rect on mousemove
+      const mouseX = e.clientX - rect.left;
+      const mouseY = e.clientY - rect.top;
+
+      showTooltip(mouseX, mouseY);
+    });
+
+    // 滑鼠離開畫布時，隱藏 tooltip
+    canvas.addEventListener('mouseleave', () => {
+      tooltip.style.opacity = 0;
+    });
+
+    function showTooltip(mouseX, mouseY) {
+      const styleWidth = parseFloat(getComputedStyle(canvas).width);
+      const styleHeight = parseFloat(getComputedStyle(canvas).height);
+
+      // 與 drawChart() 同樣的計算方式
+      const padding = 40;
+      const chartWidth = styleWidth - padding * 2;
+      const chartHeight = styleHeight - padding * 2;
+      const stepX = chartWidth / (dataPoints.length - 1);
+
+      // 將滑鼠像素座標轉回繪圖座標 (考慮 devicePixelRatio)
+      const scale = (val) => val / devicePixelRatio;
+
+      const adjMouseX = scale(mouseX);
+      const adjMouseY = scale(mouseY);
+
+      // 找到最近的資料點 (根據 X 座標)
+      let closestIndex = 0;
+      let minDist = Infinity;
+      for (let i = 0; i < dataPoints.length; i++) {
+        const x = padding + i * stepX;
+        const dist = Math.abs(x - adjMouseX);
+        if (dist < minDist) {
+          minDist = dist;
+          closestIndex = i;
+        }
+      }
+
+      // 判斷滑鼠與最近資料點的距離 (若太遠可不顯示 tooltip)
+      if (minDist > 15) {
+        tooltip.style.opacity = 0;
+        return;
+      }
+
+      // 計算該資料點的實際像素位置
+      const closestX = padding + closestIndex * stepX;
+      const valueRange = maxValue - minValue;
+      const closestY = padding + (maxValue - dataPoints[closestIndex].actual) / valueRange * chartHeight;
+
+      // 顯示 tooltip
+      tooltip.style.opacity = 1;
+      tooltip.innerHTML = `
+        時間：${dataPoints[closestIndex].time}<br/>
+        實際數量：${dataPoints[closestIndex].actual}
+      `;
+
+      // 計算 tooltip 的位置 (略做偏移)
+      const tooltipWidth = tooltip.offsetWidth;
+      const tooltipHeight = tooltip.offsetHeight;
+
+      const pageX = rect.left + closestX * devicePixelRatio;
+      const pageY = rect.top + closestY * devicePixelRatio;
+
+      tooltip.style.left = (pageX - tooltipWidth / 2) + 'px';
+      tooltip.style.top = (pageY - tooltipHeight - 15) + 'px';
+    }
+
+    // -------------------------------
+    // 6. 修改資料處理函數
+    // -------------------------------
+    function processApiData(apiData) {
+      // 建立時間點對應表
+      const timeMap = new Map();
+      
+      // 初始化每個半小時的時間點
+      for (let i = 0; i < 48; i++) {
+        const hour = Math.floor(i / 2);
+        const minute = (i % 2) * 30;
+        const timeKey = `${hour.toString().padStart(2, '0')}:${minute.toString().padStart(2, '0')}`;
+        timeMap.set(timeKey, 0);
+      }
+      
+      // 處理 API 資料
+      apiData.values.forEach(row => {
+        const [time, count] = row;
+        if (!time || !count) return; // 跳過無效資料
+        
+        // 將時間規整到最近的半小時
+        const [hours, minutes] = time.split(':').map(Number);
+        const roundedMinutes = minutes < 30 ? '00' : '30';
+        const roundedTime = `${hours.toString().padStart(2, '0')}:${roundedMinutes}`;
+        
+        // 更新時間點的數量，使用數值比較
+        const currentCount = timeMap.get(roundedTime) || 0;
+        const newCount = parseInt(count) || 0;
+        timeMap.set(roundedTime, Math.max(currentCount, newCount));
+      });
+
+      // 整理成陣列並排序
+      const sortedData = Array.from(timeMap.entries())
+        .map(([time, count]) => ({
+          time,
+          actual: count
+        }))
+        .sort((a, b) => timeToMinutes(a.time) - timeToMinutes(b.time));
+
+      // 計算 Y 軸範圍
+      const maxCount = Math.max(...sortedData.map(item => item.actual));
+      const yAxisConfig = calculateYAxisRange(maxCount);
+
+      return {
+        dataPoints: sortedData,
+        yAxisRange: yAxisConfig
+      };
+    }
+
+    // -------------------------------
+    // 7. 修改 fetchSheetData 函數
+    // -------------------------------
+    async function fetchSheetData() {
+      const sheetId = '15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU';
+      const sheetName = 'count';
+      const apiKey = 'AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw';
+
+      try {
+        const url = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/${sheetName}?key=${apiKey}`;
+        const response = await fetch(url);
+        const data = await response.json();
+        
+        if (!data.values) {
+          throw new Error('No data found in sheet');
+        }
+
+        // 處理 API 資料並更新 dataPoints
+        const processedData = processApiData(data);
+        dataPoints.length = 0; // 清空現有資料
+        dataPoints.push(...processedData.dataPoints);
+        
+        // 確保正確設置 yAxisRange
+        yAxisRange = {
+          max: processedData.yAxisRange.max,
+          step: processedData.yAxisRange.step
+        };
+
+        // 重新計算最大最小值
+        const values = dataPoints.map(dp => dp.actual);
+        const newMinValue = Math.min(...values);
+        const newMaxValue = Math.max(...values);
+        
+        // 更新全局變數
+        Object.assign(window, {
+          minValue: newMinValue,
+          maxValue: newMaxValue,
+          minIndex: values.indexOf(newMinValue),
+          maxIndex: values.indexOf(newMaxValue)
+        });
+
+        drawChart();
+      } catch (error) {
+        console.error('Error fetching sheet data:', error);
+      }
+    }
+
+    // -------------------------------
+    // 8. 初始化
+    // -------------------------------
+    window.onload = async function() {
+      await fetchSheetData();  // 等待資料載入
+      setInterval(drawChart, 60000);  // 每分鐘更新時間線
+    };
+  </script>
+</body>
+</html>

@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>可派搜</title>
+  <!-- Bootstrap 5 CSS CDN -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f8f9fa;
+    }
+    .container {
+      max-width: 960px;
+      margin-top: 2rem;
+    }
+    .header-title {
+      font-weight: 600;
+      margin-bottom: 1.5rem;
+    }
+    .card {
+      box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+    }
+    .table thead {
+      background-color: #0d6efd;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card p-4">
+      <h2 class="header-title text-center">班表搜尋</h2>
+      
+      <!-- 搜尋條件 -->
+      <form id="searchForm" class="row g-3">
+        <div class="col-md-4">
+          <label for="date" class="form-label">日期</label>
+          <input type="date" id="date" class="form-control" required>
+        </div>
+        <div class="col-md-4">
+          <label for="labelSelect" class="form-label">標籤</label>
+          <select id="labelSelect" class="form-select">
+            <option value="">全部</option>
+          </select>
+        </div>
+        <div class="col-md-4 d-flex align-items-center">
+          <div class="form-check me-3 mt-4">
+            <input type="radio" id="bothDays" name="shiftFilter" class="form-check-input" value="both">
+            <label for="bothDays" class="form-check-label">兩天都在</label>
+          </div>
+          <div class="form-check me-3 mt-4">
+            <input type="radio" id="todayOnly" name="shiftFilter" class="form-check-input" value="today">
+            <label for="todayOnly" class="form-check-label">今🆗明❌</label>
+          </div>
+          <div class="form-check mt-4">
+            <input type="radio" id="tomorrowOnly" name="shiftFilter" class="form-check-input" value="tomorrow">
+            <label for="tomorrowOnly" class="form-check-label">今❌明🆗</label>
+          </div>
+        </div>
+        <div class="col-md-2 d-flex align-items-end">
+          <button type="button" class="btn btn-primary w-100" onclick="searchSchedule()">搜尋</button>
+        </div>
+      </form>
+
+      <!-- 搜尋結果 -->
+      <div id="result" class="mt-4"></div>
+      <div id="debug" class="mt-2 text-muted" style="font-size: 0.85rem;"></div>
+    </div>
+  </div>
+
+  <!-- Bootstrap 5 JS Bundle CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script>
+    // 請填入你的 Google API Key 與 Sheets ID
+    const API_KEY = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
+    const SHEET_ID = "15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU";
+    const SHEET_RANGE = `你的表格名稱!A1:BQ`;  // 假設工作表名稱為 "工作表1"
+
+    // 讀取整個表格資料
+    async function fetchScheduleData() {
+      const url = `https://sheets.googleapis.com/v4/spreadsheets/${SHEET_ID}/values/${SHEET_RANGE}?key=${API_KEY}`;
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error(`API 錯誤: ${response.status}`);
+        const data = await response.json();
+        return data.values;
+      } catch (error) {
+        console.error("API 請求失敗:", error);
+        document.getElementById("result").innerHTML = `<div class="alert alert-danger">❌ API 讀取失敗: ${error.message}</div>`;
+        return null;
+      }
+    }
+
+    // 頁面載入時，填充標籤下拉選單：從 column B（標籤）讀取 row2 以後的所有獨特值，排除 "不可派"
+    async function populateLabelDropdown() {
+      const data = await fetchScheduleData();
+      if (!data || data.length < 2) return;
+      const labelSet = new Set();
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const label = row[1] ? row[1].trim() : "";
+        if (label && label !== "不可派") {
+          labelSet.add(label);
+        }
+      }
+      const labelSelect = document.getElementById("labelSelect");
+      labelSelect.innerHTML = `<option value="">全部</option>`;
+      labelSet.forEach(val => {
+        const option = document.createElement("option");
+        option.value = val;
+        option.textContent = val;
+        labelSelect.appendChild(option);
+      });
+    }
+
+    // 回傳下一天的 ISO 格式日期 (YYYY-MM-DD)
+    function getNextDay(dateStr) {
+      const d = new Date(dateStr);
+      d.setDate(d.getDate() + 1);
+      return d.toISOString().split("T")[0];
+    }
+
+    // 判斷班別是否為上班 (僅 "早" 或 "晚" 表示有上班)
+    function isOnDuty(shift) {
+      return shift === "早" || shift === "晚";
+    }
+
+    // 搜尋班表：依指定日期篩選出上班人員，並支援隔日有班、標籤下拉篩選。
+    // 若隔日有班被勾選，則即使今日為休假也會顯示，但隔日必須上班（早或晚）。
+    async function searchSchedule() {
+      const dateInput = document.getElementById("date").value.trim();
+      const labelFilter = document.getElementById("labelSelect").value.trim();
+      const shiftFilter = document.querySelector('input[name="shiftFilter"]:checked')?.value;
+      const resultDiv = document.getElementById("result");
+      const debugDiv = document.getElementById("debug");
+      
+      resultDiv.innerHTML = `<div class="alert alert-info">📡 搜尋中...</div>`;
+      debugDiv.innerHTML = "";
+
+      if (!dateInput) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ 請輸入日期</div>`;
+        return;
+      }
+      
+      const date = dateInput; // input type="date" 輸出 ISO 格式
+      // 修改這行，讓所有情況都顯示明天的日期
+      const nextDate = getNextDay(date);
+
+      const data = await fetchScheduleData();
+      if (!data || data.length < 2) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ 無法讀取數據，請檢查 API 設定或表格名稱</div>`;
+        return;
+      }
+      
+      const headers = data[0]; // 第一行為標題列：A: team, B: 標籤, C: name, D 以後：各日期
+      console.log("📝 標題行:", headers);
+      
+      // 找出指定日期的欄位索引
+      const dateColumnIndex = headers.indexOf(date);
+      if (dateColumnIndex === -1) {
+        resultDiv.innerHTML = `<div class="alert alert-danger">❌ 查無 ${date} 的對應日期</div>`;
+        debugDiv.innerHTML = `<pre>${JSON.stringify(headers, null, 2)}</pre>`;
+        return;
+      }
+      
+      let nextDateColumnIndex = -1;
+      if (nextDate) {
+        nextDateColumnIndex = headers.indexOf(nextDate);
+        if (nextDateColumnIndex === -1) {
+          resultDiv.innerHTML = `<div class="alert alert-danger">❌ 查無隔日 ${nextDate} 的對應日期</div>`;
+          return;
+        }
+      }
+      
+      // 搜尋記錄：從 Row2 開始
+      let results = [];
+      for (let i = 1; i < data.length; i++) {
+        const row = data[i];
+        const team = row[0];
+        const rowLabel = row[1] ? row[1].trim() : "";
+        const name = row[2];
+        const shift = row[dateColumnIndex];
+        const nextShift = row[nextDateColumnIndex];
+
+        // 排除標籤為 "不可派" 的成員
+        if (rowLabel === "不可派") continue;
+        
+        // 根據 shiftFilter 篩選
+        switch(shiftFilter) {
+          case "both":
+            // 兩天都要在
+            if (!isOnDuty(shift) || !isOnDuty(nextShift)) continue;
+            break;
+          case "today":
+            // 今日要上班，明日要休假
+            if (!isOnDuty(shift) || isOnDuty(nextShift)) continue;
+            break;
+          case "tomorrow":
+            // 今日休假，明日要上班
+            if (isOnDuty(shift) || !isOnDuty(nextShift)) continue;
+            break;
+        }
+        
+        // 若有標籤篩選，則僅保留符合條件的記錄
+        if (labelFilter && rowLabel !== labelFilter) continue;
+        
+        results.push({
+          team,
+          label: rowLabel,
+          name,
+          shift,
+          nextShift
+        });
+      }
+      
+      if (results.length === 0) {
+        resultDiv.innerHTML = `<div class="alert alert-warning">❌ 未找到符合條件的記錄</div>`;
+      } else {
+        // 以表格呈現結果
+        let html = `<h3 class="mb-3">搜尋結果 (${results.length} 筆)：</h3>`;
+        html += `<div class="table-responsive"><table class="table table-bordered table-hover align-middle">
+                    <thead>
+                      <tr>
+                        <th>Team</th>
+                        <th>標籤</th>
+                        <th>姓名</th>
+                        <th>${date} 班別</th>`;
+        if (nextDate) {
+          html += `<th>隔日 (${nextDate}) 班別</th>`;
+        }
+        html += `  </tr>
+                    </thead>
+                    <tbody>`;
+        results.forEach(rec => {
+          html += `<tr>
+                     <td>${rec.team}</td>
+                     <td>${rec.label}</td>
+                     <td>${rec.name}</td>
+                     <td>${rec.shift}</td>`;
+          if (nextDate) {
+            html += `<td>${rec.nextShift}</td>`;
+          }
+          html += `</tr>`;
+        });
+        html += `   </tbody>
+                  </table></div>`;
+        resultDiv.innerHTML = html;
+      }
+    }
+
+    // 頁面載入時，填充標籤下拉選單
+    window.onload = function() {
+      populateLabelDropdown();
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>★客服小工具ALL★</title>
+<style>
+body {
+font-size: 10px; overflow-x: hidden;
+font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+}
+/* 檔次提示語樣式 */
+#copyMessage { 
+font-size: 12px; 
+color: #ff0000; 
+}
+button {
+    background-color: #f0f0f0;
+    color: #000000;
+    padding: 2px 6px;
+    border: 1px solid #bfbfbf;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+}
+
+/* 按鈕懸停時的效果 */
+button:hover {
+    background-color: #dbdbdb;
+}
+/* 按鈕點擊時的效果 */
+button:active {
+    background-color: #949494; 
+}
+
+/* 輸入框樣式 */
+input[type=text], input[type=password] {
+    color: #946969;
+    width: 100%;
+    padding: 2px 4px;
+    margin: 0px 0;
+    display: inline-block;
+    border: 1px solid #d9d9d9;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */ 
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 輸入框陰影 */
+}
+
+/* 聚焦時的效果 */
+input[type=text]:focus, input[type=password]:focus {
+    border: 1px solid #949494 !important;
+    color:#292828;
+    outline: none; /* 移除默認的 outline */
+}
+
+/* 點名鈕基本樣式 */
+        .DienMing {
+            background-color: #daf5cc;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .DienMing:hover {
+            background-color: #93d470; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .DienMing:active {
+            background-color: #9cba8c; /* 按下時的背景顏色 */
+        }
+
+/* 解除點名鈕基本樣式 */
+        .deactiveDienMing {
+            background-color: #ffe6d7;
+            color: #000000;
+            padding: 2px 6px;
+            border: 1px solid #bfbfbf;
+            border-radius: 4px;
+             cursor: pointer;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif; /* 使用 macOS 系統字體 */
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); /* 模仿 macOS 按鈕陰影 */
+transition: background-color 0.1s ease;
+        }
+
+        /* 滑鼠懸停時的效果 */
+        .deactiveDienMing:hover {
+            background-color: #f2b794; /* 懸停時的背景顏色 */
+        }
+
+        /* 按下時的效果 */
+        .deactiveDienMing:active {
+            background-color: #c7a18b; /* 按下時的背景顏色 */
+        }
+</style>
+</head>
+<body>
+<button onclick="copyToClipboard('OneClass真人Live家教_體驗接待大廳_A')" style="font-size: 12px;">LINE大廳A</button>
+<button onclick="copyToClipboard('OneClass真人Live家教_官方臉書_A')" style="font-size: 12px;">FB_A</button>
+<button onclick="copyToClipboard('直播公開課_A')" style="font-size: 12px;">直播_A</button>
+<button onclick="copyToClipboard('電話進線_A')" style="font-size: 12px;">電話進線_A</button>
+<button onclick="copyToClipboard('2024年XX月_MGM名單_B')" style="font-size: 12px;">MGM_B</button>
+
+<button class="DienMing" onclick="copyToClipboard_F12script('\
+// 老師點名\n\
+function showRows() {\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 遍歷每個行元素\n\
+    rows.forEach(function(row) {\n\
+        var cells = row.querySelectorAll(\'.MuiTableCell-root\');\n\
+        var shouldShowRow = false;\n\
+        // 檢查每個單元格中的內容\n\
+        cells.forEach(function(cell) {\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
+            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
+            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
+            // 如果找到了符合條件的子元素，且第二個子元素沒有其他子元素\n\
+            if (box1 && box2 && !box2.querySelector(\'.MuiBox-root\')) {\n\
+                shouldShowRow = true;\n\
+            }\n\
+        });\n\
+        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
+        row.style.display = shouldShowRow ? \'table-row\' : \'none\';\n\
+    });\n\
+}\n\
+// 在延遲1秒後執行顯示/隱藏行的函數\n\
+setTimeout(showRows, 1000);\n\
+', '【點名】函數已複製')">點名</button>
+
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
+// 解除點名\n\
+function showAllRows() {\n\
+    // 選擇所有具有類名 .MuiTableRow-root 的元素\n\
+    var rows = document.querySelectorAll(\'.MuiTableRow-root\');\n\
+    // 將所有行顯示\n\
+    rows.forEach(function(row) {\n\
+        row.style.display = \'\'; // 設置為空字符串，以使用默認的顯示方式\n\
+    });\n\
+}\n\
+// 在延遲1秒後執行完全顯示所有行的函數\n\
+setTimeout(showAllRows, 1000);\n\
+', '【解除點名】函數已複製')">解除點名</button>
+
+<button class="DienMing" onclick="copyToClipboard_F12script('\
+// 即時觀課-老師點名\n\
+function showRows() {\n\
+    // 選擇所有具有特定類名的父元素\n\
+    var rows = document.querySelectorAll(\'.MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-3.css-1ha4th6\');\n\
+    console.log(\'Total rows found:\', rows.length);\n\
+\n\
+    // 遍歷每個行元素\n\
+    rows.forEach(function(row) {\n\
+        var cells = row.querySelectorAll(\'.css-hk0nmt\');\n\
+        var shouldShowRow = false;\n\
+\n\
+        console.log(\'Checking row:\', row);\n\
+\n\
+        // 檢查每個單元格中的內容\n\
+        cells.forEach(function(cell) {\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1v9l4og 的子元素\n\
+            var box1 = cell.querySelector(\'.MuiBox-root.css-1v9l4og\');\n\
+            // 在每個單元格元素中查找是否存在類名為 .MuiBox-root.css-1tqg586 的子元素\n\
+            var box2 = cell.querySelector(\'.MuiBox-root.css-1tqg586\');\n\
+            // 檢查是否包含要排除的類名為 .css-1r5to7m 的子元素\n\
+            var containsExcludedElement = cell.querySelector(\'.MuiBox-root.css-1tqg586 .css-1r5to7m\');\n\
+\n\
+            console.log(\'Checking cell:\', cell);\n\
+            console.log(\'box1 found:\', !!box1);\n\
+            console.log(\'box2 found:\', !!box2);\n\
+            console.log(\'containsExcludedElement found:\', !!containsExcludedElement);\n\
+\n\
+            // 如果存在 box1 且 box2 不包含 containsExcludedElement\n\
+            if (box1 && box2 && !containsExcludedElement) {\n\
+                shouldShowRow = true;\n\
+            }\n\
+        });\n\
+\n\
+        // 根據 shouldShowRow 的值顯示或隱藏整行\n\
+        row.style.display = shouldShowRow ? \'block\' : \'none\';\n\
+        console.log(\'Row display set to:\', shouldShowRow ? \'block\' : \'none\');\n\
+    });\n\
+}\n\
+\n\
+// 在延遲1秒後執行顯示/隱藏行的函數\n\
+setTimeout(showRows, 1000);\n\
+', '【觀課-點名】函數已複製')">觀課-點名</button>
+
+<button class="deactiveDienMing" onclick="copyToClipboard_F12script('\
+// 即時觀課-解除老師點名\n\
+function resetRows() {\n\
+    // 選擇所有具有特定類名的父元素\n\
+    var rows = document.querySelectorAll(\'.MuiGrid-root.MuiGrid-item.MuiGrid-grid-xs-12.MuiGrid-grid-md-3.css-1ha4th6\');\n\
+    console.log(\'Total rows found:\', rows.length);\n\
+\n\
+    // 遍歷每個行元素並顯示\n\
+    rows.forEach(function(row) {\n\
+        row.style.display = \'block\';\n\
+        console.log(\'Row display reset to block:\', row);\n\
+    });\n\
+}\n\
+\n\
+// 在延遲1秒後執行恢復顯示行的函數\n\
+setTimeout(resetRows, 1000);\n\
+', '【觀課-解除點名】函數已複製')">觀課-解除點名</button>
+
+
+
+
+<button onclick="copyToClipboard_F12script('老師您好，現在的課程您還沒有進教室喔，請問有發生什麼狀況需要協助嗎？', '【老師未到】話術已複製')" >老師未到</button>
+<button onclick="copyToClipboard_F12script('查看老師已進入教室了，再麻煩老師補足上課時數哦，謝謝老師！', '【補足時數】話術已複製')" >補足時數</button>
+<button onclick="copyToClipboard_F12script('目前正在確認中，請稍候', '【確認中】')" >確認中</button>
+<button onclick="copyToClipboard_F12script('您好，請問需要什麼協助呢？', '【什麼協助？】')" >什麼協助？</button>
+
+
+<div id="copyMessage"></div>
+
+
+
+
+<script>
+// 檔次複製成功的紅色提示
+function copyToClipboard(text) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = '檔次已複製【' + text + '】';
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.textContent = '　';
+    }, 5000);
+}
+// 函數複製成功的紅色提示
+function copyToClipboard_F12script(text, message) {
+    var copyMessage = document.getElementById('copyMessage');
+    copyMessage.textContent = message;
+
+    var textarea = document.createElement('textarea');
+    textarea.value = text;
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    setTimeout(function() {
+        copyMessage.textContent = '　';
+    }, 5000);
+}
+</script>
+</body>
+</html>

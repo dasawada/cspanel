@@ -1,0 +1,122 @@
+/* 長網址input */
+#ShrtURL_longUrl {
+    width: 200px; 
+    margin-right: 6px;
+	margin-bottom: 2px;
+}
+
+/* '製作短網址'按鈕 */
+#ShrtURL_shortenButton {
+    width: 85px; /* 固定寬度，可以根據需要調整 */
+    white-space: nowrap; /* 防止文本換行 */
+    overflow: hidden; /* 隱藏溢出文本 */
+    text-overflow: ellipsis; /* 添加省略號 */
+}
+
+/* 短網址輸出欄容器 (is.gd) */
+#shortUrlContainer {
+    margin: 2px 0; /* 上下邊距設置為2px，左右為0 */
+    display: flex;
+    align-items: center;
+}
+
+/* 隱藏的複製按鈕 (is.gd) */
+#ShrtURL_isGdCopyButton {
+    visibility: hidden; /* 隱藏但仍保留空間 */
+    width: 60px; /* 固定寬度，可以根據需要調整 */
+}
+
+/* 短網址輸出欄 (is.gd) */
+#ShrtURL_isGdOutput {
+    width: 350px;
+    margin-right: 6px;
+    background-color: #F5F5F5;
+}
+
+/* 短網址輸出欄容器 (reurl.cc) */
+#ShrtURL_reurlContainer {
+    margin: 2px 0; /* 與 is.gd 保持一致的邊距 */
+    display: flex;
+    align-items: center;
+}
+
+/* 隱藏的複製按鈕 (reurl.cc) */
+#ShrtURL_reurlCopyButton {
+    visibility: hidden; /* 隱藏但仍保留空間 */
+    width: 60px; /* 固定寬度，可以根據需要調整 */
+}
+
+/* 短網址輸出欄 (reurl.cc) */
+#ShrtURL_reurlOutput {
+    width: 350px;
+    margin-right: 6px;
+    background-color: #F5F5F5;
+}
+
+/* 清除按鈕 */
+#ShrtURL_clearButton {
+    width: 20px;
+    height: 20px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0.4;
+    position: absolute;
+    bottom: 8px; /* 確保距離父元素底部一定距離 */
+    right: 5px; /* 確保距離父元素右側一定距離 */
+}
+
+#ShrtURL_clearButton:hover {
+    opacity: 0.6;
+}
+
+/* 清除按鈕圖標 */
+#ShrtURL_clearButton i {
+    font-size: 20px; /* 根據需要調整圖標大小 */
+    color: inherit; /* 繼承按鈕的顏色 */
+}
+
+#ShrtURL_clearButton:hover i {
+    opacity: 0.6;
+}
+#ShrtURL_isGdContainer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+#ShrtURL_reurlContainer{
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+/* 隱藏的複製按鈕 */
+#ShrtURL_isGdCopyButton,
+#ShrtURL_reurlCopyButton {
+    visibility: hidden; /* 隱藏但保留按鈕佔位 */
+    width: 60px;
+    transition: background-color 0.3s;
+}
+
+/* 複製按鈕顯示狀態 */
+#ShrtURL_isGdCopyButton[visibility="visible"],
+#ShrtURL_reurlCopyButton[visibility="visible"] {
+    visibility: visible;
+}
+/* 按鈕容器樣式 */
+.ShrtURL_buttonContainer {
+    width: 85px;
+    margin-left: 5px; /* 與輸出框保持適當距離 */
+    display: flex;
+    justify-content: flex-end;
+}
+
+/* 輸出框樣式 */
+#ShrtURL_isGdOutput,
+#ShrtURL_reurlOutput {
+    width: 200px;
+    margin-right: 6px;
+    background-color: #F5F5F5;
+}

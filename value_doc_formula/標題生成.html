@@ -1,0 +1,567 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>技術開發文件 — 標題生成</title>
+  <style>
+    /* 全域基本樣式 */
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background-color: #f7f8fa;
+      color: #333;
+      margin: 0;
+      padding: 0;
+      line-height: 1.8;
+    }
+    .container {
+      max-width: 900px; /* 調整為與範例相同的寬度 */
+      margin: 0 auto;
+      background-color: #fff;
+      padding: 20px 40px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1, h2, h3, h4, h5 {
+      color: #2d3e50;
+      margin-top: 1.2em;
+    }
+    h1 {
+      border-bottom: 2px solid #2d3e50;
+      padding-bottom: 10px;
+    }
+    p {
+      margin: 0.8em 0;
+    }
+    code, pre {
+      font-family: Consolas, "Courier New", monospace;
+      background-color: #eef0f3;
+      padding: 4px 6px;
+      border-radius: 4px;
+    }
+    pre {
+      overflow-x: auto;
+      padding: 10px;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+    a {
+      color: #007acc;
+      text-decoration: none;
+    }
+    a:hover {
+      text-decoration: underline;
+    }
+    .section-title {
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 4px;
+      margin-bottom: 8px;
+    }
+    .toc a {
+      display: block;
+      margin: 4px 0;
+    }
+    .code-block {
+      background-color: #f4f4f4;
+      border: 1px solid #ddd;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 0.9em;
+    }
+    .sub-section {
+      margin-left: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- 文件封面 -->
+    <h1>技術開發文件 — 標題生成</h1>
+    <p>作者：[簡明修] &nbsp;&nbsp; 文件製作日期：2025-02-15</p>
+
+    <!-- 目錄 -->
+    <h2 class="section-title">目錄</h2>
+    <ol class="toc">
+      <li><a href="#introduction">專案簡介與目的</a></li>
+      <li><a href="#architecture">系統架構與文件結構</a></li>
+      <li><a href="#implementation">主要功能與技術實作細節</a></li>
+      <li><a href="#external-dependencies">外部套件與官方文檔</a></li>
+      <li><a href="#maintenance">維護與擴充建議</a></li>
+      <li><a href="#appendix">附錄與參考資料</a></li>
+    </ol>
+
+    <!-- 1. 專案簡介與目的 -->
+    <h2 id="introduction" class="section-title">1. 專案簡介與目的</h2>
+    <p>
+      本工具是一個前端網頁組件，主要功能是根據使用者輸入的資訊（顧問姓名、學生姓名、家長姓名、單號），
+      動態生成符合格式要求的標題，並通過查詢 Google Sheets API 顯示該顧問所屬組別的組長資訊。除此之外，
+      工具還具備複製生成結果、清除欄位以及動畫效果等互動功能，以提升用戶體驗。
+    </p>
+    <p>
+      本文件旨在提供一份詳盡、易讀且方便日後維護與擴充的技術文檔，符合國際百強企業的技術規格標準，
+      為新進工程師及其他技術團隊成員提供全面的參考資料。
+    </p>
+
+    <!-- 2. 系統架構與文件結構 -->
+    <h2 id="architecture" class="section-title">2. 系統架構與文件結構</h2>
+    <h3>2.1 系統架構</h3>
+    <p>
+      本工具前端架構採用 HTML、CSS 與 JavaScript 實作，並使用以下技術與外部資源：
+    </p>
+    <ul>
+      <li>HTML5 與 CSS3：構建頁面結構與視覺效果</li>
+      <li>原生 JavaScript：實現動態交互與邏輯控制</li>
+      <li>jQuery：用於簡化 AJAX 請求（$.get() 方法）</li>
+      <li>Google Sheets API：用於從 Google Sheets 取得查詢數據</li>
+      <li>FontAwesome：提供圖示支持（如垃圾桶圖示）</li>
+    </ul>
+
+    <h3>2.2 文件結構</h3>
+    <p>主要文件結構如下：</p>
+    <ul>
+      <li>
+        <strong>HTML 結構：</strong>
+        <br>
+        <code>&lt;div class="optitlepanel"&gt;</code>：主容器，包含表單、輸出區、查詢結果區及清除按鈕。
+      </li>
+      <li>
+        <strong>CSS 樣式：</strong>
+        <br>
+        提供頁面基本排版、動畫效果與各元件外觀設定。
+      </li>
+      <li>
+        <strong>JavaScript 代碼：</strong>
+        <br>
+        包含事件監聽、輸入檢查、標題生成、AJAX 查詢、複製與重置等邏輯。
+      </li>
+    </ul>
+
+    <!-- 3. 主要功能與技術實作細節 -->
+    <h2 id="implementation" class="section-title">3. 主要功能與技術實作細節</h2>
+
+    <h3>3.1 HTML 與 UI 元件</h3>
+    <p>
+      頁面包含一個 <code>&lt;form id="consultantForm"&gt;</code>，內有四個輸入欄位（顧問姓名、學生姓名、家長姓名、單號），
+      每個欄位皆搭配一個浮水印提示文字。生成的標題與複製按鈕顯示在 <code>&lt;span id="optitleoutput"&gt;</code> 中，
+      查詢結果則顯示在 <code>&lt;span id="search_SAWHO_ResultsSpan"&gt;</code> 與 <code>&lt;div id="search_SAWHO_ResultsDiv"&gt;</code> 中。
+    </p>
+
+    <div class="code-block">
+      <pre>&lt;div class="optitlepanel"&gt;
+    &lt;form id="consultantForm" style="margin: 0;"&gt;
+        &lt;div class="op-title-output-div"&gt;
+            &lt;span class="optitle-text-form"&gt;[顧問&lt;/span&gt;
+            &lt;label style="position: relative; display: inline-block; cursor: text;"&gt;
+                &lt;input type="text" id="consultantName" name="consultantName" class="optitle-input" oninput="search()" style="width: 70px;"&gt;
+                &lt;span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"&gt;顧問姓名&lt;/span&gt;
+            &lt;/label&gt;
+            &lt;span class="optitle-text-form"&gt;]&lt;/span&gt;
+            &lt;label style="position: relative; display: inline-block; cursor: text;"&gt;
+                &lt;input type="text" id="studentName" name="studentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;"&gt;
+                &lt;span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"&gt;學生姓名&lt;/span&gt;
+            &lt;/label&gt;
+            &lt;span class="optitle-text-form"&gt;/&lt;/span&gt;
+            &lt;label style="position: relative; display: inline-block; cursor: text;"&gt;
+                &lt;input type="text" id="parentName" name="parentName" class="optitle-input" oninput="checkInputs()" style="width: 70px;"&gt;
+                &lt;span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"&gt;家長姓名&lt;/span&gt;
+            &lt;/label&gt;
+            &lt;span class="optitle-text-form"&gt;#&lt;/span&gt;
+            &lt;label style="position: relative; display: inline-block; cursor: text;"&gt;
+                &lt;input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" oninput="checkInputs()" style="width: 70px;"&gt;
+                &lt;span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;"&gt;單號&lt;/span&gt;
+            &lt;/label&gt;
+        &lt;/div&gt;
+    &lt;/form&gt;
+    &lt;div class="spacer"&gt;&lt;/div&gt;
+    &lt;span id="optitleoutput"&gt;生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶&lt;/span&gt;
+&lt;/div&gt;
+&lt;span id="search_SAWHO_ResultsSpan"&gt;&lt;/span&gt;
+&lt;div id="search_SAWHO_ResultsDiv"&gt;&lt;/div&gt;
+&lt;div id="clearButton" class="clearIcon" onclick="clearFields()" title="清除標題"&gt;
+    &lt;i class="fas fa-trash"&gt;&lt;/i&gt;
+&lt;/div&gt;</pre>
+    </div>
+
+    <h3>3.2 JavaScript 核心功能</h3>
+    <p>以下逐項說明各主要函數與其技術細節：</p>
+    <ul>
+      <li>
+        <strong>浮水印顯示機制：</strong>
+        <br>
+        透過監聽 <code>focus</code>、<code>blur</code> 與 <code>input</code> 事件，動態隱藏或顯示輸入框旁的浮水印提示文字。
+        每次輸入時同時調用 <code>checkInputs()</code> 檢查所有輸入框的狀態。
+      </li>
+      <li>
+        <strong>checkInputs()</strong>：
+        <br>
+        檢查四個輸入欄位是否皆為空。若皆為空則調用 <code>clearOutput()</code>，否則調用 <code>generateText()</code> 生成標題。
+      </li>
+      <li>
+        <strong>generateText()</strong>：
+        <br>
+        處理用戶輸入：移除所有空白字符，並對單號中的井字號（#）進行過濾。依據輸入狀況生成格式：
+        <code>[顧問 顧問姓名] 學生姓名 / 家長姓名 #單號</code>。同時加入一個複製按鈕，並透過 CSS 動畫效果短暫改變輸出區樣式。
+        <br><br>
+        <strong>修正重點：</strong>在程式碼範例中，將 <code>&lt;button&gt;</code> 與 <code>&lt;img&gt;</code> 標籤轉換成 HTML 實體，避免被瀏覽器解析成實際按鈕。
+      </li>
+      <li>
+        <strong>clearOutput()</strong>：
+        <br>
+        將輸出區重置為預設提示文字，並透過動畫效果使狀態平滑過渡。
+      </li>
+      <li>
+        <strong>clearFields()</strong>：
+        <br>
+        清除所有輸入框內容，手動觸發 <code>blur</code> 事件以顯示浮水印，調用 <code>clearOutput()</code> 清除生成結果，同時執行垃圾桶動畫效果。
+      </li>
+      <li>
+        <strong>OPtitle_copyText()</strong>：
+        <br>
+        透過建立臨時 <code>input</code> 元素，選中並執行 <code>document.execCommand("copy")</code> 完成複製，並修改按鈕狀態提示複製成功。
+      </li>
+      <li>
+        <strong>search()</strong>：
+        <br>
+        當顧問姓名有輸入時，先生成標題再利用 jQuery 的 <code>$.get()</code> 方法查詢 Google Sheets 數據。遍歷返回的數據矩陣，比對輸入值（不分大小寫且移除空白）並提取對應的組長與團隊資訊展示，若無匹配則顯示提示訊息。
+      </li>
+    </ul>
+
+    <div class="code-block">
+      <pre>
+// 浮水印與事件監聽
+document.querySelectorAll('.optitle-input').forEach(input => {
+    const placeholder = input.nextElementSibling;
+    if (input.value) { placeholder.style.visibility = 'hidden'; }
+    input.addEventListener('focus', () => { placeholder.style.visibility = 'hidden'; });
+    input.addEventListener('blur', () => { if (!input.value) { placeholder.style.visibility = 'visible'; } });
+    input.addEventListener('input', () => {
+        placeholder.style.visibility = input.value ? 'hidden' : 'visible';
+        checkInputs(); // 每次輸入改變時檢查輸入框值
+    });
+});
+
+// 輸入檢查與標題生成
+function checkInputs() {
+    var consultantName = document.getElementById("consultantName").value.trim();
+    var studentName = document.getElementById("studentName").value.trim();
+    var parentName = document.getElementById("parentName").value.trim();
+    var invoiceNumber = document.getElementById("invoiceNumber").value.trim();
+    if (consultantName === '' && studentName === '' && parentName === '' && invoiceNumber === '') {
+        clearOutput();
+    } else {
+        generateText();
+    }
+}
+
+function generateText() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    var outputText = "[顧問 " + consultantName + "] " + studentName;
+    if (studentName !== '' && parentName !== '') { outputText += " / " + parentName; }
+    else { outputText += parentName; }
+    if (invoiceNumber !== '') { outputText += " #" + invoiceNumber; }
+
+    // 注意：此處將 HTML 標籤轉換為 HTML 實體，以便在文件中以純文字顯示
+    var copyButtonHTML = '&lt;button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" title="複製到剪貼簿"&gt;' +
+                         '&lt;img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;"&gt;' +
+                         '&lt;/button&gt;';
+
+    const optitleOutput = document.getElementById("optitleoutput");
+    optitleOutput.style.transform = "scale(1.1)";
+    optitleOutput.style.opacity = "0.5";
+    optitleOutput.innerHTML = outputText + copyButtonHTML;
+    setTimeout(() => {
+        optitleOutput.style.transform = "scale(1)";
+        optitleOutput.style.opacity = "1";
+    }, 100);
+}
+      </pre>
+    </div>
+
+    <h3>3.3 AJAX 與查詢功能</h3>
+    <p>
+      利用 jQuery 的 <code>$.get()</code> 方法發送 AJAX 請求到 Google Sheets API，根據顧問姓名（經過預處理後）進行比對。若找到匹配資料，
+      從預定行中取得組長與團隊資訊後動態生成查詢結果；若無匹配，則顯示提示訊息。
+    </p>
+
+    <h3>3.4 複製功能</h3>
+    <p>
+      使用 <code>document.execCommand("copy")</code> 來實現複製功能，將生成的標題或查詢結果複製到剪貼簿。部分複製邏輯依據姓名字元長度選擇複製部分內容，
+      並透過按鈕狀態提示用戶複製成功。
+    </p>
+
+    <!-- 4. 外部套件與官方文檔 -->
+    <h2 id="external-dependencies" class="section-title">4. 外部套件與官方文檔</h2>
+    <ul>
+      <li>
+        <strong>jQuery</strong>
+        <ul>
+          <li>用途：簡化 AJAX 請求，使用 <code>$.get()</code> 方法。</li>
+          <li>官方網站：<a href="https://jquery.com/" target="_blank">https://jquery.com/</a></li>
+          <li>API 文檔：<a href="https://api.jquery.com/jquery.get/" target="_blank">jQuery.get()</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>Google Sheets API</strong>
+        <ul>
+          <li>用途：從 Google Sheets 獲取資料，依據查詢顧問姓名返回相關資料。</li>
+          <li>官方文檔：<a href="https://developers.google.com/sheets/api" target="_blank">Google Sheets API Documentation</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>FontAwesome</strong>
+        <ul>
+          <li>用途：提供垃圾桶等圖示支持。</li>
+          <li>官方網站：<a href="https://fontawesome.com/" target="_blank">https://fontawesome.com/</a></li>
+          <li>使用說明：<a href="https://fontawesome.com/how-to-use/on-the-web/setup/hosting-font-awesome-yourself" target="_blank">Hosting FontAwesome</a></li>
+        </ul>
+      </li>
+      <li>
+        <strong>補充 - Clipboard API</strong>
+        <ul>
+          <li>用途：在未來考慮替換 <code>document.execCommand("copy")</code>，以提升複製功能的穩定性。</li>
+          <li>官方文檔：<a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+        </ul>
+      </li>
+    </ul>
+
+    <!-- 5. 維護與擴充建議 -->
+    <h2 id="maintenance" class="section-title">5. 維護與擴充建議</h2>
+    <ul>
+      <li>
+        <strong>模組化設計：</strong>
+        建議將各個功能模組（如標題生成、查詢、複製、動畫）拆分成獨立模組或文件，方便單元測試與後續維護。
+      </li>
+      <li>
+        <strong>錯誤處理：</strong>
+        加強對 AJAX 請求、用戶輸入與 API 回傳資料的錯誤檢查，防止異常數據導致應用崩潰。
+      </li>
+      <li>
+        <strong>效能優化：</strong>
+        對頻繁觸發的輸入事件引入防抖（debounce）機制，降低不必要的計算與請求負載。
+      </li>
+      <li>
+        <strong>現代化改造：</strong>
+        考慮採用 ES6+ 語法、Fetch API 替代 jQuery AJAX，並利用 Webpack 等打包工具進行模組化管理。
+      </li>
+      <li>
+        <strong>依賴與配置管理：</strong>
+        將所有外部 API 金鑰與第三方庫配置統一管理，並做好安全防護（如後端代理）。
+      </li>
+    </ul>
+
+    <!-- 6. 附錄與參考資料 -->
+    <h2 id="appendix" class="section-title">6. 附錄與參考資料</h2>
+    <h3>6.1 原始程式碼摘錄</h3>
+    <p>
+      下列程式碼為本工具主要實作部分，包含輸入監聽、標題生成、查詢、複製與清除功能：
+    </p>
+    <div class="code-block">
+      <pre>
+// 標題生成的浮水印設定
+document.querySelectorAll('.optitle-input').forEach(input => {
+    const placeholder = input.nextElementSibling;
+    if (input.value) { placeholder.style.visibility = 'hidden'; }
+    input.addEventListener('focus', () => { placeholder.style.visibility = 'hidden'; });
+    input.addEventListener('blur', () => { if (!input.value) { placeholder.style.visibility = 'visible'; } });
+    input.addEventListener('input', () => {
+        placeholder.style.visibility = input.value ? 'hidden' : 'visible';
+        checkInputs();
+    });
+});
+
+// 輸入檢查與標題生成
+function checkInputs() {
+    var consultantName = document.getElementById("consultantName").value.trim();
+    var studentName = document.getElementById("studentName").value.trim();
+    var parentName = document.getElementById("parentName").value.trim();
+    var invoiceNumber = document.getElementById("invoiceNumber").value.trim();
+    if (consultantName === '' && studentName === '' && parentName === '' && invoiceNumber === '') {
+        clearOutput();
+    } else {
+        generateText();
+    }
+}
+
+function generateText() {
+    var consultantName = document.getElementById("consultantName").value.replace(/\s/g, '');
+    var studentName = document.getElementById("studentName").value.replace(/\s/g, '');
+    var parentName = document.getElementById("parentName").value.replace(/\s/g, '');
+    var invoiceNumber = document.getElementById("invoiceNumber").value.replace(/[#\s]/g, '');
+    var outputText = "[顧問 " + consultantName + "] " + studentName;
+    if (studentName !== '' && parentName !== '') { outputText += " / " + parentName; }
+    else { outputText += parentName; }
+    if (invoiceNumber !== '') { outputText += " #" + invoiceNumber; }
+
+    // 注意：此處將 HTML 標籤轉換為 HTML 實體，以便在文件中以純文字顯示
+    var copyButtonHTML = '&lt;button id="OPtitle_copyButton" type="button" onclick="OPtitle_copyText()" title="複製到剪貼簿"&gt;' +
+                         '&lt;img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;"&gt;' +
+                         '&lt;/button&gt;';
+
+    const optitleOutput = document.getElementById("optitleoutput");
+    optitleOutput.style.transform = "scale(1.1)";
+    optitleOutput.style.opacity = "0.5";
+    optitleOutput.innerHTML = outputText + copyButtonHTML;
+    setTimeout(() => {
+        optitleOutput.style.transform = "scale(1)";
+        optitleOutput.style.opacity = "1";
+    }, 100);
+}
+
+// 清除輸出與欄位
+function clearOutput() {
+    const optitleOutput = document.getElementById("optitleoutput");
+    optitleOutput.style.transform = "scale(1.1)";
+    optitleOutput.style.opacity = "0.5";
+    setTimeout(() => {
+        optitleOutput.innerText = "生成的標題會顯示在這裡٩(๑❛ᴗ❛๑)۶";
+        optitleOutput.style.transform = "scale(1)";
+        optitleOutput.style.opacity = "1";
+    }, 1000);
+}
+
+function clearFields() {
+    document.getElementById("consultantName").value = "";
+    document.getElementById("studentName").value = "";
+    document.getElementById("parentName").value = "";
+    document.getElementById("invoiceNumber").value = "";
+    document.getElementById("consultantName").dispatchEvent(new Event('blur'));
+    document.getElementById("studentName").dispatchEvent(new Event('blur'));
+    document.getElementById("parentName").dispatchEvent(new Event('blur'));
+    document.getElementById("invoiceNumber").dispatchEvent(new Event('blur'));
+    clearOutput();
+    search();
+    const button = document.getElementById('clearButton');
+    const icon = button.querySelector('i');
+    icon.classList.add('trash-animated');
+    setTimeout(() => { icon.classList.remove('trash-animated'); }, 1000);
+}
+
+function OPtitle_copyText() {
+    event.preventDefault();
+    var textToCopy = document.getElementById("optitleoutput").innerText;
+    var tempInput = document.createElement("input");
+    tempInput.value = textToCopy;
+    document.body.appendChild(tempInput);
+    tempInput.select();
+    document.execCommand("copy");
+    document.body.removeChild(tempInput);
+    var copyButton = document.getElementById("OPtitle_copyButton");
+    copyButton.classList.add("OPtitle_copied", "OPtitle_unclickable");
+    var tempTitle = copyButton.title;
+    copyButton.title = "";
+    copyButton.title = tempTitle;
+    setTimeout(function() {
+        copyButton.classList.remove("OPtitle_copied", "OPtitle_unclickable");
+    }, 3000);
+}
+
+function search() {
+    var searchString = document.getElementById('consultantName').value.replace(/\s+/g, '');
+    if (searchString === '') {
+        document.getElementById('search_SAWHO_ResultsDiv').innerHTML = '';
+        document.getElementById('search_SAWHO_ResultsSpan').innerHTML = '';
+        clearOutput();
+        return;
+    }
+    generateText();
+    $.get(endpoint, function(response) {
+        const search_SAWHO_ResultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
+        const search_SAWHO_ResultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
+        search_SAWHO_ResultsSpan.innerHTML = '';
+        search_SAWHO_ResultsDiv.innerHTML = '';
+        let found = false;
+        for (let rowIndex = 0; rowIndex < response.values.length; rowIndex++) {
+            for (let columnIndex = 0; columnIndex < response.values[rowIndex].length; columnIndex++) {
+                const cellValue = response.values[rowIndex][columnIndex].replace(/\s+/g, '').toLowerCase();
+                if (cellValue === searchString.toLowerCase()) {
+                    const teamLeaderRow = 3;
+                    const teamRow = teamLeaderRow - 1;
+                    const consultantName = response.values[rowIndex][columnIndex];
+                    const teamLeaderValue = response.values[teamLeaderRow][columnIndex];
+                    const teamValue = response.values[teamRow][columnIndex];
+                    const p = document.createElement('p');
+                    const consultantSpan = document.createElement('span');
+                    consultantSpan.textContent = consultantName;
+                    consultantSpan.className = 'green-gradient-text copyable-text';
+                    consultantSpan.style.cursor = 'pointer';
+                    consultantSpan.title = '點我一下複製名字';
+                    consultantSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = consultantName.length <= 2 ? consultantName.slice(-1) : consultantName.slice(-2);
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        consultantSpan.title = '已複製！';
+                        setTimeout(function() { consultantSpan.title = '點我一下複製名字'; }, 1000);
+                    });
+                    const leaderSpan = document.createElement('span');
+                    leaderSpan.textContent = teamLeaderValue;
+                    leaderSpan.className = 'yellow-gradient-text copyable-text';
+                    leaderSpan.style.cursor = 'pointer';
+                    leaderSpan.title = '點我一下複製名字';
+                    leaderSpan.addEventListener('click', function() {
+                        const tempInput = document.createElement('input');
+                        tempInput.value = teamLeaderValue.slice(-2);
+                        document.body.appendChild(tempInput);
+                        tempInput.select();
+                        document.execCommand('copy');
+                        document.body.removeChild(tempInput);
+                        leaderSpan.title = '已複製！';
+                        setTimeout(function() { leaderSpan.title = '點我一下複製名字'; }, 1000);
+                    });
+                    p.appendChild(document.createTextNode('顧問'));
+                    p.appendChild(consultantSpan);
+                    p.appendChild(document.createTextNode('的組長是：'));
+                    p.appendChild(leaderSpan);
+                    p.appendChild(document.createTextNode(`（team：${teamValue}）`));
+                    document.getElementById('search_SAWHO_ResultsSpan').appendChild(p);
+                    found = true;
+                    break;
+                }
+            }
+            if (found) { break; }
+        }
+        if (!found) {
+            const p = document.createElement('p');
+            p.textContent = `【${searchString}】咦？這顧問找不到組長唷ఠ_ఠ`;
+            document.getElementById('search_SAWHO_ResultsDiv').appendChild(p);
+        }
+    });
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('consultantName').addEventListener('input', checkInputs);
+    document.getElementById('studentName').addEventListener('input', checkInputs);
+    document.getElementById('parentName').addEventListener('input', checkInputs);
+    document.getElementById('invoiceNumber').addEventListener('input', checkInputs);
+    document.getElementById('clearButton').addEventListener('click', clearFields);
+});
+const sheetId = "15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU";
+const apiKey = "AIzaSyCozo2rhMeVsjLB2e3nlI9ln_sZ4fIdCSw";
+const endpoint = `https://sheets.googleapis.com/v4/spreadsheets/${sheetId}/values/wtf?key=${apiKey}`;
+      </pre>
+    </div>
+
+    <h3>6.2 參考文獻與相關資源</h3>
+    <ul>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/JavaScript" target="_blank">MDN JavaScript Reference</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Document/execCommand" target="_blank">MDN execCommand</a></li>
+      <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Clipboard_API" target="_blank">MDN Clipboard API</a></li>
+    </ul>
+
+    <!-- 7. 結語 -->
+    <h2 id="conclusion" class="section-title">7. 結語</h2>
+    <p>
+      本文件詳細說明了標題生成與查詢工具的設計理念、系統架構、各模組的技術實作細節以及外部依賴資源。
+      本文件旨在為未來的維護與擴充提供明確、詳盡的參考依據，協助技術團隊快速上手並持續改進產品。
+    </p>
+    <p>
+      如有疑問或需進一步說明，請參考附錄中的參考資源或直接與相關技術負責人聯繫。
+    </p>
+  </div>
+</body>
+</html>

@@ -1,0 +1,40 @@
+#ip_search_form_container {
+    line-height: 20px;
+    width: 200px; /* 限制 ip 搜尋輸入欄的寬度 */
+    margin: 6px 0px 6px 0px
+}
+
+#ip_search_form {
+    display: flex;
+    align-items: center;
+    line-height: 15px;
+    margin: 0;
+}
+
+#ip_search_form input {
+    height: 100%;
+}
+
+#ip_result_container {
+    display: block;
+    width: 100%;
+}
+
+/* 設定所有結果段落字體、間距與顏色 */
+#ip_result_container p {
+    font-size: 13px;
+    line-height: 18px;
+    margin: 5px 0;
+    color: #4a4a4a;
+}
+
+/* 僅當結果存在時，為各段落間加入虛線分隔 */
+#ip_result_container.hasResult p:not(:last-child) {
+    border-bottom: 1px dashed #ccc;
+    padding-bottom: 5px;
+}
+
+/* 標題樣式 */
+#ip_result_container .label {
+    font-weight: bold;
+}

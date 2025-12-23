@@ -1,0 +1,271 @@
+.DTform_container {
+            display: flex;
+            flex-direction: row; /* 確保元素水平排列 */
+            height: 98vh; /* 98% 視窗高度，保持整個畫面盡量不產生捲軸 */
+            overflow: hidden;
+        }
+        .DTV_iframe {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: calc(100% - 500px); /* 除去右側固定寬度 */
+            height: 100%;
+            overflow: hidden; /* 隱藏溢出部分 */
+            z-index: 900; /* 確保在最上層，避免元素遮擋無法點擊 */
+        }
+        .form_container {
+            width: 100%; /* 固定寬度 */
+            height: 100%;
+            overflow-y: auto; /* 垂直卷軸 */
+            padding: 5px; /* 減少padding */
+            box-sizing: border-box;
+            display: flex;
+            gap: 10px;
+        }
+        .DT_left_panel, .DT_right_panel {
+            background: white;
+            border-radius: 5px;
+            padding: 10px;
+        }
+        .DT_left_panel {
+            flex: 3;  /* 佔據更多空間 */
+        }
+        .DT_right_panel {
+            flex: 2;  /* 右側面板稍窄 */
+            display: flex;
+            flex-direction: column;
+        }
+        #DT_process {
+            height: 400px;  /* 加大處理過程輸入框 */
+            resize: vertical;  /* 允許垂直調整大小 */
+        }
+        .form-group {
+            margin-bottom: 15px;
+            display: flex;
+            flex-direction: column;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .row div {
+            flex: 1;
+            text-align: center;
+            padding: 3px;
+        }
+        .row div label {
+            display: block;
+        }
+        .row div select,
+        .row div input {
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .error {
+            color: red;
+            display: none;
+        }
+        .output {
+            margin-top: 20px;
+            padding: 10px;
+            border: 1px solid #ccc;
+	word-break: break-word;
+        }
+        .copy-feedback {
+            display: none;
+            position: absolute;
+            background: #4caf50;
+            color: white;
+            padding: 5px;
+            border-radius: 5px;
+        }
+        /* 自訂樣式 */
+        .DT_SON_BORDER {
+            border: 1px solid #ccc;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgba(0, 0, 0, 0.1);
+            padding: 8px; /* 減少padding */
+            margin-bottom: 5px; /* 減少margin */
+        }
+        /* 調整 #DT_devices 中 input 元素的寬度 */
+        #DT_devices select,
+        #DT_devices input[type="text"] {
+            width: 100%; /* 讓寬度響應父元素 */
+        }
+        /* 田字型佈局 */
+        .DTDV_grid-container {
+            display: grid;
+            grid-template-columns: 40% 60%;
+            align-items: start;
+        }
+        .DTDV_grid-item {
+            text-align: left; /* 保持單選按鈕跟文字同一行 */
+			padding-left:10px;
+        }
+        /* DTYN 樣式 */
+        .DTYN {
+            display: flex;
+            flex-direction: row; /* 將內部元素由左至右排列 */
+            align-items: center; /* 垂直置中 */
+            text-align: left; /* 左對齊 */
+            white-space: nowrap; /* 禁止換行 */
+        }
+        .DTYN label {
+            margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
+        }
+        .DTYN input[type=radio] {
+            margin: 0 4px 0 4px; /* 調整間距 */
+        }
+        .DTYN .error {
+            margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
+            color: red; /* 設置錯誤消息顏色 */
+        }
+	.DV_sutable {
+            text-align: left; /* 保持單選按鈕跟文字同一行 */
+	}
+	.red-asterisk {
+            color: red;
+        }
+		
+		.device-group, .connection-group {
+    position: relative;
+    padding: 5px;
+    background: #fff;
+    border-radius: 5px;
+}
+
+.close-button {
+    position: absolute;
+    top: 2px;
+    right: 0px;
+    font-size: 24px;
+    font-weight: bold;
+    line-height: 1;
+    color: #000;
+    text-shadow: 0 1px 0 #fff;
+    opacity: .5;
+    border: none;
+    background: none;
+	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
+    height: 20px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.close-button:hover {
+    color: #aaa;
+    text-decoration: none;
+    cursor: pointer;
+    opacity: .7;
+}
+
+.DT_panel #content {
+    transition: all 0.3s ease;
+}
+
+.DT_panel #content.expanded {
+    overflow-y: auto;
+}
+
+.DT_top_panel {
+    padding: 15px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+#output_content {
+    white-space: pre-line;
+    line-height: 1.5;
+    font-family: Arial, sans-serif;
+}
+
+#output_content br {
+    display: block;
+    content: "";
+    margin-top: 10px;
+}
+
+/* 滾動條美化 */
+.DT_panel #content::-webkit-scrollbar {
+    width: 8px;
+}
+
+.DT_panel #content::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.DT_panel #content::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.DT_panel #content::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+
+/* 確保面板內容在展開時的寬度分配 */
+.form_container {
+    display: flex;
+    gap: 10px;
+    padding: 5px;
+    box-sizing: border-box;
+    width: 100%;     /* 確保填滿父容器 */
+}
+
+.DT_left_panel, .DT_right_panel {
+    flex: 1;         /* 左右面板等寬 */
+    min-width: 0;    /* 防止內容撐開 */
+}
+
+.DT_panel #content {
+    background: #f5f5f5;
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+/* 處理滾動條 */
+.DT_panel #content {
+    max-height: calc(100vh - 250px); /* 限制最大高度 */
+    overflow-y: auto;
+}
+
+/* 新增橫向排列的表單元素 */
+.form-row {
+    display: flex;
+    flex-direction: row;
+    gap: 10px;
+    width: 100%;
+}
+
+.form-col {
+    flex: 1;
+    min-width: 0; /* 防止內容撐開 */
+}
+
+.form-col label {
+    display: block;
+    margin-bottom: 3px;
+}
+
+.form-col input {
+    width: 100%;
+    box-sizing: border-box;
+}
+.input-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.input-row label {
+    white-space: nowrap;
+}
+
+.input-row input {
+    flex: 1;
+    min-width: 0;
+}

@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>外部會議查詢</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        /* 設置 body 和 html 樣式以便全屏高度 */
+        body, html {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+        }
+        /* 設置 body 為水平和垂直置中 */
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            background-color: #f5f5f5;
+        }
+        /* 搜尋框樣式 */
+        #all-meeting-search-container {
+            display: flex;
+            align-items: center;
+            background-color: #f1f1f1;
+            border-radius: 20px;
+            padding: 5px;
+            position: relative;
+            margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
+            z-index: 10; /* 降低 z-index 值以保持簡單 */
+        }
+
+        #all-meeting-search-container i {
+            margin-right: 10px;
+            color: #333;
+        }
+
+        #all-meeting-search-input {
+            border: none;
+            outline: none;
+            background: none;
+            flex-grow: 1;
+            padding-left: 10px;
+            min-width: 150px; /* 確保輸入框不會過窄 */
+        }
+
+        /* 搜尋結果顯示區域樣式 */
+        #all-meeting-result-container {
+            position: relative;
+            top: -30px;
+            left: 1px;
+            width: calc(100% - 5px);
+            background-color: #fff;
+            border: 1px solid #ddd;
+            border-radius: 0 0 10px 10px;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            max-height: 600px;
+            z-index: 9; /* 降低 z-index 值以保持簡單 */
+            padding-top: 20px;
+            overflow-y: scroll; /* 始終顯示垂直捲軸 */
+            overflow-x: hidden; /* 隱藏水平捲軸（如果需要） */
+        }
+
+        /* 自定義捲動條 */
+        #all-meeting-result-container::-webkit-scrollbar {
+            width: 5px; /* 設置垂直捲動條的寬度 */
+        }
+
+        #all-meeting-result-container::-webkit-scrollbar-track {
+            background: #f1f1f1; /* 捲動條軌道背景色 */
+        }
+
+        #all-meeting-result-container::-webkit-scrollbar-thumb {
+            background: #888; /* 滑塊顏色 */
+            border-radius: 10px; /* 滑塊圓角 */
+        }
+
+        #all-meeting-result-container::-webkit-scrollbar-thumb:hover {
+            background: #555; /* 滑塊在懸停時的顏色 */
+        }
+
+        #all-meeting-result-container div {
+            padding: 5px;
+        }
+
+        /* 錯誤顯示區域樣式 */
+        #all-meeting-error {
+            margin-top: 20px;
+            color: red;
+            font-size: 14px;
+            text-align: left;
+            padding-left: 10px;
+        }
+
+        /* 沒有結果的樣式 */
+        .all-no-results {
+            color: #999;
+            font-size: 14px;
+            text-align: center;
+        }
+
+        /* 會議結果的項目樣式 */
+        .all-meeting-result-item {
+            margin-bottom: 4px;
+            font-size: 12px;
+        }
+
+        /* 會議詳細資料的樣式 */
+.all-meeting-details {
+    white-space: pre-wrap; /* 保留資料來源中的換行符號並自動換行 */
+    word-wrap: break-word; /* 防止長單詞溢出容器，確保單詞在必要時換行 */
+    background-color: #ffffff !important; /* 永遠為白色，無論是否 hover */
+    position: relative;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    margin-bottom: 4px;
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ccc;
+    color: #454545;
+    display: grid;
+    grid-template-columns: 1fr;
+}
+
+
+        .all-meeting-details:hover {
+            background-color: #ffffff !important;
+            transition: all .5s ease 0s;
+        }
+
+        .all-meeting-summary:hover {
+            background-color: #e0e0e0 !important;
+            border-radius: 6px;
+            transition: background-color .3s ease;
+        }
+
+        .all-meeting-details p {
+            margin: 2px 0;
+            line-height: 1.2;
+        }
+
+        /* 會議標題樣式 */
+        .all-meeting-title {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+            font-weight: bold;
+            margin-bottom: 4px;
+            position: relative;
+        }
+
+        .all-meeting-title:hover {
+            background-color: #f1f1f1;
+            transition: background-color .3s ease;
+        }
+
+        .all-meeting-main-toggle-btn {
+            cursor: pointer;
+            position: relative;
+            left: 5px;
+        }
+
+        /* 會議摘要樣式 */
+        .all-meeting-summary {
+            position: relative;
+            padding: 0px;
+        }
+
+        .time-summary {
+            position: relative;
+        }
+
+        /* 第三層中的時間範圍摺疊按鈕調整到右側 */
+        .all-meeting-detail-toggle-btn {
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        .all-time-background-div {
+            display: block;
+            grid-template-columns: 1fr auto;
+            align-items: center;
+            position: relative;
+            padding: 5px;
+        }
+
+        /* 調整 .time-toggle-btn 在右側對齊 */
+        .time-toggle-btn {
+            position: absolute;
+            top: 0;
+            right: 5px;
+            cursor: pointer;
+        }
+
+        /* 調整每層的按鈕位置 */
+        .all-meeting-repeat-toggle-btn, .all-meeting-time-toggle-btn {
+            position: absolute;
+            right: 10px;
+            cursor: pointer;
+        }
+
+        /* 調整每一層內部的 grid 排列 */
+        .all-meeting-repeat {
+            display: block;
+            position: relative;
+        }
+
+        /* 單一會議列表樣式 */
+        .all-meeting-per-list {
+            border: 1px solid #cfcfcf;
+            transition: all .5s ease 0s;
+            margin-bottom: 10px;
+            border-radius: 10px;
+            background-color: #f1f1f1;
+        }
+
+        .all-meeting-per-list:hover {
+            border: 1px solid #858585;
+        }
+
+        /* 定義 grid 容器和列的布局 */
+        .all-white-background-div {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 10px;
+            border-left: 1px dashed #c5c5c5;
+            margin-left: 13px;
+        }
+
+        /* 定義時間範圍及標籤的排列 */
+        .all-meeting-time-range {
+            display: flex;
+            align-items: center;
+            position: relative;
+            padding: 5px;
+            flex-grow: 1;
+            width: 100%;
+        }
+
+        .meeting-wrapper:hover,
+        .meeting-icon-wrapper:hover,
+        .all-meeting-time-range:hover {
+            background-color: #e0e0e0 !important;
+        }
+
+        .meeting-wrapper {
+            border-radius: 10px;
+        }
+
+        /* 調整標籤元素的位置 */
+        .all-meeting-time-range div {
+            margin-right: 8px;
+            justify-content: center;
+            display: grid;
+            width: fit-content;
+        }
+
+        .meeting-time-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            position: relative;
+        }
+
+        .icon-container {
+            margin-left: 10px;
+        }
+
+        /* 標籤顏色定義 */
+        .tag-group.no-tag { border-left: 4px solid #4a90e2; }
+        .tag-group.short-cycle { border-left: 4px solid #327d28; }
+        .tag-group.one-time { border-left: 4px solid #e24a4a; }
+.tag-group.long-cycle {
+    border-left: 4px solid #4a90e2; /* 您可以選擇適當的顏色來區分長週期 */
+}
+        /* 圖標樣式 */
+        .meeting-icon {
+            width: 16px;
+            height: auto;
+        }
+
+        /* 設置 meeting-menu-content-section 水平和垂直置中 */
+.meeting-menu-content-section {
+    margin: 30px; /* 確保區塊緊貼上下左右 */
+    padding: 30px; /* 添加內間距以便內容與邊界保持距離 */
+    box-sizing: border-box; /* 確保 padding 不會讓元素超出預設大小 */
+    box-shadow: inset 0 0 10px rgba(0, 0, 0, 0.15);
+    background-color: #fff;
+    border-radius: 8px;
+    position: relative;
+    width: 100%; /* 讓區塊寬度充滿頁面 */
+    height: 100%; /* 讓區塊高度充滿頁面 */
+    overflow: auto; /* 讓內容超過容器時顯示滾動條 */
+}
+.meeting-description {
+    font-size: 16px;
+    color: #333;
+    margin-bottom: 20px;
+    text-align: center; /* 可以根據需求更改對齊方式 */
+    line-height: 1.5;
+}
+.all-meeting-search-panel {
+    width: 600px;
+    max-width: 100%; /* 確保在較小的螢幕上寬度不超過容器 */
+    margin: 0 auto; /* 讓面板在父容器中水平置中 */
+}
+    </style>
+</head>
+<body>
+
+    <div class="meeting-menu-content-section">
+        <p class="meeting-description">
+輸入學生姓名、檢索符合條件的會議。<br>
+※注意：此功能僅供輔導組查詢使用，請勿提供給學生家長。
+        </p>
+        <div id="all-meeting-search-panel" class="all-meeting-search-panel">
+            <div class="all-meeting-search">
+                <div id="all-meeting-search-container">
+                    <i class="fa fa-search"></i>
+                    <input type="text" id="all-meeting-search-input" placeholder="輸入學生名字">
+                </div>
+            </div>
+
+            <!-- 搜尋結果顯示區域 -->
+            <div id="all-meeting-result-container"></div>
+
+            <!-- 錯誤顯示區域 -->
+            <div id="all-meeting-error"></div>
+        </div>
+    </div>
+	<script type="module" src="script/meeting-all.js"></script>
+</body>
+</html>

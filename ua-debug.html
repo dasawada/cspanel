@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Android WebView Forensics</title>
+    <style>
+        body { font-family: monospace; background: #222; color: #ddd; padding: 20px; }
+        .box { padding: 15px; border: 1px solid #555; margin-bottom: 20px; border-radius: 6px; }
+        .pass { border-color: #00E676; background: #003311; color: #00E676; }
+        .fail { border-color: #FF5252; background: #330000; color: #FF5252; }
+        .label { font-size: 0.8rem; color: #888; }
+        .val { font-size: 1.1rem; font-weight: bold; word-break: break-all; }
+    </style>
+</head>
+<body>
+    <h3>🤖 Android 環境深度鑑識</h3>
+    <div id="result">分析中...</div>
+
+    <script>
+        (function() {
+            const ua = navigator.userAgent;
+            const evidence = [];
+            let isCleanBrowser = false;
+            let rejectReason = null;
+
+            // === 1. Client Hints 檢測 (Android 最強證據) ===
+            // 現代 Android 設備通常支援此 API，它比 UA 字串更誠實
+            let hintBrand = "Not Supported";
+            let isHintWebView = false;
+            
+            if (navigator.userAgentData) {
+                const brands = navigator.userAgentData.brands || [];
+                // 轉為字串方便顯示
+                hintBrand = brands.map(b => `${b.brand} (${b.version})`).join(', ');
+                
+                // 檢查是否包含 "Android WebView" 或 "WebView"
+                isHintWebView = brands.some(b => /Android WebView|WebView/i.test(b.brand));
+                if (isHintWebView) {
+                    evidence.push("❌ Client Hints 標示為 WebView");
+                }
+            }
+
+            // === 2. 'wv' 標記檢測 (Android 傳統證據) ===
+            // 在 UA string 中，"; wv" 是 WebView 的明確標識
+            // 格式通常為: ... Android 10; Mobile; wv) ...
+            const hasWVToken = /; wv\)/.test(ua) || /; wv;/.test(ua);
+            if (hasWVToken) {
+                evidence.push("❌ User Agent 包含 '; wv' 標記");
+            }
+
+            // === 3. Version/Chrome 雙重存在檢測 (邏輯陷阱) ===
+            // 純種 Chrome Mobile: "Chrome/110.0..." (沒有 Version/)
+            // WebView: "Version/4.0 Chrome/110.0..." (有 Version/)
+            // 三星瀏覽器: "Version/4.0 Chrome/... SamsungBrowser/..." (有 Version 也有 Samsung)
+            const hasVersion = /Version\//.test(ua);
+            const hasChrome = /Chrome\//.test(ua);
+            const hasSamsung = /SamsungBrowser/.test(ua);
+            const hasFirefox = /Firefox/.test(ua);
+
+            let isStockWebView = false;
+            if (hasVersion && hasChrome && !hasSamsung) {
+                isStockWebView = true;
+                evidence.push("❌ 偵測到 Version/ 與 Chrome/ 同時存在 (典型的 Android WebView 特徵)");
+            }
+
+            // === 4. 明確的 App 關鍵字 ===
+            const appKeywords = /Line\/|FBAV|FBAN|Instagram|GSA\/|MiuiBrowser|HeyTapBrowser/;
+            const isKnownApp = appKeywords.test(ua);
+            if (isKnownApp) {
+                evidence.push("❌ 命中已知 In-App 關鍵字黑名單");
+            }
+
+            // === CCT (Chrome Custom Tab) 深度偵測 ===
+            // 這是唯一能區分 "Chrome App" 與 "Google App 呼叫的 Chrome" 的方法
+            const referrer = document.referrer || "";
+            const isAndroidAppSource = referrer.startsWith("android-app://");
+
+            // 特例：Google App 的 Referrer 特徵
+            // 常見值：android-app://com.google.android.googlequicksearchbox/
+            const isGoogleApp = referrer.includes("com.google.android.googlequicksearchbox");
+
+            if (isAndroidAppSource) {
+                // 即使 UA 說是 Chrome，但來源是 App，判定為 In-App 環境
+                isCleanBrowser = false;
+                rejectReason = `Detected Chrome Custom Tab launched by: ${referrer}`;
+                evidence.push(`❌ 來源異常 (Referrer): ${referrer}`);
+            }
+
+            // === 輔助判定：歷史紀錄孤島 ===
+            // 標準 Chrome 使用者通常會有瀏覽紀錄，In-App 開啟通常是 1 或 2
+            if (history.length <= 1 && isAndroidAppSource) {
+                evidence.push("❌ History Length 極短，符合 In-App 行為");
+            }
+
+            // === 5. 判決邏輯 (Decision Matrix) ===
+            
+            if (isHintWebView || hasWVToken || isKnownApp) {
+                // 絕對死刑
+                isCleanBrowser = false;
+                rejectReason = "In-App WebView (Confirmed)";
+            } else if (isStockWebView) {
+                // 邏輯死刑
+                isCleanBrowser = false;
+                rejectReason = "Generic Android WebView";
+            } else if (hasSamsung || hasFirefox) {
+                // 三星或火狐 (白名單)
+                isCleanBrowser = true;
+                evidence.push("✅ 識別為 Samsung Internet 或 Firefox");
+            } else if (hasChrome && !hasVersion) {
+                // 純種 Chrome
+                isCleanBrowser = true;
+                evidence.push("✅ 識別為標準 Chrome Mobile (無 Version 標記)");
+            } else {
+                // 灰色地帶，預設放行但標記
+                isCleanBrowser = true; 
+                evidence.push("⚠️ 未知瀏覽器 (未命中 WebView 特徵，暫時放行)");
+            }
+
+            // === 6. 輸出 ===
+            const resultBox = document.getElementById('result');
+            const statusClass = isCleanBrowser ? 'pass' : 'fail';
+            const statusText = isCleanBrowser ? '✅ 標準瀏覽器 (WebRTC Ready)' : '⛔ 請切換瀏覽器 (WebView Detected)';
+
+            resultBox.innerHTML = `
+                <div class="box ${statusClass}">
+                    <h2>${statusText}</h2>
+                    <div>${rejectReason || "環境符合 WebRTC 標準"}</div>
+                </div>
+
+                <div class="box">
+                    <div class="label">Client Hints (Brands):</div>
+                    <div class="val">${hintBrand}</div>
+                </div>
+
+                <div class="box">
+                    <div class="label">Critical Signals:</div>
+                    <ul>
+                        ${evidence.map(e => `<li>${e}</li>`).join('')}
+                    </ul>
+                </div>
+
+                <div class="box">
+                    <div class="label">Raw User Agent:</div>
+                    <div class="val" style="font-size: 0.8rem">${ua}</div>
+                </div>
+            `;
+        })();
+    </script>
+</body>
+</html>
