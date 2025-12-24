@@ -984,20 +984,32 @@ async function fetchCourses(status, startAt, endAt) {
         return [];
     }
     
-    const token = localStorage.getItem('firebase_id_token');
+    // 優先刷新 Firebase Token，避免過期導致 401
+    let token = localStorage.getItem('firebase_id_token');
+    try {
+        const user = window.firebase?.auth?.currentUser;
+        if (user) {
+            token = await user.getIdToken(true); // 強制刷新
+            localStorage.setItem('firebase_id_token', token);
+        }
+    } catch (e) {
+        console.warn('fetchCourses: 無法刷新 token，改用 localStorage', e);
+    }
+
     if (!token) {
         console.warn('fetchCourses: 尚未登入，無法取得 token');
-        return [];
+        throw new Error('NO_TOKEN');
     }
     
     while (retryCount <= maxRetries) {
         try {
             const requestBody = {
-                token,
                 action: 'fetchCourses',
                 courseStatus: status,
                 startAt: startAt,
-                endAt: endAt
+                endAt: endAt,
+                // 兼容後端 body.token 解析（以防某些環境過濾 Authorization header）
+                token
             };
             
             console.log(`Attempt ${retryCount + 1}: Fetching ${status} courses`, requestBody);
@@ -1006,10 +1018,11 @@ async function fetchCourses(status, startAt, endAt) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 秒超時
             
-            const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/zoomclass`, {
+            const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json'
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
                 },
                 body: JSON.stringify(requestBody),
                 signal: controller.signal
