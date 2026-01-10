@@ -483,6 +483,10 @@ html,body { margin:0; height:100%; }
   <script type="module" src="../script/fusearch.js"></script>
   <script type="module">
   import { makeDraggable } from '../script/draggable.js';
+  import { DealClient } from '../script/deal-composite-client.js';
+  
+  // 設定全域 DealClient 實例
+  window.dealClient = new DealClient({ includeRaw: true });
 
   document.addEventListener('DOMContentLoaded', () => {
   const panel = document.getElementById('fudausearch-container');
@@ -652,19 +656,11 @@ html,body { margin:0; height:100%; }
     }
     let oneClubCustomers = []
     let selectedOneClubId = ""
-    let teamSheetDataCache = null
-// 新增全域變數，儲存偵測到的學制（包含幼稚園）
-    let detectedSchoolType = ""
     let studentData = [];  // 儲存學生詳細資料
+    let currentDealResult = null; // 儲存最新的 API 回應
 
     // Constants
-    const TEAM_SHEET_ENDPOINT =
-      "https://sheets.googleapis.com/v4/spreadsheets/15TsK4mB_zfH6SGqTvUe1AOYzwQfE90Z8gN1Gf5tiYLU/values/wtf?key=xxx"
-    
-    // Update these constants to use your Netlify site URL
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
-    const API_ENDPOINT = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`
-    const ONE_CLUB_SEARCH_API = `${NETLIFY_SITE_URL}/.netlify/functions/oneclub-customers`
     const EDUCATION_MAP = {
       'K': '幼稚園',
       'E': '國小',
@@ -673,25 +669,17 @@ html,body { margin:0; height:100%; }
     };
     
     async function updateTutorData() {
-      if (selectedOneClubId) {
-        try {
-          const tutorRes = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
-          if (tutorRes.ok) {
-            const tutorData = await tutorRes.json();
-            if (tutorData.status === "success" && tutorData.data?.tutor?.name) {
-              sheetData.colK = tutorData.data.tutor.name;
-              // Update the big sheet's tutor field if available
-              const bigSheetContainer = document.getElementById("bigSheetContainer");
-              if (bigSheetContainer) {
-                const newCol1 = bigSheetContainer.querySelector("#newCol1");
-                if (newCol1) {
-                  newCol1.value = sheetData.colK;
-                }
-              }
-            }
+      // Tutor 資料已在 currentDealResult 中，根據選擇的 OCID 重新取得
+      if (selectedOneClubId && currentDealResult?.raw?.tutor?.name) {
+        sheetData.colK = currentDealResult.raw.tutor.name;
+        document.getElementById("colK").value = sheetData.colK;
+        // Update the big sheet's tutor field if available
+        const bigSheetContainer = document.getElementById("bigSheetContainer");
+        if (bigSheetContainer) {
+          const newCol1 = bigSheetContainer.querySelector("#newCol1");
+          if (newCol1) {
+            newCol1.value = sheetData.colK;
           }
-        } catch (error) {
-          console.warn("更新 tutor 資料失敗:", error);
         }
       }
     }
@@ -767,85 +755,7 @@ html,body { margin:0; height:100%; }
       updateTutorData();
     });
 
-    // Functions
-    async function fetchTeamSheetData() {
-      if (teamSheetDataCache) return teamSheetDataCache
-
-      try {
-        const response = await fetch(API_ENDPOINT, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${window.userToken}`
-          },
-          body: JSON.stringify({ action: 'getTeamSheet', token: window.userToken })
-        });
-
-        if (!response.ok) {
-          throw new Error(`Team Sheet API 錯誤: ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Team Sheet API 回傳失敗');
-        }
-
-        teamSheetDataCache = result.data;
-        return teamSheetDataCache;
-      } catch (err) {
-        throw new Error(`顧問組別 API 錯誤: ${err.message}`);
-      }
-    }
-
-    function findTeamCodeForConsultant(name, sheetData) {
-      if (!name || !sheetData) return ""
-
-      const searchKey = name.replace(/\s+/g, "").toLowerCase()
-      for (let r = 0; r < sheetData.length; r++) {
-        for (let c = 0; c < sheetData[r].length; c++) {
-          const cellVal = (sheetData[r][c] || "").replace(/\s+/g, "").toLowerCase()
-          if (cellVal === searchKey) {
-            if (sheetData[2] && sheetData[2][c]) {
-              return sheetData[2][c]
-            }
-          }
-        }
-      }
-      return ""
-    }
-
-    async function searchOneClubCustomers(name) {
-      if (!name) return []
-
-      try {
-        const url = `${ONE_CLUB_SEARCH_API}?name=${encodeURIComponent(name.trim())}`
-        const res = await fetch(url, {
-          method: 'GET',
-          headers: {
-            'Accept': 'application/json'
-          },
-          mode: 'cors'  // Explicitly set CORS mode
-        })
-
-        if (!res.ok) {
-          throw new Error(`OneClub搜尋API錯誤: ${res.status}`)
-        }
-
-        const jsonData = await res.json()
-        if (jsonData.data?.customers) {
-          return jsonData.data.customers.map(customer => ({
-            oneClubId: customer.oneClubId,
-            name: customer.name
-          }))
-        }
-        return []
-      } catch (err) {
-        console.error('OneClub搜尋失敗:', err)
-        return []
-      }
-    }
-
+    // Functions - 使用新的 DealClient
     async function fetchDealInfo() {
       const cleanDealId = dealIdInput.value.trim().replace(/[^A-Za-z0-9]/g, "")
       dealIdInput.value = cleanDealId
@@ -860,376 +770,135 @@ html,body { margin:0; height:100%; }
       clearSheetFields()
       linksContainer.innerHTML = ""
 
-      try {
-        const response = await fetchWithTokenRetry(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: 'getDealInfo', 
-            dealId: cleanDealId
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`API 錯誤: ${response.status}`);
-        }
+      // 移除既有的訂單選擇器
+      const existingSelector = document.querySelector(".link-selector");
+      if (existingSelector) existingSelector.remove();
 
-        const result = await response.json();
+      try {
+        // 使用 DealClient 取得整合資料
+        if (window.dealClient) {
+          window.dealClient.setToken(window.userToken);
+        }
+        const result = await window.dealClient.fetchDealInfo(cleanDealId);
         
         if (!result.success) {
           throw new Error(result.error || 'API 回傳失敗');
         }
 
-        const bitrixJson = result.data;
-        const dealData = bitrixJson.result || {};
+        // 儲存結果供後續使用
+        currentDealResult = result;
+
+        // 從 computed 直接取得已計算好的欄位資料
+        const newSheetData = {
+          colA: result.computed.payDate || "",
+          colB: result.computed.dealId || "",
+          colC: result.computed.contactUrl || "",
+          colD: result.computed.status || "",
+          colE: result.computed.advisor || "",
+          colF: result.computed.students || "",
+          colG: result.computed.contractor || "",
+          colH: result.computed.subject || "",
+          colI: result.computed.plan || "",
+          colJ: result.computed.colJ || "",
+          colK: result.computed.tutor || "",
+          colL: result.computed.group || "",
+          colM: result.computed.amount || ""
+        };
+
+        // 從 derived 取得衍生資料
+        const { students, orderLinks, notes } = result.derived;
         
-        const notes = dealData.UF_CRM_1646312993 ? dealData.UF_CRM_1646312993.replace(/\r\n/g, "\n") : "無備註"
-
-        const orderLink1 = dealData.UF_CRM_1646313465 || "";
-        const orderLink2 = dealData.UF_CRM_1646313701 || "";
-
-        let orderLink = "無可用連結";
-        let activeOrderLink = null;
-
-        if (orderLink1 && !orderLink2) {
-          orderLink = orderLink1;
-          activeOrderLink = orderLink1;
-        } else if (!orderLink1 && orderLink2) {
-          orderLink = orderLink2;
-          activeOrderLink = orderLink2;
-        } else if (orderLink1 && orderLink2) {
-          orderLink = orderLink1;
-          activeOrderLink = orderLink1;
-          
-          const linkSelectorDiv = document.createElement("div");
-          linkSelectorDiv.className = "link-selector";
-          linkSelectorDiv.style.marginBottom = "10px";
-          
-          const link1Button = document.createElement("button");
-          link1Button.textContent = "訂單一";
-          link1Button.className = "button button-small active-link";
-          link1Button.style.marginRight = "5px";
-          
-          const link2Button = document.createElement("button");
-          link2Button.textContent = "訂單二";
-          link2Button.className = "button button-small";
-          
-          link1Button.onclick = async function() {
-            orderFrame.src = orderLink1;
-            updateOrderLink(orderLink1);
-            activeOrderLink = orderLink1;
-            link1Button.className = "button button-small active-link";
-            link2Button.className = "button button-small";
-            
-            const match = orderLink1.match(/order\/(\w+)/);
-            const orderId = match ? match[1] : "";
-            if (orderId) {
-              await fetchOrderData(orderId, cleanDealId, contactLink);
-            }
-          };
-          
-          link2Button.onclick = async function() {
-            orderFrame.src = orderLink2;
-            updateOrderLink(orderLink2);
-            activeOrderLink = orderLink2;
-            link2Button.className = "button button-small active-link";
-            link1Button.className = "button button-small";
-            
-            const match = orderLink2.match(/order\/(\w+)/);
-            const orderId = match ? match[1] : "";
-            if (orderId) {
-              await fetchOrderData(orderId, cleanDealId, contactLink);
-            }
-          };
-          
-          linkSelectorDiv.appendChild(link1Button);
-          linkSelectorDiv.appendChild(link2Button);
-          
-          document.querySelector(".iframe-footer").insertAdjacentElement("beforebegin", linkSelectorDiv);
-        }
-
-        const contactId = dealData.CONTACT_ID || ""
-        const contactLink = contactId ? `https://oneclass.bitrix24.com/crm/contact/details/${contactId}/` : ""
-        const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${cleanDealId}/`
-
-        orderFrame.src = orderLink === "無可用連結" ? "about:blank" : orderLink;
-        updateOrderLink(orderLink);
-
-        resultPre.textContent = `【備註】\n${notes}`;
-
-        linksContainer.innerHTML = ""
-        const tradeButton = document.createElement("button")
-        tradeButton.textContent = `交編 #${cleanDealId}`
-        tradeButton.onclick = function () {
-          window.open(dealLink, "_blank")
-        }
-        linksContainer.appendChild(tradeButton)
-        
-        if (contactId) {
-          const contactButton = document.createElement("button")
-          contactButton.textContent = `聯絡人 ${contactId}`
-          contactButton.onclick = function () {
-            window.open(contactLink, "_blank")
-          }
-          linksContainer.appendChild(contactButton)
-        }
-
-        if (activeOrderLink !== "無可用連結") {
-          const match = activeOrderLink.match(/order\/(\w+)/);
-          const orderId = match ? match[1] : "";
-          if (orderId) {
-            await fetchOrderData(orderId, cleanDealId, contactLink);
-          }
-        }
-      } catch (err) {
-        resultPre.textContent = "錯誤：" + err.message
-      } finally {
-        searchButton.disabled = false
-      }
-    }
-
-    async function fetchOrderData(orderId, bitrixDealId, contactLink) {
-      try {
-        const response = await fetchWithTokenRetry(API_ENDPOINT, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            action: 'getOrderData', 
-            orderId
-          })
-        });
-        
-        if (!response.ok) {
-          throw new Error(`Order API 錯誤: ${response.status}`);
-        }
-
-        const result = await response.json();
-        
-        if (!result.success) {
-          throw new Error(result.error || 'Order API 回傳失敗');
-        }
-
-        const data = result.orderData;
-        const quotationDataRaw = result.quotationData;
-
         // 儲存學生資料
-        studentData = data.students?.map(s => ({
+        studentData = students.map(s => ({
           name: s.name,
           education: s.education,
           grade: s.grade
-        })) || [];
+        }));
 
-        // 判斷合約學制
-        let contractSchoolType = '';
-        if (data.commodities && Array.isArray(data.commodities)) {
-          for (const commodity of data.commodities) {
-            const planName = commodity.plan?.name || '';
-            if (planName.includes('國小')) {
-              contractSchoolType = '國小';
-              break;
-            }
-            if (planName.includes('國中')) {
-              contractSchoolType = '國中';
-              break;
-            }
-            if (planName.includes('高中')) {
-              contractSchoolType = '高中';
-              break;
-            }
-          }
-        }
+        // 更新 UI
+        updateSheetData(newSheetData);
+        resultPre.textContent = `【備註】\n${notes}`;
 
-        const newSheetData = { ...sheetData }
-
-        // A：使用 payAt 時間戳記轉換為台北時區的日期 (mm/dd)
-        if (data.payAt) {
-          const payAtTimestamp = parseInt(data.payAt, 10)
-          newSheetData.colA = new Date(payAtTimestamp).toLocaleDateString("en-US", {
-            timeZone: "Asia/Taipei",
-            month: "2-digit",
-            day: "2-digit",
-          })
+        // 處理 OneClub 客戶
+        const customers = result.raw?.customers || [];
+        if (result.computed.oneClubId) {
+          updateOneClubCustomers(customers.length ? customers : [{
+            oneClubId: result.computed.oneClubId,
+            name: result.computed.contractor
+          }]);
         } else {
-          newSheetData.colA = ""
+          updateOneClubCustomers(customers);
         }
 
-        // B：比對 crmNo，前方加上 "#"
-        const crmNo = data.crmNo ? String(data.crmNo) : ""
-        newSheetData.colB = `#${crmNo === bitrixDealId ? crmNo : `${bitrixDealId}【需核對】`}`
-
-        // C：聯絡人頁面
-        newSheetData.colC = contactLink
-
-        // D：留空
-        newSheetData.colD = ""
-
-        // E：顧問組別-姓名
-        let advisorName = ""
-        if (data.managers && data.managers.length > 0) {
-          advisorName = data.managers[0].name || ""
-        }
-        if (advisorName) {
-          let teamStr = ""
-          try {
-            const sheetDataFromAPI = await fetchTeamSheetData()
-            teamStr = findTeamCodeForConsultant(advisorName, sheetDataFromAPI)
-          } catch (e) {
-            console.warn("顧問組別搜尋失敗", e)
-          }
-          if (teamStr) {
-            const trimmed = teamStr.replace(/^TEAM/i, "")
-            newSheetData.colE = `${trimmed}組-${advisorName}`
-          } else {
-            newSheetData.colE = advisorName
-          }
-        }
-
-        // F：學生名單
-        if (data.students && Array.isArray(data.students)) {
-          const names = data.students.map((s) => s.name).join("＆")
-          newSheetData.colF = names
-        }
-
-        // G：客戶名稱
-        const customerName = (data.customerInfo && data.customerInfo.name) || ""
-        newSheetData.colG = customerName
-
-        // H, I, J, K, L 留空（I 欄稍後填入 quotation 整理資訊）
-        newSheetData.colH = ""
-        newSheetData.colI = contractSchoolType;
-        newSheetData.colJ = ""
-        newSheetData.colK = ""
-        newSheetData.colL = ""
-        // M：金額
-        newSheetData.colM = data.amt || ""
-
-        // 更新基本資料
-        updateSheetData(newSheetData)
-
-        // 處理 OneClub ID
-        if (customerName) {
-          const customers = await searchOneClubCustomers(customerName)
-          updateOneClubCustomers(customers)
-        } else {
-          updateOneClubCustomers([])
-        }
-
-        // 將學制資訊儲存到 colI
-        newSheetData.colI = contractSchoolType
-
-        // 處理 quotation 資料
-        const quotationFormatted = formatQuotationData(quotationDataRaw)
+        // 處理訂單連結
+        const dealLink = `https://oneclass.bitrix24.com/crm/deal/details/${cleanDealId}/`;
+        const contactId = result.raw?.deal?.CONTACT_ID || "";
         
-        // 合併數量資訊到 colI
-        if (quotationFormatted) {
-          newSheetData.colI = `${contractSchoolType}${quotationFormatted}`
+        // 建立連結按鈕
+        linksContainer.innerHTML = "";
+        const tradeButton = document.createElement("button");
+        tradeButton.textContent = `交編 #${cleanDealId}`;
+        tradeButton.onclick = () => window.open(dealLink, "_blank");
+        linksContainer.appendChild(tradeButton);
+        
+        if (contactId) {
+          const contactButton = document.createElement("button");
+          contactButton.textContent = `聯絡人 ${contactId}`;
+          contactButton.onclick = () => window.open(result.computed.contactUrl, "_blank");
+          linksContainer.appendChild(contactButton);
         }
 
-        // 最終更新表單
-        updateSheetData(newSheetData)
-
-        // 儲存先前資料以便復原
-        previousData = {
-          sheetData: { ...newSheetData },
-          oneClubCustomers,
-          selectedOneClubId,
-        }
-
-        // 如果有 OCID，嘗試獲取 tutor 資料
-        if (selectedOneClubId) {
-          try {
-            const tutorRes = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/oneclub-tutor?oneClubId=${selectedOneClubId}`);
+        // 處理訂單 iframe
+        if (orderLinks.length > 0) {
+          orderFrame.src = orderLinks[0];
+          updateOrderLink(orderLinks[0]);
+          
+          // 若有多個訂單連結，建立選擇器
+          if (orderLinks.length > 1) {
+            const linkSelectorDiv = document.createElement("div");
+            linkSelectorDiv.className = "link-selector";
+            linkSelectorDiv.style.marginBottom = "10px";
             
-            if (tutorRes.ok) {
-              const tutorData = await tutorRes.json();
-              if (tutorData.status === "success" && tutorData.data?.tutor?.name) {
-                newSheetData.colK = tutorData.data.tutor.name;
-                updateSheetData(newSheetData);
-              }
-            }
-          } catch (tutorErr) {
-            console.warn("獲取 tutor 資料失敗:", tutorErr);
+            orderLinks.forEach((link, idx) => {
+              const btn = document.createElement("button");
+              btn.textContent = `訂單${idx === 0 ? '一' : '二'}`;
+              btn.className = `button button-small${idx === 0 ? ' active-link' : ''}`;
+              btn.style.marginRight = "5px";
+              btn.onclick = () => {
+                orderFrame.src = link;
+                updateOrderLink(link);
+                linkSelectorDiv.querySelectorAll('button').forEach((b, i) => {
+                  b.className = `button button-small${i === idx ? ' active-link' : ''}`;
+                });
+              };
+              linkSelectorDiv.appendChild(btn);
+            });
+            
+            document.querySelector(".iframe-footer").insertAdjacentElement("beforebegin", linkSelectorDiv);
           }
+        } else {
+          orderFrame.src = "about:blank";
+          updateOrderLink("無可用連結");
+        }
+
+        // 顯示警告訊息
+        if (result.meta?.warnings?.length) {
+          console.warn('API 警告:', result.meta.warnings);
+        }
+
+        // 顯示效能資訊
+        if (result.meta?.timing) {
+          console.log('API 耗時:', result.meta.timing);
         }
 
       } catch (err) {
-        resultPre.textContent += "\n錯誤：" + err.message
+        resultPre.textContent = "錯誤：" + err.message;
+      } finally {
+        searchButton.disabled = false;
       }
     }
-    
-    // quotation 資料整理：
-    // 1. 略過「贈品」
-    // 2. 使用正規表達式提取商品數量
-    // 3. 先檢查商品名稱中的學制（國小、國中、高中）
-    // 4. 若 category 為進度課（含 "OC+N"），前綴為全局學制
-    // 5. 若 category 為配套：
-    //    - 如果學制為國中或高中，且描述中不含「團課」(或「團體課」)，則以格式「數量(分鐘數)」輸出
-    //      （分鐘數從商品名稱中以 /(\d+)\s*mins/i 提取）
-    //    - 否則若描述含「團課」則固定前綴「團課堂」
-    // 6. 其他商品僅輸出數量
-    function formatQuotationData(dataArray) {
-      const productNames = [];
-      const activityItems = [];
-      const packageItems = [];
-      const activityCategories = ["", "贈品"]; // 保留其他贈品條件
-    
-      dataArray.forEach(item => {
-        const category = item[1] || "";
-        const productName = item[2] || "";
-        const desc = item[3] || "";
-        
-        // 不計入講義的贈品
-        if (category === "贈品" && (productName.includes("講義") || desc.includes("講義"))) {
-          return;
-        }
-        
-        if (category.includes("講義")) return;
-        
-        const quantity = extractQuantity(productName, desc);
-        if (!quantity) return;
-    
-        const output = generateOutput(category, productName, desc, quantity);
-        categorizeOutput(category, output, productNames, activityItems, packageItems, activityCategories);
-      });
-    
-      return [...productNames, ...activityItems, ...packageItems].join("+");
-    }
-    
-    function extractQuantity(productName, desc) {
-      const qtyRegex = /x\s*(\d+)/i;
-      let match = productName.match(qtyRegex) || desc.match(qtyRegex);
-      return match ? match[1] : "";
-    }
-    
-    function generateOutput(category, productName, desc, quantity) {
-      if (category.includes("配套")) {
-        return generatePackageOutput(desc, productName, quantity);
-      }
-      return quantity;
-    }
-    
-    function generatePackageOutput(desc, productName, quantity) {
-      if (desc.includes("團課") || desc.includes("團體課")) {
-        return "團課堂" + quantity;
-      }
-      
-      const minRegex = /(\d+)\s*mins/i;
-      let minMatch = productName.match(minRegex);
-      let minutes = minMatch ? minMatch[1] : "";
-      return minutes ? `${quantity}(${minutes}mins)` : quantity;
-    }
-    
-    function categorizeOutput(category, output, productNames, activityItems, packageItems, activityCategories) {
-      if (category.includes("OC+TN") || category.includes("OC+N")) {
-        productNames.push(output);
-      } else if (category.includes("配套")) {
-        packageItems.push(output);
-      } else if (activityCategories.includes(category) || category.includes("活動商品")) {
-        activityItems.push(output);
-      } else {
-        productNames.push(output);
-      }
-    }
+
+    // 已移除 fetchOrderData 及 quotation 處理函式 - 這些邏輯已移至 Edge Function
     
     function clearSheetFields() {
       const emptyData = {
