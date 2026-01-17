@@ -330,6 +330,7 @@ html,body { margin:0; height:100%; }
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { initFudausearchPanel, clearFudausearchPanel } from '../script/fusearch-panel.js';
 
     // Firebase 配置
     const firebaseConfig = {
@@ -357,6 +358,8 @@ html,body { margin:0; height:100%; }
           appContainer.style.display = 'block';
           user.getIdToken().then(token => {
             window.userToken = token;
+            // 在取得 token 後再初始化面板，確保 API 呼叫有有效權杖
+            initFudausearchPanel('fudausearch-container');
           });
           
           // ===== 新增: 背景自動更新 token (每 50 分鐘) =====
@@ -382,6 +385,8 @@ html,body { margin:0; height:100%; }
           if (window.tokenRefreshInterval) {
             clearInterval(window.tokenRefreshInterval);
           }
+          // 登出時清除 fudausearch 面板資料與綁定
+          clearFudausearchPanel('fudausearch-container');
         }
       });
 
@@ -480,7 +485,7 @@ html,body { margin:0; height:100%; }
       </div>
       <div id="fudausearch-results" style="padding: 0 10px;"></div>
   </div>
-  <script type="module" src="../script/fusearch.js"></script>
+  <script type="module" src="../script/fusearch-panel.js"></script>
   <script type="module">
   import { makeDraggable } from '../script/draggable.js';
   import { DealClient } from '../script/deal-composite-client.js';

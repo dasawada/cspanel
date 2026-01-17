@@ -41,8 +41,10 @@ export function initFudausearchPanel(containerId = 'fudausearch-placeholder') {
     return;
   }
   
-  // 注入 HTML
-  container.innerHTML = fudausearchPanelHTML;
+  // 如果容器尚未包含必要元素，才注入 HTML（避免重複插入或覆寫現有 DOM）
+  if (!container.querySelector('#fudausearch-input')) {
+    container.innerHTML = fudausearchPanelHTML;
+  }
   
   // 綁定事件
   bindFudausearchEvents();
