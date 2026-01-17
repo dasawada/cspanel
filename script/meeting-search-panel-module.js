@@ -1,3 +1,5 @@
+import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+
 // ===== 模組內部變數 =====
 let navEventHandlers = [];
 let zvModalHandler = null;
@@ -8,6 +10,156 @@ let allMeetingResultHandler = null;
 let meetingCheckClickHandler = null;
 let meetingCheckMouseoverHandler = null;
 let meetingCheckMouseoutHandler = null;
+
+// ===== 衝堂檢查器（整合版） =====
+let meetingConflictInterval = null; // interval id
+const CONFLICT_CHECK_INTERVAL = 15 * 60 * 1000; // 15 分鐘
+
+function parseTime(input) {
+    if (!input) return null;
+    const timePattern1 = /(\d{2})(\d{2})/; // 0000
+    const timePattern2 = /(\d{2}):(\d{2})/; // 00:00
+    let match = input.match(timePattern1);
+    if (match) return `${match[1]}:${match[2]}`;
+    match = input.match(timePattern2);
+    if (match) return `${match[1]}:${match[2]}`;
+    return null;
+}
+function timeStringToMinutes(timeString) {
+    const [hours, minutes] = timeString.split(':').map(Number);
+    return hours * 60 + minutes;
+}
+function getDayOfWeek(date) {
+    const dayMap = {0:'日',1:'一',2:'二',3:'三',4:'四',5:'五',6:'六'};
+    return dayMap[date.getDay()];
+}
+function allMeetingCompareIsSameDay(d1, d2) {
+    return d1.getFullYear() === d2.getFullYear() && d1.getMonth() === d2.getMonth() && d1.getDate() === d2.getDate();
+}
+function dateRangesOverlap(s1,e1,s2,e2) { return (s1 <= e2) && (s2 <= e1); }
+function isSameMeetingDay(m1,m2) {
+    if (!dateRangesOverlap(m1.startDate, m1.endDate, m2.startDate, m2.endDate)) return false;
+    const r1 = m1.repeatPattern || [], r2 = m2.repeatPattern || [];
+    if (r1.length>0 && r2.length>0) return r1.some(d=>r2.includes(d));
+    if (r1.length>0 && r2.length===0) return r1.includes(getDayOfWeek(m2.startDate));
+    if (r1.length===0 && r2.length>0) return r2.includes(getDayOfWeek(m1.startDate));
+    return allMeetingCompareIsSameDay(m1.startDate, m2.startDate);
+}
+
+async function fetchCombinedMeetingRows() {
+    const ranges = ['「騰訊會議(長週期)」!A:K','「騰訊會議(短週期)」!A:K'];
+    try {
+        const data = await callGoogleSheetBatchAPI({ ranges });
+        const longVals = data.valueRanges[0]?.values || [];
+        const shortVals = data.valueRanges[1]?.values || [];
+        return [...longVals, ...shortVals];
+    } catch (e) {
+        console.error('ConflictChecker(fetch): sheet fetch failed', e);
+        return [];
+    }
+}
+
+function processRowsToAccounts(rows) {
+    const accountResults = {};
+    for (let i = 1; i < rows.length; i++) {
+        const row = rows[i];
+        if (!row || row.length < 11) continue;
+        const meetingName = row[0] || '';
+        const startDate = row[1] ? new Date(row[1]) : null; if (startDate) startDate.setHours(0,0,0,0);
+        const endDate = row[7] ? new Date(row[7]) : null; if (endDate) endDate.setHours(0,0,0,0);
+        const meetingTimeRange = row[4] ? row[4].split('-') : null;
+        const accountid = row[5] || '';
+        const repeatPattern = row[2] ? row[2].split(',') : [];
+        const meetingLink = row[10] || '';
+        if (!meetingName || !startDate || !endDate || !meetingTimeRange || !accountid) continue;
+        if (!accountResults[accountid]) accountResults[accountid] = { meetings: [] };
+        accountResults[accountid].meetings.push({
+            name: meetingName,
+            startDate,
+            endDate,
+            timeRange: `${meetingTimeRange[0]}-${meetingTimeRange[1]}`,
+            repeatPattern,
+            link: meetingLink
+        });
+    }
+    return accountResults;
+}
+
+function checkConflictsInAccount(meetings) {
+    const conflicts = [];
+    if (!meetings || meetings.length === 0) return conflicts;
+    for (let i=0;i<meetings.length;i++){
+        for (let j=i+1;j<meetings.length;j++){
+            const m1 = meetings[i], m2 = meetings[j];
+            if (!isSameMeetingDay(m1,m2)) continue;
+            const s1 = parseTime(m1.timeRange.split('-')[0]);
+            const e1 = parseTime(m1.timeRange.split('-')[1]);
+            const s2 = parseTime(m2.timeRange.split('-')[0]);
+            const e2 = parseTime(m2.timeRange.split('-')[1]);
+            if (!s1||!e1||!s2||!e2) continue;
+            const m1S = timeStringToMinutes(s1), m1E = timeStringToMinutes(e1), m2S = timeStringToMinutes(s2), m2E = timeStringToMinutes(e2);
+            if (m1E > m2S && m1S < m2E) conflicts.push({meeting1:m1, meeting2:m2});
+        }
+    }
+    return conflicts;
+}
+
+async function runConflictCheckAndUpdateUI() {
+    try {
+        const rows = await fetchCombinedMeetingRows();
+        const accountResults = processRowsToAccounts(rows || []);
+        let totalConflicts = 0;
+        const conflictDetails = {};
+        for (const acc in accountResults) {
+            const conflicts = checkConflictsInAccount(accountResults[acc].meetings);
+            if (conflicts.length>0) {
+                totalConflicts += conflicts.length;
+                conflictDetails[acc] = conflicts.map(c=>({m1:c.meeting1, m2:c.meeting2}));
+            }
+        }
+
+        const settingsButton = document.getElementById('settings-button');
+        if (settingsButton) settingsButton.style.display = totalConflicts>0 ? 'inline' : 'none';
+
+        // populate modal if exists
+        const modalResults = document.getElementById('modal-meeting-results');
+        if (modalResults) {
+            if (totalConflicts>0) {
+                let html = '';
+                for (const acc in conflictDetails) {
+                    html += `<div class="account-section"><h4>${acc}</h4>`;
+                    conflictDetails[acc].forEach(pair=>{
+                        html += `<div class="conflict-card-container"><div class="conflict-card"><div><i class="fa fa-clock"></i> ${pair.m1.timeRange}</div><p>${pair.m1.name}<br>${pair.m1.link||''}</p></div><div class="conflict-card"><div><i class="fa fa-clock"></i> ${pair.m2.timeRange}</div><p>${pair.m2.name}<br>${pair.m2.link||''}</p></div></div>`;
+                    });
+                    html += `</div><hr>`;
+                }
+                modalResults.innerHTML = html;
+            } else {
+                modalResults.innerHTML = '<div style="text-align:center;margin-top:20px;"><i class="fa-regular fa-thumbs-up" style="font-size:48px;color:#4caf50"></i><p>目前還沒有</p></div>';
+            }
+        }
+
+        console.log('ConflictCheck: accounts=', Object.keys(accountResults).length, 'totalConflicts=', totalConflicts);
+        return { accountCount: Object.keys(accountResults).length, totalConflicts, details: conflictDetails };
+    } catch (e) {
+        console.error('ConflictCheck failed:', e);
+        throw e;
+    }
+}
+
+function startPeriodicConflictCheck() {
+    if (meetingConflictInterval) return;
+    // run immediately then schedule
+    runConflictCheckAndUpdateUI().catch(()=>{});
+    meetingConflictInterval = setInterval(()=>{
+        runConflictCheckAndUpdateUI().catch(()=>{});
+    }, CONFLICT_CHECK_INTERVAL);
+    console.log('ConflictChecker: started periodic checks');
+}
+function stopPeriodicConflictCheck() {
+    if (meetingConflictInterval) { clearInterval(meetingConflictInterval); meetingConflictInterval = null; console.log('ConflictChecker: stopped periodic checks'); }
+}
+
 
 // ===== HTML 模板 =====
 const meetingSearchPanelHTML = `
@@ -147,7 +299,21 @@ export function initMeetingSearchPanel(containerId = 'meeting-search-panel-place
     bindZvListingEvents();
     bindVvgglshtEvents();
     bindMeetingCheckAccountEvents();
-    
+
+    // 綁定 settings-button 行為（打開 modal 並顯示結果）
+    const settingsButton = document.getElementById('settings-button');
+    if (settingsButton) {
+        settingsButton.addEventListener('click', async function() {
+            const modal = document.getElementById('results-modal');
+            modal.style.display = 'block';
+            document.getElementById('modal-meeting-results').innerHTML = '';
+            await runConflictCheckAndUpdateUI();
+        });
+    }
+
+    // 啟動週期性檢查
+    startPeriodicConflictCheck();
+
     console.log('✅ MeetingSearchPanel 已初始化');
 }
 
@@ -157,6 +323,9 @@ export function clearMeetingSearchPanel(containerId = 'meeting-search-panel-plac
     
     // 移除所有事件監聽器
     removeAllEventListeners();
+
+    // 停止衝堂檢查
+    stopPeriodicConflictCheck();
     
     // 清空容器
     if (container) {

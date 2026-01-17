@@ -9,7 +9,8 @@ import {
   initAssistPanel, clearAssistPanel 
 } from './toggle-panels.js';
 import { initMeetingMatchCheck, clearMeetingMatchCheck } from './meeting-match-check.js';
-import { initAllMeetingCompare, clearAllMeetingCompare } from './all-meeting-compare.js';
+// Note: AllMeetingCompare has been refactored and its conflict checker is now embedded in the MeetingSearchPanel module.
+// import { initAllMeetingCompare, clearAllMeetingCompare } from './all-meeting-compare.js';
 import { initMeetingSearchPanel, clearMeetingSearchPanel } from './meeting-search-panel-module.js';
 import { initMeetingAll, clearMeetingAll } from './meeting-all-module.js';
 import { initCannedMessagesPanel, clearCannedMessagesPanel } from './dragb_msg_pnl.js';
@@ -110,10 +111,7 @@ async function initAllModules() {
     Promise.resolve(initMeetingAll()),
     Promise.resolve(initCannedMessagesPanel(null, { left: 1300, top: 75 })),
     Promise.resolve(initRoofButtons('roof-buttons-placeholder')),
-    Promise.resolve(initToolDownloadPanel('tool-download-placeholder')),
-    initAllMeetingCompare().catch(err => {
-      console.error('initAllMeetingCompare 失敗:', err);
-    })
+    Promise.resolve(initToolDownloadPanel('tool-download-placeholder'))
   ]);
   
   broadcastAuthState('login-ready');
@@ -140,7 +138,7 @@ function clearAllModules() {
   try { clearAssistPanel('assist-panel-placeholder'); } catch (e) { console.error('clearAssistPanel 失敗:', e); }
   try { clearMeetingMatchCheck(); } catch (e) { console.error('clearMeetingMatchCheck 失敗:', e); }
   try { clearMeetingAll(); } catch (e) { console.error('clearMeetingAll 失敗:', e); }
-  try { clearAllMeetingCompare(); } catch (e) { console.error('clearAllMeetingCompare 失敗:', e); }
+
   try { clearMeetingSearchPanel('meeting-search-panel-placeholder'); } catch (e) { console.error('clearMeetingSearchPanel 失敗:', e); }
   try { clearCannedMessagesPanel(); } catch (e) { console.error('clearCannedMessagesPanel 失敗:', e); }
   try { clearRoofButtons('roof-buttons-placeholder'); } catch (e) { console.error('clearRoofButtons 失敗:', e); }

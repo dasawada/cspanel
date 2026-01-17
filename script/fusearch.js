@@ -21,7 +21,7 @@ async function fudausearch_loadData() {
 // 排序函數：在最後加入「組長」
 function fudausearch_sortButtons(results) {
   const typeOrder = [
-    "學務部", "排課組", "客服工程師",
+    "公帳號_成交轉單", "排課組", "客服工程師",
     "組長", "輔導本人", "顧問本人", "職代一", "職代二",
     "公帳號", "數字組",
   ];
@@ -50,7 +50,7 @@ function handleXuewuMode(row, group, input) {
     fudausearch_results[1].fullName = row[5].slice(1);
   }
   // 更新公帳號
-  if (group === "學務部") {
+  if (group === "公帳號_成交轉單") {
     fudausearch_results[2].text = group;
     fudausearch_results[2].fullName = "學務";
   } else if (group && ["學務一組", "學務二組", "學務三組", "學務五組", "學務六組"].includes(group)) {
@@ -78,8 +78,8 @@ function handleXuewuMode(row, group, input) {
       type: "組長"
     });
   }
-  // 本人與學務部
-  fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
+  // 本人與公帳號_成交轉單
+  fudausearch_results.unshift({ text: "成交", fullName: "公帳號_成交轉單", type: "公帳號_成交轉單" });
   fudausearch_results.unshift({ text: input, fullName: input.slice(1), type: "輔導本人" });
 
   // 過濾掉空的職代二按鈕
@@ -217,7 +217,7 @@ function fudausearch_updateSuggestions() {
 
 // 在文件開頭添加按鈕顯示配置
 const fudausearch_buttonConfig = {
-  "學務部": true,
+  "公帳號_成交轉單": true,
   "排課組": false,        // 設為 false 即隱藏
   "客服工程師": true,
   "組長": true,
@@ -243,7 +243,7 @@ function fudausearch_renderButtons(fudausearch_results) {
     const button = document.createElement("button");
     button.className = "fudausearch-button";
 
-    if (result.type === "學務部") {
+    if (result.type === "公帳號_成交轉單") {
       button.classList.add("fudausearch-button-special");
     } else if (result.type === "排課組") {
       button.classList.add("fudausearch-button-paikezu");
