@@ -21,7 +21,7 @@ const fudausearchPanelHTML = `
 
 // ===== 按鈕顯示配置 =====
 const fudausearch_buttonConfig = {
-  "學務部": true,
+  "公帳號_成交轉單": true,
   "排課組": false,        // 設為 false 即隱藏
   "客服工程師": true,
   "組長": true,
@@ -95,7 +95,7 @@ async function fudausearch_loadData() {
 // ===== 排序函數 =====
 function fudausearch_sortButtons(results) {
   const typeOrder = [
-    "學務部", "排課組", "客服工程師",
+    "公帳號_成交轉單", "排課組", "客服工程師",
     "組長", "輔導本人", "顧問本人", "職代一", "職代二",
     "公帳號", "數字組",
   ];
@@ -153,7 +153,7 @@ function handleXuewuMode(row, group, input) {
     });
   }
   // 本人與學務部
-  fudausearch_results.unshift({ text: "學", fullName: "學務", type: "學務部" });
+  fudausearch_results.unshift({ text: "公", fullName: "成交轉單", type: "公帳號_成交轉單" });
   fudausearch_results.unshift({ text: input, fullName: input.slice(1), type: "輔導本人" });
 
   // 過濾掉空的職代二按鈕
@@ -302,7 +302,7 @@ function fudausearch_renderButtons(fudausearch_results) {
     const button = document.createElement("button");
     button.className = "fudausearch-button";
 
-    if (result.type === "學務部") {
+    if (result.type === "公帳號_成交轉單") {
       button.classList.add("fudausearch-button-special");
     } else if (result.type === "排課組") {
       button.classList.add("fudausearch-button-paikezu");
