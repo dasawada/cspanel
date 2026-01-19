@@ -468,15 +468,16 @@ export function createCannedMessagesPanel(options = {}) {
     }
 
     const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
-    const courseApiUrl = `${NETLIFY_SITE_URL}/course-info`;
+    const bundleApiUrl = `${NETLIFY_SITE_URL}/course-bundle`;
     let courseData, studentNames = '', tagNames = '', courseTime = '';
     let tutorToGroupMap = {};
+    let preparingJson = null;
 
-    // 第一個 API 請求（使用帶重試的 fetch）
-    const courseResponse = await fetchWithRetry(courseApiUrl, {
+    // 單一聚合 API 請求（使用帶重試的 fetch）
+    const courseResponse = await fetchWithRetry(bundleApiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseId }),
+      body: JSON.stringify({ courseId, checkPreparing: 'auto', includeParent: true, includeChat: true }),
       signal
     });
 
@@ -491,16 +492,16 @@ export function createCannedMessagesPanel(options = {}) {
 
     courseData = json.data;
     tutorToGroupMap = json.tutorToGroupMap || {};
+    preparingJson = json.preparingCourses || null;
     studentNames = (courseData.students || []).map(s => s.name).join('、') || '(無資料)';
     tagNames = (courseData.tags || []).map(t => t.name).join('、') || '(無資料)';
     courseTime = formatCourseTime(courseData.startAt, courseData.endAt);
 
-    let parentOneClubId = '';
-    if (courseData.students && courseData.students.length > 0) {
-      parentOneClubId = courseData.students[0].parentOneClubId || '';
-    }
-    if (!parentOneClubId) {
-      throw new Error('無法取得學生的 parentOneClubId');
+    const parentJson = json.parent;
+    const parentData = parentJson?.data?.data || parentJson?.data || null;
+    const contactId = parentData && parentData.contactId;
+    if (!contactId) {
+      throw new Error('查無家長聯絡資訊，請確認學生資料。');
     }
 
     // 檢查是否仍為最新請求
@@ -508,67 +509,20 @@ export function createCannedMessagesPanel(options = {}) {
       throw new DOMException('stale request', 'AbortError');
     }
 
-    // 第二個 API 請求（改為呼叫安全後端）
-    const secureApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`;
-
-    const parentResponse = await fetchWithRetry(secureApiUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'getParentInfo',
-        parentOneClubId: parentOneClubId
-      }),
-      signal
-    });
-
-    if (!parentResponse.ok) {
-      throw new Error('家長 API 代理錯誤: ' + parentResponse.status);
-    }
-
-    const parentJson = await parentResponse.json();
-    if (!parentJson || typeof parentJson !== 'object' || parentJson.status !== 'success' || !parentJson.data) {
-      throw new Error('家長 API 查詢失敗，請確認學生資料完整或稍後再試。');
-    }
-
-    const parentData = parentJson.data.data;
-    const contactId = parentData && parentData.contactId;
-    if (!contactId) {
-      throw new Error('查無家長聯絡資訊，請確認學生資料。');
-    }
-
-    // 再次檢查是否仍為最新請求
-    if (!isRenderable(seq, inputVal)) {
-      throw new DOMException('stale request', 'AbortError');
-    }
-
-    // Chat API 請求（改為透過後端代理）
+    // Chat 資訊（由聚合 API 直接提供）
     try {
-        const secureApiUrl = `${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`;
-        
-        const chatResponse = await fetchWithRetry(secureApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-                action: 'getChatInfo',
-                contactId: contactId
-            }),
-            signal
-        });
-
-        if (chatResponse.ok) {
-            const chatResult = await chatResponse.json();
-            if (chatResult.success && chatResult.data.chats && chatResult.data.portal) {
-                const chatCards = chatResult.data.chats.map(chat => `
-                    <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatResult.data.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
-                        ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
-                    </div>
-                `).join('');
-                
-                courseResultDiv.innerHTML = `
-                    <div><strong>BX對話入口：</strong></div>
-                    <div>${chatCards}</div>
-                `;
-            }
+        const chatResult = json.chat;
+        if (chatResult && chatResult.chats && chatResult.portal) {
+            const chatCards = chatResult.chats.map(chat => `
+                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+                    ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
+                </div>
+            `).join('');
+            
+            courseResultDiv.innerHTML = `
+                <div><strong>BX對話入口：</strong></div>
+                <div>${chatCards}</div>
+            `;
         }
     } catch (e) {
         if (e.name !== 'AbortError') {
@@ -760,34 +714,6 @@ export function createCannedMessagesPanel(options = {}) {
         const studentName = (courseData.students && courseData.students.length > 0) ? courseData.students[0].name : '';
         
         try {
-          const preparingResponse = await fetchWithRetry(courseApiUrl, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              checkPreparing: {
-                startAt,
-                endAt,
-                studentName,
-                courseStatus: 'preparing',
-                isBelong: 'false',
-                isAudition: 'false',
-                haveLeaveOrder: false,
-                skip: 0,
-                limit: 5,
-                orderBy: 'desc',
-                'transferCourseType[]': [
-                  'individualLiveCourse',
-                  'groupLiveCourse',
-                  'individualCambridge',
-                  'publicLiveStreamingCourse',
-                  'publicReplayStreamingCourse'
-                ]
-              }
-            }),
-            signal
-          });
-
-          const preparingJson = await preparingResponse.json();
           let preparingCourses = [];
           let total = 0;
           if (preparingJson?.data && Array.isArray(preparingJson.data.courses)) {
@@ -1083,6 +1009,9 @@ class TokenManager {
                 const newToken = await window.firebase.auth().currentUser.getIdToken(true);
                 localStorage.setItem('firebase_id_token', newToken);
                 return makeRequest(newToken, attempt + 1);
+            }
+            if (response.status === 401 && attempt >= retries - 1) {
+                window.dispatchEvent(new Event('firework-force-logout'));
             }
 
             if (response.status === 500 && attempt < retries - 1) {
