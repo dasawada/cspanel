@@ -29,7 +29,7 @@ window.downloadLogFile = function() {
 };
 
 const MIN_PANEL_HEIGHT = 36;
-const IP_SEARCH_API_BASE = "https://aitest.yuusuke-hamasaki.workers.dev/api/ipsearch/";
+const IP_SEARCH_API_BASE = "https://stirring-pothos-28253d.netlify.app/ipsearch/";
 let ipSearchSeq = 0;
 
 const STATUS_LABELS = {
