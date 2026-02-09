@@ -98,6 +98,12 @@
     border-bottom: 1px solid #e5e7eb;
 }
 
+.ip-dashboard__badges {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
 .ip-dashboard__location {
     font-weight: 600;
     font-size: 13px;
@@ -143,15 +149,77 @@
     border-color: #e5e7eb;
 }
 
+/* Confidence Badge Styles */
+.ip-confidence-badge {
+    font-size: 9px;
+}
+
+.confidence-high {
+    background: #d1fae5;
+    color: #065f46;
+    border-color: #a7f3d0;
+}
+
+.confidence-medium {
+    background: #fef3c7;
+    color: #92400e;
+    border-color: #fde68a;
+}
+
+.confidence-low {
+    background: #fee2e2;
+    color: #b91c1c;
+    border-color: #fecaca;
+}
+
 .ip-dashboard__identity {
     display: grid;
     gap: 2px;
+}
+
+.ip-dashboard__identity-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
 }
 
 .ip-dashboard__asn {
     font-size: 10px;
     color: #6b7280;
     font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+}
+
+.ip-dashboard__access {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+}
+
+.access-type-normal {
+    background: #e0f2fe;
+    color: #075985;
+}
+
+.access-type-mobile {
+    background: #dbeafe;
+    color: #1e40af;
+    border: 1px solid #93c5fd;
+}
+
+.access-type-vpn {
+    background: #fef3c7;
+    color: #92400e;
+    border: 1px solid #fde68a;
+}
+
+.access-type-datacenter {
+    background: #ede9fe;
+    color: #6d28d9;
+    border: 1px solid #ddd6fe;
 }
 
 .ip-dashboard__isp {
@@ -177,11 +245,243 @@
     grid-column: 1 / -1;
 }
 
+.ip-stat__label-container {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+}
+
 .ip-stat__label {
     display: block;
     font-size: 10px;
     color: #6b7280;
-    margin-bottom: 2px;
+}
+
+/* Info Button with Portal Tooltip */
+.ip-info-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: #9ca3af;
+    color: #ffffff;
+    font-size: 9px;
+    font-weight: bold;
+    cursor: help;
+    position: relative;
+    flex-shrink: 0;
+    transition: background 0.2s;
+}
+
+.ip-info-btn:hover,
+.ip-info-btn:focus {
+    background: #6b7280;
+    outline: none;
+}
+
+/* Portal Tooltip (rendered at body level) */
+.ip-tooltip-portal {
+    --ip-tooltip-bg: #ffffff;
+    --ip-tooltip-fg: #1f2937;
+    --ip-tooltip-border: rgba(15, 23, 42, 0.08);
+    --ip-tooltip-shadow: 0 10px 25px rgba(15, 23, 42, 0.14), 0 0 0 1px rgba(15, 23, 42, 0.06);
+    position: fixed;
+    background: var(--ip-tooltip-bg);
+    color: var(--ip-tooltip-fg);
+    border: 1px solid var(--ip-tooltip-border);
+    padding: 8px 10px;
+    border-radius: 8px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.45;
+    max-width: 320px;
+    min-width: 120px;
+    text-align: left;
+    z-index: 10000;
+    pointer-events: none;
+    opacity: 0;
+    transform: translateY(-4px);
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    box-shadow: var(--ip-tooltip-shadow);
+    word-wrap: break-word;
+    white-space: normal;
+}
+
+.ip-tooltip-portal--visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Arrow indicator */
+.ip-tooltip-portal::before {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-top: 4px solid var(--ip-tooltip-bg);
+}
+
+.ip-tooltip-portal--below::before {
+    bottom: auto;
+    top: -4px;
+    border-top: none;
+    border-bottom: 4px solid var(--ip-tooltip-bg);
+}
+
+.ip-tooltip-compact {
+    max-width: 240px;
+    min-width: 110px;
+    padding: 8px 10px;
+    text-align: left;
+}
+
+/* Rich Tooltip Styles */
+.ip-tooltip-rich {
+    max-width: 320px;
+    min-width: 240px;
+    text-align: left;
+    padding: 0;
+}
+
+.ip-tooltip-section {
+    padding: 10px 12px;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.ip-tooltip-section:last-child {
+    border-bottom: none;
+}
+
+.ip-tooltip-header {
+    font-size: 13px;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 8px;
+}
+
+.ip-tooltip-subheader {
+    font-size: 11px;
+    font-weight: 600;
+    color: #6b7280;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 6px;
+}
+
+.ip-tooltip-divider {
+    height: 1px;
+    background: #e5e7eb;
+    margin: 8px 0;
+}
+
+.ip-tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin: 4px 0;
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.ip-tooltip-label {
+    color: #6b7280;
+    margin-right: 12px;
+}
+
+.ip-tooltip-value {
+    font-weight: 500;
+    color: #111827;
+    text-align: right;
+}
+
+.ip-tooltip-value--low {
+    color: #059669;
+}
+
+.ip-tooltip-value--medium {
+    color: #d97706;
+}
+
+.ip-tooltip-value--high {
+    color: #dc2626;
+}
+
+.ip-tooltip-value--unknown {
+    color: #6b7280;
+}
+
+.ip-tooltip-list {
+    margin: 6px 0;
+    padding-left: 16px;
+    list-style: none;
+}
+
+.ip-tooltip-list li {
+    position: relative;
+    font-size: 11px;
+    line-height: 1.5;
+    color: #374151;
+    margin: 3px 0;
+}
+
+.ip-tooltip-list li::before {
+    content: '•';
+    position: absolute;
+    left: -12px;
+    color: #9ca3af;
+}
+
+.ip-tooltip-list--compact {
+    padding-left: 12px;
+}
+
+.ip-tooltip-list--compact li {
+    margin: 2px 0;
+}
+
+.ip-tooltip-list--compact li::before {
+    left: -10px;
+}
+
+.ip-tooltip-text {
+    font-size: 11px;
+    line-height: 1.5;
+    color: #374151;
+}
+
+.ip-tooltip-note {
+    font-size: 10px;
+    line-height: 1.4;
+    color: #6b7280;
+    font-style: italic;
+    margin-top: 4px;
+}
+
+.ip-tooltip-subsection {
+    margin-top: 8px;
+}
+
+.ip-tooltip-prior {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 4px;
+    font-size: 10px;
+}
+
+.ip-tooltip-prior span {
+    background: #f3f4f6;
+    color: #4b5563;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-weight: 500;
 }
 
 .ip-stat__value {
@@ -204,6 +504,7 @@
     overflow: hidden;
     display: -webkit-box;
     -webkit-line-clamp: 2;
+    line-clamp: 2;
     -webkit-box-orient: vertical;
 }
 
@@ -248,6 +549,78 @@
     border-color: #e5e7eb;
 }
 
+.ip-tag--certain {
+    font-weight: 700;
+    box-shadow: 0 0 0 1px rgba(29, 78, 216, 0.3);
+}
+
+.ip-tag--possible {
+    font-weight: 500;
+    opacity: 0.85;
+}
+
+/* Evidence Chain Styles */
+.ip-dashboard__evidence {
+    background: #f9fafb;
+    border: 1px solid #e5e7eb;
+    border-radius: 4px;
+    padding: 6px;
+}
+
+.ip-dashboard__evidence-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: #374151;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.ip-dashboard__evidence-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.ip-evidence-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 11px;
+    padding: 3px 5px;
+    background: #ffffff;
+    border: 1px solid #e5e7eb;
+    border-radius: 3px;
+}
+
+.ip-evidence-item__factor {
+    color: #1f2937;
+    font-weight: 500;
+    text-transform: capitalize;
+}
+
+.ip-evidence-item__weight {
+    font-size: 10px;
+    font-weight: 700;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+    padding: 1px 4px;
+    border-radius: 2px;
+}
+
+.ip-evidence-item__weight--positive {
+    background: #fee2e2;
+    color: #b91c1c;
+}
+
+.ip-evidence-item__weight--negative {
+    background: #d1fae5;
+    color: #065f46;
+}
+
 .ip-dashboard__footer {
     display: flex;
     justify-content: space-between;
@@ -277,6 +650,21 @@
         color: #f8fafc;
     }
 
+    .ip-dashboard__access {
+        background: #1e3a8a;
+        color: #bfdbfe;
+    }
+
+    .access-type-vpn {
+        background: #78350f;
+        color: #fde68a;
+    }
+
+    .access-type-datacenter {
+        background: #3b0764;
+        color: #ddd6fe;
+    }
+
     .ip-stat {
         background: #111827;
         border-color: #1f2937;
@@ -294,6 +682,61 @@
         background: #111827;
         color: #9ca3af;
         border-color: #1f2937;
+    }
+
+    .confidence-high {
+        background: #064e3b;
+        color: #a7f3d0;
+        border-color: #065f46;
+    }
+
+    .confidence-medium {
+        background: #78350f;
+        color: #fde68a;
+        border-color: #92400e;
+    }
+
+    .confidence-low {
+        background: #7f1d1d;
+        color: #fecaca;
+        border-color: #b91c1c;
+    }
+
+    .ip-info-btn {
+        background: #6b7280;
+    }
+
+    .ip-info-btn:hover,
+    .ip-info-btn:focus {
+        background: #4b5563;
+    }
+
+    .ip-dashboard__evidence {
+        background: #111827;
+        border-color: #1f2937;
+    }
+
+    .ip-dashboard__evidence-header {
+        color: #d1d5db;
+    }
+
+    .ip-evidence-item {
+        background: #1f2937;
+        border-color: #374151;
+    }
+
+    .ip-evidence-item__factor {
+        color: #e5e7eb;
+    }
+
+    .ip-evidence-item__weight--positive {
+        background: #7f1d1d;
+        color: #fecaca;
+    }
+
+    .ip-evidence-item__weight--negative {
+        background: #064e3b;
+        color: #a7f3d0;
     }
 
     .ip-tag {

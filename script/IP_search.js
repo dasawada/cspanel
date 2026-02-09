@@ -50,6 +50,88 @@ const CATEGORY_LABELS = {
   unknown: "未知"
 };
 
+const ACCESS_TYPE_LABELS = {
+  fiber: "光纖固網",
+  dsl: "DSL 固網",
+  cable: "Cable 固網",
+  mobile_hotspot: "行動熱點",
+  cellular: "行動網路",
+  vpn: "VPN 繞行",
+  proxy: "Proxy 代理",
+  datacenter: "機房連線",
+  satellite: "衛星連線",
+  unknown: "未知連線"
+};
+
+const UNCERTAINTY_LABELS = {
+  very_low: "極低",
+  low: "低",
+  medium: "中",
+  high: "高",
+  very_high: "極高"
+};
+
+const DATA_QUALITY_LABELS = {
+  very_high: "極高品質",
+  high: "高品質",
+  medium: "中等品質",
+  low: "低品質",
+  very_low: "極低品質",
+  insufficient: "樣本不足"
+};
+
+const HOTSPOT_LIKELIHOOD_LABELS = {
+  certain: "確定",
+  highly_probable: "極可能",
+  probable: "很可能",
+  possible: "可能",
+  unlikely: "不太可能",
+  very_unlikely: "極不可能"
+};
+
+const SIGNAL_EXPLANATIONS = {
+  "NO_PTR": {
+    label: "NO_PTR 信號",
+    description: "該 IP 沒有反向 DNS 記錄",
+    risk_impact: "可能為動態 IP 或臨時配發，增加連線不穩定可能性"
+  },
+  "MOBILE_NETWORK": {
+    label: "行動網路信號",
+    description: "PTR 記錄包含行動網路關鍵字",
+    risk_impact: "使用手機熱點或行動數據，連線穩定性較低"
+  },
+  "HOSTING_IP": {
+    label: "機房 IP 信號",
+    description: "檢測到資料中心或雲服務特徵",
+    risk_impact: "連線穩定但可能涉及 VPN/Proxy 使用"
+  },
+  "DATACENTER": {
+    label: "資料中心信號",
+    description: "ASN 屬於資料中心或雲服務提供商",
+    risk_impact: "非一般住宅用戶，可能為企業或代理連線"
+  },
+  "TRAFFIC_ANOMALY": {
+    label: "流量異常信號",
+    description: "偵測到流量模式異常",
+    risk_impact: "連線可能不穩定或即將中斷"
+  },
+  "VPN_DETECTED": {
+    label: "VPN 偵測",
+    description: "偵測到 VPN 或代理連線特徵",
+    risk_impact: "真實 IP 位置可能與顯示不同"
+  },
+  "PROXY_DETECTED": {
+    label: "代理伺服器偵測",
+    description: "偵測到代理伺服器特徵",
+    risk_impact: "連線經過中繼，真實來源可能不同"
+  },
+  "HIGH_RISK_ASN": {
+    label: "高風險 ASN",
+    description: "該自治系統曾有異常紀錄",
+    risk_impact: "需要額外注意該連線的安全性"
+  }
+};
+
 async function getGoogleMapUrl(lat, lon) {
   try {
     const data = await callGoogleMapsAPI({ lat, lon });
@@ -118,6 +200,566 @@ function formatCategory(value) {
   }
   const key = String(value).toLowerCase();
   return CATEGORY_LABELS[key] || value;
+}
+
+function formatAccessType(value) {
+  if (!value) {
+    return "N/A";
+  }
+  const key = String(value).toLowerCase().replace(/\s+/g, "_");
+  return ACCESS_TYPE_LABELS[key] || value;
+}
+
+function formatUncertainty(value) {
+  if (!value) {
+    return "N/A";
+  }
+  const key = String(value).toLowerCase();
+  return UNCERTAINTY_LABELS[key] || value;
+}
+
+function formatDataQuality(value) {
+  if (!value) {
+    return "N/A";
+  }
+  const key = String(value).toLowerCase();
+  return DATA_QUALITY_LABELS[key] || value;
+}
+
+function formatHotspotLikelihood(value) {
+  if (!value) {
+    return "N/A";
+  }
+  const key = String(value).toLowerCase();
+  return HOTSPOT_LIKELIHOOD_LABELS[key] || value;
+}
+
+function getConfidenceClass(uncertainty, dataQuality) {
+  const uncertaintyKey = String(uncertainty || "").toLowerCase();
+  const qualityKey = String(dataQuality || "").toLowerCase();
+  
+  if (uncertaintyKey === "very_high" || uncertaintyKey === "high" || qualityKey === "very_low" || qualityKey === "low") {
+    return "confidence-low";
+  }
+  if (uncertaintyKey === "medium" || qualityKey === "medium") {
+    return "confidence-medium";
+  }
+  return "confidence-high";
+}
+
+function getConfidenceLabelZh(uncertainty, dataQuality) {
+  const uncertaintyKey = String(uncertainty || "").toLowerCase();
+  const qualityKey = String(dataQuality || "").toLowerCase();
+  
+  if (uncertaintyKey === "very_high" || uncertaintyKey === "high" || qualityKey === "very_low" || qualityKey === "low") {
+    return "低信賴";
+  }
+  if (uncertaintyKey === "medium" || qualityKey === "medium") {
+    return "中信賴";
+  }
+  return "高信賴";
+}
+
+function getAccessTypeClass(accessType) {
+  const key = String(accessType || "").toLowerCase();
+  if (key.includes("vpn") || key.includes("proxy")) {
+    return "access-type-vpn";
+  }
+  if (key.includes("mobile") || key.includes("cellular") || key.includes("hotspot")) {
+    return "access-type-mobile";
+  }
+  if (key.includes("datacenter")) {
+    return "access-type-datacenter";
+  }
+  return "access-type-normal";
+}
+
+// Portal-based Tooltip System
+let activeTooltip = null;
+let activeTooltipTrigger = null;
+let tooltipHideTimer = null;
+let tooltipPortalSeq = 0;
+
+const COMPACT_TOOLTIP_VARIANT = {
+  classNames: ["ip-tooltip-compact"],
+  padding: 10,
+  offset: 8,
+  html: false
+};
+
+const TOOLTIP_VARIANTS = {
+  text: COMPACT_TOOLTIP_VARIANT,
+  compact: COMPACT_TOOLTIP_VARIANT,
+  rich: {
+    classNames: ["ip-tooltip-rich"],
+    padding: 12,
+    offset: 8,
+    html: true
+  }
+};
+
+function clearTooltipHideTimer() {
+  if (tooltipHideTimer) {
+    clearTimeout(tooltipHideTimer);
+    tooltipHideTimer = null;
+  }
+}
+
+function disposeActiveTooltip(immediate = false) {
+  if (activeTooltipTrigger) {
+    activeTooltipTrigger.removeAttribute("aria-describedby");
+    activeTooltipTrigger = null;
+  }
+
+  if (!activeTooltip) {
+    return;
+  }
+  const tooltipToRemove = activeTooltip;
+  activeTooltip = null;
+
+  if (tooltipToRemove._cleanup) {
+    tooltipToRemove._cleanup();
+  }
+
+  if (immediate) {
+    tooltipToRemove.remove();
+    return;
+  }
+
+  tooltipToRemove.classList.remove("ip-tooltip-portal--visible");
+  setTimeout(() => {
+    tooltipToRemove.remove();
+  }, 200);
+}
+
+function scheduleTooltipHide(delay = 150) {
+  clearTooltipHideTimer();
+  tooltipHideTimer = setTimeout(() => {
+    removeTooltipPortal();
+  }, delay);
+}
+
+function createTooltipPortal(content, triggerElement, options = {}) {
+  if (!triggerElement) {
+    return null;
+  }
+  const variant = TOOLTIP_VARIANTS[options.variant] || TOOLTIP_VARIANTS.compact;
+
+  clearTooltipHideTimer();
+  disposeActiveTooltip(true);
+
+  const tooltip = document.createElement("div");
+  tooltip.id = `ip-tooltip-portal-${++tooltipPortalSeq}`;
+  tooltip.className = "ip-tooltip-portal";
+  tooltip.setAttribute("role", "tooltip");
+  variant.classNames.forEach((className) => tooltip.classList.add(className));
+
+  if (variant.html) {
+    tooltip.innerHTML = String(content || "");
+  } else {
+    tooltip.textContent = String(content || "");
+  }
+
+  document.body.appendChild(tooltip);
+
+  const updatePosition = () => {
+    const rect = triggerElement.getBoundingClientRect();
+    const tooltipRect = tooltip.getBoundingClientRect();
+
+    tooltip.classList.remove("ip-tooltip-portal--below");
+    let top = rect.top - tooltipRect.height - variant.offset;
+    let left = rect.left + (rect.width / 2) - (tooltipRect.width / 2);
+    const padding = variant.padding;
+
+    if (top < padding) {
+      top = rect.bottom + variant.offset;
+      tooltip.classList.add("ip-tooltip-portal--below");
+    }
+
+    if (left < padding) {
+      left = padding;
+    }
+
+    if (left + tooltipRect.width > window.innerWidth - padding) {
+      left = window.innerWidth - tooltipRect.width - padding;
+    }
+
+    tooltip.style.top = `${top}px`;
+    tooltip.style.left = `${left}px`;
+  };
+
+  requestAnimationFrame(() => {
+    updatePosition();
+    tooltip.classList.add("ip-tooltip-portal--visible");
+  });
+
+  const handleScroll = () => updatePosition();
+  const handleKeydown = (event) => {
+    if (event.key === "Escape") {
+      removeTooltipPortal();
+    }
+  };
+  window.addEventListener("scroll", handleScroll, true);
+  window.addEventListener("resize", handleScroll);
+  document.addEventListener("keydown", handleKeydown);
+
+  tooltip._cleanup = () => {
+    window.removeEventListener("scroll", handleScroll, true);
+    window.removeEventListener("resize", handleScroll);
+    document.removeEventListener("keydown", handleKeydown);
+  };
+
+  triggerElement.setAttribute("aria-describedby", tooltip.id);
+  activeTooltipTrigger = triggerElement;
+  activeTooltip = tooltip;
+  return tooltip;
+}
+
+function removeTooltipPortal() {
+  clearTooltipHideTimer();
+  disposeActiveTooltip(false);
+}
+
+function createRichTooltipPortal(htmlContent, triggerElement) {
+  return createTooltipPortal(htmlContent, triggerElement, { variant: "rich" });
+}
+
+function bindTooltipTrigger(element, getContent, options = {}) {
+  if (!element || typeof getContent !== "function") {
+    return;
+  }
+
+  const variant = options.variant || "text";
+  const hideDelay = Number.isFinite(options.hideDelay) ? options.hideDelay : 150;
+
+  if (options.cursor) {
+    element.style.cursor = options.cursor;
+  }
+
+  const showTooltip = () => {
+    clearTooltipHideTimer();
+    const content = getContent();
+    if (content === undefined || content === null || content === "") {
+      return;
+    }
+    if (variant === "rich") {
+      createRichTooltipPortal(content, element);
+      return;
+    }
+    createTooltipPortal(content, element, { variant });
+  };
+
+  const hideTooltip = () => {
+    scheduleTooltipHide(hideDelay);
+  };
+
+  element.addEventListener("mouseenter", showTooltip);
+  element.addEventListener("mouseleave", hideTooltip);
+
+  if (options.showOnFocus) {
+    element.addEventListener("focus", showTooltip);
+    element.addEventListener("blur", () => {
+      removeTooltipPortal();
+    });
+  }
+}
+
+function createInfoButton(tooltip) {
+  const btn = document.createElement("span");
+  btn.className = "ip-info-btn";
+  btn.textContent = "?";
+  btn.tabIndex = 0;
+  btn.setAttribute("aria-label", tooltip);
+
+  bindTooltipTrigger(btn, () => tooltip, {
+    variant: "compact",
+    hideDelay: 100,
+    cursor: "help",
+    showOnFocus: true
+  });
+
+  return btn;
+}
+
+// Tooltip content builders
+function buildRiskBadgeTooltip(customData) {
+  if (!customData || !customData.connection_stability_risk) {
+    return "<div class=\"ip-tooltip-section\"><strong>資料不足</strong></div>";
+  }
+
+  const risk = customData.connection_stability_risk;
+  const riskLevelZh = { LOW: "低", MEDIUM: "中", HIGH: "高", UNKNOWN: "未知" }[risk.risk_level] || risk.risk_level;
+  const volatilityPercent = Math.round((risk.expected_volatility || 0) * 100);
+  
+  const dataQuality = risk.data_quality || {};
+  const qualityGradeZh = formatDataQuality(dataQuality.grade);
+  const uncertaintyZh = formatUncertainty(risk.uncertainty_grade);
+  
+  let html = `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-header">風險評估詳情</div>
+    <div class="ip-tooltip-divider"></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險等級</span><span class="ip-tooltip-value ip-tooltip-value--${risk.risk_level?.toLowerCase() || 'unknown'}">${riskLevelZh}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險評分</span><span class="ip-tooltip-value">${risk.risk_score || 0} / 100</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">期望波動率</span><span class="ip-tooltip-value">${volatilityPercent}%</span></div>
+  </div>`;
+  
+  html += `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">判斷信心</div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">數據品質</span><span class="ip-tooltip-value">${qualityGradeZh}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">有效證據</span><span class="ip-tooltip-value">${dataQuality.evidence_count || 0} 項</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">不確定性</span><span class="ip-tooltip-value">${uncertaintyZh}</span></div>
+    ${dataQuality.has_strong_signal ? '<div class="ip-tooltip-note">✓ 存在決定性證據</div>' : ''}
+  </div>`;
+  
+  // Top evidence
+  const layers = risk.layers || {};
+  const evidence = layers.evidence || [];
+  if (evidence.length > 0) {
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">主要風險來源</div>
+      <ul class="ip-tooltip-list">`;
+    
+    evidence.slice(0, 3).forEach(evd => {
+      const desc = evd.description || evd.signal || "";
+      const reliability = evd.reliability ? ` (可靠度 ${Math.round(evd.reliability * 100)}%)` : "";
+      html += `<li>${desc}${reliability}</li>`;
+    });
+    
+    html += `</ul></div>`;
+  }
+  
+  return html;
+}
+
+function buildAccessTypeTooltip(customData) {
+  if (!customData || !customData.connection_stability_risk) {
+    return "<div class=\"ip-tooltip-section\"><strong>資料不足</strong></div>";
+  }
+
+  const risk = customData.connection_stability_risk;
+  const mostLikely = risk.most_likely_access || {};
+  const layers = risk.layers || {};
+  const posterior = layers.posterior || [];
+  const prior = layers.prior || {};
+  const evidence = layers.evidence || [];
+  
+  const typeLabel = mostLikely.label || formatAccessType(mostLikely.type);
+  const probability = Math.round((mostLikely.probability || 0) * 100);
+  const volatility = mostLikely.inherent_volatility || 0;
+  
+  let html = `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-header">連線類型判斷</div>
+    <div class="ip-tooltip-divider"></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">最可能</span><span class="ip-tooltip-value">${typeLabel} (${probability}%)</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">固有波動</span><span class="ip-tooltip-value">${volatility.toFixed(2)} ${volatility > 0.5 ? '(高風險)' : '(穩定)'}</span></div>
+  </div>`;
+  
+  // Other possibilities
+  const alternatives = posterior.filter(p => p.access_type !== mostLikely.type && p.probability >= 0.10);
+  if (alternatives.length > 0) {
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">其他可能</div>
+      <ul class="ip-tooltip-list">`;
+    
+    alternatives.slice(0, 2).forEach(alt => {
+      const altLabel = formatAccessType(alt.access_type);
+      const altProb = Math.round(alt.probability * 100);
+      html += `<li>${altLabel} ${altProb}%</li>`;
+    });
+    
+    html += `</ul></div>`;
+  }
+  
+  // Judgment basis
+  html += `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">判斷依據</div>`;
+  
+  // Prior
+  if (prior.source && prior.distribution) {
+    const priorLabel = prior.label || prior.source;
+    html += `<div class="ip-tooltip-subsection">
+      <div class="ip-tooltip-note">[先驗] ${priorLabel}</div>`;
+    
+    const topPriors = Object.entries(prior.distribution)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3);
+    
+    if (topPriors.length > 0) {
+      html += `<div class="ip-tooltip-prior">`;
+      topPriors.forEach(([type, prob]) => {
+        const label = formatAccessType(type);
+        html += `<span>${label} ${Math.round(prob * 100)}%</span>`;
+      });
+      html += `</div>`;
+    }
+    html += `</div>`;
+  }
+  
+  // Evidence
+  const relevantEvidence = evidence.filter(e => 
+    e.source === 'ptr' || 
+    e.source === 'rpki_csv' || 
+    e.source === 'initial_classification' ||
+    e.signal?.includes('hosting') ||
+    e.signal?.includes('mobile')
+  );
+  
+  if (relevantEvidence.length > 0) {
+    html += `<div class="ip-tooltip-subsection">
+      <div class="ip-tooltip-note">[證據]</div>
+      <ul class="ip-tooltip-list ip-tooltip-list--compact">`;
+    
+    relevantEvidence.slice(0, 3).forEach(evd => {
+      const desc = evd.description || evd.signal || "";
+      html += `<li>✓ ${desc}</li>`;
+    });
+    
+    html += `</ul></div>`;
+  }
+  
+  html += `</div>`;
+  
+  return html;
+}
+
+function buildSignalTooltip(signalName, customData) {
+  const normalizedSignal = String(signalName).toUpperCase().replace(/\s+/g, "_");
+  const explanation = SIGNAL_EXPLANATIONS[normalizedSignal];
+  
+  // Special handling for HOTSPOT
+  if (signalName.includes("HOTSPOT") || customData?.mobile_hotspot_assessment) {
+    const assessment = customData.mobile_hotspot_assessment || {};
+    const likelihood = assessment.likelihood || "";
+    const likelihoodZh = formatHotspotLikelihood(likelihood);
+    const confidence = Math.round(assessment.confidence || 0);
+    const posterior = Math.round((assessment.posterior_probability || 0) * 100);
+    
+    const risk = customData.connection_stability_risk || {};
+    const volatility = risk.expected_volatility || 0;
+    const riskLevel = risk.risk_level || "UNKNOWN";
+    const riskLevelZh = { LOW: "低", MEDIUM: "中", HIGH: "高" }[riskLevel] || riskLevel;
+    
+    let html = `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-header">行動熱點評估</div>
+      <div class="ip-tooltip-divider"></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">判斷等級</span><span class="ip-tooltip-value">${likelihoodZh}</span></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">後驗機率</span><span class="ip-tooltip-value">${posterior}%</span></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">置信度</span><span class="ip-tooltip-value">${confidence}%</span></div>
+    </div>`;
+    
+    if (assessment.decision_summary) {
+      html += `<div class="ip-tooltip-section">
+        <div class="ip-tooltip-subheader">貝葉斯推論</div>
+        <div class="ip-tooltip-text">${assessment.decision_summary}</div>
+      </div>`;
+    }
+    
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">連線穩定性</div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">波動率</span><span class="ip-tooltip-value">${volatility.toFixed(2)} ${volatility > 0.5 ? '(高度不穩定)' : ''}</span></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險等級</span><span class="ip-tooltip-value ip-tooltip-value--${riskLevel.toLowerCase()}">${riskLevelZh}</span></div>
+    </div>`;
+    
+    return html;
+  }
+  
+  // Special handling for HOSTING
+  if (signalName.includes("HOSTING") || normalizedSignal === "DATACENTER") {
+    const isHosting = customData?.risk_assessment?.is_hosting;
+    const layers = customData?.connection_stability_risk?.layers || {};
+    const evidence = layers.evidence || [];
+    const datacenterEvidence = evidence.filter(e => 
+      e.signal?.includes("datacenter") || 
+      e.signal?.includes("hosting") ||
+      e.source === "initial_classification"
+    );
+    
+    let html = `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-header">機房 IP 檢測</div>
+      <div class="ip-tooltip-divider"></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">判斷</span><span class="ip-tooltip-value">資料中心連線</span></div>
+    </div>`;
+    
+    if (datacenterEvidence.length > 0) {
+      html += `<div class="ip-tooltip-section">
+        <div class="ip-tooltip-subheader">特徵</div>
+        <ul class="ip-tooltip-list">`;
+      
+      datacenterEvidence.slice(0, 3).forEach(evd => {
+        const desc = evd.description || evd.signal || "";
+        html += `<li>• ${desc}</li>`;
+      });
+      
+      html += `</ul></div>`;
+    }
+    
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">風險特性</div>
+      <div class="ip-tooltip-text">連線穩定 (波動率 0.05)<br>但可能涉及 VPN/Proxy</div>
+    </div>`;
+    
+    return html;
+  }
+  
+  // Special handling for OUTAGE
+  if (signalName.includes("OUTAGE") || normalizedSignal === "TRAFFIC_ANOMALY") {
+    const networkHealth = customData?.network_health || {};
+    const status = networkHealth.status || "";
+    const statusZh = formatStatus(status);
+    const trend = networkHealth.traffic_trend || "N/A";
+    
+    let html = `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-header">斷線警報</div>
+      <div class="ip-tooltip-divider"></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">狀態</span><span class="ip-tooltip-value">${statusZh}</span></div>
+      <div class="ip-tooltip-row"><span class="ip-tooltip-label">流量趨勢</span><span class="ip-tooltip-value">${trend}</span></div>
+    </div>`;
+    
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">影響</div>
+      <div class="ip-tooltip-text">該 IP 可能無法正常連線<br>建議檢查用戶網路狀態</div>
+    </div>`;
+    
+    return html;
+  }
+  
+  // Generic signal explanation
+  if (explanation) {
+    let html = `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-header">${explanation.label}</div>
+      <div class="ip-tooltip-divider"></div>
+      <div class="ip-tooltip-subheader">說明</div>
+      <div class="ip-tooltip-text">${explanation.description}</div>
+    </div>`;
+    
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">風險意義</div>
+      <div class="ip-tooltip-text">${explanation.risk_impact}</div>
+    </div>`;
+    
+    // Try to find matching evidence
+    const layers = customData?.connection_stability_risk?.layers || {};
+    const evidence = layers.evidence || [];
+    const matchingEvidence = evidence.find(e => 
+      e.signal?.toUpperCase() === normalizedSignal ||
+      e.description?.toUpperCase().includes(normalizedSignal)
+    );
+    
+    if (matchingEvidence && matchingEvidence.reliability) {
+      html += `<div class="ip-tooltip-section">
+        <div class="ip-tooltip-row"><span class="ip-tooltip-label">證據可靠度</span><span class="ip-tooltip-value">${Math.round(matchingEvidence.reliability * 100)}%</span></div>
+      </div>`;
+    }
+    
+    return html;
+  }
+  
+  // Fallback for unknown signals
+  return `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-header">${signalName}</div>
+    <div class="ip-tooltip-divider"></div>
+    <div class="ip-tooltip-text">此信號表示系統偵測到特定風險特徵</div>
+  </div>`;
 }
 
 function formatValue(value, fallback = "N/A") {
@@ -206,12 +848,23 @@ function createStatItem(label, value, options = {}) {
     item.classList.add("ip-stat--wrap");
   }
 
+  const labelContainer = document.createElement("span");
+  labelContainer.className = "ip-stat__label-container";
+  
   const labelElement = createTextElement("span", "ip-stat__label", label);
+  labelContainer.appendChild(labelElement);
+  
+  if (options.tooltip) {
+    const infoBtn = createInfoButton(options.tooltip);
+    labelContainer.appendChild(infoBtn);
+  }
+  
   const valueElement = createTextElement("span", "ip-stat__value", value);
   if (options.title) {
     valueElement.title = options.title;
   }
-  item.appendChild(labelElement);
+  
+  item.appendChild(labelContainer);
   item.appendChild(valueElement);
   return item;
 }
@@ -327,6 +980,37 @@ async function IP_handleIpInput(ip, date) {
     const riskBadgeClass = getRiskClass(riskScore);
     const riskLabel = getRiskLabelZh(riskScore);
 
+    // API v3: Extract confidence metrics
+    const riskAssessment = customData && customData.risk_assessment ? customData.risk_assessment : {};
+    const uncertaintyGrade = riskAssessment.uncertainty_grade || networkHealth.uncertainty || "";
+    const dataQuality = riskAssessment.data_quality || "";
+    const confidenceClass = getConfidenceClass(uncertaintyGrade, dataQuality);
+    const confidenceLabel = getConfidenceLabelZh(uncertaintyGrade, dataQuality);
+    const uncertaintyDisplay = formatUncertainty(uncertaintyGrade);
+    const dataQualityDisplay = formatDataQuality(dataQuality);
+
+    // API v3: Access type (scenario reconstruction)
+    const accessType = riskAssessment.most_likely_access || identity.access_type || "";
+    const accessTypeDisplay = formatAccessType(accessType);
+    const accessTypeClass = getAccessTypeClass(accessType);
+
+    // API v3: Mobile hotspot assessment
+    const hotspotAssessment = customData && customData.mobile_hotspot_assessment ? customData.mobile_hotspot_assessment : {};
+    const hotspotLikelihood = hotspotAssessment.likelihood || "";
+    const hotspotConfidence = hotspotAssessment.confidence || 0;
+    const hotspotLikelihoodDisplay = formatHotspotLikelihood(hotspotLikelihood);
+
+    // API v3: Evidence layers for explainability
+    const layers = customData && customData.layers ? customData.layers : {};
+    const evidenceList = Array.isArray(layers.evidence) ? layers.evidence : [];
+    const filteredEvidence = evidenceList
+      .filter(evd => evd && evd.factor)
+      .map(evd => ({
+        factor: String(evd.factor).replace(/_/g, " "),
+        weight: evd.weight || 0,
+        impact: evd.impact || ""
+      }));
+
     const statusCode = formatValue(networkHealth.status, "");
     const statusFallback = statusCode ? formatStatus(statusCode) : "";
     const statusDisplay = formatValue(networkHealth.description || statusFallback || statusCode, "N/A");
@@ -371,9 +1055,18 @@ async function IP_handleIpInput(ip, date) {
     const isMobile =
       signals.includes("MOBILE_NETWORK") ||
       /mobile|cellular|emome/i.test(hostnameLower) ||
-      /mobile|cellular/i.test(categoryLower);
+      /mobile|cellular/i.test(categoryLower) ||
+      (hotspotLikelihood && !["unlikely", "very_unlikely"].includes(String(hotspotLikelihood).toLowerCase()));
+    
     if (isMobile) {
-      pushTag("HOTSPOT", "ip-tag--mobile");
+      const likelihoodKey = String(hotspotLikelihood || "").toLowerCase();
+      if (likelihoodKey === "certain" || likelihoodKey === "highly_probable") {
+        pushTag(`HOTSPOT (確定 ${Math.round(hotspotConfidence)}%)`, "ip-tag--mobile ip-tag--certain");
+      } else if (likelihoodKey === "probable" || likelihoodKey === "possible") {
+        pushTag(`疑似熱點 (${hotspotLikelihoodDisplay} ${Math.round(hotspotConfidence)}%)`, "ip-tag--mobile ip-tag--possible");
+      } else {
+        pushTag("HOTSPOT", "ip-tag--mobile");
+      }
     }
 
     const isHosting =
@@ -430,30 +1123,90 @@ async function IP_handleIpInput(ip, date) {
       header.className = "ip-dashboard__header";
       const locationElement = createTextElement("div", "ip-dashboard__location", locationDisplay);
       locationElement.title = locationDisplay;
+      
+      const badgesContainer = document.createElement("div");
+      badgesContainer.className = "ip-dashboard__badges";
+      
       const riskBadge = createTextElement("span", `ip-badge ${riskBadgeClass}`, `風險 ${riskLabel}`);
+      bindTooltipTrigger(riskBadge, () => buildRiskBadgeTooltip(customData), {
+        variant: "rich",
+        hideDelay: 150,
+        cursor: "pointer"
+      });
+      
+      badgesContainer.appendChild(riskBadge);
+      
+      if (uncertaintyGrade || dataQuality) {
+        const confidenceBadge = createTextElement(
+          "span", 
+          `ip-badge ip-confidence-badge ${confidenceClass}`, 
+          confidenceLabel
+        );
+        confidenceBadge.title = `不確定性: ${uncertaintyDisplay} | 數據品質: ${dataQualityDisplay}`;
+        bindTooltipTrigger(confidenceBadge, () => buildRiskBadgeTooltip(customData), {
+          variant: "rich",
+          hideDelay: 150,
+          cursor: "pointer"
+        });
+        
+        badgesContainer.appendChild(confidenceBadge);
+      }
+      
       header.appendChild(locationElement);
-      header.appendChild(riskBadge);
+      header.appendChild(badgesContainer);
 
       const identityElement = document.createElement("div");
       identityElement.className = "ip-dashboard__identity";
+      
+      const topRow = document.createElement("div");
+      topRow.className = "ip-dashboard__identity-row";
+      
       const asnElement = createTextElement("div", "ip-dashboard__asn", asnDisplay);
+      topRow.appendChild(asnElement);
+      
+      if (accessType) {
+        const accessElement = createTextElement("div", `ip-dashboard__access ${accessTypeClass}`, accessTypeDisplay);
+        accessElement.title = `連線類型: ${accessTypeDisplay}`;
+        bindTooltipTrigger(accessElement, () => buildAccessTypeTooltip(customData), {
+          variant: "rich",
+          hideDelay: 150,
+          cursor: "pointer"
+        });
+        
+        topRow.appendChild(accessElement);
+      }
+      
+      identityElement.appendChild(topRow);
+      
       const ispElement = createTextElement("div", "ip-dashboard__isp", ispDisplay);
       ispElement.title = ispDisplay;
-      identityElement.appendChild(asnElement);
       identityElement.appendChild(ispElement);
 
       const statusItem = createStatItem("狀態", statusDisplay, {
         title: statusTitle,
         wide: true,
-        className: "ip-stat--status"
+        className: "ip-stat--status",
+        tooltip: statusCode ? `狀態代碼: ${statusCode}` : ""
       });
 
       const grid = document.createElement("div");
       grid.className = "ip-dashboard__grid";
-      grid.appendChild(createStatItem("類型", categoryDisplay, { title: categoryDisplay }));
-      grid.appendChild(createStatItem("BGP 前綴", bgpPrefix, { title: bgpPrefix }));
-      grid.appendChild(createStatItem("流量趨勢", trafficTrend, { title: trafficTrend }));
-      grid.appendChild(createStatItem("查詢模式", queryContextDisplay, { title: queryContextDisplay }));
+      grid.appendChild(createStatItem("類型", categoryDisplay, { 
+        title: categoryDisplay,
+        tooltip: "使用者所屬的網路類別分類" 
+      }));
+      grid.appendChild(createStatItem("BGP 前綴", bgpPrefix, { 
+        title: bgpPrefix,
+        tooltip: "該 IP 所屬的 BGP 路由前綴段" 
+      }));
+      grid.appendChild(createStatItem("流量趋勢", trafficTrend, { 
+        title: trafficTrend,
+        tooltip: "近期網路流量的變化趋勢" 
+      }));
+      grid.appendChild(createStatItem("查詢模式", queryContextDisplay, { 
+        title: queryContextDisplay,
+        tooltip: "實時追蹤或歷史模式查詢" 
+      }));
 
       const hostnameItem = createStatItem("主機名", hostname, {
         title: hostname,
@@ -472,11 +1225,56 @@ async function IP_handleIpInput(ip, date) {
       dashboard.appendChild(grid);
       dashboard.appendChild(hostnameItem);
 
+      // API v3: Evidence Chain (Risk Attribution)
+      if (filteredEvidence.length > 0) {
+        const evidenceSection = document.createElement("div");
+        evidenceSection.className = "ip-dashboard__evidence";
+        
+        const evidenceHeader = document.createElement("div");
+        evidenceHeader.className = "ip-dashboard__evidence-header";
+        evidenceHeader.textContent = "\u98a8\u96aa\u6b78\u56e0";
+        
+        const evidenceHeaderInfo = createInfoButton("\u5f71\u97ff\u98a8\u96aa\u5224\u65b7\u7684\u95dc\u9375\u56e0\u5b50\uff0c\u6839\u64da API \u8b49\u64da\u5c64 (layers.evidence) \u751f\u6210");
+        evidenceHeader.appendChild(evidenceHeaderInfo);
+        evidenceSection.appendChild(evidenceHeader);
+        
+        const evidenceList = document.createElement("ul");
+        evidenceList.className = "ip-dashboard__evidence-list";
+        
+        filteredEvidence.slice(0, 5).forEach((evd) => {
+          const item = document.createElement("li");
+          item.className = "ip-evidence-item";
+          
+          const factorText = createTextElement("span", "ip-evidence-item__factor", evd.factor);
+          item.appendChild(factorText);
+          
+          if (evd.weight && evd.weight !== 0) {
+            const weightBadge = createTextElement(
+              "span", 
+              evd.weight > 0 ? "ip-evidence-item__weight ip-evidence-item__weight--positive" : "ip-evidence-item__weight ip-evidence-item__weight--negative",
+              evd.weight > 0 ? `+${evd.weight.toFixed(2)}` : evd.weight.toFixed(2)
+            );
+            item.appendChild(weightBadge);
+          }
+          
+          evidenceList.appendChild(item);
+        });
+        
+        evidenceSection.appendChild(evidenceList);
+        dashboard.appendChild(evidenceSection);
+      }
+
       if (tags.length) {
         const tagsElement = document.createElement("div");
         tagsElement.className = "ip-dashboard__tags";
         tags.forEach((tag) => {
           const tagElement = createTextElement("span", `ip-tag ${tag.className}`, tag.text);
+          bindTooltipTrigger(tagElement, () => buildSignalTooltip(tag.text, customData), {
+            variant: "rich",
+            hideDelay: 150,
+            cursor: "pointer"
+          });
+          
           tagsElement.appendChild(tagElement);
         });
         dashboard.appendChild(tagsElement);
