@@ -132,6 +132,46 @@ const SIGNAL_EXPLANATIONS = {
   }
 };
 
+const HOTSPOT_SIGNAL_CODES = new Set(["MOBILE_NETWORK", "MOBILE_POSSIBLE", "MOBILE_UNLIKELY"]);
+const HOSTING_SIGNAL_CODES = new Set(["HOSTING_IP", "DATACENTER"]);
+const OUTAGE_SIGNAL_CODES = new Set(["TRAFFIC_ANOMALY"]);
+
+const SIGNAL_CODE_TO_GROUP = {
+  MOBILE_NETWORK: "HOTSPOT",
+  MOBILE_POSSIBLE: "HOTSPOT",
+  MOBILE_UNLIKELY: "HOTSPOT",
+  HOSTING_IP: "HOSTING",
+  DATACENTER: "HOSTING",
+  TRAFFIC_ANOMALY: "OUTAGE"
+};
+
+const SIGNAL_TOOLTIP_GROUPS = {
+  HOTSPOT: {
+    title: "行動熱點信號",
+    defaultConclusion: "偵測到行動網路特徵",
+    defaultImpact: "可能造成連線波動，建議必要時加做二次驗證",
+    signalCodes: HOTSPOT_SIGNAL_CODES,
+    keywords: ["MOBILE", "CELLULAR", "HOTSPOT"],
+    sources: new Set(["ptr", "rpki_csv", "initial_classification"])
+  },
+  HOSTING: {
+    title: "機房連線信號",
+    defaultConclusion: "偵測到資料中心或機房連線特徵",
+    defaultImpact: "連線通常較穩定，但需留意 VPN / Proxy 風險",
+    signalCodes: HOSTING_SIGNAL_CODES,
+    keywords: ["HOSTING", "DATACENTER", "CLOUD", "PROXY"],
+    sources: new Set(["ptr", "rpki_csv", "initial_classification"])
+  },
+  OUTAGE: {
+    title: "流量異常信號",
+    defaultConclusion: "偵測到流量異常或斷線風險",
+    defaultImpact: "可能影響可用性，建議優先檢查網路狀態",
+    signalCodes: OUTAGE_SIGNAL_CODES,
+    keywords: ["ANOMALY", "OUTAGE", "DROP", "TRAFFIC"],
+    sources: new Set(["traffic"])
+  }
+};
+
 async function getGoogleMapUrl(lat, lon) {
   try {
     const data = await callGoogleMapsAPI({ lat, lon });
@@ -622,144 +662,325 @@ function buildAccessTypeTooltip(customData) {
   return html;
 }
 
-function buildSignalTooltip(signalName, customData) {
-  const normalizedSignal = String(signalName).toUpperCase().replace(/\s+/g, "_");
-  const explanation = SIGNAL_EXPLANATIONS[normalizedSignal];
-  
-  // Special handling for HOTSPOT
-  if (signalName.includes("HOTSPOT") || customData?.mobile_hotspot_assessment) {
-    const assessment = customData.mobile_hotspot_assessment || {};
-    const likelihood = assessment.likelihood || "";
-    const likelihoodZh = formatHotspotLikelihood(likelihood);
-    const confidence = Math.round(assessment.confidence || 0);
-    const posterior = Math.round((assessment.posterior_probability || 0) * 100);
-    
-    const risk = customData.connection_stability_risk || {};
-    const volatility = risk.expected_volatility || 0;
-    const riskLevel = risk.risk_level || "UNKNOWN";
-    const riskLevelZh = { LOW: "低", MEDIUM: "中", HIGH: "高" }[riskLevel] || riskLevel;
-    
-    let html = `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-header">行動熱點評估</div>
-      <div class="ip-tooltip-divider"></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">判斷等級</span><span class="ip-tooltip-value">${likelihoodZh}</span></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">後驗機率</span><span class="ip-tooltip-value">${posterior}%</span></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">置信度</span><span class="ip-tooltip-value">${confidence}%</span></div>
-    </div>`;
-    
-    if (assessment.decision_summary) {
-      html += `<div class="ip-tooltip-section">
-        <div class="ip-tooltip-subheader">貝葉斯推論</div>
-        <div class="ip-tooltip-text">${assessment.decision_summary}</div>
-      </div>`;
-    }
-    
-    html += `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-subheader">連線穩定性</div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">波動率</span><span class="ip-tooltip-value">${volatility.toFixed(2)} ${volatility > 0.5 ? '(高度不穩定)' : ''}</span></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險等級</span><span class="ip-tooltip-value ip-tooltip-value--${riskLevel.toLowerCase()}">${riskLevelZh}</span></div>
-    </div>`;
-    
-    return html;
+function getRiskAttributionSummary(customData) {
+  const summary = formatValue(customData?.connection_stability_risk?.summary, "");
+  if (summary) {
+    return summary;
   }
-  
-  // Special handling for HOSTING
-  if (signalName.includes("HOSTING") || normalizedSignal === "DATACENTER") {
-    const isHosting = customData?.risk_assessment?.is_hosting;
-    const layers = customData?.connection_stability_risk?.layers || {};
-    const evidence = layers.evidence || [];
-    const datacenterEvidence = evidence.filter(e => 
-      e.signal?.includes("datacenter") || 
-      e.signal?.includes("hosting") ||
-      e.source === "initial_classification"
-    );
-    
-    let html = `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-header">機房 IP 檢測</div>
-      <div class="ip-tooltip-divider"></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">判斷</span><span class="ip-tooltip-value">資料中心連線</span></div>
-    </div>`;
-    
-    if (datacenterEvidence.length > 0) {
-      html += `<div class="ip-tooltip-section">
-        <div class="ip-tooltip-subheader">特徵</div>
-        <ul class="ip-tooltip-list">`;
-      
-      datacenterEvidence.slice(0, 3).forEach(evd => {
-        const desc = evd.description || evd.signal || "";
-        html += `<li>• ${desc}</li>`;
-      });
-      
-      html += `</ul></div>`;
-    }
-    
-    html += `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-subheader">風險特性</div>
-      <div class="ip-tooltip-text">連線穩定 (波動率 0.05)<br>但可能涉及 VPN/Proxy</div>
-    </div>`;
-    
-    return html;
+
+  const risk = customData?.connection_stability_risk || {};
+  const riskLevel = String(risk.risk_level || "").toUpperCase();
+  const riskLevelZh = { LOW: "低", MEDIUM: "中", HIGH: "高", UNKNOWN: "未知" }[riskLevel] || "未知";
+  const mostLikely = risk.most_likely_access || {};
+  const accessLabel = mostLikely.label || formatAccessType(mostLikely.type);
+  const score = Number(risk.risk_score);
+  const scoreText = Number.isFinite(score) ? `${score} / 100` : "N/A";
+
+  if (accessLabel && accessLabel !== "N/A") {
+    return `最可能連線型態：${accessLabel}；風險等級 ${riskLevelZh}（${scoreText}）`;
   }
-  
-  // Special handling for OUTAGE
-  if (signalName.includes("OUTAGE") || normalizedSignal === "TRAFFIC_ANOMALY") {
-    const networkHealth = customData?.network_health || {};
-    const status = networkHealth.status || "";
-    const statusZh = formatStatus(status);
-    const trend = networkHealth.traffic_trend || "N/A";
-    
-    let html = `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-header">斷線警報</div>
-      <div class="ip-tooltip-divider"></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">狀態</span><span class="ip-tooltip-value">${statusZh}</span></div>
-      <div class="ip-tooltip-row"><span class="ip-tooltip-label">流量趨勢</span><span class="ip-tooltip-value">${trend}</span></div>
-    </div>`;
-    
-    html += `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-subheader">影響</div>
-      <div class="ip-tooltip-text">該 IP 可能無法正常連線<br>建議檢查用戶網路狀態</div>
-    </div>`;
-    
-    return html;
+  return `風險等級 ${riskLevelZh}（${scoreText}）`;
+}
+
+function buildRiskAttributionTooltip(customData) {
+  if (!customData || !customData.connection_stability_risk) {
+    return "<div class=\"ip-tooltip-section\"><strong>資料不足</strong></div>";
   }
-  
-  // Generic signal explanation
-  if (explanation) {
-    let html = `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-header">${explanation.label}</div>
-      <div class="ip-tooltip-divider"></div>
-      <div class="ip-tooltip-subheader">說明</div>
-      <div class="ip-tooltip-text">${explanation.description}</div>
-    </div>`;
-    
-    html += `<div class="ip-tooltip-section">
-      <div class="ip-tooltip-subheader">風險意義</div>
-      <div class="ip-tooltip-text">${explanation.risk_impact}</div>
-    </div>`;
-    
-    // Try to find matching evidence
-    const layers = customData?.connection_stability_risk?.layers || {};
-    const evidence = layers.evidence || [];
-    const matchingEvidence = evidence.find(e => 
-      e.signal?.toUpperCase() === normalizedSignal ||
-      e.description?.toUpperCase().includes(normalizedSignal)
-    );
-    
-    if (matchingEvidence && matchingEvidence.reliability) {
-      html += `<div class="ip-tooltip-section">
-        <div class="ip-tooltip-row"><span class="ip-tooltip-label">證據可靠度</span><span class="ip-tooltip-value">${Math.round(matchingEvidence.reliability * 100)}%</span></div>
-      </div>`;
-    }
-    
-    return html;
-  }
-  
-  // Fallback for unknown signals
-  return `<div class="ip-tooltip-section">
-    <div class="ip-tooltip-header">${signalName}</div>
+
+  const risk = customData.connection_stability_risk;
+  const summary = getRiskAttributionSummary(customData);
+  const riskLevel = String(risk.risk_level || "UNKNOWN").toUpperCase();
+  const riskLevelZh = { LOW: "低", MEDIUM: "中", HIGH: "高", UNKNOWN: "未知" }[riskLevel] || riskLevel;
+  const score = Number(risk.risk_score);
+  const scoreText = Number.isFinite(score) ? `${score} / 100` : "N/A";
+  const uncertaintyText = formatUncertainty(risk.uncertainty_grade || "N/A");
+  const qualityText = formatDataQuality((risk.data_quality && risk.data_quality.grade) || "N/A");
+  const evidenceCount = risk.data_quality && Number.isFinite(Number(risk.data_quality.evidence_count))
+    ? Number(risk.data_quality.evidence_count)
+    : getSignalEvidenceList(customData).length;
+
+  let html = `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-header">風險歸因詳情</div>
     <div class="ip-tooltip-divider"></div>
-    <div class="ip-tooltip-text">此信號表示系統偵測到特定風險特徵</div>
+    <div class="ip-tooltip-text">${escapeHtml(summary)}</div>
   </div>`;
+
+  html += `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">判斷概況</div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險等級</span><span class="ip-tooltip-value ip-tooltip-value--${riskLevel.toLowerCase()}">${riskLevelZh}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">風險分數</span><span class="ip-tooltip-value">${scoreText}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">不確定性</span><span class="ip-tooltip-value">${uncertaintyText}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">數據品質</span><span class="ip-tooltip-value">${qualityText}</span></div>
+    <div class="ip-tooltip-row"><span class="ip-tooltip-label">證據數量</span><span class="ip-tooltip-value">${evidenceCount} 項</span></div>
+  </div>`;
+
+  const evidence = getSignalEvidenceList(customData)
+    .slice()
+    .sort((a, b) => (Number(b.reliability) || 0) - (Number(a.reliability) || 0))
+    .slice(0, 3);
+
+  if (evidence.length > 0) {
+    html += `<div class="ip-tooltip-section">
+      <div class="ip-tooltip-subheader">關鍵證據</div>
+      <ul class="ip-tooltip-list">`;
+
+    evidence.forEach((evd) => {
+      const description = evd.description || evd.signal || evd.raw_value || "無描述";
+      const source = evd.source ? ` / ${evd.source}` : "";
+      const reliability = Number(evd.reliability);
+      const reliabilityText = Number.isFinite(reliability) && reliability > 0
+        ? `（可靠度 ${Math.round(reliability * 100)}%${source}）`
+        : (source ? `（來源 ${evd.source}）` : "");
+      html += `<li>${escapeHtml(`${description}${reliabilityText}`)}</li>`;
+    });
+
+    html += `</ul></div>`;
+  }
+
+  return html;
+}
+
+function normalizeSignalCode(value) {
+  return String(value || "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
+}
+
+function escapeHtml(value) {
+  return String(value ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function shortenTooltipText(value, maxLength = 68) {
+  const text = String(value || "").trim();
+  if (!text) {
+    return "";
+  }
+  if (text.length <= maxLength) {
+    return text;
+  }
+  return `${text.slice(0, maxLength - 1)}…`;
+}
+
+function getSignalGroupConfig(signalCode, groupKey = "") {
+  const resolvedGroupKey = String(groupKey || SIGNAL_CODE_TO_GROUP[signalCode] || "").toUpperCase();
+  return SIGNAL_TOOLTIP_GROUPS[resolvedGroupKey] || null;
+}
+
+function getSignalTooltipContext(tagOrSignal) {
+  if (tagOrSignal && typeof tagOrSignal === "object") {
+    const signalCode = normalizeSignalCode(tagOrSignal.signalCode || tagOrSignal.signal);
+    const text = formatValue(tagOrSignal.text || signalCode, "SIGNAL");
+    const groupKey = String(tagOrSignal.groupKey || SIGNAL_CODE_TO_GROUP[signalCode] || "").toUpperCase();
+    return { text, signalCode, groupKey };
+  }
+
+  const text = formatValue(tagOrSignal, "SIGNAL");
+  const signalCode = normalizeSignalCode(text);
+  const groupKey = String(SIGNAL_CODE_TO_GROUP[signalCode] || "").toUpperCase();
+  return { text, signalCode, groupKey };
+}
+
+function getSignalEvidenceList(customData) {
+  const layers = customData?.connection_stability_risk?.layers || customData?.layers || {};
+  return Array.isArray(layers.evidence) ? layers.evidence.filter(Boolean) : [];
+}
+
+function scoreSignalEvidence(evidence, signalCode, groupConfig) {
+  const evidenceSignal = normalizeSignalCode(evidence.signal);
+  const evidenceText = `${String(evidence.description || "")} ${String(evidence.raw_value || "")}`.toUpperCase();
+  let score = 0;
+
+  if (signalCode && evidenceSignal === signalCode) {
+    score += 8;
+  }
+
+  if (groupConfig?.signalCodes instanceof Set && groupConfig.signalCodes.has(evidenceSignal)) {
+    score += 6;
+  }
+
+  if (signalCode) {
+    const signalToken = signalCode.replace(/_/g, " ");
+    if (evidenceText.includes(signalToken)) {
+      score += 2;
+    }
+  }
+
+  const keywords = Array.isArray(groupConfig?.keywords) ? groupConfig.keywords : [];
+  keywords.forEach((keyword) => {
+    if (evidenceText.includes(String(keyword).toUpperCase())) {
+      score += 2;
+    }
+  });
+
+  const source = String(evidence.source || "").toLowerCase();
+  if (groupConfig?.sources instanceof Set && groupConfig.sources.has(source)) {
+    score += 1;
+  }
+
+  score += Number(evidence.reliability) || 0;
+  return score;
+}
+
+function findTopSignalEvidence(customData, signalCode, groupConfig) {
+  const scoredEvidence = getSignalEvidenceList(customData)
+    .map((evidence) => ({
+      evidence,
+      score: scoreSignalEvidence(evidence, signalCode, groupConfig)
+    }))
+    .filter((entry) => entry.score > 0);
+
+  if (!scoredEvidence.length) {
+    return null;
+  }
+
+  scoredEvidence.sort((a, b) => {
+    if (b.score !== a.score) {
+      return b.score - a.score;
+    }
+    return (Number(b.evidence.reliability) || 0) - (Number(a.evidence.reliability) || 0);
+  });
+
+  return scoredEvidence[0].evidence;
+}
+
+function formatSignalEvidence(evidence) {
+  if (!evidence) {
+    return "無直接證據（僅模型信號）";
+  }
+
+  const description = shortenTooltipText(evidence.description || evidence.signal || evidence.raw_value || "無描述", 62);
+  const reliability = Number(evidence.reliability);
+  if (Number.isFinite(reliability) && reliability > 0) {
+    return `${description}（可靠度 ${Math.round(reliability * 100)}%）`;
+  }
+  return description;
+}
+
+function getDataQualityGrade(customData) {
+  const riskQuality = customData?.connection_stability_risk?.data_quality;
+  if (typeof riskQuality === "string") {
+    return riskQuality;
+  }
+  if (riskQuality && typeof riskQuality === "object" && riskQuality.grade) {
+    return riskQuality.grade;
+  }
+
+  const legacyQuality = customData?.risk_assessment?.data_quality;
+  if (typeof legacyQuality === "string") {
+    return legacyQuality;
+  }
+  if (legacyQuality && typeof legacyQuality === "object" && legacyQuality.grade) {
+    return legacyQuality.grade;
+  }
+  return "";
+}
+
+function buildSignalConfidenceSummary(customData, groupKey) {
+  const uncertaintyRaw =
+    customData?.connection_stability_risk?.uncertainty_grade ||
+    customData?.risk_assessment?.uncertainty_grade ||
+    customData?.network_health?.uncertainty ||
+    "";
+  const dataQualityRaw = getDataQualityGrade(customData);
+  const uncertaintyText = formatUncertainty(uncertaintyRaw || "N/A");
+  const dataQualityText = formatDataQuality(dataQualityRaw || "N/A");
+
+  const parts = [`不確定性 ${uncertaintyText}`, `數據品質 ${dataQualityText}`];
+  if (groupKey === "HOTSPOT") {
+    const hotspotConfidence = Math.round(customData?.mobile_hotspot_assessment?.confidence || 0);
+    if (hotspotConfidence > 0) {
+      parts.push(`熱點信心 ${hotspotConfidence}%`);
+    }
+  }
+  return parts.join(" / ");
+}
+
+function buildSignalCardTooltip({ title, signalCode, conclusion, evidence, confidence, impact }) {
+  const header = signalCode ? `${title} (${signalCode})` : title;
+  return `<div class="ip-tooltip-section">
+    <div class="ip-tooltip-header">${escapeHtml(header)}</div>
+    <div class="ip-tooltip-divider"></div>
+    <div class="ip-tooltip-subheader">結論</div>
+    <div class="ip-tooltip-text">${escapeHtml(conclusion)}</div>
+  </div>
+  <div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">主因證據</div>
+    <div class="ip-tooltip-text">${escapeHtml(evidence)}</div>
+  </div>
+  <div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">可信度</div>
+    <div class="ip-tooltip-text">${escapeHtml(confidence)}</div>
+  </div>
+  <div class="ip-tooltip-section">
+    <div class="ip-tooltip-subheader">風險影響</div>
+    <div class="ip-tooltip-text">${escapeHtml(impact)}</div>
+  </div>`;
+}
+
+function buildSignalTooltip(tagOrSignal, customData) {
+  const { text, signalCode, groupKey } = getSignalTooltipContext(tagOrSignal);
+  const explanation = SIGNAL_EXPLANATIONS[signalCode];
+  const groupConfig = getSignalGroupConfig(signalCode, groupKey);
+
+  let title = explanation?.label || groupConfig?.title || `${text} 信號`;
+  let conclusion = explanation?.description || groupConfig?.defaultConclusion || "偵測到特定風險特徵";
+  let impact = explanation?.risk_impact || groupConfig?.defaultImpact || "建議搭配其他風險訊號一起判讀";
+
+  if (groupKey === "HOTSPOT") {
+    const assessment = customData?.mobile_hotspot_assessment || {};
+    const likelihood = assessment.likelihood ? formatHotspotLikelihood(assessment.likelihood) : "";
+    const posterior = Math.round((assessment.posterior_probability || 0) * 100);
+    if (likelihood && posterior > 0) {
+      conclusion = `${likelihood}（後驗機率 ${posterior}%）`;
+    } else if (likelihood) {
+      conclusion = `${likelihood}（模型評估）`;
+    }
+
+    const expectedVolatility = Math.round((customData?.connection_stability_risk?.expected_volatility || 0) * 100);
+    if (expectedVolatility > 0) {
+      impact = `期望波動率 ${expectedVolatility}%；${groupConfig?.defaultImpact || impact}`;
+    }
+  } else if (groupKey === "HOSTING") {
+    const isHosting = Boolean(customData?.risk_assessment?.is_hosting);
+    if (isHosting) {
+      conclusion = "模型判定為資料中心 / 機房連線";
+    }
+
+    const expectedVolatility = Math.round((customData?.connection_stability_risk?.expected_volatility || 0) * 100);
+    if (expectedVolatility > 0) {
+      impact = `期望波動率 ${expectedVolatility}%；需留意代理與來源真實性`;
+    }
+  } else if (groupKey === "OUTAGE") {
+    const status = formatStatus(customData?.network_health?.status || "N/A");
+    const trend = formatValue(customData?.network_health?.traffic_trend, "N/A");
+    conclusion = `狀態 ${status} / 流量趨勢 ${trend}`;
+    impact = "該 IP 可能無法穩定連線，建議優先檢查網路狀態";
+  }
+
+  const topEvidence = findTopSignalEvidence(customData, signalCode, groupConfig);
+  let evidenceText = formatSignalEvidence(topEvidence);
+  if (!topEvidence && groupKey === "HOTSPOT") {
+    const decisionSummary = customData?.mobile_hotspot_assessment?.decision_summary;
+    if (decisionSummary) {
+      evidenceText = shortenTooltipText(decisionSummary, 62);
+    }
+  }
+
+  const confidenceText = buildSignalConfidenceSummary(customData, groupKey);
+  return buildSignalCardTooltip({
+    title,
+    signalCode,
+    conclusion,
+    evidence: evidenceText,
+    confidence: confidenceText,
+    impact
+  });
 }
 
 function formatValue(value, fallback = "N/A") {
@@ -1000,16 +1221,7 @@ async function IP_handleIpInput(ip, date) {
     const hotspotConfidence = hotspotAssessment.confidence || 0;
     const hotspotLikelihoodDisplay = formatHotspotLikelihood(hotspotLikelihood);
 
-    // API v3: Evidence layers for explainability
-    const layers = customData && customData.layers ? customData.layers : {};
-    const evidenceList = Array.isArray(layers.evidence) ? layers.evidence : [];
-    const filteredEvidence = evidenceList
-      .filter(evd => evd && evd.factor)
-      .map(evd => ({
-        factor: String(evd.factor).replace(/_/g, " "),
-        weight: evd.weight || 0,
-        impact: evd.impact || ""
-      }));
+    const riskAttributionSummary = getRiskAttributionSummary(customData);
 
     const statusCode = formatValue(networkHealth.status, "");
     const statusFallback = statusCode ? formatStatus(statusCode) : "";
@@ -1039,13 +1251,20 @@ async function IP_handleIpInput(ip, date) {
 
     const tags = [];
     const seenTags = new Set();
-    const pushTag = (text, className) => {
-      const normalized = String(text).toUpperCase();
-      if (seenTags.has(normalized)) {
+    const pushTag = ({ text, className, signalCode, groupKey = "" }) => {
+      const normalizedSignalCode = normalizeSignalCode(signalCode || text);
+      const resolvedGroupKey = String(groupKey || SIGNAL_CODE_TO_GROUP[normalizedSignalCode] || "GENERIC").toUpperCase();
+      const dedupeKey = `${resolvedGroupKey}:${normalizedSignalCode}`;
+      if (seenTags.has(dedupeKey)) {
         return;
       }
-      seenTags.add(normalized);
-      tags.push({ text, className });
+      seenTags.add(dedupeKey);
+      tags.push({
+        text,
+        className,
+        signalCode: normalizedSignalCode,
+        groupKey: resolvedGroupKey
+      });
     };
 
     const hostnameLower = hostname.toLowerCase();
@@ -1059,13 +1278,29 @@ async function IP_handleIpInput(ip, date) {
       (hotspotLikelihood && !["unlikely", "very_unlikely"].includes(String(hotspotLikelihood).toLowerCase()));
     
     if (isMobile) {
+      const mobileSignalCode = signals.find((signal) => HOTSPOT_SIGNAL_CODES.has(signal)) || "MOBILE_NETWORK";
       const likelihoodKey = String(hotspotLikelihood || "").toLowerCase();
       if (likelihoodKey === "certain" || likelihoodKey === "highly_probable") {
-        pushTag(`HOTSPOT (確定 ${Math.round(hotspotConfidence)}%)`, "ip-tag--mobile ip-tag--certain");
+        pushTag({
+          text: `HOTSPOT (確定 ${Math.round(hotspotConfidence)}%)`,
+          className: "ip-tag--mobile ip-tag--certain",
+          signalCode: mobileSignalCode,
+          groupKey: "HOTSPOT"
+        });
       } else if (likelihoodKey === "probable" || likelihoodKey === "possible") {
-        pushTag(`疑似熱點 (${hotspotLikelihoodDisplay} ${Math.round(hotspotConfidence)}%)`, "ip-tag--mobile ip-tag--possible");
+        pushTag({
+          text: `疑似熱點 (${hotspotLikelihoodDisplay} ${Math.round(hotspotConfidence)}%)`,
+          className: "ip-tag--mobile ip-tag--possible",
+          signalCode: mobileSignalCode,
+          groupKey: "HOTSPOT"
+        });
       } else {
-        pushTag("HOTSPOT", "ip-tag--mobile");
+        pushTag({
+          text: "HOTSPOT",
+          className: "ip-tag--mobile",
+          signalCode: mobileSignalCode,
+          groupKey: "HOTSPOT"
+        });
       }
     }
 
@@ -1074,7 +1309,13 @@ async function IP_handleIpInput(ip, date) {
       signals.includes("DATACENTER") ||
       Boolean(customData.risk_assessment && customData.risk_assessment.is_hosting);
     if (isHosting) {
-      pushTag("HOSTING", "ip-tag--hosting");
+      const hostingSignalCode = signals.includes("HOSTING_IP") ? "HOSTING_IP" : "DATACENTER";
+      pushTag({
+        text: "HOSTING",
+        className: "ip-tag--hosting",
+        signalCode: hostingSignalCode,
+        groupKey: "HOSTING"
+      });
     }
 
     const isOutage =
@@ -1082,14 +1323,27 @@ async function IP_handleIpInput(ip, date) {
       statusLower === "outage" ||
       statusLower === "inactive";
     if (isOutage) {
-      pushTag("OUTAGE", "ip-tag--outage");
+      pushTag({
+        text: "OUTAGE",
+        className: "ip-tag--outage",
+        signalCode: "TRAFFIC_ANOMALY",
+        groupKey: "OUTAGE"
+      });
     }
 
     signals.forEach((signal) => {
-      if (["MOBILE_NETWORK", "HOSTING_IP", "DATACENTER", "TRAFFIC_ANOMALY"].includes(signal)) {
+      if (
+        HOTSPOT_SIGNAL_CODES.has(signal) ||
+        HOSTING_SIGNAL_CODES.has(signal) ||
+        OUTAGE_SIGNAL_CODES.has(signal)
+      ) {
         return;
       }
-      pushTag(signal.replace(/_/g, " "), "ip-tag--signal");
+      pushTag({
+        text: signal.replace(/_/g, " "),
+        className: "ip-tag--signal",
+        signalCode: signal
+      });
     });
 
     const queryContextDisplay = formatQueryContext(customData && customData.query_context);
@@ -1225,42 +1479,29 @@ async function IP_handleIpInput(ip, date) {
       dashboard.appendChild(grid);
       dashboard.appendChild(hostnameItem);
 
-      // API v3: Evidence Chain (Risk Attribution)
-      if (filteredEvidence.length > 0) {
+      // API v3: Risk Attribution Summary (details in hover card)
+      if (customData && customData.connection_stability_risk) {
         const evidenceSection = document.createElement("div");
         evidenceSection.className = "ip-dashboard__evidence";
         
         const evidenceHeader = document.createElement("div");
         evidenceHeader.className = "ip-dashboard__evidence-header";
-        evidenceHeader.textContent = "\u98a8\u96aa\u6b78\u56e0";
-        
-        const evidenceHeaderInfo = createInfoButton("\u5f71\u97ff\u98a8\u96aa\u5224\u65b7\u7684\u95dc\u9375\u56e0\u5b50\uff0c\u6839\u64da API \u8b49\u64da\u5c64 (layers.evidence) \u751f\u6210");
+        evidenceHeader.textContent = "風險歸因";
+
+        const evidenceHeaderInfo = createInfoButton("滑入下方摘要可查看完整歸因細節");
         evidenceHeader.appendChild(evidenceHeaderInfo);
         evidenceSection.appendChild(evidenceHeader);
-        
-        const evidenceList = document.createElement("ul");
-        evidenceList.className = "ip-dashboard__evidence-list";
-        
-        filteredEvidence.slice(0, 5).forEach((evd) => {
-          const item = document.createElement("li");
-          item.className = "ip-evidence-item";
-          
-          const factorText = createTextElement("span", "ip-evidence-item__factor", evd.factor);
-          item.appendChild(factorText);
-          
-          if (evd.weight && evd.weight !== 0) {
-            const weightBadge = createTextElement(
-              "span", 
-              evd.weight > 0 ? "ip-evidence-item__weight ip-evidence-item__weight--positive" : "ip-evidence-item__weight ip-evidence-item__weight--negative",
-              evd.weight > 0 ? `+${evd.weight.toFixed(2)}` : evd.weight.toFixed(2)
-            );
-            item.appendChild(weightBadge);
-          }
-          
-          evidenceList.appendChild(item);
+
+        const summaryText = createTextElement("div", "ip-dashboard__evidence-summary", riskAttributionSummary);
+        summaryText.title = riskAttributionSummary;
+        bindTooltipTrigger(summaryText, () => buildRiskAttributionTooltip(customData), {
+          variant: "rich",
+          hideDelay: 150,
+          cursor: "pointer",
+          showOnFocus: true
         });
-        
-        evidenceSection.appendChild(evidenceList);
+        evidenceSection.appendChild(summaryText);
+
         dashboard.appendChild(evidenceSection);
       }
 
@@ -1269,7 +1510,8 @@ async function IP_handleIpInput(ip, date) {
         tagsElement.className = "ip-dashboard__tags";
         tags.forEach((tag) => {
           const tagElement = createTextElement("span", `ip-tag ${tag.className}`, tag.text);
-          bindTooltipTrigger(tagElement, () => buildSignalTooltip(tag.text, customData), {
+          tagElement.dataset.signalCode = tag.signalCode;
+          bindTooltipTrigger(tagElement, () => buildSignalTooltip(tag, customData), {
             variant: "rich",
             hideDelay: 150,
             cursor: "pointer"
