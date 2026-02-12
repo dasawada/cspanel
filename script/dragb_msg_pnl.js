@@ -202,6 +202,51 @@ const defaultTexts = {
 // ===== 面板實例管理 =====
 let cannedPanelInstance = null;
 
+const TAB4_TOTAL_COLUMNS = 14; // A~N
+const TAB4_TIMESTAMP_INDEX = 13; // Column N
+const TAB4_URL_PREFIX = 'https://oneclub.backstage.oneclass.com.tw/audition/course/edit/';
+
+function pad2(value) {
+  return String(value).padStart(2, '0');
+}
+
+function getLocalTimestampForSheet() {
+  const now = new Date();
+  return `${now.getFullYear()}/${pad2(now.getMonth() + 1)}/${pad2(now.getDate())} ${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}`;
+}
+
+function normalizeTab4SheetText(text) {
+  const cols = String(text || '').split('\t');
+
+  if (cols.length < TAB4_TOTAL_COLUMNS) {
+    cols.push(...new Array(TAB4_TOTAL_COLUMNS - cols.length).fill(''));
+  } else if (cols.length > TAB4_TOTAL_COLUMNS) {
+    cols.length = TAB4_TOTAL_COLUMNS;
+  }
+
+  cols[TAB4_TIMESTAMP_INDEX] = getLocalTimestampForSheet();
+  return cols.join('\t');
+}
+
+function buildTab4SheetText({ owner, dateText, studentNames, messageText, courseId }) {
+  const cols = new Array(TAB4_TOTAL_COLUMNS).fill('');
+  cols[0] = owner || '';
+  cols[1] = '';
+  cols[2] = dateText || '';
+  cols[3] = '請假與補課';
+  cols[4] = '';
+  cols[5] = studentNames || '';
+  cols[6] = messageText || '';
+  cols[7] = `${TAB4_URL_PREFIX}${courseId}`;
+  cols[8] = 'TRUE';
+  cols[9] = 'TRUE';
+  cols[10] = 'FALSE';
+  cols[11] = '老師假單';
+  cols[12] = '';
+  cols[13] = getLocalTimestampForSheet();
+  return cols.join('\t');
+}
+
 // ===== 3. 主函數 =====
 export function createCannedMessagesPanel(options = {}) {
   injectStyle();
@@ -290,7 +335,13 @@ export function createCannedMessagesPanel(options = {}) {
       const tab = btn.getAttribute('data-copy');
       const textarea = panel.querySelector(`#${panelId}-${tab} textarea`);
       textarea.removeAttribute('disabled');
-      navigator.clipboard.writeText(textarea.value).then(() => {
+      let valueToCopy = textarea.value;
+      if (tab === 'tab4' && valueToCopy.includes('\t')) {
+        valueToCopy = normalizeTab4SheetText(valueToCopy);
+        textarea.value = valueToCopy;
+        apiTexts.tab4 = valueToCopy;
+      }
+      navigator.clipboard.writeText(valueToCopy).then(() => {
         textarea.setAttribute('disabled', '');
         btn.classList.add('copied');
         btn.textContent = '已複製';
@@ -605,7 +656,13 @@ export function createCannedMessagesPanel(options = {}) {
       const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
-      apiTexts.tab4 = `${tutorNameWithoutSurname}\t\t${taipeiMMDD}\t請假與補課\t\t${studentNames}\t${mmddTime} 首課老師請假，未安排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE\tFALSE\t老師假單`;
+      apiTexts.tab4 = buildTab4SheetText({
+        owner: tutorNameWithoutSurname,
+        dateText: taipeiMMDD,
+        studentNames,
+        messageText: `${mmddTime} 首課老師請假，未安排代課`,
+        courseId
+      });
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
       
       return;
@@ -663,7 +720,13 @@ export function createCannedMessagesPanel(options = {}) {
       const taipeiDate = new Date(localDate.toLocaleString('en-US', { timeZone: 'Asia/Taipei' }));
       const taipeiMMDD = `${String(taipeiDate.getMonth() + 1).padStart(2, '0')}/${String(taipeiDate.getDate()).padStart(2, '0')}`;
 
-      apiTexts.tab4 = `行政\t\t${taipeiMMDD}\t請假與補課\t\t${studentNames}\t${mmddTime} 老師請假，已排代課\thttps://oneclub.backstage.oneclass.com.tw/audition/course/edit/${courseId}\tTRUE\tTRUE\tFALSE\t老師假單`;
+      apiTexts.tab4 = buildTab4SheetText({
+        owner: '行政',
+        dateText: taipeiMMDD,
+        studentNames,
+        messageText: `${mmddTime} 老師請假，已排代課`,
+        courseId
+      });
       panel.querySelector(`#${panelId}-tab4 textarea`).value = apiTexts.tab4;
 
       ['tab2', 'tab3'].forEach(tab => {
