@@ -15,7 +15,7 @@ const UI_CONFIG = {
   }
 };
 
-// 定義統一背景 (預載與正式一致)
+// 定義統一背景 (預載與正式一致，此處保留硬編碼供預遮罩使用，CSS 變數尚未載入)
 const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
 
 // ===== 0. 立即預遮罩 (防止畫面閃爍) =====
@@ -41,6 +41,24 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
 // ===== 1. 初始化基礎設施 (CSS & DOM) =====
 (function initUIInfrastructure() {
   const css = `
+    /* ===== 色彩系統 — 三主色，其餘自動衍生 ===== */
+    :root {
+      --ui-accent: #642800;   /* 主色：Spinner / 光束 / 粒子 */
+      --ui-surface: #f0f5f1;  /* 底色：遮罩背景基調     */
+      --ui-text:    #8b6464;  /* 文字：狀態文字色        */
+
+      /* ▼ 以下全由三主色自動運算，換色只需改上方三行 ▼ */
+      --ui-overlay-bg-start: color-mix(in srgb, var(--ui-accent)  4%, var(--ui-surface));
+      --ui-overlay-bg-end:   color-mix(in srgb, var(--ui-accent) 12%, var(--ui-surface));
+      --ui-spinner-primary:  var(--ui-accent);
+      --ui-spinner-secondary:color-mix(in srgb, var(--ui-accent) 65%, white);
+      --ui-spinner-highlight:color-mix(in srgb, var(--ui-accent) 40%, white);
+      --ui-track-color:      color-mix(in srgb, var(--ui-accent)  5%, transparent);
+      --ui-spinner-glow:     color-mix(in srgb, var(--ui-accent) 30%, transparent);
+      --ui-particle-color:   color-mix(in srgb, var(--ui-accent) 40%, transparent);
+      --ui-status-color:     color-mix(in srgb, var(--ui-accent) 25%, var(--ui-text));
+    }
+
     /* ===== 主遮罩層 ===== */
     #ui-transition-overlay {
       position: fixed;
@@ -49,7 +67,7 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
       pointer-events: none;
       opacity: 0;
       transition: opacity ${UI_CONFIG.timing.overlayFade}ms ${UI_CONFIG.easing.smooth};
-      background: ${OVERLAY_BACKGROUND};
+      background: linear-gradient(135deg, var(--ui-overlay-bg-start) 0%, var(--ui-overlay-bg-end) 100%);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -89,7 +107,7 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
       width: 72px;  /* 加大尺寸以容納雙層細節 */
       height: 72px;
       /* 複合光暈：產生類似電影鏡頭的空氣感 */
-      filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.3));
+      filter: drop-shadow(0 0 8px var(--ui-spinner-glow));
       /* 整體緩慢公轉，增加不確定性 */
       animation: container-rotate 4s linear infinite; 
     }
@@ -97,14 +115,14 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
     /* 0. 軌道層 (最底層) */
     .path-track {
       fill: none;
-      stroke: rgba(59, 130, 246, 0.05); /* 極淡 */
+      stroke: var(--ui-track-color); /* 極淡 */
       stroke-width: 1;
     }
 
     /* 1. 主光束 (外圈 - 負責動量與伸縮) */
     .path-beam {
       fill: none;
-      stroke: #3b82f6;
+      stroke: var(--ui-spinner-primary);
       stroke-width: 2.5;
       stroke-linecap: round; /* 圓頭端點 */
       
@@ -121,7 +139,7 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
     /* 2. 數據環 (內圈 - 負責精密度與對沖) */
     .path-data {
       fill: none;
-      stroke: #60a5fa; 
+      stroke: var(--ui-spinner-secondary); 
       stroke-width: 1.5;
       opacity: 0.8;
       transform-origin: center;
@@ -166,8 +184,8 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
     }
 
     @keyframes beam-pulse {
-      0%, 100% { stroke: #3b82f6; }
-      50% { stroke: #93c5fd; } /* 高亮狀態 */
+      0%, 100% { stroke: var(--ui-spinner-primary); }
+      50% { stroke: var(--ui-spinner-highlight); } /* 高亮狀態 */
     }
 
     /* ===== 狀態文字 ===== */
@@ -176,7 +194,7 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
       font-size: 14px;
       font-weight: 500;
-      color: #64748b;
+      color: var(--ui-status-color);
       letter-spacing: 1.5px; /* 增加字距提升高級感 */
       opacity: 0.8;
       min-width: 120px;
@@ -190,7 +208,7 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
       border-radius: 50%;
       pointer-events: none;
       opacity: 0;
-      background: linear-gradient(to top, rgba(59, 130, 246, 0.4), transparent);
+      background: linear-gradient(to top, var(--ui-particle-color), transparent);
     }
     
     .ui-particle.floating {
