@@ -1,8 +1,13 @@
+:root {
+    --bdr-base: #8d9c00;
+    --bdr-rgb: 141,156,0;
+}
+
 button {
     background-color: #f0f0f0;
     color: #000000;
     padding: 3px 8px;
-    border: 1px solid #00a1ff30;
+    border: 1px solid rgba(var(--bdr-rgb), 0.3);
     border-radius: 8px;
     cursor: pointer;
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);  /* 模仿 macOS 按鈕陰影 */

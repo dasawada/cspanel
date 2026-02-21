@@ -6,7 +6,7 @@ html, body {
 
 /* 登入狀態的背景 - 由 ui-conductor.js 控制 class 切換 */
 html.auth-active, body.auth-active {
-    background: linear-gradient(135deg, #ddeff7 0%, #faf4f4 100%) !important;
+    background: linear-gradient(135deg, #e4f7dd 0%, #feebeb 100%) !important;
     background-attachment: fixed !important;
 }
 

@@ -1,4 +1,15 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600&family=Noto+Sans+TC:wght@400;700&display=swap');
+:root {
+    --bdr-base: #8d9c00;
+    --bdr-rgb: 141,156,0;
+}
+
+/* 若要某個 panel 用其他顏色，只需覆寫變數
+.idsearchpanel.custom-red {
+    --bdr-base: #ff0000;
+    --bdr-rgb: 255,0,0;
+}
+*/
 
 body, button, textarea {
     font-family: 'Noto Sans TC', 'Inter', 'Microsoft JhengHei', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif;
@@ -27,12 +38,12 @@ nav,
 .fudausearch-container,
 .panel-tab-content {
     background-color: white;
-    border: 1px solid #00a1ff30;
+    border: 1px solid rgba(var(--bdr-rgb), 0.3);
     border-radius: 10px;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1), 0 6px 20px rgb(184 205 215 / 61%);
     transition: border 0.3s ease, box-shadow 0.3s ease; 
 }
-
+ 
 .update-header {
     position: fixed;
     top: 0;
@@ -116,16 +127,19 @@ nav,
 
 /* 定義呼吸燈動畫 */
 @keyframes border-breathe {
-    0% { border-color: #00a2ff50; }
-    50% { border-color: #00a2ff; }
-    100% { border-color: #00a2ff50; }
+    0%, 100% {
+        border-color: rgba(var(--bdr-rgb), 0.3);
+    }
+    50% {
+        border-color: var(--bdr-base);
+    }
 }
 
 .idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
 .meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover,.canned-panel:hover{
-    border: 1px solid #00a2ff91;
+    border: 1px solid rgba(var(--bdr-rgb), 0.3);
     animation: border-breathe 1s infinite ease-in-out;
 }
 
@@ -895,7 +909,7 @@ textarea {
     padding: 5px 10px;
     color: rgba(90, 90, 90, 0.35);
     background-color: rgba(231, 247, 255, 0.341);
-    border: 1px solid #00a1ff30;
+    border: 1px solid rgba(var(--bdr-rgb), 0.1);
     border-bottom: none; /* Remove top border to connect with label */
     border-radius: 10px 10px 0px 0px;
     cursor: pointer;
