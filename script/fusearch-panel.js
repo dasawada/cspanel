@@ -342,10 +342,15 @@ function fudausearch_copyToClipboard(content, button) {
 }
 
 // ===== 組別檢索函數 =====
+// 向上尋找最近的「非純數字」群組名稱（跳過小組序號如 "2"、"3"）
 function fudausearch_getGroup(columnA, rows, currentRow) {
-  if (columnA) return columnA;
+  const isGroupName = (val) => val && !/^\d+$/.test(val.trim());
+
+  if (isGroupName(columnA)) return columnA.trim();
+
   for (let i = currentRow - 1; i >= 0; i--) {
-    if (rows[i][0]) return rows[i][0];
+    const val = rows[i][0];
+    if (isGroupName(val)) return val.trim();
   }
   return "未知組別";
 }
