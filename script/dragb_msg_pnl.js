@@ -202,8 +202,8 @@ const defaultTexts = {
 // ===== 面板實例管理 =====
 let cannedPanelInstance = null;
 
-const TAB4_TOTAL_COLUMNS = 14; // A~N
-const TAB4_TIMESTAMP_INDEX = 13; // Column N
+const TAB4_TOTAL_COLUMNS = 13; // A~M
+const TAB4_TIMESTAMP_INDEX = 12; // Column N（貼上起點為B欄，故index 12對應N）
 const TAB4_URL_PREFIX = 'https://oneclub.backstage.oneclass.com.tw/audition/course/edit/';
 
 function pad2(value) {
@@ -242,8 +242,7 @@ function buildTab4SheetText({ owner, dateText, studentNames, messageText, course
   cols[9] = 'TRUE';
   cols[10] = 'FALSE';
   cols[11] = '老師假單';
-  cols[12] = '';
-  cols[13] = getLocalTimestampForSheet();
+  cols[12] = getLocalTimestampForSheet();
   return cols.join('\t');
 }
 
