@@ -234,10 +234,11 @@ async function fudausearch_search() {
     if (row[1] === input) {
       hasMatch = true;
       const mode = group.startsWith("學務") ? "xuewu" : "independent";
-      console.log(`[debug] input="${input}" group="${group}" mode="${mode}"`);
+      console.log(`[debug] ✅ 命中 rowIndex=${rowIndex} input="${input}" group="${group}" mode="${mode}" row=`, row);
       fudausearch_results = fudausearch_modes[mode](row, group, input);
     }
   });
+  console.log(`[debug] 搜尋完畢 hasMatch=${hasMatch} results=`, fudausearch_results);
 
   if (!hasMatch) fudausearch_results = [];
 
