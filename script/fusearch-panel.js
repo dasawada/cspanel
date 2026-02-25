@@ -234,6 +234,7 @@ async function fudausearch_search() {
     if (row[1] === input) {
       hasMatch = true;
       const mode = group.startsWith("學務") ? "xuewu" : "independent";
+      console.log(`[debug] input="${input}" group="${group}" mode="${mode}"`);
       fudausearch_results = fudausearch_modes[mode](row, group, input);
     }
   });
