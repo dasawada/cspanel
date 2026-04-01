@@ -825,7 +825,7 @@ html,body { margin:0; height:100%; }
         resultPre.textContent = `【備註】\n${notes}`;
 
         // 處理 OneClub 客戶
-        const customers = result.raw?.customers || [];
+        const customers = result.raw?.customers || result.customers || [];
         if (result.computed.oneClubId) {
           updateOneClubCustomers(customers.length ? customers : [{
             oneClubId: result.computed.oneClubId,

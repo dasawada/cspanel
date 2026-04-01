@@ -137,7 +137,8 @@ export class DealClient {
    * @returns {Array} - 舊版 customers 格式
    */
   static toCustomers(result) {
-    if (!result.success || !result.raw?.customers) {
+    const customers = result.raw?.customers || result.customers;
+    if (!result.success || !customers) {
       // 若無 raw 資料，從 computed 重建
       if (result.computed?.oneClubId) {
         return [{
@@ -147,7 +148,7 @@ export class DealClient {
       }
       return [];
     }
-    return result.raw.customers;
+    return customers;
   }
 
   /**
