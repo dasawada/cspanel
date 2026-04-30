@@ -1,27 +1,38 @@
-// 可由全域變數覆寫 API Base，例如：
-//   window.CSPANEL_API_BASE = 'https://your-worker.example.workers.dev';
-// 預設為現有 Netlify Functions 路徑
-let API_BASE = (typeof window !== 'undefined' && window.CSPANEL_API_BASE)
-  ? String(window.CSPANEL_API_BASE).replace(/\/+$/,'')
-  : 'https://sheetread.jimmychienwada.cc';
+import {
+  DEFAULT_CSPANEL_API_BASE,
+  getCspanelApiBase,
+  normalizeApiBase
+} from './cspanel-api.js';
 
-// 備援機制的三層路由
-const API_ENDPOINTS = [
-  'https://sheetread.jimmychienwada.cc',  // 第一優先
-  'https://google-sheet-worker.yuusuke-hamasaki.workers.dev',  // 第二優先
-  'https://stirring-pothos-28253d.netlify.app/.netlify/functions'  // 最後退回Netlify
+let API_BASE_OVERRIDE = null;
+
+const GOOGLE_SHEET_FALLBACK_BASES = [
+  'https://sheetread.jimmychienwada.cc/.netlify/functions',
+  'https://google-sheet-worker.yuusuke-hamasaki.workers.dev'
 ];
 
 export function setApiBase(base) {
-  API_BASE = String(base || '').replace(/\/+$/,'');
+  API_BASE_OVERRIDE = normalizeApiBase(base) || null;
 }
 
-function apiUrl(path, baseUrl = API_BASE) {
-  if (baseUrl.includes('netlify')) {
-    // Netlify使用不同的路徑結構，需要在函數名稱前加上適當的前綴
-    return `${baseUrl}/${path}`;
+function buildGoogleSheetUrl(baseUrl, endpoint) {
+  const normalizedBase = normalizeApiBase(baseUrl);
+  if (!normalizedBase) return '';
+  if (normalizedBase.endsWith('/.netlify/functions') || normalizedBase.includes('workers.dev')) {
+    return `${normalizedBase}/${endpoint}`;
   }
-  return `${baseUrl}/${path}`;
+  return `${normalizedBase}/.netlify/functions/${endpoint}`;
+}
+
+function getGoogleSheetEndpointUrls(endpoint) {
+  const primaryBase = API_BASE_OVERRIDE || getCspanelApiBase();
+  const bases = [
+    primaryBase,
+    DEFAULT_CSPANEL_API_BASE,
+    ...GOOGLE_SHEET_FALLBACK_BASES
+  ];
+
+  return [...new Set(bases.map((baseUrl) => buildGoogleSheetUrl(baseUrl, endpoint)).filter(Boolean))];
 }
 
 /**
@@ -31,37 +42,22 @@ function apiUrl(path, baseUrl = API_BASE) {
  * @returns {Promise} 回傳fetch response
  */
 async function fetchWithFallback(endpoint, requestOptions) {
-  for (let i = 0; i < API_ENDPOINTS.length; i++) {
-    const baseUrl = API_ENDPOINTS[i];
-    const isNetlify = baseUrl.includes('netlify');
-    
+  const endpointUrls = getGoogleSheetEndpointUrls(endpoint);
+
+  for (let i = 0; i < endpointUrls.length; i++) {
+    const url = endpointUrls[i];
+
     try {
-      let url;
-      let finalRequestOptions = { ...requestOptions };
-      
-      if (isNetlify) {
-        // Netlify Functions 的特殊處理
-        url = apiUrl(endpoint, baseUrl);
-        // Netlify 可能需要不同的請求格式或標頭
-        finalRequestOptions.headers = {
-          ...finalRequestOptions.headers,
-          // 可以添加 Netlify 特定的標頭
-        };
-      } else {
-        // Worker 端點的處理
-        url = apiUrl(endpoint, baseUrl);
-      }
-      
-      const response = await fetch(url, finalRequestOptions);
+      const response = await fetch(url, requestOptions);
       
       if (response.ok) {
-        console.log(`Successfully connected to ${baseUrl}`);
+        console.log(`Successfully connected to ${url}`);
         return response;
       }
       
       // 如果不是最後一個端點，繼續嘗試下一個
-      if (i < API_ENDPOINTS.length - 1) {
-        console.warn(`API endpoint ${baseUrl} failed with status ${response.status}, trying next endpoint...`);
+      if (i < endpointUrls.length - 1) {
+        console.warn(`API endpoint ${url} failed with status ${response.status}, trying next endpoint...`);
         continue;
       } else {
         // 最後一個端點也失敗了，拋出錯誤
@@ -70,8 +66,8 @@ async function fetchWithFallback(endpoint, requestOptions) {
       }
     } catch (error) {
       // 如果不是最後一個端點，繼續嘗試下一個
-      if (i < API_ENDPOINTS.length - 1) {
-        console.warn(`API endpoint ${baseUrl} failed with error:`, error.message, 'trying next endpoint...');
+      if (i < endpointUrls.length - 1) {
+        console.warn(`API endpoint ${url} failed with error:`, error.message, 'trying next endpoint...');
         continue;
       } else {
         // 最後一個端點也失敗了，拋出錯誤

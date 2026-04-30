@@ -1,9 +1,12 @@
 document.addEventListener('DOMContentLoaded', (event) => {
-    document.querySelector('.appicon').addEventListener('click', function(e) {
-if (e.target && e.target.tagName === 'IMG') {
-    copyImageToClipboard(e.target.id);
-}
-    });
+    const appIcon = document.querySelector('.appicon');
+    if (appIcon) {
+        appIcon.addEventListener('click', function(e) {
+            if (e.target && e.target.tagName === 'IMG') {
+                copyImageToClipboard(e.target.id);
+            }
+        });
+    }
 
     async function copyImageToClipboard(imageId) {
 try {

@@ -10,15 +10,14 @@
  * const result = await client.fetchDealInfo('12345');
  */
 
-const NETLIFY_SITE_URL = 'https://stirring-pothos-28253d.netlify.app';
-const COMPOSITE_API = `${NETLIFY_SITE_URL}/api/deal-composite`;
+import { CSPANEL_API } from './cspanel-api.js';
 
 /**
  * Deal Composite Client
  */
 export class DealClient {
   constructor(options = {}) {
-    this.apiUrl = options.apiUrl || COMPOSITE_API;
+    this.apiUrl = options.apiUrl || CSPANEL_API.dealComposite;
     this.token = options.token || null;
     this.includeRaw = options.includeRaw || false;
   }

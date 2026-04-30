@@ -1,3 +1,5 @@
+import { CSPANEL_API } from './cspanel-api.js';
+
 // 內部變數，用於儲存 interceptor 引用以便移除
 let currentInterceptor = null;
 
@@ -66,7 +68,7 @@ async function fetchProtectedContentWithRetry(retries = 3) {
       
       const token = await user.getIdToken(); 
 
-      const response = await fetch('https://stirring-pothos-28253d.netlify.app/.netlify/functions/order-tool-api', {
+      const response = await fetch(CSPANEL_API.orderTool, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

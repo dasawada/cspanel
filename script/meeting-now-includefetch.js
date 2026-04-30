@@ -1,4 +1,5 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+import { CSPANEL_API } from './cspanel-api.js';
 import { ZVaccountEmailMap } from './ZVaccountEmailMap.js';
 
 // 初始化會議分類數組
@@ -975,7 +976,6 @@ function createCopyableAccountElement(accountid) {
 }
 
 async function fetchCourses(status, startAt, endAt) {
-    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
     let retryCount = 0;
     const maxRetries = 2;
     
@@ -1018,7 +1018,7 @@ async function fetchCourses(status, startAt, endAt) {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 秒超時
             
-            const response = await fetch(`${NETLIFY_SITE_URL}/.netlify/functions/order-tool-api`, {
+            const response = await fetch(CSPANEL_API.orderTool, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
