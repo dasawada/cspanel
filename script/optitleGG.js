@@ -1,7 +1,11 @@
 import { callGoogleSheetAPI } from './googleSheetAPI.js';
 
-// 新增全域變數，用來存放結構化的 "wtf" 表資料
-let structuredWtfRecords = [];
+const ORG_SHEET_RANGE = 'wtf!A:ZZ';
+
+// 組織矩陣資料與搜尋索引
+let orgMatrixData = null;
+let consultantSearchRecords = [];
+let wtfDataPromise = null;
 let previousOptitleOutput = '';
 
 // ===== HTML 模板 =====
@@ -69,7 +73,9 @@ export function clearOptitlePanel(containerId = 'optitle-placeholder') {
     container.innerHTML = '';
   }
   // 清空快取資料
-  structuredWtfRecords = [];
+  orgMatrixData = null;
+  consultantSearchRecords = [];
+  wtfDataPromise = null;
   previousOptitleOutput = '';
   console.log('🧹 OptitlePanel 已清除');
 }
@@ -145,21 +151,34 @@ function generateText() {
   
   optitleOutput.style.transform = "scale(1.1)";
   optitleOutput.style.opacity = "0.5";
-  optitleOutput.innerHTML = outputText + 
-    '<button id="OPtitle_copyButton" type="button" style="border: none;padding: 3px;margin-left:3px;" title="複製到剪貼簿">' +
-    '<img src="img/copy-icon.png" alt="複製標題" style="width: 15px; height: 15px;">' +
-    '</button>';
-  
-  // 綁定複製按鈕事件
-  const copyBtn = document.getElementById('OPtitle_copyButton');
-  if (copyBtn) {
-    copyBtn.addEventListener('click', OPtitle_copyText);
-  }
+  optitleOutput.textContent = '';
+  optitleOutput.appendChild(document.createTextNode(outputText));
+  optitleOutput.appendChild(createOptitleCopyButton());
   
   setTimeout(() => {
     optitleOutput.style.transform = "scale(1)";
     optitleOutput.style.opacity = "1";
   }, 100);
+}
+
+function createOptitleCopyButton() {
+  const button = document.createElement('button');
+  button.id = 'OPtitle_copyButton';
+  button.type = 'button';
+  button.style.border = 'none';
+  button.style.padding = '3px';
+  button.style.marginLeft = '3px';
+  button.title = '複製到剪貼簿';
+  button.addEventListener('click', OPtitle_copyText);
+
+  const image = document.createElement('img');
+  image.src = 'img/copy-icon.png';
+  image.alt = '複製標題';
+  image.style.width = '15px';
+  image.style.height = '15px';
+
+  button.appendChild(image);
+  return button;
 }
 
 // ===== 清除輸出 =====
@@ -207,12 +226,7 @@ function OPtitle_copyText(e) {
   if (!optitleOutput) return;
   
   const textToCopy = optitleOutput.innerText;
-  const tempInput = document.createElement("input");
-  tempInput.value = textToCopy;
-  document.body.appendChild(tempInput);
-  tempInput.select();
-  document.execCommand("copy");
-  document.body.removeChild(tempInput);
+  copyText(textToCopy);
   
   const copyButton = document.getElementById("OPtitle_copyButton");
   if (copyButton) {
@@ -226,27 +240,145 @@ function OPtitle_copyText(e) {
   }
 }
 
+function copyText(text) {
+  if (navigator.clipboard?.writeText && window.isSecureContext) {
+    return navigator.clipboard.writeText(text).catch(() => fallbackCopyText(text));
+  }
+  fallbackCopyText(text);
+  return Promise.resolve();
+}
+
+function fallbackCopyText(text) {
+  const tempInput = document.createElement("input");
+  tempInput.value = text;
+  document.body.appendChild(tempInput);
+  tempInput.select();
+  document.execCommand("copy");
+  document.body.removeChild(tempInput);
+}
+
+function normalizeSearchText(value) {
+  return String(value || '').replace(/\s/g, '').toLowerCase();
+}
+
+function cell(row, col) {
+  return row && row[col] != null ? String(row[col]).trim() : '';
+}
+
+export function parseOrgMatrix(rows) {
+  const safeRows = Array.isArray(rows) ? rows : [];
+  const headerRow = safeRows[0] || [];
+  const managerRow = safeRows[1] || [];
+  const memberRows = safeRows.slice(2);
+  const period = cell(headerRow, 0);
+
+  const deptSlots = [];
+  for (let col = 1; col < headerRow.length; col += 2) {
+    const department = cell(headerRow, col);
+    if (department) {
+      deptSlots.push({ department, nameCol: col, titleCol: col + 1 });
+    }
+  }
+
+  const departments = deptSlots.map(({ department, nameCol, titleCol }) => {
+    const manager = {
+      name: cell(managerRow, nameCol),
+      title: cell(managerRow, titleCol),
+      role: cell(managerRow, 0) || '主管'
+    };
+
+    const members = [];
+    for (const row of memberRows) {
+      const name = cell(row, nameCol);
+      if (!name) continue;
+      members.push({
+        name,
+        title: cell(row, titleCol),
+        role: cell(row, 0)
+      });
+    }
+
+    return {
+      department,
+      manager,
+      members,
+      headcount: 1 + members.length
+    };
+  });
+
+  return {
+    period,
+    generated_at: new Date().toISOString(),
+    departments,
+    summary: {
+      total_departments: departments.length,
+      total_headcount: departments.reduce((sum, department) => sum + department.headcount, 0)
+    }
+  };
+}
+
+function buildConsultantSearchRecords(orgData) {
+  if (!orgData?.departments) return [];
+
+  return orgData.departments.flatMap((department) => {
+    const people = [];
+    if (department.manager?.name) {
+      people.push({
+        consultant: department.manager.name,
+        title: department.manager.title,
+        role: department.manager.role,
+        team: department.department,
+        teamLeader: department.manager.name
+      });
+    }
+
+    department.members.forEach((member) => {
+      people.push({
+        consultant: member.name,
+        title: member.title,
+        role: member.role,
+        team: department.department,
+        teamLeader: department.manager?.name || ''
+      });
+    });
+
+    return people.map((person) => ({
+      ...person,
+      normalizedName: normalizeSearchText(person.consultant)
+    }));
+  });
+}
+
+function findConsultantRecord(searchTerm) {
+  return consultantSearchRecords.find(record => record.normalizedName === searchTerm) || null;
+}
+
 // ===== 載入 Google Sheet 資料 =====
 function loadWtfData() {
-  return callGoogleSheetAPI({ range: 'wtf!A:Z' })
+  if (wtfDataPromise) return wtfDataPromise;
+
+  wtfDataPromise = callGoogleSheetAPI({ range: ORG_SHEET_RANGE })
     .then(response => {
       if (!response.values || !response.values.length) {
         console.error("loadWtfData: 沒有取得資料");
-        return;
+        orgMatrixData = null;
+        consultantSearchRecords = [];
+        return null;
       }
-      const rows = response.values;
-      const numCols = Math.max(...rows.map(r => r.length));
-      structuredWtfRecords = [];
-      for (let j = 0; j < numCols; j++) {
-        const record = [];
-        for (let i = 0; i < rows.length; i++) {
-          record.push(rows[i][j] ? rows[i][j] : '');
-        }
-        structuredWtfRecords.push(record);
-      }
-      console.log("loadWtfData: 結構化資料", structuredWtfRecords);
+      orgMatrixData = parseOrgMatrix(response.values);
+      consultantSearchRecords = buildConsultantSearchRecords(orgMatrixData);
+      console.log("loadWtfData: 組織矩陣資料", orgMatrixData);
+      return orgMatrixData;
     })
-    .catch(error => console.error("loadWtfData: 錯誤", error));
+    .catch(error => {
+      console.error("loadWtfData: 錯誤", error);
+      return null;
+    })
+    .finally(() => {
+      wtfDataPromise = null;
+    });
+
+  return wtfDataPromise;
 }
 
 // ===== 搜尋功能 =====
@@ -254,7 +386,7 @@ function search() {
   const consultantInput = document.getElementById('consultantName');
   if (!consultantInput) return;
   
-  const searchTerm = consultantInput.value.replace(/\s/g, '').toLowerCase();
+  const searchTerm = normalizeSearchText(consultantInput.value);
   if (!searchTerm) {
     const resultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
     const resultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
@@ -264,20 +396,7 @@ function search() {
   }
 
   const proceedSearch = () => {
-    let foundRecord = null;
-    structuredWtfRecords.some(record => {
-      return record.some(cell => {
-        if (cell && cell.replace(/\s/g, '').toLowerCase() === searchTerm) {
-          foundRecord = {
-            consultant: cell,
-            team: record[2] || '',
-            teamLeader: record[3] || ''
-          };
-          return true;
-        }
-        return false;
-      });
-    });
+    const foundRecord = findConsultantRecord(searchTerm);
     
     const resultsSpan = document.getElementById('search_SAWHO_ResultsSpan');
     const resultsDiv = document.getElementById('search_SAWHO_ResultsDiv');
@@ -293,12 +412,7 @@ function search() {
       consultantSpan.style.cursor = 'pointer';
       consultantSpan.title = '點我一下複製名字';
       consultantSpan.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = foundRecord.consultant.length <= 2 ? foundRecord.consultant.slice(-1) : foundRecord.consultant.slice(-2);
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
+        copyText(foundRecord.consultant.length <= 2 ? foundRecord.consultant.slice(-1) : foundRecord.consultant.slice(-2));
         consultantSpan.title = '已複製！';
         setTimeout(() => { consultantSpan.title = '點我一下複製名字'; }, 1000);
       });
@@ -309,12 +423,7 @@ function search() {
       leaderSpan.style.cursor = 'pointer';
       leaderSpan.title = '點我一下複製名字';
       leaderSpan.addEventListener('click', () => {
-        const tempInput = document.createElement('input');
-        tempInput.value = foundRecord.teamLeader.length <= 2 ? foundRecord.teamLeader.slice(-1) : foundRecord.teamLeader.slice(-2);
-        document.body.appendChild(tempInput);
-        tempInput.select();
-        document.execCommand('copy');
-        document.body.removeChild(tempInput);
+        copyText(foundRecord.teamLeader.length <= 2 ? foundRecord.teamLeader.slice(-1) : foundRecord.teamLeader.slice(-2));
         leaderSpan.title = '已複製！';
         setTimeout(() => { leaderSpan.title = '點我一下複製名字'; }, 1000);
       });
@@ -332,18 +441,17 @@ function search() {
     }
   };
 
-  // 只要輸入長度 <= 2，永遠只用快取
   if (searchTerm.length <= 2) {
-    proceedSearch();
+    if (!consultantSearchRecords.length && !orgMatrixData) {
+      loadWtfData().then(proceedSearch);
+    } else {
+      proceedSearch();
+    }
     return;
   }
 
   // 輸入長度 >= 3，若快取查無資料才 fetch
-  let foundInCache = false;
-  structuredWtfRecords.some(record => {
-    return record.some(cell => cell && cell.replace(/\s/g, '').toLowerCase() === searchTerm && (foundInCache = true));
-  });
-  if (foundInCache) {
+  if (findConsultantRecord(searchTerm)) {
     proceedSearch();
   } else {
     loadWtfData().then(() => {
@@ -361,11 +469,13 @@ function updateOptitleOutput(content) {
 
 function clearOptitleOutput() {
   const el = document.getElementById('optitleoutput');
-  if (el) el.innerHTML = previousOpttitleOutput;
+  if (el) el.innerHTML = previousOptitleOutput;
 }
 
-// ===== 掛載全域函數 (供 inline 呼叫，若有需要) =====
-window.OPtitle_copyText = OPtitle_copyText;
-window.search = search;
-window.clearFields = clearFields;
-window.initOptitlePanel = initOptitlePanel;
+// ===== 掛載全域函數 (保留 legacy inline 呼叫相容性) =====
+if (typeof window !== 'undefined') {
+  window.OPtitle_copyText = OPtitle_copyText;
+  window.search = search;
+  window.clearFields = clearFields;
+  window.initOptitlePanel = initOptitlePanel;
+}
