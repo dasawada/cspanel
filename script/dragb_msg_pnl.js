@@ -19,8 +19,8 @@ const PANEL_CSS = `
   will-change: transform;
   width: 400px;
   min-width: 350px;
-  font-family: Arial, sans-serif;
-  color: #333;
+  font-family: var(--sans);
+  color: var(--fg);
 }
 .canned-panel-handle {
   padding: 5px 10px;
