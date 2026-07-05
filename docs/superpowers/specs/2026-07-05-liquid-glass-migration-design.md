@@ -56,7 +56,7 @@
 ### 2.3 主題引擎
 
 - `web/theme.js` 整檔搬入 cspanel（classic script，僅 setProperty + localStorage，UI 文案已是繁中）
-- 新增第 51 組「Olive」palette：accent #8d9c00、mesh 用低飽和橄欖/暖白系，設為預設主題，延續 cspanel 識別色
+- 新增第 63 組「Olive」palette：accent #8d9c00、mesh 用低飽和橄欖/暖白系，設為預設主題，延續 cspanel 識別色
 - localStorage key 定為 `cspanel.theme.v1`（不沿用 `tarkka.theme.v1`，避免與同瀏覽器上的 Tarkka 偏好互相覆寫）
 - server 同步（POST /api/me/preferences、GET /api/me）在 GitHub Pages 上 404，theme.js 已包 `.catch(){}` 靜默失敗，行為退化為 localStorage-only——可接受，不改
 - 主題切換器入口：登入列旁小按鈕，開玻璃 popover gallery
@@ -107,6 +107,8 @@ JS 檔無法像 CSS 一樣新舊並存，因此這些改動只存在分支上—
 6. `firebase_id_token` localStorage、`window.verifyFireworkAuth`、`window.CSPANEL_API_BASE` 等既有介面
 
 ### 3.4 cspanel_netlify 連動（僅注入區塊）
+
+> **執行時修訂**：實查發現 tabsHTML/ipHTML 存於 Firestore、由 edge function 原樣回傳，程式碼無 markup 生成處。實際做法改為 cspanel 端 `auth-protected-tabs.js` 注入後動態補 class（`gl-injected`/`gl-table`），cspanel_netlify 零修改，下述部署順序問題隨之消失。
 
 - `order-tool-api` edge function 回傳的 `tabsHTML` / `ipHTML`：markup 加上 v2 class（如 `gl-tab`、`gl-table`），不動資料與邏輯
 - **部署順序：netlify 先上**——新 class 在 main 的舊 CSS 下無匹配規則、無視覺影響（無害），cspanel 之後切換即生效。兩 repo 不需同時上線
