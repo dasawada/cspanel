@@ -40,8 +40,8 @@
   --success: #4E8C6A;
   --warning: #C99A3C;
   --danger:  #C0463C;
-  --code-bg: #1a1c14;
-  --code-fg: #e8ecdd;
+  --code-bg: #1c1c1e;
+  --code-fg: #e5e5e7;
 
   /* 字型與尺度 */
   --sans: "IBM Plex Sans", "Noto Sans TC", -apple-system, BlinkMacSystemFont,
