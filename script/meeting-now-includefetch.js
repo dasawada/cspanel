@@ -463,13 +463,13 @@ function displayMeetingResults(resultDiv) {
         const hasFilter = filterInput && filterInput.value.trim();
         
         if (hasFilter) {
-            resultDiv.innerHTML += '<div style="padding: 20px; color: #666;">沒有符合搜尋條件的會議。</div>';
+            resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">沒有符合搜尋條件的會議。</div>';
         } else {
             const token = localStorage.getItem('firebase_id_token');
             if (!token) {
-                resultDiv.innerHTML += '<div style="padding: 20px; color: #666;">請先登入。</div>';
+                resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">請先登入。</div>';
             } else {
-                resultDiv.innerHTML += '<div style="padding: 20px; color: #666;">今日沒有會議安排。</div>';
+                resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">今日沒有會議安排。</div>';
             }
         }
     }
@@ -919,10 +919,10 @@ function createMeetingItem(meeting, className, index, accountid) {
                 </tr>
             </table>
             <div class="meeting-info-divider"></div>
-            <div style="font-size: 12px; color: #666; margin-top: 8px;">
+            <div style="font-size: 12px; color: var(--fg-2); margin-top: 8px;">
                 會議資訊：
             </div>
-            <div style="font-size: 12px; color: #333; margin-top: 4px; line-height: 1.4;">
+            <div style="font-size: 12px; color: var(--fg); margin-top: 4px; line-height: 1.4;">
                 ${meeting.info.replace(/\n/g, '<br>')}
             </div>
             <div style="margin-top: 8px; font-size: 12px;" id="account-span-container-${uniqueId}">
@@ -942,31 +942,31 @@ function createCopyableAccountElement(accountid) {
     accountSpan.textContent = accountid;
     accountSpan.className = 'meeting-now-account-span';
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray';
+    accountSpan.style.color = 'var(--muted)';
 
     const emailToCopy = ZVaccountEmailMap[accountid] || accountid;
 
     accountSpan.addEventListener('mouseover', function() {
-        accountSpan.style.color = 'blue';
+        accountSpan.style.color = 'var(--accent)';
     });
     accountSpan.addEventListener('mouseout', function() {
-        accountSpan.style.color = 'gray';
+        accountSpan.style.color = 'var(--muted)';
     });
 
     accountSpan.addEventListener('click', async function() {
         try {
             await navigator.clipboard.writeText(emailToCopy);
-            accountSpan.style.color = 'green';
+            accountSpan.style.color = 'var(--success)';
             accountSpan.textContent = accountid + ' (已複製)';
             setTimeout(() => {
-                accountSpan.style.color = 'gray';
+                accountSpan.style.color = 'var(--muted)';
                 accountSpan.textContent = accountid;
             }, 1000);
         } catch (err) {
             accountSpan.textContent = accountid + ' (複製失敗)';
-            accountSpan.style.color = 'red';
+            accountSpan.style.color = 'var(--danger)';
             setTimeout(() => {
-                accountSpan.style.color = 'gray';
+                accountSpan.style.color = 'var(--muted)';
                 accountSpan.textContent = accountid;
             }, 1000);
         }

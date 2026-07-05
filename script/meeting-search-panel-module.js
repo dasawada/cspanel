@@ -135,7 +135,7 @@ async function runConflictCheckAndUpdateUI() {
                 }
                 modalResults.innerHTML = html;
             } else {
-                modalResults.innerHTML = '<div style="text-align:center;margin-top:20px;"><i class="fa-regular fa-thumbs-up" style="font-size:48px;color:#4caf50"></i><p>目前還沒有</p></div>';
+                modalResults.innerHTML = '<div style="text-align:center;margin-top:20px;"><i class="fa-regular fa-thumbs-up" style="font-size:48px;color:var(--success)"></i><p>目前還沒有</p></div>';
             }
         }
 
@@ -424,7 +424,7 @@ function bindZvListingEvents() {
         copyBtn.onclick = function() {
             const outputTextarea = document.getElementById('zv-metting-list-output');
             navigator.clipboard.writeText(outputTextarea.value).then(() => {
-                copyBtn.style.backgroundColor = '#4CAF50';
+                copyBtn.style.backgroundColor = 'var(--success)';
                 copyBtn.style.color = 'white';
                 copyBtn.innerText = '已複製!';
                 setTimeout(() => {
@@ -497,16 +497,16 @@ function bindMeetingCheckAccountEvents() {
             if (email) {
                 navigator.clipboard.writeText(email)
                     .then(function() {
-                        targetAccountSpan.style.color = 'green';
+                        targetAccountSpan.style.color = 'var(--success)';
                         setTimeout(function() {
-                            targetAccountSpan.style.color = 'gray';
+                            targetAccountSpan.style.color = 'var(--muted)';
                         }, 1000);
                     })
                     .catch(function(error) {
                         console.error('複製失敗', error);
-                        targetAccountSpan.style.color = 'red';
+                        targetAccountSpan.style.color = 'var(--danger)';
                         setTimeout(function() {
-                            targetAccountSpan.style.color = 'gray';
+                            targetAccountSpan.style.color = 'var(--muted)';
                         }, 1000);
                     });
             }
@@ -518,7 +518,7 @@ function bindMeetingCheckAccountEvents() {
     meetingCheckMouseoverHandler = function(event) {
         const targetAccountSpan = event.target.closest('.meeting-now-account-span');
         if (targetAccountSpan) {
-            targetAccountSpan.style.color = 'blue';
+            targetAccountSpan.style.color = 'var(--accent)';
         }
     };
     accountResults.addEventListener('mouseover', meetingCheckMouseoverHandler);
@@ -527,7 +527,7 @@ function bindMeetingCheckAccountEvents() {
     meetingCheckMouseoutHandler = function(event) {
         const targetAccountSpan = event.target.closest('.meeting-now-account-span');
         if (targetAccountSpan) {
-            targetAccountSpan.style.color = 'gray';
+            targetAccountSpan.style.color = 'var(--muted)';
         }
     };
     accountResults.addEventListener('mouseout', meetingCheckMouseoutHandler);

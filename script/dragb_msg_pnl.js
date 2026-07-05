@@ -488,7 +488,7 @@ export function createCannedMessagesPanel(options = {}) {
         if (err?.name === 'AbortError') return;
         if (!isRenderable(seq, q)) return;
         // 顯示錯誤
-        courseResultDiv.innerHTML = `<p style="color:red;">查詢失敗：${err.message}</p>`;
+        courseResultDiv.innerHTML = `<p style="color:var(--danger);">查詢失敗：${err.message}</p>`;
       })
       .finally(() => {
         hideSpinnerGuard();
@@ -564,7 +564,7 @@ export function createCannedMessagesPanel(options = {}) {
         const chatResult = json.chat;
         if (chatResult && chatResult.chats && chatResult.portal) {
             const chatCards = chatResult.chats.map(chat => `
-                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-2);cursor:pointer;background:${chat.status==='open'?'color-mix(in srgb, var(--success) 14%, white)':'var(--bg-soft)'};color:${chat.status==='open'?'var(--success)':'var(--fg-2)'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
                     ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
                 </div>
             `).join('');
@@ -576,7 +576,7 @@ export function createCannedMessagesPanel(options = {}) {
         }
     } catch (e) {
         if (e.name !== 'AbortError') {
-            courseResultDiv.innerHTML = `<p style="color:red;">查詢 chat 失敗：${e.message}</p>`;
+            courseResultDiv.innerHTML = `<p style="color:var(--danger);">查詢 chat 失敗：${e.message}</p>`;
         }
     }
 

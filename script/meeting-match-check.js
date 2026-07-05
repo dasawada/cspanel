@@ -224,7 +224,7 @@ function displayResults(accountResults) {
     accountResultsDiv.innerHTML = '';
 
     resultDiv.textContent = '查詢結果如下:';
-    resultDiv.style.color = 'green';
+    resultDiv.style.color = 'var(--success)';
 
     const noMeetingGroup = document.createElement('div');
     noMeetingGroup.className = 'meeting-check-result-group meeting-check-no-meeting';
@@ -302,12 +302,12 @@ function displayResults(accountResults) {
                 // 動態設置樣式
                 if (meeting.label === '一次性') {
                     labelElement.style.color = '#ffffff'; // 設置文字顏色為白色
-                    labelElement.style.backgroundColor = 'rgb(207, 4, 4)'; // 設置底色為紅色
-                    labelElement.style.border = '1px solid rgb(207, 4, 4)'; // 邊框顏色
+                    labelElement.style.backgroundColor = 'var(--danger)'; // 設置底色為紅色
+                    labelElement.style.border = '1px solid var(--danger)'; // 邊框顏色
                     labelElement.style.fontWeight = 'bold'; // 設置文字為粗體
                 } else if (meeting.label === '短週期') {
-                    labelElement.style.color = 'rgb(34, 154, 22)';
-                    labelElement.style.border = '1px solid rgb(34, 154, 22)';
+                    labelElement.style.color = 'var(--success)';
+                    labelElement.style.border = '1px solid var(--success)';
                 }
 
                 // 公共樣式設置
@@ -336,7 +336,7 @@ function displayResults(accountResults) {
             // 如果不是最後一個會議，則插入分隔線
             if (index < array.length - 1) {
                 const hr = document.createElement('hr');
-                hr.style.border = '1px solid #ccc';  // 設定分隔線樣式
+                hr.style.border = '1px solid var(--border)';  // 設定分隔線樣式
                 hr.style.margin = '10px 0';  // 控制分隔線的上下距離
                 meetingDetailsContainer.appendChild(hr);
             }
@@ -389,7 +389,7 @@ function createCopyableAccountElement(accountid) {
     accountSpan.textContent = accountid;
     accountSpan.className = 'meeting-now-account-span';
     accountSpan.style.cursor = 'pointer';
-    accountSpan.style.color = 'gray';
+    accountSpan.style.color = 'var(--muted)';
 
     return accountSpan;
 }
