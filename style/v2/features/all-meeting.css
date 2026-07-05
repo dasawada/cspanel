@@ -1,4 +1,6 @@
 /* 搜尋框樣式 */
+/* 搜尋膠囊：靜止 var(--bg-soft) 軟填色；focus-within 轉白底、
+   accent 圖示、3px accent-ring 光環，spring 曲線平滑過渡 */
 #all-meeting-search-container {
     display: flex;
     align-items: center;
@@ -9,7 +11,7 @@
     position: relative; /* 讓結果框能夠依附在搜尋框下方 */
     margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
     z-index: 897;
-    transition: box-shadow 0.15s ease, background 0.15s ease;
+    transition: box-shadow var(--spring), background var(--spring);
 }
 
 #all-meeting-search-container:focus-within {
@@ -19,7 +21,13 @@
 
 #all-meeting-search-container i {
     margin-right: 10px;
-    color: var(--fg);
+    margin-left: 6px;
+    color: var(--muted);
+    transition: color var(--spring);
+}
+
+#all-meeting-search-container:focus-within i {
+    color: var(--accent);
 }
 
 #all-meeting-search-input {
@@ -28,17 +36,26 @@
     background: none;
     flex-grow: 1;
     padding-left: 10px;
+    color: var(--fg);
 }
 
+#all-meeting-search-input::placeholder {
+    color: var(--muted);
+}
+
+/* 結果容器：懸浮玻璃層 — elevated 表面 + 20px 模糊 + glass-border 髮絲線 +
+   12px 圓角 + 較深的懸浮陰影，與搜尋膠囊在視覺上明確分層 */
 #all-meeting-result-container {
     position: relative;
     top: -35px;
     left: 1px;
 	width: 99%;
     background-color: var(--elevated);
-    border: 1px solid var(--border-2);
-    border-radius: 0 0 10px 10px;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+    backdrop-filter: blur(var(--glass-blur));
+    -webkit-backdrop-filter: blur(var(--glass-blur));
+    border: 1px solid var(--glass-border);
+    border-radius: 0 0 var(--radius-md) var(--radius-md);
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
     max-height: 600px;
     z-index: 896;
     margin-top: 0px;
@@ -93,6 +110,14 @@
 .all-meeting-result-item {
     margin-bottom: 4px; /* 縮小間隔 */
     font-size: 12px; /* 縮小字體 */
+    border-bottom: 1px solid var(--border); /* 結果項目間的髮絲分隔線 */
+}
+/* 提高特異度以覆蓋 #all-meeting-result-container div 的 padding: 5px */
+#all-meeting-result-container .all-meeting-result-item {
+    padding-bottom: 8px;
+}
+.all-meeting-result-item:last-child {
+    border-bottom: none;
 }
 
 .all-meeting-details {
@@ -126,25 +151,56 @@
 .all-meeting-details p {
     margin: 2px 0; /* 縮小段落之間的間距 */
     line-height: 1.2; /* 縮小行距 */
+    color: var(--muted);
+    font-size: 12px;
 }
 
+/* 結果標題：var(--fg) 600；hover 用 accent-tint 標示為可互動項目 */
 .all-meeting-title {
     display: flex;
     justify-content: space-between;
     align-items: center;
     font-size: 14px;
-    font-weight: bold;
+    font-weight: 600;
+    color: var(--fg);
     margin-bottom: 4px;
     position: relative;
-	
+    border-radius: 6px;
+
 }
 .all-meeting-title:hover {
-	background-color: var(--bg-soft);
+	background-color: var(--accent-tint);
 }
 .all-meeting-main-toggle-btn {
     cursor: pointer;
     position: relative;
     left: 5px;
+}
+
+/* 展開/摺疊按鈕：安靜的 ghost chip — 靜止透明、hover var(--bg-soft)，
+   展開狀態（沿用既有 JS 切換的 fa-minus / fa-angle-up 圖示 class 作為
+   狀態標記，不需新增 class 或改動邏輯）文字轉 var(--accent) */
+.all-meeting-main-toggle-btn,
+.all-meeting-repeat-toggle-btn,
+.all-meeting-time-toggle-btn,
+.all-meeting-detail-toggle-btn {
+    display: inline-block;
+    padding: 3px 6px;
+    border-radius: 999px;
+    color: var(--muted);
+    background: transparent;
+    transition: background var(--spring), color var(--spring);
+}
+.all-meeting-main-toggle-btn:hover,
+.all-meeting-repeat-toggle-btn:hover,
+.all-meeting-time-toggle-btn:hover,
+.all-meeting-detail-toggle-btn:hover {
+    background: var(--bg-soft);
+}
+.all-meeting-main-toggle-btn.fa-minus,
+.all-meeting-repeat-toggle-btn.fa-angle-up,
+.all-meeting-time-toggle-btn.fa-angle-up {
+    color: var(--accent);
 }
 
 .all-meeting-summary {
@@ -189,6 +245,18 @@
 .all-meeting-repeat {
     display: block; /* 保證每個項目換行垂直排列 */
     position: relative;
+    padding: 6px 10px;
+    color: var(--muted);
+    font-size: 12px;
+}
+
+/* 標籤群組表頭（週期/一次性等標籤文字），與 meta 文字同一套詞彙 */
+.tag-header {
+    padding: 4px 10px 0;
+    color: var(--muted);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
 }
 .all-meeting-per-list {
     border: 1px solid var(--border);
@@ -219,6 +287,8 @@
     padding: 5px;
     flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
     width: 100%; /* 強制佔滿父級寬度 */
+    color: var(--muted);
+    font-size: 12px;
 }
 .meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
     background-color: var(--bg-soft) !important;
@@ -243,6 +313,10 @@
 }
 .icon-container {
     margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
+}
+/* 標籤群組：與其餘結果區共用 hairline 詞彙（取代 JS 內聯的 #ddd 原始灰） */
+.tag-group {
+    border-top: 1px solid var(--border);
 }
         /* 標籤顏色定義 */
         .tag-group.no-tag { border-left: 4px solid var(--accent); }

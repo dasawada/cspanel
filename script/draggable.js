@@ -4,7 +4,7 @@
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
  * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary }
  *   color: 若提供，handle 拖曳中會加上主題 class；實際顏色一律套用全域
- *   --accent / --accent-tint token（不再依 color 的字面值渲染色相），
+ *   --accent / --accent-hover token 衍生的漸層（不再依 color 的字面值渲染色相），
  *   color 值僅用來產生穩定的 class 名稱。
  */
 export function makeDraggable(panel, handle, options = {}) {
@@ -44,8 +44,12 @@ export function makeDraggable(panel, handle, options = {}) {
   }
 
   // === options.color 僅作為 handle 主題 class 的識別字；實際顏色一律
-  // 套用全域 --accent / --accent-tint token（登入後由 theme.js 主題化，
-  // 未登入時為單色基準），不再硬編碼特定色相 ===
+  // 套用全域 --accent token 衍生的漸層（登入後由 theme.js 主題化，未登入
+  // 時為單色基準），不再硬編碼特定色相。
+  // 還原自 main:script/draggable.js 的原始把手漸層（拖曳中 180deg、
+  // 由飽和色過渡到近透明的直向漸層），僅將色相來源換成 --accent token：
+  //   原始： linear-gradient(180deg, ${color} 0%, ${color}22 100%)
+  //   現在： linear-gradient(180deg, color-mix(...accent 30%...), color-mix(...accent 14%...))
   if (options.color) {
     const colorCode = String(options.color).replace('#', '').toLowerCase();
     const themeClass = `draggable-handle-theme-${colorCode}`;
@@ -54,8 +58,12 @@ export function makeDraggable(panel, handle, options = {}) {
       style.setAttribute('data-draggable-theme', themeClass);
       style.textContent = `
 .draggable-dragging .${themeClass} {
-  background: var(--accent-tint) !important;
-  color: var(--accent) !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 30%, white),
+    color-mix(in srgb, var(--accent) 14%, white)
+  ) !important;
+  color: var(--accent-hover) !important;
 }
 `;
       document.head.appendChild(style);
@@ -154,6 +162,10 @@ export function makeDraggable(panel, handle, options = {}) {
 
     panel.style.transition = 'none';
     panel.classList.add('draggable-dragging');
+    // gl-dragging：拖曳中近透明玻璃特效的掛鉤 class（附加、不影響既有
+    // draggable-dragging 的透明度/陰影行為），實際視覺由各面板注入的
+    // CSS 決定（見 dragb_msg_pnl.js 的 .canned-panel.gl-dragging）
+    panel.classList.add('gl-dragging');
     document.addEventListener('pointermove', handleDragMove);
     document.addEventListener('pointerup', handleDragEnd);
     document.addEventListener('pointercancel', handleDragEnd);
@@ -201,6 +213,7 @@ export function makeDraggable(panel, handle, options = {}) {
   function handleDragEnd() {
     if (!dragState.isDragging) return;
     panel.classList.remove('draggable-dragging');
+    panel.classList.remove('gl-dragging');
     document.removeEventListener('pointermove', handleDragMove);
     document.removeEventListener('pointerup', handleDragEnd);
     document.removeEventListener('pointercancel', handleDragEnd);

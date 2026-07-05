@@ -350,24 +350,51 @@
     margin: 5px;
 }
 
-/* 語義呼吸換色（取代漸層字；no gradient text、無新增色點） */
+/* 流動漸層字（還原自 main:style/body.css 的 .yellow-gradient-text /
+   .green-gradient-text 強度：多段停駐點、90deg、background-size 200%
+   200%、background-clip:text、1s infinite；no-gradient-text 禁令對
+   .gl-chip--* 解禁，色相來源改為 --success / --warning / --accent-2 token） */
 .gl-chip--success, .gl-chip--warning {
     font-weight: 600;
-    transition: color 0.3s ease;
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: gl-gradient-flow 1s infinite;
 }
-.gl-chip--success { color: var(--success); animation: gl-hue-breathe-success 2.4s ease-in-out infinite; }
-.gl-chip--warning { color: var(--warning); animation: gl-hue-breathe-warning 2.4s ease-in-out infinite; }
-@keyframes gl-hue-breathe-success {
-    0%, 100% { color: var(--success); }
-    50% { color: color-mix(in srgb, var(--success) 55%, var(--accent-2)); }
+.gl-chip--success {
+    background-image: linear-gradient(90deg,
+        var(--success),
+        color-mix(in srgb, var(--success) 45%, white),
+        var(--accent-2),
+        var(--success));
 }
-@keyframes gl-hue-breathe-warning {
-    0%, 100% { color: var(--warning); }
-    50% { color: color-mix(in srgb, var(--warning) 55%, var(--accent-2)); }
+.gl-chip--warning {
+    background-image: linear-gradient(90deg,
+        var(--warning),
+        color-mix(in srgb, var(--warning) 45%, white),
+        var(--accent-2),
+        var(--warning));
 }
-.gl-chip--success:hover, .gl-chip--warning:hover { animation: none; color: var(--accent-hover); }
+@keyframes gl-gradient-flow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.gl-chip--success:hover, .gl-chip--warning:hover {
+    animation: none;
+    background-image: none;
+    -webkit-text-fill-color: currentColor;
+    color: var(--accent-hover);
+}
 @media (prefers-reduced-motion: reduce) {
-    .gl-chip--success, .gl-chip--warning { animation: none; }
+    .gl-chip--success, .gl-chip--warning {
+        animation: none;
+        background-image: none;
+        -webkit-text-fill-color: currentColor;
+    }
+    .gl-chip--success { color: var(--success); }
+    .gl-chip--warning { color: var(--warning); }
 }
 
 .copyable-text {

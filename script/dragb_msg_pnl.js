@@ -22,6 +22,18 @@ const PANEL_CSS = `
   font-family: var(--sans);
   color: var(--fg);
 }
+/* 拖曳中近透明玻璃特效（還原自 main 分支 .draggable-dragging 的
+   「拖曳時整體 opacity: 0.95」設計意圖；.draggable-dragging 的
+   opacity/box-shadow 仍原樣保留、疊加生效，這裡是本面板專屬、於玻璃
+   化改版後讓「近透明」重新變得可見的加強層。gl-dragging 由
+   draggable.js 於拖曳開始/結束時附加/移除，本樣式表晚於 v2 載入，
+   足以覆蓋統一玻璃規則）*/
+.canned-panel.gl-dragging {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.18);
+}
 .canned-panel-handle {
   padding: 5px 10px;
   border-radius: 10px 10px 0 0;
