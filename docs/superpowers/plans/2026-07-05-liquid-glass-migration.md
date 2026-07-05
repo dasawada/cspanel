@@ -1029,6 +1029,8 @@ git commit -m "feat(v2): 漸層字改語義色點（no gradient text）"
 
 ### Task 11: cspanel_netlify 注入區塊加 class（跨 repo，僅 markup）
 
+> **執行時裁定（取代本 task 原做法）**：實查發現 tabsHTML/ipHTML 存於 Firestore `protectedContent/tabsAndIP`，由 order-tool-api 原樣回傳，程式碼中無 markup 生成處。故改為 **cspanel 端注入後動態補 class**：`script/auth-protected-tabs.js` 在 `innerHTML` 賦值後，對注入容器加 `gl-injected`、其內 `table` 加 `gl-table`（`querySelectorAll` 迴圈），token/fetch/401 重試邏輯不動。cspanel_netlify **零修改**，部署順序問題消失。Step 3 的 .gl-injected CSS 照常加入 panels.css。
+
 **Files:**
 - Modify: `/Users/jianmingxiu/cspanel_clone/cspanel_netlify/netlify/edge-functions/` 中產生 `tabsHTML` / `ipHTML` 的檔案（`order-tool-api` 相關；先以 `grep -rn "tabsHTML\|ipHTML" netlify/` 定位）
 - Modify: `style/v2/panels.css`（cspanel 端補 `.gl-injected` 精修樣式）
