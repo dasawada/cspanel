@@ -6,12 +6,13 @@ import { makeDraggable } from './draggable.js';
 // ===== 1. CSS 動態插入 =====
 const PANEL_CSS = `
 .canned-panel {
+  /* background/border/box-shadow 一律交給 style/v2/panels.css 的統一玻璃
+     規則（本 <style> 於 runtime 注入、晚於 v2 樣式表，同特異度下任何
+     覆寫都會壓過統一玻璃，勿在此設定這三類屬性） */
   position: absolute;
   touch-action: none;
   user-select: none;
-  background-color: transparent; /* 面板本體不疊白底，統一玻璃（--glass-bg）已供底 */
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.1);
   margin: 0;
   margin-bottom: 20px;
   z-index: 1005;
@@ -20,7 +21,6 @@ const PANEL_CSS = `
   min-width: 350px;
   font-family: Arial, sans-serif;
   color: #333;
-  border: 1px solid #ccc;
 }
 .canned-panel-handle {
   padding: 5px 10px;
