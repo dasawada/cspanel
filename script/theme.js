@@ -1,6 +1,6 @@
 /* ════════════════════════════════════════════════════════════════════
-   theme.js — cspanel global colour-theme module (shared by tarkka.html
-   and doc-manager). 61 nature-derived palettes. Sets CSS custom
+   theme.js — cspanel global colour-theme module (used by
+   panel_all.html). 63 palettes. Sets CSS custom
    properties on :root, persists choice to localStorage, and renders a
    gallery picker. Same-origin localStorage → a choice on one page
    applies site-wide on the next load.
