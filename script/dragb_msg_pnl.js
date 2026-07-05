@@ -922,7 +922,7 @@ export function createCannedMessagesPanel(options = {}) {
   makeDraggable(panel, dragHandle, {
     left: 1300,
     top: 75,
-    color: 'accent', // 僅作 handle 主題 class 識別字；實際顏色套用 --accent/--accent-tint token
+    color: 'accent', // 僅作 handle 主題 class 識別字；實際樣式為 --accent 系 color-mix 漸層（見 draggable.js）
     ...options
   });
 
