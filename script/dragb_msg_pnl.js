@@ -9,7 +9,7 @@ const PANEL_CSS = `
   position: absolute;
   touch-action: none;
   user-select: none;
-  background-color: white;
+  background-color: transparent; /* 面板本體不疊白底，統一玻璃（--glass-bg）已供底 */
   border-radius: 10px;
   box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.1);
   margin: 0;
@@ -68,7 +68,7 @@ const PANEL_CSS = `
   display: flex;
   border: 1px solid #ddd;
   border-radius: 10px;
-  background: #fff;
+  background: rgba(255,255,255,0.35);
   margin-top: 10px;
 }
 .canned-panel-tab-menu {
@@ -910,7 +910,7 @@ export function createCannedMessagesPanel(options = {}) {
   makeDraggable(panel, dragHandle, {
     left: 1300,
     top: 75,
-    color: '#a2c6de',
+    color: 'accent', // 僅作 handle 主題 class 識別字；實際顏色套用 --accent/--accent-tint token
     ...options
   });
 

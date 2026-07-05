@@ -350,22 +350,25 @@
     margin: 5px;
 }
 
-/* 語義色點 + 純色文字（取代漸層字；DESIGN.md: no gradient text） */
+/* 語義呼吸換色（取代漸層字；no gradient text、無新增色點） */
 .gl-chip--success, .gl-chip--warning {
-    color: var(--fg);
     font-weight: 600;
+    transition: color 0.3s ease;
 }
-.gl-chip--success::before, .gl-chip--warning::before {
-    content: "";
-    display: inline-block;
-    width: 7px; height: 7px;
-    border-radius: 50%;
-    margin-right: 4px;
-    vertical-align: 1px;
+.gl-chip--success { color: var(--success); animation: gl-hue-breathe-success 2.4s ease-in-out infinite; }
+.gl-chip--warning { color: var(--warning); animation: gl-hue-breathe-warning 2.4s ease-in-out infinite; }
+@keyframes gl-hue-breathe-success {
+    0%, 100% { color: var(--success); }
+    50% { color: color-mix(in srgb, var(--success) 55%, var(--accent-2)); }
 }
-.gl-chip--success::before { background: var(--success); }
-.gl-chip--warning::before { background: var(--warning); }
-.gl-chip--success:hover, .gl-chip--warning:hover { color: var(--accent-hover); }
+@keyframes gl-hue-breathe-warning {
+    0%, 100% { color: var(--warning); }
+    50% { color: color-mix(in srgb, var(--warning) 55%, var(--accent-2)); }
+}
+.gl-chip--success:hover, .gl-chip--warning:hover { animation-play-state: paused; color: var(--accent-hover); }
+@media (prefers-reduced-motion: reduce) {
+    .gl-chip--success, .gl-chip--warning { animation: none; }
+}
 
 .copyable-text {
     cursor: pointer;
@@ -422,9 +425,10 @@ nav {
     width: 100%;
     height: 30px;
     display: flex;
-    background: transparent;
+    background: var(--bg-soft);
+    border-radius: 10px;
+    box-shadow: 0 0 0 1px var(--border) inset;
     border: none;
-    box-shadow: none;
 }
 
 nav a {
@@ -778,6 +782,11 @@ a.no-nth-child {
     position: absolute;
     gap: 10px;
 }
+
+/* backdrop-filter 會建立新的 stacking context，導致 .fudausearch-suggestions
+   的 z-index 出不了自己的面板而被其他面板蓋住；互動中把整個面板浮到頂層，
+   離開（blur）即自動還原 */
+.fudausearch-container:focus-within { z-index: 1200; }
 
 /* 建議選單樣式 */
 .fudausearch-suggestions {

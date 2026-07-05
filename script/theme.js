@@ -64,7 +64,9 @@
   }
 
   let activeId = DEFAULT_ID;
+  let authed = false;
   function setTheme(id) {
+    if (!authed) return;
     const p = byId[id]; if (!p) return;
     activeId = id; applyTheme(p);
     try { localStorage.setItem(LS_KEY, id); } catch (e) {}
@@ -81,10 +83,12 @@
   // On load, pull the signed-in user's saved theme from D1 and apply it
   // (server is authoritative for authenticated users). Best-effort.
   function syncFromServer() {
+    if (!authed) return;
     try {
       fetch('/api/me', { headers: { 'accept': 'application/json' } })
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (d) {
+          if (!authed) return;
           var t = d && d.preferences && d.preferences.theme;
           if (t && byId[t] && t !== activeId) {
             activeId = t; applyTheme(byId[t]);
@@ -98,8 +102,17 @@
     let id = DEFAULT_ID;
     try { id = localStorage.getItem(LS_KEY) || DEFAULT_ID; } catch (e) {}
     if (!byId[id]) id = DEFAULT_ID;
-    activeId = id; applyTheme(byId[id]);
+    activeId = id;
   }
+  function resetTheme() {
+    const s = document.documentElement.style;
+    ['--bg-base','--bg-mesh-1','--bg-mesh-2','--bg-mesh-3','--accent','--accent-hover','--accent-2','--accent-tint','--accent-ring','--selection-bg','--user-bubble','--link','--success','--warning','--danger','--code-bg','--code-fg','--tier-fast','--tier-grounded','--tier-deep','--tier-max'].forEach(function(k){ s.removeProperty(k); });
+  }
+  function onAuthLogin() { authed = true; applyTheme(byId[activeId] || byId[DEFAULT_ID]); markActive(); syncFromServer(); }
+  function onAuthLogout() { authed = false; closePicker(); resetTheme(); }
+  window.addEventListener('firework-login-success', onAuthLogin);
+  window.addEventListener('firework-logout-success', onAuthLogout);
+  window.addEventListener('firework-force-logout', onAuthLogout);
 
   /* ── gallery picker (built lazily) ─────────────────────────────── */
   let modal = null;
@@ -170,7 +183,7 @@
     modal.querySelectorAll('.tk-sw').forEach(el => el.classList.toggle('active', el.dataset.id === activeId));
   }
   function esc(s) { return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;'); }
-  function openPicker() { buildModal(); modal.classList.add('open'); markActive(); }
+  function openPicker() { if (!authed) return; buildModal(); modal.classList.add('open'); markActive(); }
   function closePicker() { if (modal) modal.classList.remove('open'); }
 
   window.CspanelTheme = {
@@ -180,5 +193,4 @@
   };
 
   loadTheme();
-  syncFromServer();
 })();

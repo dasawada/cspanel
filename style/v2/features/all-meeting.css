@@ -9,6 +9,12 @@
     position: relative; /* 讓結果框能夠依附在搜尋框下方 */
     margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
     z-index: 897;
+    transition: box-shadow 0.15s ease, background 0.15s ease;
+}
+
+#all-meeting-search-container:focus-within {
+    box-shadow: 0 0 0 3px var(--accent-ring);
+    background: #fff;
 }
 
 #all-meeting-search-container i {
