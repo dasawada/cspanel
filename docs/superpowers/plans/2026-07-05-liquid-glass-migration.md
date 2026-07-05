@@ -48,6 +48,8 @@
 | 字族清單 `'Noto Sans TC', 'Inter', ...` | `var(--sans)` |
 | **例外：不改** | `.fudausearch-button-special/-paikezu/-kefugon/-groupnumber`（部門色碼，功能性識別）；iframe 內部（管不到）；`cursorspk.js`/`snowfall.js`/`rippleEffect.js` 特效檔 |
 
+**驗收回饋後的框架修正（2026-07-05，第二序變更，優先於上表的逐字替換邏輯）**：對「有設計意圖的效果」——漸層、狀態特效（如拖曳半透明）、動畫——一律採**「效果保留、色彩來源 token 化」**：漸層仍是漸層（stops 由 token/color-mix 調出）、狀態特效保留、動畫強度貼近原版，只有色相來源換成主題變數。禁止把效果壓扁成單一平色。另：「no gradient text」禁令經使用者裁定**對 .gl-chip--\* 解禁**（使用者偏好高於來源專案 DESIGN.md）。
+
 **Task 8 執行後追加的裁定（不可回退）**：(1) ipsearch 的 `.confidence-*` 徽章是「信賴度」語義（high=好），採色相保留（high→success、low→danger），**不套用** low→success 關鍵字表——套用會反轉 UX 語義；(2) 「白字」例外從 accent 底擴大為「任何語義色實底上的白字」（如 `.copy-feedback` 的 success 底、`.ip-info-btn` 的 muted 底）；(3) ipsearch 原有的 `@media (prefers-color-scheme: dark)` 區塊已中性化為同 light tokens（全站無 OS 暗色機制）。
 
 ---
