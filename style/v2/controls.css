@@ -206,7 +206,7 @@ input[type=datetime-local]::-webkit-datetime-edit {
 }
 
 input[type=datetime-local]::-webkit-datetime-edit-fields-wrapper {
-    background: #fff; /* 更改背景顏色 */
+    background: transparent; /* 更改背景顏色 */
 }
 
 input[type=datetime-local]::-webkit-inner-spin-button,

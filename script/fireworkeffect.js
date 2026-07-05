@@ -119,6 +119,12 @@ export async function loadLoginPanel() {
   const themeBtn = document.getElementById('fw-theme-btn');
   if (themeBtn) {
     themeBtn.addEventListener('click', () => { window.CspanelTheme && window.CspanelTheme.openPicker(); });
+    themeBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.CspanelTheme && window.CspanelTheme.openPicker();
+      }
+    });
   }
 
   // SDK Loading

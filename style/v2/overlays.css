@@ -48,6 +48,7 @@
 #firebase-login-bar-btn:hover { color: var(--accent-hover); }
 #firebase-login-bar-btn:active { transform: scale(0.92); }
 #firebase-logout-bar-btn {
+    display: flex;
     font-size: 18px;
     color: var(--muted);
     cursor: pointer;

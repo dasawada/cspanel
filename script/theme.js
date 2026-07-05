@@ -108,7 +108,7 @@
     const s = document.createElement('style');
     s.id = 'tk-theme-style';
     s.textContent = `
-      .tk-theme-modal{ position:fixed; inset:0; z-index:1000; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(18,22,26,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+      .tk-theme-modal{ position:fixed; inset:0; z-index:99990; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(18,22,26,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
       .tk-theme-modal.open{ display:flex; animation:tkfade .2s ease; }
       @keyframes tkfade{ from{ opacity:0 } }
       .tk-theme-panel{ width:min(920px,100%); max-height:88vh; display:flex; flex-direction:column; font-family:var(--sans, system-ui, sans-serif); color:var(--fg,#1d1d1f);
@@ -130,6 +130,7 @@
       .tk-sw-dots{ display:flex; gap:3px; }
       .tk-sw-dot{ width:7px; height:7px; border-radius:50%; box-shadow:0 0 0 1px rgba(255,255,255,0.5) inset; }
       .tk-sw-name{ font-size:12.5px; font-weight:500; padding:0 2px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+      @media (prefers-reduced-motion: reduce){ .tk-theme-modal.open{ animation:none; } .tk-sw:hover{ transform:none; } }
     `;
     document.head.appendChild(s);
   }
