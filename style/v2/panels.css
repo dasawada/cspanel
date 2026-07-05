@@ -66,9 +66,9 @@
 }
 .roofbutton {
     width: 110px;
-    height: auto; 
+    height: auto;
     font-size: 12px;
-    color: #4d4d4d;
+    color: var(--fg-2);
     padding: 10px;
     box-sizing: border-box; /* 確保內邊距不影響總寬度 */
     position: absolute; /* 確保容器為相對定位 */
@@ -81,7 +81,7 @@
     z-index: 996;
 }
 .tool_zip_dl {
-    color: #4d4d4d;
+    color: var(--fg-2);
     padding: 5px 10px 5px 10px;
     box-sizing: border-box;
     position: absolute;  /* 正確的定位方式 */
@@ -534,11 +534,6 @@ a.no-nth-child {
     animation: gl-modal-rise 0.42s cubic-bezier(0.22,1,0.36,1); /* 縮短動畫時間 */
 }
 
-@keyframes slideIn {
-    from { transform: translateY(-30px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-}
-
 @keyframes gl-modal-rise {
     0%   { opacity: 0; transform: translateY(12px) scale(0.95); }
     62%  { opacity: 1; transform: translateY(-1.8px) scale(1.017); }
@@ -612,7 +607,7 @@ a.no-nth-child {
         color: inherit; /* 原色 */
     }
     50% {
-        color: red; /* 閃爍為紅色 */
+        color: var(--danger); /* 閃爍為紅色 */
     }
     100% {
         color: inherit; /* 返回原色 */
@@ -777,7 +772,7 @@ a.no-nth-child {
     width: 400px;
     height: 105px;
     font-size: 12px;
-    color: #4d4d4d;
+    color: var(--fg-2);
     padding: 10px 5px 10px 5px;
     box-sizing: border-box;
     position: absolute;
@@ -795,7 +790,7 @@ a.no-nth-child {
     border-radius: 10px;
     backdrop-filter: blur(20px) saturate(1.6);
     -webkit-backdrop-filter: blur(20px) saturate(1.6);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     z-index: 999;
     display: none;
 }
