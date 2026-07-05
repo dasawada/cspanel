@@ -12,15 +12,18 @@ export async function loadLoginPanel() {
       pointer-events: none;
     }
     .firework-toast {
-      background: #333;
-      color: #fff;
+      background: var(--elevated);
+      backdrop-filter: blur(20px) saturate(1.6);
+      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      color: var(--fg);
       padding: 12px 20px;
-      border-radius: 8px;
+      border-radius: 12px;
+      border: 1px solid var(--glass-border);
       font-size: 14px;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
       opacity: 0;
       transform: translateX(-20px);
-      transition: all 0.3s ease;
+      transition: opacity var(--spring), transform var(--spring);
       pointer-events: auto;
       display: flex;
       align-items: center;
@@ -30,17 +33,19 @@ export async function loadLoginPanel() {
       opacity: 1;
       transform: translateX(0);
     }
-    .firework-toast.success {
-      background: linear-gradient(135deg, #2ecc71, #27ae60);
+    .firework-toast::before {
+      content: "";
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: var(--accent);
     }
-    .firework-toast.error {
-      background: linear-gradient(135deg, #e74c3c, #c0392b);
-    }
-    .firework-toast.warning {
-      background: linear-gradient(135deg, #f39c12, #d68910);
-    }
-    .firework-toast.info {
-      background: linear-gradient(135deg, #3498db, #2980b9);
+    .firework-toast.success::before { background: var(--success); }
+    .firework-toast.error::before   { background: var(--danger); }
+    .firework-toast.warning::before { background: var(--warning); }
+    .firework-toast.info::before    { background: var(--accent); }
+    @media (prefers-reduced-motion: reduce) {
+      .firework-toast { transition: opacity 0.2s ease; transform: none; }
     }
   `;
 
@@ -91,23 +96,29 @@ export async function loadLoginPanel() {
   window.showFireworkToast = showToast;
 
   const panelHtml = `
-    <div id="firebase-login-bar" style="position:fixed;right:20px;bottom:20px;z-index:9999;width:auto;min-width:unset;max-width:unset;">
+    <div id="firebase-login-bar">
       <form id="firebase-login-form" autocomplete="on">
-        <div id="firebase-login-bar-content" style="display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #eee;border-radius:24px;padding:8px 16px;box-shadow:0 2px 8px #eee;transition:all .3s;width:auto;min-width:unset;max-width:unset;">
-          <div id="firebase-login-bar-status" style="flex:1;color:#333;font-size:15px;">
+        <div id="firebase-login-bar-content">
+          <div id="firebase-login-bar-status">
             <span id="firebase-login-bar-message"><i class="fa-solid fa-right-to-bracket"></i></span>
           </div>
-          <input type="email" id="firebase-login-bar-email" name="email" placeholder="Email" autocomplete="username" style="width:110px;font-size:13px;padding:2px 6px;border-radius:4px;border:1px solid #ddd;">
-          <input type="password" id="firebase-login-bar-password" name="password" placeholder="密碼" autocomplete="current-password" style="width:80px;font-size:13px;padding:2px 6px;border-radius:4px;border:1px solid #ddd;">
+          <input type="email" id="firebase-login-bar-email" name="email" placeholder="Email" autocomplete="username">
+          <input type="password" id="firebase-login-bar-password" name="password" placeholder="密碼" autocomplete="current-password">
           <button type="submit" id="firebase-login-bar-submit" style="display:none;" aria-hidden="true"></button>
-          <i id="firebase-login-bar-btn" class="fa-solid fa-play" style="font-size:18px;color:#2d8cf0;cursor:pointer;display:flex;align-items:center;justify-content:center;" role="button" tabindex="0" aria-label="登入"></i>
-          <i id="firebase-logout-bar-btn" class="fa-solid fa-right-to-bracket" style="display:none;font-size:18px;color:#aaa;cursor:pointer;display:flex;align-items:center;justify-content:center;" role="button" tabindex="0" aria-label="登出"></i>
+          <i id="firebase-login-bar-btn" class="fa-solid fa-play" role="button" tabindex="0" aria-label="登入"></i>
+          <i id="firebase-logout-bar-btn" class="fa-solid fa-right-to-bracket" style="display:none;" role="button" tabindex="0" aria-label="登出"></i>
+          <i id="fw-theme-btn" class="fa-solid fa-palette" role="button" tabindex="0" aria-label="配色主題" title="配色主題"></i>
         </div>
       </form>
     </div>
   `;
   if (!document.getElementById('firebase-login-bar')) {
     document.body.insertAdjacentHTML('beforeend', panelHtml);
+  }
+
+  const themeBtn = document.getElementById('fw-theme-btn');
+  if (themeBtn) {
+    themeBtn.addEventListener('click', () => { window.CspanelTheme && window.CspanelTheme.openPicker(); });
   }
 
   // SDK Loading
@@ -144,50 +155,32 @@ export async function loadLoginPanel() {
   function updateUIState(isLoggedIn) {
     const bar = document.getElementById('firebase-login-bar');
     const barContent = document.getElementById('firebase-login-bar-content');
+    const barStatus = document.getElementById('firebase-login-bar-status');
+    const emailInput = document.getElementById('firebase-login-bar-email');
+    const pwdInput = document.getElementById('firebase-login-bar-password');
     const loginBtn = document.getElementById('firebase-login-bar-btn');
     const logoutBtn = document.getElementById('firebase-logout-bar-btn');
     const statusMsg = document.getElementById('firebase-login-bar-message');
-    const emailInput = document.getElementById('firebase-login-bar-email');
-    const pwdInput = document.getElementById('firebase-login-bar-password');
-    const barStatus = document.getElementById('firebase-login-bar-status');
-
+    if (!bar || !barContent) return;
+    bar.classList.toggle('logged-in', !!isLoggedIn);
     if (isLoggedIn) {
       emailInput.style.display = 'none';
       pwdInput.style.display = 'none';
       loginBtn.style.display = 'none';
       logoutBtn.style.display = '';
-      statusMsg.innerHTML = '<i class="fa-solid fa-circle-check" style="color:#2ecc71"></i>';
+      statusMsg.innerHTML = '<i class="fa-solid fa-circle-check fw-status-ok"></i>';
       statusMsg.style.display = '';
       barStatus.style.display = '';
       barStatus.style.flex = '1';
-      barContent.style.background = '#f6fff7';
-      barContent.style.borderColor = '#b7f5c2';
-      barContent.style.boxShadow = '0 2px 8px #d2f5e3';
-      barContent.style.minWidth = 'unset';
-      barContent.style.maxWidth = 'unset';
-      barContent.style.justifyContent = 'center';
-      barContent.style.padding = '8px 12px';
     } else {
       emailInput.style.display = '';
       pwdInput.style.display = '';
       loginBtn.style.display = '';
       logoutBtn.style.display = 'none';
-      statusMsg.innerHTML = '';
       statusMsg.style.display = 'none';
       barStatus.style.display = 'none';
       barStatus.style.flex = '0';
-      barContent.style.background = '#fff';
-      barContent.style.borderColor = '#eee';
-      barContent.style.boxShadow = '0 2px 8px #eee';
-      barContent.style.minWidth = 'unset';
-      barContent.style.maxWidth = 'unset';
-      barContent.style.justifyContent = '';
-      barContent.style.padding = '8px 16px';
     }
-    bar.style.position = 'fixed'; 
-    bar.style.right = '20px'; 
-    bar.style.bottom = '20px'; 
-    bar.style.zIndex = '9999';
   }
 
   // ----- [關鍵方法] 全域強制驗證 -----
@@ -265,14 +258,14 @@ export async function loadLoginPanel() {
     }
     
     statusMsg.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i>';
-    loginBtn.style.color = '#2d8cf0';
+    loginBtn.style.color = '';
     
     try {
       await auth.signInWithEmailAndPassword(email, password);
       // 登入成功的 toast 會在 onAuthStateChanged 中顯示
       return true;
     } catch(e) {
-      loginBtn.style.color = '#e74c3c';
+      loginBtn.style.color = 'var(--danger)';
       statusMsg.innerHTML = '';
       
       // 根據錯誤類型顯示不同訊息
