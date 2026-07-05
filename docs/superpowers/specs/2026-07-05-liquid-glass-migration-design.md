@@ -60,6 +60,7 @@
 - localStorage key 定為 `cspanel.theme.v1`（不沿用 `tarkka.theme.v1`，避免與同瀏覽器上的 Tarkka 偏好互相覆寫）
 - server 同步（POST /api/me/preferences、GET /api/me）在 GitHub Pages 上 404，theme.js 已包 `.catch(){}` 靜默失敗，行為退化為 localStorage-only——可接受，不改
 - 主題切換器入口：登入列旁小按鈕，開玻璃 popover gallery
+- **驗收回饋修訂（2026-07-05）**：主題改為登入後才生效——tokens.css 預設值為未登入單色基準（灰階 accent/mesh；success/warning/danger 保留語義色），theme.js 監聽 `firework-login-success` 才套用儲存的配色、登出（含 force-logout）時 `resetTheme()` 還原單色；調色盤按鈕登入後才顯示
 
 ### 2.4 設計禁令（承襲 DESIGN.md）
 
