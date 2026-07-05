@@ -7,7 +7,7 @@
 
 ## 1. 目標與範圍
 
-把 Tarkka 的 Liquid Glass 設計系統移植到 cspanel 主控台，讓 cspanel 具備與 Tarkka、cspanel_netlify 的 course_debug.html 一致的視覺語言：磨砂玻璃面板浮在三點 mesh gradient 背景上，配 50+1 組可切換配色主題。
+把 Tarkka 的 Liquid Glass 設計系統移植到 cspanel 主控台，讓 cspanel 具備與 Tarkka、cspanel_netlify 的 course_debug.html 一致的視覺語言：磨砂玻璃面板浮在三點 mesh gradient 背景上，配 62+1 組可切換配色主題。
 
 此設計語言並非外來——Tarkka 的 DESIGN.md 明言其玻璃 tokens 對照 course_debug.html 制定，本次移植是「把已存在於同生態的語言推廣到 cspanel 全站」。
 
@@ -16,7 +16,7 @@
 | 決策點 | 定案 |
 |---|---|
 | 佈局 | **只換皮**：保留 min-width:1700px、全部面板絕對定位座標、DOM 結構不動 |
-| 主題 | **搬 50 組主題切換器**（theme.js），另新增第 51 組「Olive」palette（accent #8d9c00）設為預設 |
+| 主題 | **搬 62 組主題切換器**（theme.js），另新增第 63 組「Olive」palette（accent #8d9c00）設為預設 |
 | 頁面範圍 | **本期僅 panel_all.html 主控台**（含登入列、轉場、toast、全部面板）；board/、gotogo、DT_report、ggsheet、轉單小工具等 12 個獨立頁排第二期 |
 | 跨 repo | **cspanel_netlify 僅允許改注入區塊**（tabsHTML/ipHTML 的 markup 加 class，不動邏輯）；TESTwhosthere 等 netlify 使用者頁排第二期 |
 | 實作策略 | **平行重寫、一次切換**：在 `redesign/liquid-glass` 分支重建 style/v2/ 全新樣式組並改寫 JS 內嵌樣式，驗證通過後一次合併 main 上線 |
@@ -132,7 +132,7 @@ JS 檔無法像 CSS 一樣新舊並存，因此這些改動只存在分支上—
 2. 十多個面板逐一目視 + 互動抽測：拖曳面板（dragb_msg_pnl）、tab 切換、modal（#results-modal、#vvgglesht_modal）、toast 四型（success/error/warning/info）
 3. Google Sheet 大表格（consultantlistgooglesheet 950×700、assist_googlesheet）在玻璃卡上的可讀性——已知高風險點，必要時表格區局部改高不透明底（rgba 0.92+）
 4. 受保護區塊：登入後 tabsHTML / ipHTML 注入內容樣式正確（需 netlify 端先部署）
-5. 主題：50+1 組抽測至少 5 組（必含 Olive 預設與 Iceland）；切換後 mesh、玻璃、按鈕、轉場、Mermaid 無殘留舊色；重新整理後主題自 localStorage 恢復
+5. 主題：62+1 組抽測至少 5 組（必含 Olive 預設與 Iceland）；切換後 mesh、玻璃、按鈕、轉場、Mermaid 無殘留舊色；重新整理後主題自 localStorage 恢復
 6. `prefers-reduced-motion: reduce` 下動效全部停用
 7. 本機 http.server 與 GitHub Pages 部署後各驗一輪（子路徑資源載入）
 
