@@ -57,6 +57,15 @@ export function clearProtectedTabs() {
   if (ipPlaceholder) ipPlaceholder.innerHTML = '';
 }
 
+// Liquid Glass：伺服器注入內容（tabsHTML/ipHTML）注入後補上 class，供 panels.css 的 .gl-injected 樣式套用
+function glDecorate(container) {
+  if (!container) return;
+  container.classList.add('gl-injected');
+  container.querySelectorAll('table').forEach((table) => {
+    table.classList.add('gl-table');
+  });
+}
+
 // 內部輔助函式保持不變
 async function fetchProtectedContentWithRetry(retries = 3) {
   for (let i = 0; i < retries; i++) {
@@ -97,10 +106,12 @@ async function fetchProtectedContentWithRetry(retries = 3) {
 
         if (tabsPlaceholder && data.tabsHTML) {
           tabsPlaceholder.innerHTML = data.tabsHTML;
+          glDecorate(tabsPlaceholder);
         }
-        
+
         if (ipPlaceholder && data.ipHTML) {
           ipPlaceholder.innerHTML = data.ipHTML;
+          glDecorate(ipPlaceholder);
           try {
             const { initIPSearch } = await import('./IP_search.js');
             await initIPSearch();

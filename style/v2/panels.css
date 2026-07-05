@@ -891,3 +891,20 @@ a.no-nth-child {
     padding-top: 0;
     padding-bottom: 0;
 }
+
+/* ===== 伺服器注入內容（tabsHTML/ipHTML，注入後由 auth-protected-tabs.js 補 class）===== */
+.gl-injected { color: var(--fg); }
+.gl-injected .gl-table { border-collapse: collapse; width: 100%; }
+.gl-injected .gl-table th {
+    color: var(--fg-2);
+    font-weight: 600;
+    border-bottom: 1px solid var(--border-2);
+    padding: 4px 8px;
+    text-align: left;
+}
+.gl-injected .gl-table td {
+    border-bottom: 1px solid var(--border);
+    padding: 4px 8px;
+}
+.gl-injected .gl-table tr:hover td { background: var(--accent-tint); }
+.gl-injected a { color: var(--link); }
