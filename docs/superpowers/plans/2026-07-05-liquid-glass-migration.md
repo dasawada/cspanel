@@ -48,6 +48,8 @@
 | 字族清單 `'Noto Sans TC', 'Inter', ...` | `var(--sans)` |
 | **例外：不改** | `.fudausearch-button-special/-paikezu/-kefugon/-groupnumber`（部門色碼，功能性識別）；iframe 內部（管不到）；`cursorspk.js`/`snowfall.js`/`rippleEffect.js` 特效檔 |
 
+**Task 8 執行後追加的裁定（不可回退）**：(1) ipsearch 的 `.confidence-*` 徽章是「信賴度」語義（high=好），採色相保留（high→success、low→danger），**不套用** low→success 關鍵字表——套用會反轉 UX 語義；(2) 「白字」例外從 accent 底擴大為「任何語義色實底上的白字」（如 `.copy-feedback` 的 success 底、`.ip-info-btn` 的 muted 底）；(3) ipsearch 原有的 `@media (prefers-color-scheme: dark)` 區塊已中性化為同 light tokens（全站無 OS 暗色機制）。
+
 ---
 
 ### Task 0: 建立分支與預覽環境
