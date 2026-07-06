@@ -1,0 +1,54 @@
+/* ===== 畫布編輯模式 ===== */
+.gl-canvas-slot { /* 通用 slot 標記（防閃爍由 base.css 既有 id 規則供給；此處僅供未來畫布） */ }
+
+html.canvas-editing .gl-edit-handle {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 22px;
+    border-radius: 10px 10px 0 0;
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent) 30%, white),
+        color-mix(in srgb, var(--accent) 14%, white));
+    color: var(--accent-hover);
+    font-size: 11px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: grab;
+    z-index: var(--layer-panel-active);
+    user-select: none;
+    letter-spacing: 0.1em;
+}
+html.canvas-editing .gl-edit-handle:active { cursor: grabbing; }
+.gl-edit-handle { display: none; }
+html.canvas-editing .gl-edit-handle { display: flex; }
+
+#gl-edit-bar {
+    position: fixed;
+    top: 14px; left: 50%;
+    transform: translateX(-50%);
+    z-index: var(--layer-bar);
+    display: none;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--glass-bg-hover);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid var(--glass-border);
+    box-shadow: var(--glass-shadow);
+    animation: gl-modal-rise 0.42s cubic-bezier(0.22,1,0.36,1);
+}
+html.canvas-editing #gl-edit-bar { display: flex; }
+#gl-edit-bar button {
+    padding: 5px 14px;
+    border-radius: 999px;
+}
+#gl-edit-bar .gl-edit-done { background: var(--accent); color: #fff; border-color: transparent; }
+#gl-edit-bar .gl-edit-done:hover { background: var(--accent-hover); }
+html.canvas-editing .gl-editable { outline: 1px dashed var(--accent-ring); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) {
+    #gl-edit-bar { animation: none; }
+}

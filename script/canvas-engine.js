@@ -1,6 +1,8 @@
 // Canvas Engine — 泛化自 firework-mediator.js（認證調度邏輯原樣保留）。
 // 職責：slot 生成、幾何注入（manifest 為唯一座標權威）、init/clear 調度、
 //       編輯模式（enter/exitEditMode，Task 6 實作）。
+import { makeDraggable } from './draggable.js';
+
 const LAYOUT_KEY = (canvasId) => `cspanel.layout.${canvasId}.v1`;
 
 let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false }
@@ -185,9 +187,81 @@ function clearAllModules() {
   console.log('Engine: 所有模組已清理 🧹');
 }
 
-// ===== 編輯模式（Task 6 實作；先固定介面） =====
-export function enterEditMode() { /* Task 6 */ }
-export function exitEditMode(save = true) { /* Task 6 */ }
+// ===== 編輯模式 =====
+const editState = { detachers: [] };
+function panelRoots(manifest) {
+  return manifest.panels
+    .filter((p) => p.rootSelector && (p.behaviors || []).includes('draggable') && !p.alwaysDraggable)
+    .map((p) => ({ p, el: document.querySelector(p.rootSelector) }))
+    .filter((x) => x.el);
+}
+function saveLayoutEntry(canvasId, panelId, pos) {
+  const layout = readLayout(canvasId);
+  layout[panelId] = { x: pos.left, y: pos.top };
+  try { localStorage.setItem(LAYOUT_KEY(canvasId), JSON.stringify(layout)); } catch (e) {}
+}
+export function enterEditMode() {
+  if (!activeCanvas || activeCanvas.editing) return;
+  activeCanvas.editing = true;
+  document.documentElement.classList.add('canvas-editing');
+  ensureEditBar();
+  for (const { p, el } of panelRoots(activeCanvas.manifest)) {
+    el.classList.add('gl-editable');
+    const handle = document.createElement('div');
+    handle.className = 'gl-edit-handle';
+    handle.textContent = p.id;
+    el.appendChild(handle);
+    // persist:false —— 編輯把手的位置權威是引擎自身的統一 layout
+    // （由 onPositionChange 寫入 LAYOUT_KEY），draggable.js 不應再讀寫
+    // 各面板獨立的 draggable:<path>:<id> key（見檔案內註解與任務報告）。
+    makeDraggable(el, handle, {
+      color: 'accent',
+      persist: false,
+      onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
+    });
+    editState.detachers.push(() => { handle.remove(); el.classList.remove('gl-editable'); });
+  }
+}
+export function exitEditMode() {
+  if (!activeCanvas || !activeCanvas.editing) return;
+  activeCanvas.editing = false;
+  document.documentElement.classList.remove('canvas-editing');
+  editState.detachers.forEach((fn) => fn());
+  editState.detachers = [];
+  emitGeometry(activeCanvas.manifest, readLayout(activeCanvas.manifest.id));
+  for (const { el } of panelRoots(activeCanvas.manifest)) { el.style.left = ''; el.style.top = ''; }
+}
+export function resetLayout() {
+  if (!activeCanvas) return;
+  try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id)); } catch (e) {}
+  const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  for (const { el } of panelRoots(activeCanvas.manifest)) {
+    if (!reduced) {
+      el.style.transition = 'left 0.4s cubic-bezier(0.22,1,0.36,1), top 0.4s cubic-bezier(0.22,1,0.36,1)';
+      setTimeout(() => { el.style.transition = ''; }, 450);
+    }
+    el.style.left = ''; el.style.top = '';
+  }
+  emitGeometry(activeCanvas.manifest, {});
+}
+function ensureEditBar() {
+  if (document.getElementById('gl-edit-bar')) return;
+  const bar = document.createElement('div');
+  bar.id = 'gl-edit-bar';
+  bar.innerHTML = `<span style="font-size:12px;color:var(--fg-2)">編排模式</span>
+    <button type="button" class="gl-edit-reset">重設佈局</button>
+    <button type="button" class="gl-edit-done">完成</button>`;
+  document.body.appendChild(bar);
+  bar.querySelector('.gl-edit-done').addEventListener('click', () => exitEditMode());
+  bar.querySelector('.gl-edit-reset').addEventListener('click', () => resetLayout());
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && activeCanvas && activeCanvas.editing) exitEditMode();
+  });
+}
+window.CanvasEdit = {
+  toggle: () => (activeCanvas && activeCanvas.editing ? exitEditMode() : enterEditMode()),
+  enter: enterEditMode, exit: exitEditMode, reset: resetLayout,
+};
 
 // ===== 入口 =====
 export async function loadCanvas(manifest) {
@@ -197,12 +271,28 @@ export async function loadCanvas(manifest) {
     manifest = { ...manifest, panels: manifest.panels.filter((p) => p.id && p.module && p.init && p.clear) };
   }
   buildSlots(manifest);
-  emitGeometry(manifest, readLayout(manifest.id));
+
+  // 話術面板（canned）舊版每頁獨立 storage key 一次性遷移入統一 layout
+  // （不刪舊 key——canned 自身仍以 quirks:['self-persisted'] 走原本機制）
+  const oldCanned = localStorage.getItem(`draggable:${location.pathname}:canned-panel-main`);
+  if (oldCanned && !readLayout(manifest.id).canned) {
+    try {
+      const p = JSON.parse(oldCanned);
+      saveLayoutEntry(manifest.id, 'canned', { left: p.left, top: p.top });
+    } catch (e) {}
+  }
+  const layout = readLayout(manifest.id);
+  const cannedPanel = manifest.panels.find((x) => x.id === 'canned');
+  if (layout.canned && cannedPanel) {
+    cannedPanel.initArgs = [null, { left: layout.canned.x, top: layout.canned.y }];
+  }
+
+  emitGeometry(manifest, layout);
   const mods = await loadModules(manifest);
   activeCanvas = { manifest, mods, editing: false };
 
   window.addEventListener('firework-login-success', () => { initAllModules(); });
-  window.addEventListener('firework-logout-success', () => { clearAllModules(); });
+  window.addEventListener('firework-logout-success', () => { exitEditMode(); clearAllModules(); });
 
   // 原 mediator checkExistingAuth（mediator.js:163-185 逐字搬入）
   (async function checkExistingAuth() {

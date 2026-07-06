@@ -2,10 +2,15 @@
  * 讓指定元素可拖曳，彼此互不影響，並自動套用拖曳樣式
  * @param {HTMLElement} panel  要拖曳的主體元素
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
- * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary }
+ * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary, onPositionChange, persist }
  *   color: 若提供，handle 拖曳中會加上主題 class；實際顏色一律套用全域
  *   --accent / --accent-hover token 衍生的漸層（不再依 color 的字面值渲染色相），
  *   color 值僅用來產生穩定的 class 名稱。
+ *   onPositionChange({left, top}): 拖曳結束（回彈與直接兩路徑皆會呼叫一次）時的回呼。
+ *   persist: 預設 true（未傳等同 true）。false 時略過本模組自身的
+ *   per-panel localStorage 初始還原/寫入與初始 inline left/top 設定，交由
+ *   呼叫端（例如畫布引擎的統一 layout）作為位置權威——用於避免編輯模式把手
+ *   與獨立面板各自的 draggable:<path>:<id> 存檔互相打架。
  */
 export function makeDraggable(panel, handle, options = {}) {
   handle = handle || panel;
@@ -270,6 +275,9 @@ export function makeDraggable(panel, handle, options = {}) {
         dragState.translateX = 0;
         dragState.translateY = 0;
       }, BOUNCE_DURATION);
+      if (typeof options.onPositionChange === 'function') {
+        options.onPositionChange({ left: finalX, top: finalY });
+      }
     } else {
       panel.style.left = `${finalX}px`;
       panel.style.top = `${finalY}px`;
@@ -277,9 +285,12 @@ export function makeDraggable(panel, handle, options = {}) {
       panel.style.transition = '';
       dragState.translateX = 0;
       dragState.translateY = 0;
+      if (typeof options.onPositionChange === 'function') {
+        options.onPositionChange({ left: finalX, top: finalY });
+      }
     }
     const panelId = panel.id || panel.dataset.draggableId;
-    if (panelId) {
+    if (panelId && options.persist !== false) {
       const storageKey = 'draggable:' + location.pathname + ':' + panelId;
       localStorage.setItem(storageKey, JSON.stringify({ left: finalX, top: finalY }));
     }
@@ -354,6 +365,11 @@ export function makeDraggable(panel, handle, options = {}) {
 
   // 初始定位（支援跨頁面唯一 key）
   setTimeout(() => {
+    // persist:false（如畫布編輯模式把手）：初始位置權威來自呼叫端既有的
+    // CSS/inline 幾何（例如引擎 emitGeometry 注入的座標），不讀取也不覆寫
+    // per-panel 的 localStorage 位置，避免與統一 layout 來源衝突或造成
+    // 進入編輯模式瞬間跳位到預設 (100,100)。
+    if (options.persist === false) return;
     const panelId = panel.id || panel.dataset.draggableId;
     let saved = null;
     if (panelId) {
