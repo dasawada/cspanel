@@ -203,12 +203,22 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 `.ClassLogpanel` 用 `position: fixed`（`cs.js` 的 `sharedGeometryCss`，唯一 fixed 例外）不受此規則約束，
 因為它屬於 `quirks: ['server-markup']` 的伺服器渲染面板，不透過 manifest 的 `behaviors`/`draggable` 機制拖曳。
 
-### 4.6 `geometryCss` 內容規則
+### 4.6 `geometryCss`／`sharedGeometryCss` 的 z-index 規則
 
-`geometryCss`（含 `sharedGeometryCss`）**嚴禁出現 `z-index`**——z-index 一律用 `zOrder` 欄位表達，
-由引擎組出 `calc(var(--layer-panel) + zOrder)` 字串注入。已知取捨：現有 `geometryCss` 為了逐字保留
-遷移前的 CSS 語意，會夾帶少數非幾何屬性（例如 `color`、`overflow`、`transition`），這是「先搬運、後增能」
-兩階段策略下的刻意妥協；新增面板不必比照此包山包海的作法，但也不強制拆分，只要不含 `z-index` 即符合鐵律。
+- **每面板的 `geometryCss` 嚴禁出現 `z-index`**——面板疊序一律用 `zOrder` 欄位表達，由引擎組出
+  `calc(var(--layer-panel) + zOrder)` 字串注入。
+- **`sharedGeometryCss` 允許帶內 calc z-index，但僅限「無 `rootSelector` 的伺服器注入面板與共用狀態類」**：
+  目前即 `.small-size`／`.idsearchpanel`／`.ClassLogpanel`／`.IPsearch_in_panelALL`／`.panel-tabs-container`
+  五處（`cs.js`）。它們沒有對應的 `panels[]` 條目可承載 `zOrder`（或如 `.small-size` 是跨面板共用的狀態
+  class），寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們進入層帶的唯一途徑。
+- **`sharedGeometryCss` 不得對「有 `rootSelector` 的面板」宣告 `z-index`**：這種宣告若以較高特異度
+  selector 寫成（例如 `.DT_panel:not(.small-size)`，特異度 0-2-0），會永久遮蔽引擎依 `zOrder` 注入的
+  `.DT_panel { z-index: ... }`（0-1-0）——之後改 manifest 的 `zOrder` 會靜默無效。前例：`cs.js` 的
+  `.DT_panel:not(.small-size)` 曾夾帶 `z-index: calc(var(--layer-panel) + 4)`，與 `dt` 面板 `zOrder: 4`
+  的注入值恰好相同因此未被察覺，後於審查中移除（本節規則的直接動機），`zOrder` 自此為真正權威。
+- 已知取捨：現有 `geometryCss` 為了逐字保留遷移前的 CSS 語意，會夾帶少數非幾何屬性（例如 `color`、
+  `overflow`、`transition`），這是「先搬運、後增能」兩階段策略下的刻意妥協；新增面板不必比照此
+  包山包海的作法，但也不強制拆分，只要遵守上列 z-index 規則即符合鐵律。
 
 ---
 
@@ -249,9 +259,11 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 2. **tooltip 相對登入列的相對順序改變**：IP 搜尋 tooltip portal 舊值 `10000` 高於登入列/轉場遮罩的
    `9999`。歸帶後改用 `--layer-dropdown(300)`，**低於** `--layer-bar(400)`。因為 tooltip（依附在 IP 搜尋
    結果列表）與登入列（畫面右下角常駐 chrome）在畫面上無幾何交集，此相對順序變化被判定可接受並記錄在案。
-3. **死樣式移除清單**（Task 4，因 DOM 內已不存在對應元素而整段刪除）：`.temp2`、`.board`（含其幾何區塊，
-   原 `style/v2/panels.css` 314-324 行）、`.appicon`／`.appicon img`、`#excalidraw-container` 與整段
-   Excalidraw 相關規則（原 404-439 行）。
+3. **死樣式移除清單**（Task 4，commit `fc72004`，因 DOM 內已不存在對應元素而刪除）：`.temp2`、`.board`
+   （含其幾何區塊，原 `style/v2/panels.css` 314-324 行）、`.appicon { ... }` 區塊、`#excalidraw-container`
+   與整段 Excalidraw 相關規則（原 404-439 行）。注意：`.appicon img { cursor: pointer; margin: 5px; }`
+   **未被移除**，仍存活於 `style/v2/panels.css`（實務上無效——panel_all 頁面不存在 `.appicon` 元素，
+   `script/imgcp2bx.js` 仍查詢 `.appicon` 但查無結果），屬沿襲殘留而非已刪項目。
 4. **`syncInit` 呼叫加上 `try/catch`**：原始 `firework-mediator.js` 對同步先行面板（`meeting-shell`）的
    `init` 呼叫（`initMeetingSearchPanel('meeting-search-panel-placeholder')`）沒有任何錯誤防護。
    `canvas-engine.js` 泛化時主動替所有 `syncInit` 面板的 `init` 呼叫加上 `try { ... } catch (e) { console.error(...) }`

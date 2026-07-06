@@ -12,7 +12,7 @@ export default {
 .idsearchpanel:not(.small-size) { width: 560px; height: 600px; }
 .consultantlistgooglesheet:not(.small-size) { width: 950px; height: 700px; }
 .ClassLogpanel:not(.small-size) { width: 560px; height: 700px; }
-.DT_panel:not(.small-size) { width: 900px; height: auto; overflow: visible; z-index: calc(var(--layer-panel) + 4); }
+.DT_panel:not(.small-size) { width: 900px; height: auto; overflow: visible; } /* z-index 已移除：0-2-0 特異度會遮蔽 dt 面板 zOrder 注入的 0-1-0 規則，疊序一律由 zOrder 供給 */
 .assist_googlesheet:not(.small-size) { width: 800px; height: 600px; }
 .idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet { display: flex; flex-direction: column; position: absolute; transition: all 0.3s ease; box-sizing: border-box; overflow: hidden; }
 /* 伺服器注入 markup 的幾何（repo 內無模板，class 為既定契約） */
