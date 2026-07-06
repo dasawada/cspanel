@@ -243,7 +243,7 @@ export default {
       initArgs: ['meeting-search-panel-placeholder'], syncInit: true, // mediator:99 原為同步先行
       slot: 'meeting-search-panel-placeholder', rootSelector: '.meeting-search-panel-menu',
       geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
-      zOrder: 1, behaviors: ['draggable'] },
+      zOrder: 0, behaviors: ['draggable'] }, // 執行時修正：原 CSS 無 z-index，與其他 zOrder:0 面板同列（Task 4 parity 迭代發現）
 
     { id: 'meeting-now', module: './meeting-now-includefetch.js',
       init: 'initMeetingNowPanel', clear: 'clearMeetingNowPanel', slot: null }, // 邏輯模組，綁 meeting-shell DOM
