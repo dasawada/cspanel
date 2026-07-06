@@ -78,14 +78,18 @@ function broadcastAuthState(state) {
 }
 
 // ===== manifest 驗證 =====
+// 回傳「有問題面板」清單，每筆帶 index（在 manifest.panels 陣列中的位置）
+// 與人類可讀的 reason，讓呼叫端（loadCanvas）能精準依 index 過濾——
+// 重複 id 只丟棄後出現的那幾筆，第一筆（seen 尚未記錄時遇到的那筆）視為
+// 合法保留，行為才會跟這裡的警告訊息（「重複」）一致。
 function validateManifest(m) {
   const bad = [];
   const seen = new Set();
-  for (const p of m.panels || []) {
-    if (!p.id || seen.has(p.id)) { bad.push(`${p.id || '(no id)'}: id 缺失或重複`); continue; }
+  (m.panels || []).forEach((p, index) => {
+    if (!p.id || seen.has(p.id)) { bad.push({ index, id: p.id, reason: `${p.id || '(no id)'}: id 缺失或重複` }); return; }
     seen.add(p.id);
-    if (!p.module || !p.init || !p.clear) bad.push(`${p.id}: module/init/clear 缺失`);
-  }
+    if (!p.module || !p.init || !p.clear) bad.push({ index, id: p.id, reason: `${p.id}: module/init/clear 缺失` });
+  });
   return bad;
 }
 
@@ -214,12 +218,16 @@ export function enterEditMode() {
     // persist:false —— 編輯把手的位置權威是引擎自身的統一 layout
     // （由 onPositionChange 寫入 LAYOUT_KEY），draggable.js 不應再讀寫
     // 各面板獨立的 draggable:<path>:<id> key（見檔案內註解與任務報告）。
-    makeDraggable(el, handle, {
+    const detach = makeDraggable(el, handle, {
       color: 'accent',
       persist: false,
       onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
     });
-    editState.detachers.push(() => { handle.remove(); el.classList.remove('gl-editable'); });
+    // detach()：卸除 makeDraggable 內部掛在 handle/window/document 上的事件
+    // 監聽器（原本只在 panel 被移出 DOM 時由其內部 MutationObserver 觸發，
+    // 進出編輯模式本身並不會移除 panel，等於每次 enter 都疊加一組新監聽器
+    // 而從不回收）。退出編輯模式時連同把手一起主動收掉，避免監聽器洩漏。
+    editState.detachers.push(() => { detach(); handle.remove(); el.classList.remove('gl-editable'); });
   }
 }
 export function exitEditMode() {
@@ -234,6 +242,11 @@ export function exitEditMode() {
 export function resetLayout() {
   if (!activeCanvas) return;
   try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id)); } catch (e) {}
+  // 同時清掉 canned 的舊版 per-panel key，否則「重設」對話術面板不完整
+  // （見 loadCanvas 的一次性遷移邏輯）。已知行為：canned 目前畫面位置在
+  // 面板存續期間由 draggable.js 自己的 inline left/top 主導，此處刪 key
+  // 不會讓它立即跳回預設值，要等下次 loadCanvas（頁面重新載入）才會套用。
+  try { localStorage.removeItem(`draggable:${location.pathname}:canned-panel-main`); } catch (e) {}
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   for (const { el } of panelRoots(activeCanvas.manifest)) {
     if (!reduced) {
@@ -267,8 +280,12 @@ window.CanvasEdit = {
 export async function loadCanvas(manifest) {
   const problems = validateManifest(manifest);
   if (problems.length) {
-    console.warn('Engine: manifest 異常，問題面板將被跳過', problems);
-    manifest = { ...manifest, panels: manifest.panels.filter((p) => p.id && p.module && p.init && p.clear) };
+    console.warn('Engine: manifest 異常，問題面板將被跳過', problems.map((p) => p.reason));
+    // 依 validateManifest 回傳的 index 過濾，而不是重新用 id/module/init/clear
+    // 是否存在來判斷——後者對「重複 id」無效（重複的第二筆通常 4 個欄位都
+    // 齊全，字面上不會被濾掉），會跟警告文字（「重複將被跳過」）自相矛盾。
+    const badIndexes = new Set(problems.map((p) => p.index));
+    manifest = { ...manifest, panels: manifest.panels.filter((_, i) => !badIndexes.has(i)) };
   }
   buildSlots(manifest);
 

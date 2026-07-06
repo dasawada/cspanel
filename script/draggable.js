@@ -383,6 +383,13 @@ export function makeDraggable(panel, handle, options = {}) {
     panel.style.top = (saved?.top !== undefined ? saved.top : (options.top !== undefined ? options.top : 100)) + 'px';
     panel.style.position = 'absolute';
   }, 0);
+
+  // 回傳 cleanup，讓呼叫端（例如畫布引擎的編輯模式）可以在自己判定
+  // 該收手的時機（非僅限於 panel 被移出 DOM 時的 MutationObserver）主動
+  // 呼叫，取消事件監聽與（若正在拖曳）dragOverlay；不影響原本 observer
+  // 觸發的自動清理路徑（cleanup 本身是 idempotent 的內部函式，兩條路徑
+  // 皆可安全呼叫，即使呼叫端已手動呼叫過、observer 之後又觸發一次）。
+  return cleanup;
 }
 
 /*
