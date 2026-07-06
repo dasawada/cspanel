@@ -23,13 +23,6 @@ export default {
 `,
 
   panels: [
-    { id: 'meeting-shell', module: './meeting-search-panel-module.js',
-      init: 'initMeetingSearchPanel', clear: 'clearMeetingSearchPanel',
-      initArgs: ['meeting-search-panel-placeholder'], syncInit: true, // mediator:99 原為同步先行
-      slot: 'meeting-search-panel-placeholder', rootSelector: '.meeting-search-panel-menu',
-      geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
-      zOrder: 1, behaviors: ['draggable'] },
-
     { id: 'meeting-now', module: './meeting-now-includefetch.js',
       init: 'initMeetingNowPanel', clear: 'clearMeetingNowPanel', slot: null }, // 邏輯模組，綁 meeting-shell DOM
 
@@ -38,6 +31,15 @@ export default {
 
     { id: 'meeting-all', module: './meeting-all-module.js',
       init: 'initMeetingAll', clear: 'clearMeetingAll', slot: null },
+
+    // 順序契約：meeting-shell 的 clear 會清空容器，必須排在 meeting-now/meeting-match/meeting-all 之後（三者需先拆容器內監聽器）；init 不受影響（syncInit 獨立先行）
+    { id: 'meeting-shell', module: './meeting-search-panel-module.js',
+      init: 'initMeetingSearchPanel', clear: 'clearMeetingSearchPanel',
+      initArgs: ['meeting-search-panel-placeholder'], clearArgs: ['meeting-search-panel-placeholder'],
+      syncInit: true, // mediator:99 原為同步先行
+      slot: 'meeting-search-panel-placeholder', rootSelector: '.meeting-search-panel-menu',
+      geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
+      zOrder: 1, behaviors: ['draggable'] },
 
     { id: 'protected', module: './auth-protected-tabs.js',
       init: 'initProtectedTabs', clear: 'clearProtectedTabs',
