@@ -32,25 +32,18 @@
     import { loadLoginPanel } from './script/fireworkeffect.js';
     loadLoginPanel();
 </script>
-<script type="module" src="script/ui-conductor-v2.js"></script> 
-<script type="module" src="script/firework-mediator.js"></script>
+<script type="module" src="script/ui-conductor-v2.js"></script>
+<script type="module">
+    import { loadCanvas } from './script/canvas-engine.js';
+    import cs from './script/canvases/cs.js';
+    loadCanvas(cs);
+</script>
 
 </head>
 <body>
 <div class="update-header">※版本更新：
 <a href="https://dasawada.github.io/cspanel/updatenote.txt" target="_blank">2025/03/26</a></div>
 <div class="panel_all_container">
-<div id="roof-buttons-placeholder"></div>
-<div id="tool-download-placeholder"></div>
-<div id="optitle-placeholder"></div>
-<div id="fudausearch-placeholder"></div>
-<div id="auth-protected-tabs-placeholder"></div>
-<div id="dt-panel-placeholder"></div>
-<div id="consultant-panel-placeholder"></div>
-<div id="assist-panel-placeholder"></div>
-<div id="shrturl-placeholder"></div>
-<div id="auth-protected-ip-placeholder"></div>
-<div id="meeting-search-panel-placeholder"></div>
     <script src="script/imgcp2bx.js"></script>
     <script src="script/cpcast.js"></script>
     <script src="script/DT_test_copybutton_script.js"></script>

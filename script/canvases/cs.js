@@ -39,7 +39,7 @@ export default {
       syncInit: true, // mediator:99 原為同步先行
       slot: 'meeting-search-panel-placeholder', rootSelector: '.meeting-search-panel-menu',
       geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
-      zOrder: 1, behaviors: ['draggable'] },
+      zOrder: 0, behaviors: ['draggable'] }, // 原 CSS 無 z-index（auto，與 optitle/fudausearch/linkout 同層），Task 2 manifest 誤填 1，Task 4 parity 迭代時修正
 
     { id: 'protected', module: './auth-protected-tabs.js',
       init: 'initProtectedTabs', clear: 'clearProtectedTabs',
@@ -57,7 +57,7 @@ export default {
       init: 'initFudausearchPanel', clear: 'clearFudausearchPanel',
       initArgs: ['fudausearch-placeholder'], clearArgs: ['fudausearch-placeholder'],
       slot: 'fudausearch-placeholder', rootSelector: '.fudausearch-container',
-      geometryCss: '.fudausearch-container { left: 0px; top: 130px; }', // 原模板 inline（Task 4 移除 inline 後由此供給）
+      geometryCss: '.fudausearch-container { left: 0px; top: 130px; width: 400px; height: 105px; position: absolute; padding: 10px 5px 10px 5px; box-sizing: border-box; gap: 10px; }', // 原模板 inline + panels.css:802-811 幾何合併（Task 4）
       zOrder: 0, behaviors: ['draggable'] },
 
     { id: 'shrturl', module: './shrturl.js',

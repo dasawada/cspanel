@@ -8,7 +8,7 @@ let fudausearch_cachedData = [];
 
 // ===== HTML 模板 =====
 const fudausearchPanelHTML = `
-<div class="fudausearch-container" id="fudausearch-container" style="left:0px;top:130px;">
+<div class="fudausearch-container" id="fudausearch-container">
   <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
   <div class="fudausearch-input-wrapper">
     <input type="text" id="fudausearch-input" placeholder="輔導職代、顧問組長查詢" autocomplete="off" />
