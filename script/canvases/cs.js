@@ -76,7 +76,7 @@ export default {
       init: 'initConsultantPanel', clear: 'clearConsultantPanel',
       initArgs: ['consultant-panel-placeholder'], clearArgs: ['consultant-panel-placeholder'],
       slot: 'consultant-panel-placeholder', rootSelector: '.consultantlistgooglesheet',
-      geometryCss: '.consultantlistgooglesheet { position: absolute; height: 700px; width: 950px; z-index: auto; top: 0px; left: 636px; }', // panels.css:198-206；right:20px 雙宣告本無效，不搬（盤點異常 C）
+      geometryCss: '.consultantlistgooglesheet { position: absolute; height: 700px; width: 950px; top: 0px; left: 636px; }', // panels.css:198-206；right:20px 雙宣告本無效，不搬（盤點異常 C）；z 由 zOrder 供給
       zOrder: 3, behaviors: ['draggable'] },
 
     { id: 'assist', module: './toggle-panels.js',
