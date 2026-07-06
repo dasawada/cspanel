@@ -3,6 +3,9 @@
  * @param {HTMLElement} panel  要拖曳的主體元素
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
  * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary }
+ *   color: 若提供，handle 拖曳中會加上主題 class；實際顏色一律套用全域
+ *   --accent / --accent-hover token 衍生的漸層（不再依 color 的字面值渲染色相），
+ *   color 值僅用來產生穩定的 class 名稱。
  */
 export function makeDraggable(panel, handle, options = {}) {
   handle = handle || panel;
@@ -40,17 +43,27 @@ export function makeDraggable(panel, handle, options = {}) {
     window.__draggableStyleInjected = true;
   }
 
-  // === 根據 options.color 動態產生主題色 ===
+  // === options.color 僅作為 handle 主題 class 的識別字；實際顏色一律
+  // 套用全域 --accent token 衍生的漸層（登入後由 theme.js 主題化，未登入
+  // 時為單色基準），不再硬編碼特定色相。
+  // 還原自 main:script/draggable.js 的原始把手漸層（拖曳中 180deg、
+  // 由飽和色過渡到近透明的直向漸層），僅將色相來源換成 --accent token：
+  //   原始： linear-gradient(180deg, ${color} 0%, ${color}22 100%)
+  //   現在： linear-gradient(180deg, color-mix(...accent 30%...), color-mix(...accent 14%...))
   if (options.color) {
-    const colorCode = options.color.replace('#', '').toLowerCase();
+    const colorCode = String(options.color).replace('#', '').toLowerCase();
     const themeClass = `draggable-handle-theme-${colorCode}`;
     if (!document.querySelector(`style[data-draggable-theme="${themeClass}"]`)) {
       const style = document.createElement('style');
       style.setAttribute('data-draggable-theme', themeClass);
       style.textContent = `
 .draggable-dragging .${themeClass} {
-  background: linear-gradient(180deg, ${options.color} 0%, ${options.color}22 100%) !important;
-  color: #fff !important;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 30%, white),
+    color-mix(in srgb, var(--accent) 14%, white)
+  ) !important;
+  color: var(--accent-hover) !important;
 }
 `;
       document.head.appendChild(style);
@@ -149,6 +162,10 @@ export function makeDraggable(panel, handle, options = {}) {
 
     panel.style.transition = 'none';
     panel.classList.add('draggable-dragging');
+    // gl-dragging：拖曳中近透明玻璃特效的掛鉤 class（附加、不影響既有
+    // draggable-dragging 的透明度/陰影行為），實際視覺由各面板注入的
+    // CSS 決定（見 dragb_msg_pnl.js 的 .canned-panel.gl-dragging）
+    panel.classList.add('gl-dragging');
     document.addEventListener('pointermove', handleDragMove);
     document.addEventListener('pointerup', handleDragEnd);
     document.addEventListener('pointercancel', handleDragEnd);
@@ -196,6 +213,7 @@ export function makeDraggable(panel, handle, options = {}) {
   function handleDragEnd() {
     if (!dragState.isDragging) return;
     panel.classList.remove('draggable-dragging');
+    panel.classList.remove('gl-dragging');
     document.removeEventListener('pointermove', handleDragMove);
     document.removeEventListener('pointerup', handleDragEnd);
     document.removeEventListener('pointercancel', handleDragEnd);
@@ -359,12 +377,12 @@ export function makeDraggable(panel, handle, options = {}) {
   // 啟用邊界限制 (預設行為)
   const panelA = document.getElementById('panelA');
   const handleA = panelA.querySelector('.handleA');
-  makeDraggable(panelA, handleA, { left: 100, top: 100, color: '#ff0000' });
+  makeDraggable(panelA, handleA, { left: 100, top: 100, color: 'panelA' });
 
-  // 停用邊界限制，允許自由拖曳
+  // 停用邊界限制，允許自由拖曳（color 只是 class 識別字，實際顏色為 --accent token）
   const panelB = document.getElementById('panelB');
   const handleB = panelB.querySelector('.handleB');
-  makeDraggable(panelB, handleB, { left: 400, top: 200, color: '#00ff00', disableBoundary: true });
+  makeDraggable(panelB, handleB, { left: 400, top: 200, color: 'panelB', disableBoundary: true });
 
   // 只要呼叫 makeDraggable(你的div, 你的把手)，每個都能獨立拖曳
 */

@@ -16,7 +16,7 @@ const UI_CONFIG = {
 };
 
 // 定義統一背景 (預載與正式一致，此處保留硬編碼供預遮罩使用，CSS 變數尚未載入)
-const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
+const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
 
 // ===== 0. 立即預遮罩 (防止畫面閃爍) =====
 (function immediateOverlayCheck() {
@@ -43,9 +43,9 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%)';
   const css = `
     /* ===== 色彩系統 — 三主色，其餘自動衍生 ===== */
     :root {
-      --ui-accent: #642800;   /* 主色：Spinner / 光束 / 粒子 */
-      --ui-surface: #f0f5f1;  /* 底色：遮罩背景基調     */
-      --ui-text:    #8b6464;  /* 文字：狀態文字色        */
+      --ui-accent: var(--accent, #8d9c00);   /* 主色：跟隨主題 */
+      --ui-surface: var(--bg-base, #f2f3ec); /* 底色：跟隨主題 */
+      --ui-text:    var(--fg-2, #6e6e73);    /* 文字：跟隨主題 */
 
       /* ▼ 以下全由三主色自動運算，換色只需改上方三行 ▼ */
       --ui-overlay-bg-start: color-mix(in srgb, var(--ui-accent)  4%, var(--ui-surface));

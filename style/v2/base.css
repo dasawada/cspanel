@@ -1,0 +1,71 @@
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500;700&display=swap');
+
+/* ===== 底盤 ===== */
+html, body {
+    min-width: 1700px; /* 佈局契約：不可變更 */
+    background-color: var(--bg-base); /* 未登入底色，防止閃爍 */
+    transition: background 0.8s ease-in-out;
+}
+
+/* 登入後 mesh gradient（取代舊綠粉漸層；!important 沿用舊檔壓過度機制） */
+html.auth-active, body.auth-active {
+    background-color: var(--bg-base) !important;
+    background-image:
+        radial-gradient(ellipse at 20% 20%, var(--bg-mesh-1) 0%, transparent 50%),
+        radial-gradient(ellipse at 80% 80%, var(--bg-mesh-2) 0%, transparent 50%),
+        radial-gradient(ellipse at 60% 30%, var(--bg-mesh-3) 0%, transparent 50%) !important;
+    background-attachment: fixed !important;
+}
+
+/* ===== 全域文字（維持 13px/500 高密度） ===== */
+body, button, textarea {
+    font-family: var(--sans);
+    font-size: 13px;
+    position: relative;
+    letter-spacing: 0.01em;
+    z-index: 1;
+    font-weight: 500;
+    color: var(--fg);
+}
+
+b, h1, h2, h3, h4, h5, h6 { font-family: var(--sans); }
+
+h2 { font-size: 18px; text-align: center; margin-bottom: 15px; }
+h3 { margin-top: 0; margin-bottom: 5px; text-align: center; }
+hr { border: 0; border-top: 1px solid var(--border); margin: 10px 0; }
+
+::selection { background: var(--selection-bg); }
+
+/* ===== 防閃爍：與舊 panel-all.css 逐字同構，僅搬家 ===== */
+#roof-buttons-placeholder,
+#tool-download-placeholder,
+#optitle-placeholder,
+#fudausearch-placeholder,
+#auth-protected-tabs-placeholder,
+#dt-panel-placeholder,
+#consultant-panel-placeholder,
+#assist-panel-placeholder,
+#shrturl-placeholder,
+#auth-protected-ip-placeholder,
+#meeting-search-panel-placeholder,
+.canned-panel {
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+}
+
+html.auth-active #roof-buttons-placeholder,
+html.auth-active #tool-download-placeholder,
+html.auth-active #optitle-placeholder,
+html.auth-active #fudausearch-placeholder,
+html.auth-active #auth-protected-tabs-placeholder,
+html.auth-active #dt-panel-placeholder,
+html.auth-active #consultant-panel-placeholder,
+html.auth-active #assist-panel-placeholder,
+html.auth-active #shrturl-placeholder,
+html.auth-active #auth-protected-ip-placeholder,
+html.auth-active #meeting-search-panel-placeholder,
+html.auth-active .canned-panel {
+    opacity: 1;
+    visibility: visible;
+}

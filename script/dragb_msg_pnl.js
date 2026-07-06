@@ -6,21 +6,33 @@ import { makeDraggable } from './draggable.js';
 // ===== 1. CSS 動態插入 =====
 const PANEL_CSS = `
 .canned-panel {
+  /* background/border/box-shadow 一律交給 style/v2/panels.css 的統一玻璃
+     規則（本 <style> 於 runtime 注入、晚於 v2 樣式表，同特異度下任何
+     覆寫都會壓過統一玻璃，勿在此設定這三類屬性） */
   position: absolute;
   touch-action: none;
   user-select: none;
-  background-color: white;
   border-radius: 10px;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1), 0 6px 20px rgba(0,0,0,0.1);
   margin: 0;
   margin-bottom: 20px;
   z-index: 1005;
   will-change: transform;
   width: 400px;
   min-width: 350px;
-  font-family: Arial, sans-serif;
-  color: #333;
-  border: 1px solid #ccc;
+  font-family: var(--sans);
+  color: var(--fg);
+}
+/* 拖曳中近透明玻璃特效（還原自 main 分支 .draggable-dragging 的
+   「拖曳時整體 opacity: 0.95」設計意圖；.draggable-dragging 的
+   opacity/box-shadow 仍原樣保留、疊加生效，這裡是本面板專屬、於玻璃
+   化改版後讓「近透明」重新變得可見的加強層。gl-dragging 由
+   draggable.js 於拖曳開始/結束時附加/移除，本樣式表晚於 v2 載入，
+   足以覆蓋統一玻璃規則）*/
+.canned-panel.gl-dragging {
+  background: rgba(255,255,255,0.15);
+  backdrop-filter: blur(6px) saturate(1.2);
+  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  box-shadow: 0 18px 48px rgba(0,0,0,0.18);
 }
 .canned-panel-handle {
   padding: 5px 10px;
@@ -68,7 +80,7 @@ const PANEL_CSS = `
   display: flex;
   border: 1px solid #ddd;
   border-radius: 10px;
-  background: #fff;
+  background: rgba(255,255,255,0.35);
   margin-top: 10px;
 }
 .canned-panel-tab-menu {
@@ -488,7 +500,7 @@ export function createCannedMessagesPanel(options = {}) {
         if (err?.name === 'AbortError') return;
         if (!isRenderable(seq, q)) return;
         // 顯示錯誤
-        courseResultDiv.innerHTML = `<p style="color:red;">查詢失敗：${err.message}</p>`;
+        courseResultDiv.innerHTML = `<p style="color:var(--danger);">查詢失敗：${err.message}</p>`;
       })
       .finally(() => {
         hideSpinnerGuard();
@@ -564,7 +576,7 @@ export function createCannedMessagesPanel(options = {}) {
         const chatResult = json.chat;
         if (chatResult && chatResult.chats && chatResult.portal) {
             const chatCards = chatResult.chats.map(chat => `
-                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid #e5e7eb;cursor:pointer;background:${chat.status==='open'?'#d1fae5':'#e5e7eb'};color:${chat.status==='open'?'#065f46':'#374151'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-2);cursor:pointer;background:${chat.status==='open'?'color-mix(in srgb, var(--success) 14%, white)':'var(--bg-soft)'};color:${chat.status==='open'?'var(--success)':'var(--fg-2)'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
                     ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
                 </div>
             `).join('');
@@ -576,7 +588,7 @@ export function createCannedMessagesPanel(options = {}) {
         }
     } catch (e) {
         if (e.name !== 'AbortError') {
-            courseResultDiv.innerHTML = `<p style="color:red;">查詢 chat 失敗：${e.message}</p>`;
+            courseResultDiv.innerHTML = `<p style="color:var(--danger);">查詢 chat 失敗：${e.message}</p>`;
         }
     }
 
@@ -910,7 +922,7 @@ export function createCannedMessagesPanel(options = {}) {
   makeDraggable(panel, dragHandle, {
     left: 1300,
     top: 75,
-    color: '#a2c6de',
+    color: 'accent', // 僅作 handle 主題 class 識別字；實際樣式為 --accent 系 color-mix 漸層（見 draggable.js）
     ...options
   });
 

@@ -47,7 +47,7 @@ const dtPanelHTML = `
                         </div>
                     </div>
                 </div>
-                <div class="DT_SON_BORDER" style="background: white;">
+                <div class="DT_SON_BORDER" style="background: var(--elevated);">
                     <div id="DT_devices">
                         <h3>使用設備</h3>
                         <div class="device-group">
@@ -111,7 +111,7 @@ const dtPanelHTML = `
                     <div class="spacer"></div>
                     <button type="button" id="dt-add-device-btn">新增設備</button>
                 </div>
-                <div class="DT_SON_BORDER" style="background: white;">
+                <div class="DT_SON_BORDER" style="background: var(--elevated);">
                     <div id="DT_connections">
                         <h3>網路連線</h3>
                         <div class="connection-group">

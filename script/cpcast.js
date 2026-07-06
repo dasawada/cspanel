@@ -26,7 +26,7 @@ function copyToClipboard(button, text, isDynamic = false, type = 'MGM名單') {
 
     // 按鈕變色呈現複製狀態
     var originalColor = button.style.backgroundColor; // 保存原始背景色
-    button.style.backgroundColor = '#4caf50'; // 設置為綠色
+    button.style.backgroundColor = 'var(--success)'; // 設置為綠色
 
     // 延遲恢復原始顏色
     setTimeout(function () {

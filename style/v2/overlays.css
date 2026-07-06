@@ -1,0 +1,74 @@
+/* ===== 登入列（fireworkeffect.js 注入的 DOM；樣式自 inline 收斂至此） ===== */
+#firebase-login-bar {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    z-index: 9999;
+}
+#firebase-login-bar-content {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: var(--glass-bg-hover);
+    backdrop-filter: blur(28px) saturate(1.8);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid var(--glass-border);
+    border-radius: 999px;
+    padding: 8px 16px;
+    box-shadow: var(--glass-shadow);
+    transition: background var(--spring), border-color 0.3s, box-shadow 0.3s, padding 0.3s;
+}
+#firebase-login-bar.logged-in #firebase-login-bar-content {
+    background: color-mix(in srgb, var(--success) 10%, rgba(255,255,255,0.82));
+    border-color: color-mix(in srgb, var(--success) 30%, var(--glass-border));
+    justify-content: center;
+    padding: 8px 12px;
+}
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+    #firebase-login-bar-content { background: rgba(252,253,250,0.97); }
+}
+#firebase-login-bar-status { flex: 1; color: var(--fg-2); font-size: 15px; }
+#firebase-login-bar input[type=email],
+#firebase-login-bar input[type=password] {
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 8px;
+    width: 110px;
+}
+#firebase-login-bar input[type=password] { width: 80px; }
+#firebase-login-bar-btn {
+    font-size: 18px;
+    color: var(--accent);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform var(--spring);
+}
+#firebase-login-bar-btn:hover { color: var(--accent-hover); }
+#firebase-login-bar-btn:active { transform: scale(0.92); }
+#firebase-logout-bar-btn {
+    display: flex;
+    font-size: 18px;
+    color: var(--muted);
+    cursor: pointer;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s;
+}
+#firebase-logout-bar-btn:hover { color: var(--danger); }
+#fw-theme-btn {
+    font-size: 15px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform var(--spring);
+}
+#fw-theme-btn:hover { color: var(--accent); }
+#fw-theme-btn:active { transform: scale(0.92); }
+.fw-status-ok { color: var(--success); }
+@media (prefers-reduced-motion: reduce) {
+    #firebase-login-bar-btn:active, #fw-theme-btn:active { transform: none; }
+}

@@ -206,7 +206,9 @@ function displayMeetings(meetings) {
 
                 const tagGroupDiv = document.createElement('div');
                 tagGroupDiv.className = 'tag-group';
-                tagGroupDiv.style.borderTop = '1px solid #ddd';
+                // 髮絲線改由 style/v2/features/all-meeting.css 的
+                // .tag-group { border-top: 1px solid var(--border); }
+                // 統一供色，移除內聯的原始灰（#ddd）以符合 token 化規範
 
                 if (tag === '無標籤') tagGroupDiv.classList.add('no-tag');
                 else if (tag === '短週期') tagGroupDiv.classList.add('short-cycle');

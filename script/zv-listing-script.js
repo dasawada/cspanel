@@ -50,7 +50,7 @@ function zvMettingListCopyToClipboard() {
     navigator.clipboard.writeText(outputTextarea.value).then(() => {
         // 更改按鈕樣式以提示複製成功
         const copyButton = document.getElementById('zv-metting-list-copy-btn');
-        copyButton.style.backgroundColor = '#4CAF50'; // 綠色
+        copyButton.style.backgroundColor = 'var(--success)'; // 綠色
         copyButton.style.color = 'white';
         copyButton.innerText = '已複製!';
 

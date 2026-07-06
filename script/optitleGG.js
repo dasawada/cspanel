@@ -16,22 +16,22 @@ const optitlePanelHTML = `
             <span class="optitle-text-form">[顧問</span>
             <label style="position: relative; display: inline-block; cursor: text;">
                 <input type="text" id="consultantName" name="consultantName" class="optitle-input" style="width: 70px;">
-                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">顧問姓名</span>
+                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none;">顧問姓名</span>
             </label>
             <span class="optitle-text-form">]</span>
             <label style="position: relative; display: inline-block; cursor: text;">
                 <input type="text" id="studentName" name="studentName" class="optitle-input" style="width: 70px;">
-                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">學生姓名</span>
+                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none;">學生姓名</span>
             </label>
             <span class="optitle-text-form">/</span>
             <label style="position: relative; display: inline-block; cursor: text;">
                 <input type="text" id="parentName" name="parentName" class="optitle-input" style="width: 70px;">
-                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">家長姓名</span>
+                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none;">家長姓名</span>
             </label>
             <span class="optitle-text-form">#</span>
             <label style="position: relative; display: inline-block; cursor: text;">
                 <input type="text" id="invoiceNumber" name="invoiceNumber" class="optitle-input" style="width: 70px;">
-                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: #999; pointer-events: none;">單號</span>
+                <span class="optitle-placeholder" style="position: absolute; right: 5px; top: 50%; transform: translateY(-50%); color: var(--muted); pointer-events: none;">單號</span>
             </label>
         </div>
     </form>
@@ -408,7 +408,7 @@ function search() {
       
       const consultantSpan = document.createElement('span');
       consultantSpan.textContent = foundRecord.consultant;
-      consultantSpan.className = 'green-gradient-text copyable-text';
+      consultantSpan.className = 'gl-chip--success copyable-text';
       consultantSpan.style.cursor = 'pointer';
       consultantSpan.title = '點我一下複製名字';
       consultantSpan.addEventListener('click', () => {
@@ -419,7 +419,7 @@ function search() {
       
       const leaderSpan = document.createElement('span');
       leaderSpan.textContent = foundRecord.teamLeader;
-      leaderSpan.className = 'yellow-gradient-text copyable-text';
+      leaderSpan.className = 'gl-chip--warning copyable-text';
       leaderSpan.style.cursor = 'pointer';
       leaderSpan.title = '點我一下複製名字';
       leaderSpan.addEventListener('click', () => {
