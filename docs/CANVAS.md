@@ -106,6 +106,15 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 `tools/parity-selectors.json` 的 `rects`／`zorder` 陣列後，重新 capture 覆蓋
 `tools/parity-baseline.json`，讓它從此納入回歸保護。
 
+**已知限制（zorder 驗收盲區）**：`tools/layout-parity.mjs` 的 `capture()` 對擷取到的 z 值用
+`Array.prototype.sort((p, q) => q.z - p.z)`（stable sort）排序後才寫入輸出；相同 z 值（即同帶內
+`zOrder` 相同，見第 4.2 節「tie 疊序」）的元素之間，排序結果只會照抄 `parity-selectors.json` 內
+`zorder` 陣列本身的原始順序，並不是量測當下瀏覽器實際的 DOM 疊序。也就是說：若某次改動把兩個
+tie 面板在 `manifest.panels[]` 內的相對位置互換（依第 4.2 節規則，這會讓實際畫面疊序跟著互換），
+只要沒有同時去改 `parity-selectors.json` 的 `zorder` 陣列順序，`compare()` 仍會回報 `PARITY OK`——
+harness 對「相同 z 值元素之間的疊序回歸」是盲區，這類變動需要人工開瀏覽器覆核，不能只看
+`PARITY OK` 就當作驗收通過。
+
 ---
 
 ## 3. 新增畫布 SOP
@@ -161,6 +170,14 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 
 帶內排序：面板間相對疊序 = `calc(var(--layer-panel) + manifest zOrder)`，由引擎在 `emitGeometry()` 寫入。
 
+**tie 疊序（相同 `zOrder`）**：兩個以上面板 `zOrder` 數值相同時，算出來的 z-index 也相同，實際畫面上
+誰蓋誰不是由引擎決定，而是瀏覽器對「z-index 相同」元素的預設規則——DOM 後出現者蓋過先出現者。面板
+根元素的 DOM 生成序，對有 `slot` 的面板來說等於 `buildSlots()` 依 `manifest.panels[]` 陣列順序建立插槽
+div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 = manifest `panels[]` 陣列順序（陣列中
+排在後面的蓋過排在前面的）**。`cs.js` 目前實際存在的兩組 tie：`meeting-shell`／`optitle`／
+`fudausearch`／`shrturl`（皆 `zOrder: 0`）、`consultant`／`tooldl`（皆 `zOrder: 3`）。要調整某個 tie 面板
+蓋過另一個，須調整它們在 `panels[]` 陣列中的相對位置，只改 `zOrder` 數值本身（不打破 tie）不會改變疊序。
+
 ### 4.3 白名單特例表（不受第 4.2 節管轄，逐項列出檔案與值）
 
 | 值 | 檔案:行 | 說明 |
@@ -178,7 +195,7 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 | `2` | `script/capsuleinput.js:84` | `.enhanced-clear-btn` 相對輸入框的局部值。 |
 | `900` | `style/v2/features/DT_CSS.css:15` | `.DTV_iframe`（DT_report 頁內部 iframe 遮擋修正），非畫布面板局部值。 |
 | `897` / `896` | `style/v2/features/all-meeting.css:13,60` | 會議搜尋框／結果清單的局部堆疊。 |
-| `1004` | `script/dragb_msg_pnl.js:76` | `.canned-panel-clear-btn` 相對 `.canned-panel` 內部子元素的局部值（`.canned-panel` 本身的全域 z-index 由 `zOrder:15` 供給，即 `calc(var(--layer-panel) + 15)`；此值只在該面板內部的 stacking context 生效，不影響跨面板比較）。 |
+| `1004` | `script/dragb_msg_pnl.js:76` | `.canned-panel-clear-btn` 相對 `.canned-panel` 內部子元素的局部值（`.canned-panel` 本身的全域 z-index 一律由 `zOrder:15` 供給，即 `calc(var(--layer-panel) + 15)`；模組注入的 `PANEL_CSS` 不再帶 `.canned-panel` 的 `z-index` 宣告——原本兩處同時宣告、數值恰好都是 15 的雙重權威已於審查中移除，`zOrder` 自此為唯一來源，同 `.DT_panel` 的處理方式。此 `1004` 值只在該面板內部的 stacking context 生效，不影響跨面板比較）。 |
 | `1000` | `script/toggle-panels.js:159` | `#generateReportButton` 表單提交鈕的局部堆疊值。 |
 
 ### 4.4 表面階層 → 配方對應表
@@ -235,10 +252,16 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 - **寫入**：拖曳結束（`makeDraggable` 的 `onPositionChange` 回呼）呼叫 `saveLayoutEntry(canvasId, panelId, pos)`，
   讀出整個既有物件、覆蓋該 `panelId` 一筆、`JSON.stringify` 整個寫回（非局部 patch，`localStorage.setItem`
   失敗時 `try/catch` 吞掉，不阻斷互動）。
-- **重設**（`resetLayout()`）：`localStorage.removeItem(LAYOUT_KEY(canvasId))` 刪掉整把存檔 → 逐一清空
+- **重設**（`resetLayout()`）：`localStorage.removeItem(LAYOUT_KEY(canvasId))` 刪掉整把存檔 →
+  同時 `localStorage.removeItem` 話術面板（canned）的舊版 per-panel key
+  `` `draggable:${location.pathname}:canned-panel-main` ``（見下方「舊格式一次性遷移」段落），
+  讓「重設」對 canned 也真正生效，不再留下舊 key 讓下次遷移邏輯復活過期座標 → 逐一清空
   每個可拖曳面板的 inline `left`/`top` → （`prefers-reduced-motion: reduce` 時跳過）套用
   `transition: left 0.4s cubic-bezier(0.22,1,0.36,1), top 0.4s cubic-bezier(0.22,1,0.36,1)` 動畫回彈 →
-  `emitGeometry(manifest, {})` 以空 layout 重新套用純 manifest 預設值。
+  `emitGeometry(manifest, {})` 以空 layout 重新套用純 manifest 預設值。**已知行為**：`canned` 面板
+  本身不在 `panelRoots()` 清單內（`alwaysDraggable: true` 被排除），`resetLayout()` 不會動它目前的
+  inline `left`/`top`（那由 `draggable.js` 自己在面板存續期間主導），所以刪 key 這一步在畫面上**不會
+  立即**移動 canned；要等下次 `loadCanvas()`（頁面重新載入）才會依清空後的狀態套用預設座標。
 - **話術面板（canned）舊格式一次性遷移**：`canned` 面板原本用 `draggable.js` 自己的 per-panel key
   `` `draggable:${location.pathname}:canned-panel-main` ``（`quirks: ['self-persisted']`）。`loadCanvas()`
   第一次執行時，若該畫布的統一 layout 尚無 `canned` 這筆記錄，就讀取舊 key、`saveLayoutEntry` 轉存成新格式
