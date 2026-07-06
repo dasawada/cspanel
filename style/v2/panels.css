@@ -297,7 +297,7 @@ a.no-nth-child {
 #results-modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -415,7 +415,7 @@ a.no-nth-child {
 #zv-metting-list-results-modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -508,7 +508,7 @@ a.no-nth-child {
 #vvgglesht_modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;

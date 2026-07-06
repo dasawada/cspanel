@@ -5,7 +5,7 @@ export async function loadLoginPanel() {
       position: fixed;
       left: 20px;
       bottom: 20px;
-      z-index: 10000;
+      z-index: var(--layer-toast);
       display: flex;
       flex-direction: column-reverse;
       gap: 8px;
