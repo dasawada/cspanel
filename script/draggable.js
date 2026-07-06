@@ -334,6 +334,10 @@ export function makeDraggable(panel, handle, options = {}) {
         dragOverlay.remove();
         dragOverlay = null;
     }
+
+    // 停止 DOM 移除觀察器（cleanup 由外部呼叫時 observer 仍在觀察整個 body，
+    // 不 disconnect 會在編輯模式反覆進出時累積 observer）
+    observer.disconnect();
   }
 
   // 在元素被移除時執行清理
