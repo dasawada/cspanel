@@ -45,67 +45,8 @@
     border-radius: 0 0 0 10px;
     padding: 5px; /* 可選，增加內邊距 */
 }
-.panel_all_container {
-    position: relative;  /* 確保作為定位上下文 */
-    width: 100%;
-    height: 100vh;      /* 確保容器有足夠高度 */
-    min-height: 800px;  /* 確保最小高度足夠 */
-    overflow: visible;   /* 允許內容溢出 */
-    box-sizing: border-box;
-    margin: 0;
-    padding: 10px;
-    gap: 10px; /* 定義列和行之間的間距 */
-    height: auto; /* 自動高度 */
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 確保容器為相對定位 */
-    left: 0px;
-    top:  0px;
-    border: 10px;
-    padding: 10px;
-    margin:10px;
-}
 .roofbutton {
-    width: 110px;
-    height: auto;
-    font-size: 12px;
     color: var(--fg-2);
-    padding: 10px;
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 確保容器為相對定位 */
-    left: 0px;
-    top: 240px;
-    gap: 10px;
-    display: flex;
-    flex-wrap: nowrap;
-    flex-direction: column;
-    z-index: 996;
-}
-.tool_zip_dl {
-    color: var(--fg-2);
-    padding: 5px 10px 5px 10px;
-    box-sizing: border-box;
-    position: absolute;  /* 正確的定位方式 */
-    left: 1290px;  /* 更改位置對齊 linkout */
-    top: 0px;   /* 與 roofbutton 同高 */
-    z-index: 993; /* 添加合適的 z-index */
-}
-.optitlepanel {
-    padding: 10px;
-    width: 400px;
-    height: 120px;
-    box-sizing: border-box;
-    position: absolute;
-    top: 0px;
-    left: 0px;
-}
-
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,.IPsearch_in_panelALL,.assist_googlesheet {
-    display: flex;
-    flex-direction: column;
-    position: absolute;  /* 改為 absolute 以確保定位一致 */
-    transition: all 0.3s ease;
-    box-sizing: border-box;
-    overflow: hidden;
 }
 
 .toggle-container label {
@@ -123,134 +64,11 @@
     border-color: color-mix(in srgb, var(--accent) 35%, var(--glass-border));
 }
 
-.small-size {
-    position: absolute !important;
-    width: 105px !important;
-    height: 30px !important;
-    min-width: 0px !important;
-    flex-basis: 110px !important;
-    overflow: hidden !important;
-    z-index: 1000;
-}
-
-.idsearchpanel:not(.small-size) {
-    width: 560px;
-    height: 600px;
-}
-
-.consultantlistgooglesheet:not(.small-size) {
-    width: 950px;
-    height: 700px;
-}
-
-.ClassLogpanel:not(.small-size) {
-    width: 560px;
-    height: 700px;
-}
-
-.DT_panel:not(.small-size) {
-    width: 900px;    /* 確保與 DT_CSS.css 一致 */
-    height: auto;
-    overflow: visible;
-    z-index: 994;
-}
-
-.assist_googlesheet:not(.small-size) {
-    width: 800px;
-    height: 600px;
-}
-
-.idsearchpanel {
-    width: 560px;
-    height: 600px;
-    z-index: 998;
-    left: 0px;
-    top: 260px;
-    position: absolute; /* 改為 absolute 而不是 fixed */
-}
-.ClassLogpanel {
-    width: 560px;
-    height: 700px;
-    z-index: 997;
-    position: fixed;
-    left: 0px;
-    top: 300px;
-}
-
-.assist_googlesheet {
-    position: absolute; 
-    z-index: 1000; 
-    top: 0px;
-    left: 410px; /* 根據需要調整 */
-    height:600px;
-    width: 800px;
-    vertical-align: middle; /* 垂直對齊方式 */
-}
-
-.DT_panel {
-    position: absolute;
-    top: 0;
-    left: 523px;
-    z-index: 994 !important;
-    transition: all 0.3s ease;
-}
-
-.consultantlistgooglesheet {
-    position: absolute; 
-    height: 700px;
-    width: 950px;
-    right: 20px; /* 緊貼右側 */
-    z-index: 993;
-    top: 0px;
-    left: 636px;
-}
-
-.IPsearch_in_panelALL {
-    top: 240px;
-    left: 115px;
-    display: flex;                 /* 使用 Flexbox */
-    flex-direction: column;        /* 垂直排列 */
-    justify-content: normal;/* 子元素在垂直方向上均匀分布 */
-    align-items: flex-start;       /* 子元素靠左对齐 */
-    padding: 0px 6px 0px 6px;      /* 内边距 */
-    z-index: 996;
-    min-height: 42px;              /* 设置初始最小高度 */
-    width: 285px;                  /* 固定宽度 */
-    overflow: hidden;              /* 控制内容溢出 */
-    position: absolute;
-    height: auto;
-}
-
-
-.linkout {
-    padding: 5px 8px; 
-    height: auto; /* 固定高度 */
-    width: auto;
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 固定位置 */
-    top: 40px;
-    left: 420px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: flex-start;
-}
 .input-container,
 #shortUrlContainer {
     display: flex;
     align-items: center;
     justify-content: center;
-}
-.appicon {
-    background: transparent;
-    padding: 10px;
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-}
-.temp2 {
-    grid-column: 2 / 3;
-    grid-row: 1 / 2;
-    padding: 20px;
-    box-sizing: border-box; 
 }
 /* 檔次提示語樣式 */
 #copyMessage {
@@ -310,17 +128,6 @@
     font-size: 13px;
     color: var(--fg-2);
     transition: transform 0.1s ease, opacity 0.1s ease;
-}
-.board {
-    padding: 3px;
-    box-sizing: border-box; /* 確保內邊距不影響總寬度 */
-    position: absolute; /* 固定位置 */
-    z-index: 900;
-    width: 870px;
-    height: 600px;
-    left: 0px;
-    top: 410px;
-    transition: width 0.3s ease, height 0.3s ease;
 }
 .meeting-now-search{
     padding: 10px; 
@@ -399,51 +206,6 @@
 
 .copyable-text {
     cursor: pointer;
-}
-
-#excalidraw-container {
-    width: 100%;
-    height: 100%;
-}
-
-/* 自定义 zoom-actions 位置 */
-.layer-ui__wrapper__footer-left {
-    position: absolute;
-    top: -560px; /* 根据需要调整 */
-    left: 630px; /* 根据需要调整 */
-}
-/* 自定义形状工具栏位置 */
-.shapes-section {
-    position: relative;
-    right: 100px; /* 根据需要调整 */
-}
-.App-menu_top__left {
-    position: relative;
-    left: -10px;
-}
-.App-menu_top {
-    position: relative;
-    top: -15px;
-}
-/* 隐藏其他不需要的按钮 */
-.App-toolbar__divider,
-.App-toolbar__extra-tools-trigger,
-.sidebar-trigger,
-.dropdown-menu-item[title="開啟"],
-.dropdown-menu-group,
-.dropdown-menu-item[title="說明"],
-.dropdown-menu-item[title="深色模式"],
-.help-icon,
-.dropdown-menu-item[title="儲存至..."] {
-    display: none !important;
-}
-
-.meeting-search-panel-menu {
-    height: auto;
-    width: 360px;
-    position: absolute; /* 確保容器為相對定位 */
-    left: 920px;
-    top:  0px;
 }
 
 nav {
@@ -535,7 +297,7 @@ a.no-nth-child {
 #results-modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -653,7 +415,7 @@ a.no-nth-child {
 #zv-metting-list-results-modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -746,7 +508,7 @@ a.no-nth-child {
 #vvgglesht_modal {
     display: none;
     position: fixed;
-    z-index: 999691;
+    z-index: var(--layer-modal);
     left: 0;
     top: 0;
     width: 100%;
@@ -800,14 +562,8 @@ a.no-nth-child {
 
 /* 容器樣式 */
 .fudausearch-container {
-    width: 400px;
-    height: 105px;
     font-size: 12px;
     color: var(--fg-2);
-    padding: 10px 5px 10px 5px;
-    box-sizing: border-box;
-    position: absolute;
-    gap: 10px;
 }
 
 /* backdrop-filter 會建立新的 stacking context，導致 .fudausearch-suggestions
@@ -815,13 +571,12 @@ a.no-nth-child {
    離開即自動還原。hover 一併提升：建議項 div 不可聚焦，滑鼠 mousedown 會先
    blur 容器，僅靠 :focus-within 會在點擊完成前掉回下層 */
 .fudausearch-container:hover,
-.fudausearch-container:focus-within { z-index: 1200; }
+.fudausearch-container:focus-within { z-index: var(--layer-panel-active); }
 
 /* 建議選單樣式 */
 .fudausearch-suggestions {
     position: absolute;
     top: 100%;
-    left: 4;
     width: 90%;
     background-color: var(--elevated);
     border: 1px solid var(--border-2);
@@ -845,16 +600,10 @@ a.no-nth-child {
 
 /* 新的panel tabs樣式 */
 .panel-tabs-container {
-    position: absolute;
-    left: 410px;
-    top: 160px;
-    width: 500px;
-    height: 600px;
     background-color: transparent;
     padding: 0;
     border: none;
     box-shadow: none;
-    z-index: 800;
 }
 
 .panel-tabs {

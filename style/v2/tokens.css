@@ -51,4 +51,12 @@
   --radius-md: 12px;
   --radius-sm: 8px;
   --spring: 0.35s cubic-bezier(0.34, 1.3, 0.64, 1);
+
+  /* 疊層層帶（z-index 只准引用層帶；帶內排序由 manifest z 提供） */
+  --layer-panel: 100;         /* 面板本體 */
+  --layer-panel-active: 200;  /* 互動中浮起（拖曳、focus-within 提升） */
+  --layer-dropdown: 300;      /* 下拉/建議/tooltip portal */
+  --layer-bar: 400;           /* 登入列等常駐 chrome */
+  --layer-modal: 500;         /* modal 與 scrim */
+  --layer-toast: 600;         /* toast */
 }

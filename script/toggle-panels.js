@@ -7,7 +7,7 @@ let reportWindow = null;
 
 // 測試模板 HTML
 const dtPanelHTML = `
-<div class="DT_panel small-size" style="z-index: 0;">
+<div class="DT_panel small-size">
     <div class="toggle-container">
         <input type="checkbox" id="DT_toggleCheckbox">
         <label for="DT_toggleCheckbox">🛠️測試模板</label>

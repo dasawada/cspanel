@@ -1,0 +1,14 @@
+{
+  "rects": [
+    ".roofbutton", ".tool_zip_dl", ".optitlepanel", ".fudausearch-container",
+    ".linkout", ".DT_panel", ".consultantlistgooglesheet", ".assist_googlesheet",
+    ".meeting-search-panel-menu", ".canned-panel", ".panel_all_container",
+    "#firebase-login-bar", ".update-header"
+  ],
+  "zorder": [
+    ".canned-panel", ".assist_googlesheet", ".DT_panel", ".consultantlistgooglesheet",
+    ".tool_zip_dl", ".roofbutton", ".optitlepanel", ".fudausearch-container",
+    ".linkout", ".meeting-search-panel-menu", "#firebase-login-bar"
+  ],
+  "note": "伺服器注入元素（.idsearchpanel/.ClassLogpanel/.IPsearch_in_panelALL/.panel-tabs-container）需登入取得，不在自動 harness 內；其幾何值以 manifest 逐字搬運 + Task 8 人工驗收覆蓋"
+}

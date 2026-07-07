@@ -15,7 +15,6 @@ const PANEL_CSS = `
   border-radius: 10px;
   margin: 0;
   margin-bottom: 20px;
-  z-index: 1005;
   will-change: transform;
   width: 400px;
   min-width: 350px;

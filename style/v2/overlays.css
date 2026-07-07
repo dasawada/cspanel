@@ -3,7 +3,7 @@
     position: fixed;
     right: 20px;
     bottom: 20px;
-    z-index: 9999;
+    z-index: var(--layer-bar);
 }
 #firebase-login-bar-content {
     display: flex;
@@ -68,7 +68,18 @@
 }
 #fw-theme-btn:hover { color: var(--accent); }
 #fw-theme-btn:active { transform: scale(0.92); }
+#fw-edit-btn {
+    font-size: 15px;
+    color: var(--muted);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: color 0.15s, transform var(--spring);
+}
+#fw-edit-btn:hover { color: var(--accent); }
+#fw-edit-btn:active { transform: scale(0.92); }
 .fw-status-ok { color: var(--success); }
 @media (prefers-reduced-motion: reduce) {
-    #firebase-login-bar-btn:active, #fw-theme-btn:active { transform: none; }
+    #firebase-login-bar-btn:active, #fw-theme-btn:active, #fw-edit-btn:active { transform: none; }
 }

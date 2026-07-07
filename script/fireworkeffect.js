@@ -5,7 +5,7 @@ export async function loadLoginPanel() {
       position: fixed;
       left: 20px;
       bottom: 20px;
-      z-index: 10000;
+      z-index: var(--layer-toast);
       display: flex;
       flex-direction: column-reverse;
       gap: 8px;
@@ -108,6 +108,7 @@ export async function loadLoginPanel() {
           <i id="firebase-login-bar-btn" class="fa-solid fa-play" role="button" tabindex="0" aria-label="登入"></i>
           <i id="firebase-logout-bar-btn" class="fa-solid fa-right-to-bracket" style="display:none;" role="button" tabindex="0" aria-label="登出"></i>
           <i id="fw-theme-btn" class="fa-solid fa-palette" style="display:none;" role="button" tabindex="0" aria-label="配色主題" title="配色主題"></i>
+          <i id="fw-edit-btn" class="fa-solid fa-up-down-left-right" style="display:none;" role="button" tabindex="0" aria-label="編排佈局" title="編排佈局"></i>
         </div>
       </form>
     </div>
@@ -123,6 +124,17 @@ export async function loadLoginPanel() {
       if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         window.CspanelTheme && window.CspanelTheme.openPicker();
+      }
+    });
+  }
+
+  const editBtn = document.getElementById('fw-edit-btn');
+  if (editBtn) {
+    editBtn.addEventListener('click', () => { window.CanvasEdit && window.CanvasEdit.toggle(); });
+    editBtn.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        window.CanvasEdit && window.CanvasEdit.toggle();
       }
     });
   }
@@ -167,6 +179,7 @@ export async function loadLoginPanel() {
     const loginBtn = document.getElementById('firebase-login-bar-btn');
     const logoutBtn = document.getElementById('firebase-logout-bar-btn');
     const themeBtn = document.getElementById('fw-theme-btn');
+    const editBtn = document.getElementById('fw-edit-btn');
     const statusMsg = document.getElementById('firebase-login-bar-message');
     if (!bar || !barContent) return;
     bar.classList.toggle('logged-in', !!isLoggedIn);
@@ -176,6 +189,7 @@ export async function loadLoginPanel() {
       loginBtn.style.display = 'none';
       logoutBtn.style.display = '';
       if (themeBtn) themeBtn.style.display = '';
+      if (editBtn) editBtn.style.display = '';
       statusMsg.innerHTML = '<i class="fa-solid fa-circle-check fw-status-ok"></i>';
       statusMsg.style.display = '';
       barStatus.style.display = '';
@@ -186,6 +200,7 @@ export async function loadLoginPanel() {
       loginBtn.style.display = '';
       logoutBtn.style.display = 'none';
       if (themeBtn) themeBtn.style.display = 'none';
+      if (editBtn) editBtn.style.display = 'none';
       statusMsg.style.display = 'none';
       barStatus.style.display = 'none';
       barStatus.style.flex = '0';

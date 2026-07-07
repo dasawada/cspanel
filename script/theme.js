@@ -121,7 +121,7 @@
     const s = document.createElement('style');
     s.id = 'tk-theme-style';
     s.textContent = `
-      .tk-theme-modal{ position:fixed; inset:0; z-index:99990; display:none; align-items:center; justify-content:center; padding:16px; background:rgba(18,22,26,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+      .tk-theme-modal{ position:fixed; inset:0; z-index:calc(var(--layer-modal) + 10); display:none; align-items:center; justify-content:center; padding:16px; background:rgba(18,22,26,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
       .tk-theme-modal.open{ display:flex; animation:tkfade .2s ease; }
       @keyframes tkfade{ from{ opacity:0 } }
       .tk-theme-panel{ width:min(920px,100%); max-height:88vh; display:flex; flex-direction:column; font-family:var(--sans, system-ui, sans-serif); color:var(--fg,#1d1d1f);

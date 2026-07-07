@@ -299,7 +299,7 @@
     max-width: 320px;
     min-width: 120px;
     text-align: left;
-    z-index: 10000;
+    z-index: var(--layer-dropdown);
     pointer-events: none;
     opacity: 0;
     transform: translateY(-4px);

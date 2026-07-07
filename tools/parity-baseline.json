@@ -1,0 +1,95 @@
+{
+  "rects": {
+    ".roofbutton": {
+      "x": 18,
+      "y": 258,
+      "w": 110,
+      "h": 162
+    },
+    ".tool_zip_dl": {
+      "x": 1308,
+      "y": 18,
+      "w": 277.3125,
+      "h": 58.5
+    },
+    ".optitlepanel": {
+      "x": 18,
+      "y": 18,
+      "w": 400,
+      "h": 120
+    },
+    ".fudausearch-container": {
+      "x": 18,
+      "y": 148,
+      "w": 400,
+      "h": 105
+    },
+    ".linkout": {
+      "x": 438,
+      "y": 58,
+      "w": 309,
+      "h": 106.5
+    },
+    ".DT_panel": {
+      "x": 541,
+      "y": 18,
+      "w": 105,
+      "h": 30
+    },
+    ".consultantlistgooglesheet": {
+      "x": 654,
+      "y": 18,
+      "w": 105,
+      "h": 30
+    },
+    ".assist_googlesheet": {
+      "x": 428,
+      "y": 18,
+      "w": 105,
+      "h": 30
+    },
+    ".meeting-search-panel-menu": {
+      "x": 938,
+      "y": 18,
+      "w": 360,
+      "h": 40
+    },
+    ".canned-panel": {
+      "x": 1308,
+      "y": 83,
+      "w": 402,
+      "h": 326
+    },
+    ".panel_all_container": {
+      "x": 18,
+      "y": 18,
+      "w": 1784,
+      "h": 800
+    },
+    "#firebase-login-bar": {
+      "x": 1666.4375,
+      "y": 1131,
+      "w": 113.5625,
+      "h": 49
+    },
+    ".update-header": {
+      "x": 1645.359375,
+      "y": 0,
+      "w": 154.640625,
+      "h": 27
+    }
+  },
+  "zorder": [
+    "#firebase-login-bar",
+    ".canned-panel",
+    ".assist_googlesheet",
+    ".roofbutton",
+    ".DT_panel",
+    ".consultantlistgooglesheet",
+    ".tool_zip_dl",
+    ".optitlepanel",
+    ".fudausearch-container",
+    ".linkout",
+    ".meeting-search-panel-menu"
+  ]
+}
