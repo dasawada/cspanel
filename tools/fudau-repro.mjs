@@ -23,8 +23,10 @@ await page.waitForFunction(() => !!window.__snap, { timeout: 10000 });
 const snap = await page.evaluate(() => window.__snap);
 await browser.close();
 
-const ok = snap.containers === 1 && snap.dragHandles === 1;
-console.log(`snap = ${JSON.stringify(snap)}  (expected {containers:1, dragHandles:1})`);
+const ok = snap.containers === 1 && snap.dragHandles === 1
+  && snap.hasInput && snap.hasResults && snap.dispatchOk;
+console.log(`snap = ${JSON.stringify(snap)}`);
+console.log('expected: containers:1, dragHandles:1, hasInput:true, hasResults:true, dispatchOk:true');
 if (errors.length) console.log('pageerror:', errors.join(' | '));
 if (!ok) { console.error('FUDAU REPRO FAIL'); process.exit(1); }
 console.log('FUDAU REPRO OK');

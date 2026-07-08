@@ -133,27 +133,52 @@ assert(s.length === 1, `1 window after merge (got ${s.length})`);
 assert(s[0].tabs.includes('courselog') && s[0].tabs.length === 4, `merged window has 4 tabs (${JSON.stringify(s[0].tabs)})`);
 assert((await loadSum()) === base, `no reload on merge (delta ${await loadSum() - base})`);
 
-console.log('— 同視窗重排（把 naniclub 拖到最右）—');
-const before = (await snapshot())[0].tabs.slice();
+console.log('— 同視窗重排：精確落點（off-by-one 防護，審查 #2）—');
+// 先 reset 取乾淨預設序 [naniclub,classlog,courselog,tools]
+await page.evaluate(() => window.WindowManager.reset());
+await page.waitForTimeout(150);
+// 拖 naniclub 到 courselog 左半 → 應插在 classlog 與 courselog「之間」，不是之後
 from = await tabCenter(0, 'naniclub');
+const dropLeftOfCourse = await page.evaluate(() => {
+  const t = document.querySelector('.wm-window .wm-tab[data-tab="courselog"]').getBoundingClientRect();
+  return { x: t.left + t.width * 0.25, y: t.top + t.height / 2 };
+});
+await drag(from, dropLeftOfCourse);
+let ord = (await snapshot())[0].tabs;
+assert(JSON.stringify(ord) === JSON.stringify(['classlog', 'naniclub', 'courselog', 'tools']),
+  `mid 重排精確落點 = ${JSON.stringify(ord)}`);
+// 拖到最右端 → 落在最後
+from = await tabCenter(0, 'classlog');
 const barRight = await page.evaluate(() => {
   const bar = document.querySelector('.wm-window .wm-tabbar').getBoundingClientRect();
   return { x: bar.right - 6, y: bar.top + bar.height / 2 };
 });
 await drag(from, barRight);
-const after = (await snapshot())[0].tabs.slice();
-assert(JSON.stringify(after) !== JSON.stringify(before), `order changed ${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
-assert(after.length === 4 && new Set(after).size === 4, `still 4 unique tabs after reorder`);
+ord = (await snapshot())[0].tabs;
+assert(ord[ord.length - 1] === 'classlog' && ord.length === 4 && new Set(ord).size === 4,
+  `末端重排 = ${JSON.stringify(ord)}`);
 
-console.log('— 持久化：撕離後重載還原 —');
+console.log('— 持久化：撕離後重載還原（含幾何 x/y/w/h，非只拓樸）—');
 from = await tabCenter(0, 'tools');
 await drag(from, { x: 1300, y: 300 });
-assert((await snapshot()).length === 2, `2 windows before reload`);
+const pre = await snapshot();
+assert(pre.length === 2, `2 windows before reload`);
+const tornPre = pre.find((w) => w.tabs.length === 1 && w.tabs[0] === 'tools');
+assert(!!tornPre, `torn 'tools' window exists before reload`);
 await page.reload();
 await ready();
 s = await snapshot();
 assert(s.length === 2, `2 windows restored after reload (got ${s.length})`);
-assert(s.some((w) => w.tabs.length === 1 && w.tabs[0] === 'tools'), `torn 'tools' window restored`);
+const tornPost = s.find((w) => w.tabs.length === 1 && w.tabs[0] === 'tools');
+assert(!!tornPost, `torn 'tools' window restored`);
+if (tornPre && tornPost) {
+  const dx = Math.abs(tornPre.rect.x - tornPost.rect.x);
+  const dy = Math.abs(tornPre.rect.y - tornPost.rect.y);
+  const dw = Math.abs(tornPre.rect.w - tornPost.rect.w);
+  const dh = Math.abs(tornPre.rect.h - tornPost.rect.h);
+  assert(dx <= 2 && dy <= 2 && dw <= 2 && dh <= 2,
+    `torn window 幾何跨 reload 還原(≤2px): pre=${JSON.stringify(tornPre.rect)} post=${JSON.stringify(tornPost.rect)}`);
+}
 
 console.log('— 重設回預設 —');
 await page.evaluate(() => window.WindowManager.reset());

@@ -367,6 +367,12 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
   同步監聽。
 - 拆除：登出 `clearProtectedTabs` → `windowManager.destroy()`（中斷進行中拖曳、移除全域監聽、移除池/視窗層、
   清 `window.WindowManager`）→ 清空 placeholder。
+- **併發防護（審查 #1）**：`initProtectedTabs` 帶 in-flight 旗標。canvas-engine 有兩個各自呼叫
+  `initAllModules` 的觸發點（`checkExistingAuth` 與 `firework-login-success` 監聽器），已登入 refresh 時可能
+  「併發」雙呼叫 `initProtectedTabs`；若不擋，兩條 `fetchProtectedContentWithRetry` 各自
+  `innerHTML→(await import)→mount/destroy` 交錯，第二輪的 `destroy` 會把第一輪剛搬入常駐池的 iframe 連池
+  一起銷毀，最壞落到「分頁整組消失」的空白終態。旗標保證同一時刻只跑一輪 init（登出→再登入屬「循序」
+  重入，旗標已歸零，不受影響）。回歸：`tools/wm-concurrent-test.mjs`。
 - **`.panel-tabs-container` 不再是普通可拖面板**（它變成初始視窗的幾何來源後即被移除）——**不要**把它加進
   manifest 的 `rootSelector`/`behaviors`；其 `sharedGeometryCss` 幾何**保留**，作為初始視窗位置的來源。
 
@@ -392,3 +398,11 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
    交棒 + 登出拆除；`canvas-engine.js` `resetLayout` 委派 `WindowManager.reset()`；`panel_all.html` 加
    `window-manager.css`。伺服器面板 parity harness 測不到，改用真實 markup fixture（`tools/wm-fixture.html`
    + `tools/wm-test.mjs`）+ 使用者真登入實測驗收。
+6. **whole-branch 對抗式審查修正**（審查後回圈，7 項確認缺陷全數修復並補回歸）：
+   (#1, high) `initProtectedTabs` 併發雙初始化會弄消失分頁 → 加 in-flight 守衛（第 7.5 節）+
+   `tools/wm-concurrent-test.mjs`；(#2, med) 同視窗 tab 向右重排 off-by-one → 移除被拖 tab 後補償插入索引
+   + wm-test 精確落點斷言；(#3, med) fudau-repro 未覆蓋重登入循環 → 擴充多輪 clear→init + input dispatch；
+   (#4, low) `tabBarAt` 取陣列首個命中而非最上層 → 改取 z 最大；(#5, low) `readContainerRect` 的
+   `|| fallback` 誤判合法 0 座標 → 改 `Number.isFinite`/正值判斷；(#6, low) 攔截器用新閉包
+   `removeEventListener`（no-op）致累積 → 改卸「舊」`currentInterceptor` 參照；(#7, low) wm-test 持久化未驗
+   幾何 → 加 x/y/w/h 跨 reload 還原斷言。

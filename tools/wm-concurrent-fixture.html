@@ -1,0 +1,52 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">
+<title>window-manager 併發 init fixture（審查 #1 回歸）</title>
+<!--
+  重現「已登入 refresh 時 checkExistingAuth 與 firework-login-success 併發雙呼叫
+  initProtectedTabs」：無 in-flight 守衛時，兩條 fetch 各自 innerHTML→mount/destroy
+  交錯，第二輪 destroy 會把第一輪剛搬入常駐池的 iframe 連池一起銷毀 → 分頁整組消失。
+  用 tools/wm-concurrent-test.mjs 跑。stub fetch/firebase 以脫離真實後端。
+-->
+<link rel="stylesheet" href="/style/v2/tokens.css">
+<link rel="stylesheet" href="/style/v2/window-manager.css">
+<style>
+  html, body { margin: 0; height: 100%; }
+  .panel_all_container { position: absolute; left: 0; top: 0; width: 100%; height: 100vh; }
+  .panel-tabs-container { position: absolute; left: 410px; top: 160px; width: 500px; height: 600px; }
+  .panel-tab-content { display: none; }
+</style>
+</head><body>
+<div class="panel_all_container">
+  <div id="auth-protected-tabs-placeholder"></div>
+  <div id="auth-protected-ip-placeholder"></div>
+</div>
+<script type="module">
+  import { initProtectedTabs } from '/script/auth-protected-tabs.js';
+  localStorage.removeItem('cspanel.windows.cs.v1');
+  const TABS_HTML = `<div class="panel-tabs-container"><div class="panel-tabs">
+    <input type="radio" id="panel-tab-naniclub" name="panel-tab" checked>
+    <label for="panel-tab-naniclub">🗝️帳號搜尋</label>
+    <div class="panel-tab-content"><iframe src="/tools/wm-iframe-stub.html?tab=naniclub"></iframe></div>
+    <input type="radio" name="panel-tab" id="panel-tab-classlog">
+    <label for="panel-tab-classlog">📊教室LOG</label>
+    <div class="panel-tab-content"><iframe src="/tools/wm-iframe-stub.html?tab=classlog"></iframe></div>
+    <input type="radio" name="panel-tab" id="panel-tab-courselog">
+    <label for="panel-tab-courselog">📝課程日誌</label>
+    <div class="panel-tab-content"><iframe src="/tools/wm-iframe-stub.html?tab=courselog"></iframe></div>
+    <input type="radio" name="panel-tab" id="panel-tab-tools">
+    <label for="panel-tab-tools">🚀快捷貼圖</label>
+    <div class="panel-tab-content"><div class="appicon">tools</div></div>
+  </div></div>`;
+  // 計數 fetch：有 in-flight 守衛 → 第二個併發 init 在 fetch 前就 return → 只 fetch 一次；
+  // 無守衛 → 兩次（且可能雙掛載互相銷毀）。故 __fetchCount===1 即守衛生效的硬證據。
+  window.__fetchCount = 0;
+  window.fetch = async () => {
+    window.__fetchCount++;
+    return { status: 200, ok: true, json: async () => ({ success: true, tabsHTML: TABS_HTML }) };
+  };
+  const fakeUser = { getIdToken: async () => 'stub-token' };
+  window.firebase = { auth: () => ({ currentUser: fakeUser }) };
+  window.verifyFireworkAuth = async () => true;
+  // 併發雙初始化
+  Promise.all([initProtectedTabs(), initProtectedTabs()]).then(() => { window.__concurrentDone = true; });
+</script>
+</body></html>

@@ -357,21 +357,24 @@ export function mountWindowManager(host, opts = {}) {
   // 命中哪個視窗的 tab 列，以及插入索引（用已知 tab 列 rect 幾何命中，不用
   // elementFromPoint——shield 蓋在最上層會攔截 elementFromPoint）。
   function tabBarAt(x, y) {
+    let best = null;
     for (const win of windows) {
       const bar = win.el && win.el.querySelector('.wm-tabbar');
       if (!bar) continue;
       const r = bar.getBoundingClientRect();
-      if (x >= r.left && x <= r.right && y >= r.top && y <= r.bottom) {
-        const tabs = [...bar.querySelectorAll('.wm-tab')];
-        let index = tabs.length;
-        for (let i = 0; i < tabs.length; i++) {
-          const tr = tabs[i].getBoundingClientRect();
-          if (x < tr.left + tr.width / 2) { index = i; break; }
-        }
-        return { win, index };
+      if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
+      // tab 列在畫面上重疊時，取「最上層」（z 最大）的視窗才與使用者所見一致，
+      // 不是陣列順序的第一個命中者（審查 #4）。
+      if (best && win.z <= best.win.z) continue;
+      const tabs = [...bar.querySelectorAll('.wm-tab')];
+      let index = tabs.length;
+      for (let i = 0; i < tabs.length; i++) {
+        const tr = tabs[i].getBoundingClientRect();
+        if (x < tr.left + tr.width / 2) { index = i; break; }
       }
+      best = { win, index };
     }
-    return null;
+    return best;
   }
 
   function applyTabDrop(srcWin, tabId, ev) {
@@ -379,9 +382,14 @@ export function mountWindowManager(host, opts = {}) {
     const clamp = (i, lo, hi) => Math.max(lo, Math.min(hi, i));
 
     if (target && target.win === srcWin) {
-      // 同視窗內重排
+      // 同視窗內重排。target.index 是在「仍含被拖 tab」的 tab 列上算出的；移除被拖
+      // tab 後其原位置之後的索引全部左移一格，故若原索引 < target.index 需 -1 補償，
+      // 否則向右重排到中段會多插一格（審查 #2；左移與拖到最尾 clamp 不受影響）。
+      const origIdx = srcWin.tabs.indexOf(tabId);
+      let idx = target.index;
+      if (origIdx !== -1 && origIdx < idx) idx -= 1;
       srcWin.tabs = srcWin.tabs.filter((t) => t !== tabId);
-      srcWin.tabs.splice(clamp(target.index, 0, srcWin.tabs.length), 0, tabId);
+      srcWin.tabs.splice(clamp(idx, 0, srcWin.tabs.length), 0, tabId);
       srcWin.active = tabId;
     } else if (target) {
       // 合併到別的視窗
@@ -470,10 +478,14 @@ function readContainerRect(el) {
   const cbEl = document.querySelector('.panel_all_container') || el.offsetParent || document.body;
   const cb = cbEl.getBoundingClientRect();
   const r = el.getBoundingClientRect();
+  // 用有限性/正值判斷，讓合法的 0 座標通過（審查 #5）——`top:0`／`left:0` 是重排
+  // 常見值，若用 `0 || 160` 會被誤判成缺值而靜默替換成硬編碼預設造成偏移。
+  const x = Math.round(r.left - cb.left);
+  const y = Math.round(r.top - cb.top);
   return {
-    x: Math.round(r.left - cb.left) || 410,
-    y: Math.round(r.top - cb.top) || 160,
-    w: Math.round(r.width) || 500,
-    h: Math.round(r.height) || 600,
+    x: Number.isFinite(x) ? x : 410,
+    y: Number.isFinite(y) ? y : 160,
+    w: r.width > 0 ? Math.round(r.width) : 500,
+    h: r.height > 0 ? Math.round(r.height) : 600,
   };
 }
