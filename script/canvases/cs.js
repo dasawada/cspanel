@@ -9,16 +9,14 @@ export default {
   sharedGeometryCss: `
 .panel_all_container { position: relative; width: 100%; height: 100vh; min-height: 800px; overflow: visible; box-sizing: border-box; margin: 0; padding: 10px; gap: 10px; height: auto; position: absolute; left: 0px; top: 0px; border: 10px; padding: 10px; margin: 10px; }
 .small-size { position: absolute !important; width: 105px !important; height: 30px !important; min-width: 0px !important; flex-basis: 110px !important; overflow: hidden !important; z-index: calc(var(--layer-panel) + 10); }
-.idsearchpanel:not(.small-size) { width: 560px; height: 600px; }
 .consultantlistgooglesheet:not(.small-size) { width: 950px; height: 700px; }
-.ClassLogpanel:not(.small-size) { width: 560px; height: 700px; }
 .DT_panel:not(.small-size) { width: 900px; height: auto; overflow: visible; } /* z-index 已移除：0-2-0 特異度會遮蔽 dt 面板 zOrder 注入的 0-1-0 規則，疊序一律由 zOrder 供給 */
 .assist_googlesheet:not(.small-size) { width: 800px; height: 600px; }
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet { display: flex; flex-direction: column; position: absolute; transition: all 0.3s ease; box-sizing: border-box; overflow: hidden; }
-/* 伺服器注入 markup 的幾何（repo 內無模板，class 為既定契約） */
-.idsearchpanel { width: 560px; height: 600px; z-index: calc(var(--layer-panel) + 8); left: 0px; top: 260px; position: absolute; }
-.ClassLogpanel { width: 560px; height: 700px; z-index: calc(var(--layer-panel) + 7); position: fixed; left: 0px; top: 300px; } /* 唯一 fixed 例外（原樣保留） */
-.IPsearch_in_panelALL { top: 240px; left: 115px; display: flex; flex-direction: column; justify-content: normal; align-items: flex-start; padding: 0px 6px 0px 6px; z-index: calc(var(--layer-panel) + 5); min-height: 42px; width: 285px; overflow: hidden; position: absolute; height: auto; }
+.consultantlistgooglesheet, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet { display: flex; flex-direction: column; position: absolute; transition: all 0.3s ease; box-sizing: border-box; overflow: hidden; }
+/* 伺服器注入 markup 的幾何（repo 內無模板，class 為既定契約）。
+   第三期：.idsearchpanel／.ClassLogpanel 為死樣式（實測伺服器不再注入該 markup，
+   真實 markup 只有 .panel-tabs-container 與 .IPsearch_in_panelALL），整組移除。 */
+.IPsearch_in_panelALL { top: 240px; left: 115px; display: flex; flex-direction: column; justify-content: normal; align-items: flex-start; padding: 0px 6px 0px 6px; min-height: 42px; width: 285px; overflow: hidden; position: absolute; height: auto; } /* z-index 移至 protected 面板 zOrder:5 供給（§4.6：有 rootSelector 者不得在 sharedGeometryCss 宣告 z-index） */
 .panel-tabs-container { position: absolute; left: 410px; top: 160px; width: 500px; height: 600px; z-index: calc(var(--layer-panel) + 2); }
 `,
 
@@ -41,10 +39,16 @@ export default {
       geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
       zOrder: 0, behaviors: ['draggable'] }, // 原 CSS 無 z-index（auto，與 optitle/fudausearch/linkout 同層），Task 2 manifest 誤填 1，Task 4 parity 迭代時修正
 
+    // protected：伺服器注入 tabsHTML（→ 分頁視窗管理器 window-manager.js）與
+    // ipHTML（.IPsearch_in_panelALL）。rootSelector 指向 IPsearch 盒：承接其
+    // 層帶疊序（zOrder:5，z-index 從 sharedGeometryCss 遷出，遵 §4.6）並讓它在
+    // 編輯模式可拖（handle 附加於 .IPsearch_in_panelALL，佈局存於 layout['protected']）。
+    // .panel-tabs-container 不列 rootSelector——它由視窗管理器接管，非普通可拖面板。
     { id: 'protected', module: './auth-protected-tabs.js',
       init: 'initProtectedTabs', clear: 'clearProtectedTabs',
       slot: 'auth-protected-tabs-placeholder', extraSlots: ['auth-protected-ip-placeholder'],
-      quirks: ['server-markup'] }, // 幾何在 sharedGeometryCss（伺服器 class）
+      rootSelector: '.IPsearch_in_panelALL', zOrder: 5, behaviors: ['draggable'],
+      quirks: ['server-markup'] }, // 幾何在 sharedGeometryCss（伺服器 class）；z 由 zOrder 供給
 
     { id: 'optitle', module: './optitleGG.js',
       init: 'initOptitlePanel', clear: 'clearOptitlePanel',
