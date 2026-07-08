@@ -1,0 +1,121 @@
+/* ===== 分頁視窗管理器（第三期，子專案 B）=====
+   視窗 chrome、tab 列、縮放把手、iframe 常駐池。
+   疊序（z-index）由 window-manager.js 以 inline calc(var(--layer-panel) + N)
+   注入，只引用 --layer-panel 層帶——CSS 這裡不寫視窗/pane 的 z-index。
+   .wm-drag-ghost 用的 2147483647 與 draggable.js 拖曳事件盾同屬白名單值。 */
+
+/* 常駐池與視窗層：position:static，不成為 containing block，讓其 position:absolute
+   的子元素（pane / 視窗）解析到 .panel_all_container（與其他面板同座標系）。 */
+.wm-pool { position: static; }
+.wm-layer { position: static; }
+
+/* iframe 常駐 pane：搬進來後永不 re-parent；作用中被 syncPanes 定位貼合視窗內容區。 */
+.wm-pane {
+    position: absolute;
+    overflow: auto;
+    box-sizing: border-box;
+    -webkit-overflow-scrolling: touch;
+}
+.wm-pane > iframe {
+    width: 100%;
+    height: 100%;
+    border: 0;
+    display: block;
+}
+
+/* 視窗框：毛玻璃面板（panel 表面配方，比照 panels.css 既有 tab 外觀）。 */
+.wm-window {
+    position: absolute;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    min-width: 240px;
+    min-height: 160px;
+    background: var(--glass-bg);
+    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(20px) saturate(1.6);
+    border: 1px solid var(--glass-border);
+    border-radius: 12px;
+    box-shadow: var(--glass-shadow);
+    overflow: hidden;
+}
+
+/* tab 列：空白處拖曳 = 移動視窗。 */
+.wm-tabbar {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    height: 34px;
+    padding: 4px 6px 0 6px;
+    box-sizing: border-box;
+    cursor: grab;
+    overflow: hidden;
+}
+.wm-tabbar:active { cursor: grabbing; }
+
+.wm-tab {
+    padding: 4px 10px;
+    font-size: 12px;
+    line-height: 1.4;
+    color: var(--muted);
+    background: color-mix(in srgb, var(--glass-bg) 55%, transparent);
+    border: 1px solid var(--glass-border);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+    cursor: grab;
+    white-space: nowrap;
+    user-select: none;
+    transition: background var(--spring), color 0.15s;
+}
+.wm-tab:hover { background: var(--glass-bg-hover); color: var(--fg-2); }
+.wm-tab.is-active {
+    color: var(--accent-hover);
+    background: var(--glass-bg-hover);
+    font-weight: 600;
+}
+.wm-tab:active { cursor: grabbing; }
+
+/* 內容區：作用中 pane 對位貼合這塊（pane 是常駐池的兄弟、疊在其上）。 */
+.wm-content {
+    flex: 1 1 auto;
+    min-height: 0;
+    position: relative;
+}
+
+/* 底部 chrome 條：容納右下角縮放把手，且「不被 pane 蓋住」（pane 只貼 .wm-content）。 */
+.wm-footer {
+    flex: 0 0 14px;
+    position: relative;
+}
+.wm-resize-se {
+    position: absolute;
+    right: 2px;
+    bottom: 1px;
+    width: 14px;
+    height: 14px;
+    cursor: nwse-resize;
+    background:
+        linear-gradient(135deg,
+            transparent 0 55%,
+            var(--glass-border) 55% 63%,
+            transparent 63% 74%,
+            var(--glass-border) 74% 82%,
+            transparent 82%);
+}
+
+/* 拖曳 tab 時跟著游標的浮動標籤（純視覺、pointer-events:none）。 */
+.wm-drag-ghost {
+    position: fixed;
+    z-index: 2147483647;
+    pointer-events: none;
+    padding: 4px 10px;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--accent-hover);
+    background: var(--glass-bg-hover);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    box-shadow: var(--glass-shadow);
+    white-space: nowrap;
+}

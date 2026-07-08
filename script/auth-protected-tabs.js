@@ -2,6 +2,8 @@ import { CSPANEL_API } from './cspanel-api.js';
 
 // 內部變數，用於儲存 interceptor 引用以便移除
 let currentInterceptor = null;
+// 分頁視窗管理器實例（第三期，子專案 B）：tabsHTML 注入完成後接管，登出時拆除。
+let windowManager = null;
 
 export async function initProtectedTabs() {
   const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
@@ -52,7 +54,15 @@ export function clearProtectedTabs() {
     currentInterceptor = null;
   }
 
-  // 2. 清空 UI
+  // 2. 拆除分頁視窗管理器（移除全域 pointer/scroll/resize 監聽與常駐池/視窗層），
+  //    再清空 UI。順序：先 destroy（收監聽器）→ 後清 DOM（innerHTML 會一併移除
+  //    池/視窗，iframe 於登出被銷毀屬預期）。
+  if (windowManager) {
+    try { windowManager.destroy(); } catch (e) { console.error('視窗管理器 destroy 失敗:', e); }
+    windowManager = null;
+  }
+
+  // 3. 清空 UI
   if (tabsPlaceholder) tabsPlaceholder.innerHTML = '';
   if (ipPlaceholder) ipPlaceholder.innerHTML = '';
 }
@@ -107,6 +117,16 @@ async function fetchProtectedContentWithRetry(retries = 3) {
         if (tabsPlaceholder && data.tabsHTML) {
           tabsPlaceholder.innerHTML = data.tabsHTML;
           glDecorate(tabsPlaceholder);
+          // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
+          // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
+          // （見 window-manager.js）。此刻 iframe 本就在載入，唯一一次 DOM 移動免費。
+          try {
+            const { mountWindowManager } = await import('./window-manager.js');
+            if (windowManager) { windowManager.destroy(); windowManager = null; }
+            windowManager = mountWindowManager(tabsPlaceholder);
+          } catch (error) {
+            console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
+          }
         }
 
         if (ipPlaceholder && data.ipHTML) {
