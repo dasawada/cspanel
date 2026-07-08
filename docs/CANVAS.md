@@ -217,17 +217,22 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
 `position/left/top` 的初始化區塊**（`script/draggable.js:372`）。若面板本身沒有 `position: absolute`，
 把手仍會顯示，但拖曳時 `left`/`top` 在 static/relative 定位語境下不會產生預期的視覺位移。
 
-`.ClassLogpanel` 用 `position: fixed`（`cs.js` 的 `sharedGeometryCss`，唯一 fixed 例外）不受此規則約束，
-因為它屬於 `quirks: ['server-markup']` 的伺服器渲染面板，不透過 manifest 的 `behaviors`/`draggable` 機制拖曳。
+（歷史）`.ClassLogpanel` 曾用 `position: fixed`（唯一 fixed 例外）不受此規則約束。第三期連同 `.idsearchpanel`
+一起被判定為**死樣式**（實測伺服器不再注入該 markup，真實伺服器 markup 只有 `.panel-tabs-container` 與
+`.IPsearch_in_panelALL` 兩根，見第 7、8 節）而自 `sharedGeometryCss` 移除，目前畫布已無 `position: fixed` 的面板。
 
 ### 4.6 `geometryCss`／`sharedGeometryCss` 的 z-index 規則
 
 - **每面板的 `geometryCss` 嚴禁出現 `z-index`**——面板疊序一律用 `zOrder` 欄位表達，由引擎組出
   `calc(var(--layer-panel) + zOrder)` 字串注入。
 - **`sharedGeometryCss` 允許帶內 calc z-index，但僅限「無 `rootSelector` 的伺服器注入面板與共用狀態類」**：
-  目前即 `.small-size`／`.idsearchpanel`／`.ClassLogpanel`／`.IPsearch_in_panelALL`／`.panel-tabs-container`
-  五處（`cs.js`）。它們沒有對應的 `panels[]` 條目可承載 `zOrder`（或如 `.small-size` 是跨面板共用的狀態
-  class），寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們進入層帶的唯一途徑。
+  第三期後目前即 `.small-size`（跨面板共用狀態 class）與 `.panel-tabs-container`（伺服器注入，其幾何是
+  分頁視窗管理器初始視窗位置的來源，見第 7 節）兩處（`cs.js`）。它們沒有對應的 `panels[]` 條目可承載
+  `zOrder`（或是跨面板共用狀態 class），寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們
+  進入層帶的唯一途徑。**第三期變更**：`.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
+  `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
+  `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），
+  依本規則不得再於 `sharedGeometryCss` 為它宣告 z-index。
 - **`sharedGeometryCss` 不得對「有 `rootSelector` 的面板」宣告 `z-index`**：這種宣告若以較高特異度
   selector 寫成（例如 `.DT_panel:not(.small-size)`，特異度 0-2-0），會永久遮蔽引擎依 `zOrder` 注入的
   `.DT_panel { z-index: ... }`（0-1-0）——之後改 manifest 的 `zOrder` 會靜默無效。前例：`cs.js` 的
@@ -268,6 +273,10 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
   ——**不刪除舊 key**（保留一版回退）。轉存後，`loadCanvas` 會用讀出的統一 layout 覆寫 `canned` 面板的
   `initArgs` 為 `[null, { left: x, top: y }]`，之後 `canned` 的位置初始化就走這條路徑，不再依賴模組自己
   重讀舊 key。
+- **分頁視窗佈局（另一把 key，第三期新增）**：分頁視窗管理器（見第 7 節）用**獨立**的
+  `` `cspanel.windows.${canvasId}.v1` `` 存視窗佈局，**不走本節的 layout 機制**（那是面板拖曳位移）。
+  `resetLayout()` 除了清本節的 `LAYOUT_KEY`，還會額外委派 `window.WindowManager.reset()`（若已掛載）一併
+  把視窗清回預設單視窗，故編輯模式的「重設佈局」對「面板位移」與「分頁視窗」兩套系統同時生效。
 
 ---
 
@@ -298,3 +307,88 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
    新增 `persist: false` 選項（預設 `true`，向下相容零風險）：`false` 時 `draggable.js` 完全略過自己的
    初始位置讀寫，把位置權威交給呼叫端（畫布引擎的 `onPositionChange` + 統一 layout）。這是預先核可後
    補入的必要修正，屬刻意變更。
+
+---
+
+## 7. 分頁視窗管理器（第三期，子專案 B）
+
+`protected` 面板的伺服器 `tabsHTML`（`.panel-tabs-container`，四個 tab：三 iframe + 一 DOM tools）不再用
+radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式可拖/可縮放的視窗系統。它是**獨立常駐系統，
+不受編輯模式管轄**（隨時可操作，不需進「編排」模式）。
+
+### 7.1 檔案與掛載
+
+| 構件 | 檔案 | 職責 |
+|---|---|---|
+| 視窗管理器 | `script/window-manager.js` | `mountWindowManager(host, opts)`：常駐池、視窗模型/渲染/互動、`syncPanes`、持久化。回傳 `{ destroy, reset, syncPanes }` 並掛 `window.WindowManager`。 |
+| 視窗樣式 | `style/v2/window-manager.css` | 視窗玻璃 chrome、tab 列、縮放把手、pane 池。**不寫視窗/pane 的 z-index**（由 JS 注入）。 |
+| 交棒點 | `script/auth-protected-tabs.js` | `fetchProtectedContentWithRetry` 注入 `tabsHTML` 且 `glDecorate` 後 `await import('./window-manager.js')` 掛載；`clearProtectedTabs`（登出）先 `windowManager.destroy()` 再清 DOM。 |
+| 頁面 | `panel_all.html` | `<head>` 於 `canvas-edit.css` 後加 `window-manager.css`（**無 DOCTYPE 不變**）。 |
+
+掛載失敗（import 失敗等）會 `console.error` 並**保留伺服器原生 radio/label tab**，屬優雅降級。
+
+### 7.2 常駐池與「不重載」契約
+
+掛載時把四個 tab 內容（三 iframe 元素 + tools 的 `.appicon` DOM）**一次性**搬進常駐池 `.wm-pool`，之後
+**永不在 DOM 搬移**——re-parent iframe = 重載；這唯一一次移動發生在剛登入 iframe 本就在載入，等於免費。
+搬完即 `remove()` 伺服器的 `.panel-tabs-container` chrome。之後：
+
+- **切 tab / 撕離 / 合併 / 重排**：只改「pane 所屬視窗」關係與 `display`，pane 節點不動 → **iframe 不重載**。
+- **非作用中 pane** 用 `display: none`（`display:none` 不重載 iframe，只有 DOM 重新 parent 才重載）。
+- 回歸測試 `tools/wm-test.mjs` 對每個操作斷言 iframe `load` 事件計數不變（零重載）。
+
+### 7.3 座標系與疊序（鐵律遵循）
+
+- pane 與視窗皆 `position: absolute`，其 containing block = `.panel_all_container`（唯一定位祖先），
+  與其他面板**同座標系**（scroll 不分離 pane 與視窗）。`syncPanes()` 以 `getBoundingClientRect` 量測
+  每個視窗的 `.wm-content` 內容區，換算成相對 containing block 的 `left/top/width/height` 貼合作用中 pane。
+- **z-index 只引用 `--layer-panel` 層帶**：視窗 = `calc(var(--layer-panel) + z*2)`、其作用中 pane =
+  `calc(var(--layer-panel) + z*2 + 1)`（pane 疊在自己視窗之上才看得到 iframe 且可互動）。`z` 為 0..n-1 的
+  視窗堆疊名次，點擊提升時 `raise()` 重新正規化為連續名次，**永不無限增長、恆在層帶內**（tab 數上限 4 →
+  視窗上限 4 → 最高偏移 +7，遠在 `--layer-panel(100)`～`--layer-panel-active(200)` 帶內）。
+- 拖曳/縮放時沿用 `draggable.js` 那個最高 z（`2147483647`）**透明 shield** 防 iframe 吃滑鼠事件；拖 tab
+  的浮動 ghost 同屬此白名單值。
+
+### 7.4 持久化 schema 與重設
+
+- **key**：`` `cspanel.windows.${canvasId}.v1` ``（`cs` 畫布即 `cspanel.windows.cs.v1`）。
+- **格式**：`{ windows: [{ id, tabs, active, x, y, w, h, z }] }`——`tabs` 為該視窗的 tab id 陣列、`active`
+  為作用中 tab id、`x/y/w/h` 為幾何、`z` 為堆疊名次。撕出→新視窗、合併→移動 tab id、空視窗→移除。
+- **讀取容錯**（`loadWindows`）：JSON 壞、未知 tab、缺 tab、重複 tab、`active` 非法、尺寸過小一律淨化
+  （過濾未知 tab、跨視窗去重、把遺漏的已知 tab 補進第一個視窗、`active` 合法化、`z` 正規化、`w/h` 夾最小值），
+  確保每個已知 tab 恰好出現一次、至少一個視窗；解不出時退回**預設單視窗**（四 tab、位置尺寸沿用
+  `.panel-tabs-container` 的 `left:410,top:160,500×600`）。
+- **重設**：`window.WindowManager.reset()` 刪 key 並重建預設單視窗。畫布引擎 `resetLayout()`
+  （`CanvasEdit.reset`）會委派呼叫它，故「重設佈局」一併把視窗回預設（見第 5 節）。
+
+### 7.5 生命週期與引擎關係
+
+- 掛載：`glDecorate` 注入完成 → 搬內容進池 → 依存檔（或預設）建視窗 → `render()` + 啟動 `scroll`/`resize`
+  同步監聽。
+- 拆除：登出 `clearProtectedTabs` → `windowManager.destroy()`（中斷進行中拖曳、移除全域監聽、移除池/視窗層、
+  清 `window.WindowManager`）→ 清空 placeholder。
+- **`.panel-tabs-container` 不再是普通可拖面板**（它變成初始視窗的幾何來源後即被移除）——**不要**把它加進
+  manifest 的 `rootSelector`/`behaviors`；其 `sharedGeometryCss` 幾何**保留**，作為初始視窗位置的來源。
+
+---
+
+## 8. 第三期刻意變更記錄（編輯模式健壯化 + 分頁視窗管理器）
+
+1. **fudausearch clear 改非破壞式 + bind 冪等**（`script/fusearch-panel.js`）：`clearFudausearchPanel` 不再
+   `innerHTML=''`（會洗掉轉單頁自帶把手導致拖不動 + 再登入雙層嵌套），改只重置 results/suggestions/input
+   內容與快取；`bindFudausearchEvents` 以具名 handler `removeEventListener→addEventListener` 冪等綁定。
+   回歸 fixture：`tools/fudau-repro.html` + `tools/fudau-repro.mjs`（斷言 `containers===1 && dragHandles===1`）。
+2. **會議 nav 讓位**（`style/v2/canvas-edit.css`）：`html.canvas-editing .meeting-search-panel-menu nav
+   { margin-top: 22px }`，編輯把手佔頂 22px 時 nav 下滑避開，退出復原。選配的 `nav a`(801)/`.animation`(800)
+   歸帶**未做**——屬 vvgglesht iframe modal 內部局部堆疊（第 4.3 節白名單，與全域層帶無關），改動有風險且
+   無益於讓位目標，故維持白名單現狀。
+3. **IPsearch 可拖 + z 遷移**：`protected` 面板加 `rootSelector: '.IPsearch_in_panelALL'` + `zOrder: 5` +
+   `behaviors: ['draggable']`；z-index 自 `sharedGeometryCss` 遷至 `zOrder`（遵第 4.6 節），佈局存於
+   `layout['protected']`。編輯把手文字顯示面板 id（`protected`）——沿用引擎既有把手機制的既知外觀，非缺陷。
+4. **死樣式移除**：`sharedGeometryCss` 移除 `.idsearchpanel`／`.ClassLogpanel` 全部幾何（含 `:not(.small-size)`
+   尺寸、共用 flex 群、獨立幾何塊與唯一的 `position: fixed` 例外）。實測伺服器不再注入該 markup，真實伺服器
+   markup 只有 `.panel-tabs-container` 與 `.IPsearch_in_panelALL` 兩根。
+5. **分頁視窗管理器**（第 7 節）：新增 `window-manager.js` / `window-manager.css`；`auth-protected-tabs.js`
+   交棒 + 登出拆除；`canvas-engine.js` `resetLayout` 委派 `WindowManager.reset()`；`panel_all.html` 加
+   `window-manager.css`。伺服器面板 parity harness 測不到，改用真實 markup fixture（`tools/wm-fixture.html`
+   + `tools/wm-test.mjs`）+ 使用者真登入實測驗收。
