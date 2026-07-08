@@ -1,0 +1,30 @@
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>fudausearch repro fixture</title></head><body>
+<!--
+  子專案 A 回歸 fixture：重現「轉單頁自帶 markup + Firebase null-first」的
+  clear/inject 生命週期。三步（makeDraggable → clear → init）後量測：
+  修好後 window.__snap 應為 { containers: 1, dragHandles: 1 }
+  （壞的是 { containers: 2, dragHandles: 0 }）。用 tools/fudau-repro.mjs 跑。
+-->
+<div id="app-container">
+  <div class="fudausearch-container" id="fudausearch-container" style="z-index:998;">
+    <div class="fudausearch-drag-handle" id="fudausearch-drag-handle">職代是誰</div>
+    <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display:none;">學務部</button>
+    <div class="fudausearch-input-wrapper">
+      <input type="text" id="fudausearch-input" autocomplete="off"/>
+      <button class="fudausearch-clear-btn" id="fudausearch-clear-btn">x</button>
+      <div id="fudausearch-suggestions" class="fudausearch-suggestions"></div>
+    </div>
+    <div id="fudausearch-results"></div>
+  </div>
+</div>
+<script type="module">
+  import { makeDraggable } from '/script/draggable.js';
+  import { initFudausearchPanel, clearFudausearchPanel } from '/script/fusearch-panel.js';
+  const panel = document.getElementById('fudausearch-container');
+  const handle = panel.querySelector('.fudausearch-drag-handle');
+  makeDraggable(panel, handle, { left:300, top:185, color:'#a9bcc7'});
+  clearFudausearchPanel('fudausearch-container');   // 模擬 Firebase null-first
+  initFudausearchPanel('fudausearch-container');     // 模擬登入
+  window.__snap = { containers: document.querySelectorAll('.fudausearch-container').length,
+                    dragHandles: document.querySelectorAll('.fudausearch-drag-handle').length };
+</script></body></html>

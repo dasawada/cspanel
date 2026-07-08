@@ -56,25 +56,48 @@ export function initFudausearchPanel(containerId = 'fudausearch-placeholder') {
 }
 
 // ===== 清除面板函數 (登出時呼叫) =====
+// 非破壞式：只重置面板「內容狀態」（結果、建議、輸入值與快取），不動容器
+// 結構與拖曳把手。轉單頁（新增資料夾/轉單小工具.html）自帶靜態 markup
+// （含 #fudausearch-drag-handle），且 Firebase onAuthStateChanged 載入時會
+// 先回一次 null → 走到這裡。舊版 `innerHTML = ''` 會洗掉那份靜態 markup：
+//   (1) makeDraggable 綁定的把手被清 → 拖不動；
+//   (2) 再登入時 initFudausearchPanel 見容器空 → 注入自帶 .fudausearch-container
+//       的模板 → 雙層嵌套。
+// 改為只清內容，panel_all（占位符注入模型）與轉單頁（自帶 markup 模型）通吃。
 export function clearFudausearchPanel(containerId = 'fudausearch-placeholder') {
   const container = document.getElementById(containerId);
   if (container) {
-    container.innerHTML = '';
+    const results = container.querySelector('#fudausearch-results');
+    if (results) results.innerHTML = '';
+
+    const suggestions = container.querySelector('#fudausearch-suggestions');
+    if (suggestions) {
+      suggestions.innerHTML = '';
+      suggestions.style.display = 'none';
+    }
+
+    const inputField = container.querySelector('#fudausearch-input');
+    if (inputField) inputField.value = '';
   }
   // 清空快取資料
   fudausearch_cachedData = [];
-  console.log('🧹 FudausearchPanel 已清除');
+  console.log('🧹 FudausearchPanel 已清除（非破壞式）');
 }
 
 // ===== 綁定事件 =====
+// 冪等綁定：非破壞式 clear 後容器與元素仍在，登出→再登入會再次呼叫本函式。
+// 先以「具名 handler」removeEventListener 再 addEventListener，避免同一次輸入
+// 觸發多次 suggestion（handler 已具名於模組層級，參照穩定，可安全移除）。
 function bindFudausearchEvents() {
   const inputField = document.getElementById("fudausearch-input");
   if (inputField) {
+    inputField.removeEventListener("input", fudausearch_updateSuggestions);
     inputField.addEventListener("input", fudausearch_updateSuggestions);
   }
 
   const clearButton = document.getElementById("fudausearch-clear-btn");
   if (clearButton) {
+    clearButton.removeEventListener("click", fudausearch_clearInput);
     clearButton.addEventListener("click", fudausearch_clearInput);
   }
 }
