@@ -39,7 +39,14 @@ html.canvas-editing .gl-edit-handle { display: flex; }
     -webkit-backdrop-filter: blur(28px) saturate(1.8);
     border: 1px solid var(--glass-border);
     box-shadow: var(--glass-shadow);
-    animation: gl-modal-rise 0.42s cubic-bezier(0.22,1,0.36,1);
+    animation: gl-edit-bar-rise 0.42s cubic-bezier(0.22,1,0.36,1);
+}
+/* 專屬 keyframe：每格保留 translateX(-50%) 置中位移。不可借用 panels.css 的
+   gl-modal-rise——它每格都寫 transform（到 transform:none），會蓋掉靜態的
+   translateX(-50%)，導致進場動畫期間浮動列右偏、動畫結束才彈回置中。 */
+@keyframes gl-edit-bar-rise {
+    0%   { opacity: 0; transform: translateX(-50%) translateY(12px); }
+    100% { opacity: 1; transform: translateX(-50%); }
 }
 html.canvas-editing #gl-edit-bar { display: flex; }
 #gl-edit-bar button {
