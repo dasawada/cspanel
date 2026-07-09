@@ -154,12 +154,17 @@ export function makeDraggable(panel, handle, options = {}) {
         : e.clientY + window.scrollY);
     dragState.startX = pageX;
     dragState.startY = pageY;
+    // 座標系必須與寫回的 style.left/top（相對 containing block 的 padding 邊）一致。
+    // 無 inline left 時（如編輯把手 persist:false 情境），用 offsetLeft/offsetTop
+    // （相對 offsetParent = containing block），不可用 getBoundingClientRect（視窗座標）
+    // ——否則放開時把視窗座標寫回 style.left 會平移 containing block 的視窗偏移
+    // （body margin + 容器 margin/padding，約 18px），造成「點一下沒移動也位移」。
     dragState.elementX = panel.style.left
       ? parseInt(panel.style.left, 10)
-      : (panel.getBoundingClientRect().left + window.scrollX);
+      : panel.offsetLeft;
     dragState.elementY = panel.style.top
       ? parseInt(panel.style.top, 10)
-      : (panel.getBoundingClientRect().top + window.scrollY);
+      : panel.offsetTop;
 
     // 滑鼠指標相對於元素左上角的位移
     dragState.pointerOffsetX = pageX - dragState.elementX;
