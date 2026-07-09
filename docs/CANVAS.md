@@ -168,9 +168,18 @@ harness 對「相同 z 值元素之間的疊序回歸」是盲區，這類變動
 | `--layer-modal` | `500` | modal 與 scrim |
 | `--layer-toast` | `600` | toast |
 
-帶內排序：面板間相對疊序 = `calc(var(--layer-panel) + manifest zOrder)`，由引擎在 `emitGeometry()` 寫入。
+**（第四期）帶內排序改為「統一動態疊序」**：面板與 tab 視窗的 resting z-index 不再由 `emitGeometry()`
+以 `calc(var(--layer-panel) + zOrder)` 靜態寫入，改由 **`script/stack-manager.js`** 動態管理——
+點擊任一 surface（有 `rootSelector` 的面板，或 tab 視窗）即提到最上層，名次正規化為 0..N-1 並持久化
+（見第 5 節 `cspanel.stack.<id>.v1`）。z-index 仍只引用 `--layer-panel`：由 `style/v2/stack.css` 的
+`.gl-stack-surface { z-index: calc(var(--layer-panel) + var(--stack-rank)*2) }`（tab 視窗的作用中 pane
+用 `.gl-stack-pane`，`+ ...*2 + 1`）供給，`--stack-rank` 為管理器寫入的整數名次。**`emitGeometry()` 不再
+注入任何 `${rootSelector} { z-index }`**（若注入，其 canvas-geometry `<style>` 排在 stack.css 之後、特異度
+相同，會靜默遮蔽 `.gl-stack-surface` 使動態疊序失效）。**`manifest.zOrder` 降級為「初始名次來源」**：
+`registerPanelStack()` 依 `(zOrder 升冪、同值依 panels[] 陣列序)` 換算成連續 `initialRank`，讓**初始**疊序
+等同舊 zOrder 相對高低與下方 tie 規則；之後由互動決定、存檔還原。
 
-**tie 疊序（相同 `zOrder`）**：兩個以上面板 `zOrder` 數值相同時，算出來的 z-index 也相同，實際畫面上
+**tie 疊序（相同 `zOrder`）——僅適用初始**：兩個以上面板 `zOrder` 數值相同時，算出來的 z-index 也相同，實際畫面上
 誰蓋誰不是由引擎決定，而是瀏覽器對「z-index 相同」元素的預設規則——DOM 後出現者蓋過先出現者。面板
 根元素的 DOM 生成序，對有 `slot` 的面板來說等於 `buildSlots()` 依 `manifest.panels[]` 陣列順序建立插槽
 div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 = manifest `panels[]` 陣列順序（陣列中
@@ -226,10 +235,14 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
 - **每面板的 `geometryCss` 嚴禁出現 `z-index`**——面板疊序一律用 `zOrder` 欄位表達，由引擎組出
   `calc(var(--layer-panel) + zOrder)` 字串注入。
 - **`sharedGeometryCss` 允許帶內 calc z-index，但僅限「無 `rootSelector` 的伺服器注入面板與共用狀態類」**：
-  第三期後目前即 `.small-size`（跨面板共用狀態 class）與 `.panel-tabs-container`（伺服器注入，其幾何是
-  分頁視窗管理器初始視窗位置的來源，見第 7 節）兩處（`cs.js`）。它們沒有對應的 `panels[]` 條目可承載
-  `zOrder`（或是跨面板共用狀態 class），寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們
-  進入層帶的唯一途徑。**第三期變更**：`.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
+  第四期後目前僅剩 `.panel-tabs-container`（伺服器注入，其幾何是分頁視窗管理器初始視窗位置的來源，
+  見第 7 節）一處（`cs.js`）。**第四期變更**：`.small-size` 的 `z-index: calc(var(--layer-panel) + 10)`
+  已移除——它會蓋掉 stack-manager 的 `--stack-rank`，使「最小化的面板點擊也無法置頂」（動態疊序失效）；
+  移除後最小化面板與其他面板一樣走統一疊序、可點擊置頂。它們沒有對應的 `panels[]` 條目可承載 `zOrder`，
+  寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們進入層帶的唯一途徑。**第三期變更**：
+  `.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
+  `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
+  `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），**第三期變更**：`.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
   `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
   `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），
   依本規則不得再於 `sharedGeometryCss` 為它宣告 z-index。
@@ -277,6 +290,14 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
   `` `cspanel.windows.${canvasId}.v1` `` 存視窗佈局，**不走本節的 layout 機制**（那是面板拖曳位移）。
   `resetLayout()` 除了清本節的 `LAYOUT_KEY`，還會額外委派 `window.WindowManager.reset()`（若已掛載）一併
   把視窗清回預設單視窗，故編輯模式的「重設佈局」對「面板位移」與「分頁視窗」兩套系統同時生效。
+  （第四期：`cspanel.windows.*` 不再存 `z`——疊序改由下方 stack key 統一管理。）
+- **統一疊序（第三把 key，第四期新增）**：`script/stack-manager.js` 用 `` `cspanel.stack.${canvasId}.v1` ``
+  存**所有 surface（面板 + tab 視窗）的相對疊序**，格式 `{ order: [key, ...] }`（由下往上；面板 key = 面板
+  `id`，視窗 key = window id）。點擊置頂 = 把該 key 移到 `order` 尾端、名次正規化 0..N-1、整寫回。
+  **還原**：頁面載入時對存檔取一次快照（`savedSnapshot`），每個 surface `register` 時依快照相對位置插入；
+  不在快照者依 `initialRank`（面板 = zOrder 換算的連續名次；視窗 = 100+i，預設在面板之上）。壞損（JSON 壞、
+  非陣列）→ 靜默回 initialRank 序。**重設**：`resetLayout()` 亦委派 `stack.reset()`，故「重設佈局」對
+  **面板位移 + 分頁視窗 + 疊序**三套系統同時生效。
 
 ---
 
@@ -406,3 +427,28 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
    `|| fallback` 誤判合法 0 座標 → 改 `Number.isFinite`/正值判斷；(#6, low) 攔截器用新閉包
    `removeEventListener`（no-op）致累積 → 改卸「舊」`currentInterceptor` 參照；(#7, low) wm-test 持久化未驗
    幾何 → 加 x/y/w/h 跨 reload 還原斷言。
+
+---
+
+## 9. 第四期刻意變更記錄（統一動態疊序 + 把手標籤 + 編輯模式修正）
+
+1. **統一動態疊序（`stack-manager.js`）**：面板與 tab 視窗的 resting z 從「靜態 `calc(--layer-panel+zOrder)`」
+   改為「點擊置頂的動態名次 + 持久化」（見第 4.2、5、7 節）。z-index 改由 `.gl-stack-surface`/`.gl-stack-pane`
+   （`style/v2/stack.css`）配 `--stack-rank` 供給，仍只引用 `--layer-panel` 帶。`emitGeometry()` 不再注入
+   `${rootSelector} { z-index }`（否則遮蔽 stack.css，動態疊序失效）。`zOrder` 降級為初始名次來源。
+2. **`.small-size` z-index 移除**：原 `calc(--layer-panel+10)` 會蓋掉 `--stack-rank`，使最小化面板點擊無法
+   置頂；移除後最小化面板走統一疊序。
+3. **parity baseline 重擷取**：ties 由「同 z（harness §2.4 盲區）」變「distinct z」＝真實 §4.2 陣列序疊序；
+   `rects` 零變動，僅 `zorder` 反映真實疊序（`tools/parity-baseline.json`）。
+4. **把手顯性標籤**：manifest panel 新增 `label` 欄位，編輯把手 `textContent = p.label || p.id`；11 面板
+   標籤見 `cs.js`（標題生成 / 外部會議面板 / 職代查詢 / 短網址 / 測試報告生成 / 顧問清單 / 輔導班表 /
+   檔次快捷 / 工具下載 / IP 查詢 / 代課回應生成器）。
+5. **`#gl-edit-bar` 右偏修正**：改用專屬 keyframe `gl-edit-bar-rise`（每格保留 `translateX(-50%)`），不再借用
+   會清掉置中位移的 `gl-modal-rise`。回歸 `tools/editbar-center-test.mjs`。
+6. **draggable.js 點擊 +18px 修正**：`handleDragStart` 的 `elementX/Y` 無 inline left 時改用 `offsetLeft/
+   offsetTop`（與 `style.left` 同座標系），不用 `getBoundingClientRect`（視窗座標）。既有使用者若佈局存檔
+   已被舊 bug 污染，需手動 `localStorage.removeItem('cspanel.layout.cs.v1')` 或按「重設佈局」一次。回歸
+   `tools/drag-noshift-test.mjs`（點擊零位移 + 真實拖曳正確）。
+7. **回歸測試新增**：`tools/stack-test.mjs`（stack-manager）、`tools/panel-stack-test.mjs`（引擎整合：點擊
+   置頂/持久化/中文標籤）、`tools/editbar-center-test.mjs`、`tools/drag-noshift-test.mjs`；`wm-test.mjs` 加
+   跨類（面板↔視窗）疊序斷言。
