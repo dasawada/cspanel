@@ -409,8 +409,12 @@ export function mountWindowManager(host, opts = {}) {
       windows.push(nw);
       tornWinId = nw.id; // render 後提到最上層（新開視窗在最上）
     }
-    // 移除空視窗、重繪、存檔（疊序由 stack-manager 管）
+    // 移除空視窗（合併/撕離後可能有視窗被清空）：先記下再 filter，並對被移除的視窗
+    // stack.unregister，否則 stack 的 order/surfaces 會累積死 key、--stack-rank 灌水、
+    // cspanel.stack.cs.v1 無限增長（審查 #4/#6）。
+    const removedWins = windows.filter((w) => w.tabs.length === 0);
     windows = windows.filter((w) => w.tabs.length > 0);
+    removedWins.forEach((w) => stack.unregister(w.id));
     persist();
     render();
     if (tornWinId) stack.raise(tornWinId);
@@ -428,7 +432,7 @@ export function mountWindowManager(host, opts = {}) {
     document.removeEventListener('scroll', onScroll, true);
     if (syncRaf) cancelAnimationFrame(syncRaf);
     document.querySelectorAll('.wm-drag-ghost').forEach((g) => g.remove());
-    windows.forEach((w) => stack.unregister(w.id)); // 從統一疊序卸除所有視窗
+    windows.forEach((w) => stack.unregister(w.id, true)); // 登出批次拆除：quiet，不動 stack 存檔
     if (pool.parentNode) pool.remove();
     if (layer.parentNode) layer.remove();
     if (window.WindowManager === api) window.WindowManager = null;

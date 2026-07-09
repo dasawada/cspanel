@@ -220,7 +220,7 @@ function registerPanelStack() {
 function unregisterPanelStack() {
   stackRaisers.forEach(({ el, handler, id }) => {
     el.removeEventListener('pointerdown', handler, true);
-    stack.unregister(id);
+    stack.unregister(id, true); // 登出批次拆除：quiet，不 persist（保住使用者的疊序存檔）
   });
   stackRaisers.length = 0;
 }

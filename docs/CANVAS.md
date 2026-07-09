@@ -242,8 +242,6 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
   寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們進入層帶的唯一途徑。**第三期變更**：
   `.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
   `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
-  `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），**第三期變更**：`.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
-  `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
   `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），
   依本規則不得再於 `sharedGeometryCss` 為它宣告 z-index。
 - **`sharedGeometryCss` 不得對「有 `rootSelector` 的面板」宣告 `z-index`**：這種宣告若以較高特異度

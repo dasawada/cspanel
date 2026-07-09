@@ -39,8 +39,16 @@ function applyRanks() {
   order.forEach((key, rank) => {
     const s = surfaces.get(key);
     if (!s) return;
+    // 以「目前 surface 集合」為 class 權威，每次都補回 class（idempotent add）。這樣即使
+    // 同一 render pass 內 pane 換手（surface A 認養某 pane、surface B 因 stale existing.pane
+    // 又把它的 class 移掉，審查 #1/#2），applyRanks 會替仍擁有該 pane 的 A 重新加回，
+    // 不留下「有 --stack-rank 卻無 class → z-index:auto、藏到視窗框後」的隱形 pane。
+    s.el.classList.add('gl-stack-surface');
     s.el.style.setProperty('--stack-rank', String(rank));
-    if (s.pane) s.pane.style.setProperty('--stack-rank', String(rank));
+    if (s.pane) {
+      s.pane.classList.add('gl-stack-pane');
+      s.pane.style.setProperty('--stack-rank', String(rank));
+    }
   });
 }
 
@@ -96,7 +104,12 @@ export const stack = {
     persist();
   },
 
-  unregister(key) {
+  // quiet=true：批次拆除（登出/destroy）用——不 persist。若每筆都 persist，登出逐一
+  // unregister 會把 order 一路縮小、最後覆寫存檔成殘缺/空，抹掉使用者已持久化的點擊
+  // 置頂順序（同屬持久化的 layout/windows key 登出時都保留不變）（審查 #3）。
+  // quiet=false（預設）：單筆移除（合併/撕離空視窗）用——要 persist 把死 key 從存檔
+  // 去除，否則存檔累積死 key（審查 #4/#6）。
+  unregister(key, quiet) {
     const s = surfaces.get(key);
     if (s) {
       s.el.classList.remove('gl-stack-surface');
@@ -106,7 +119,10 @@ export const stack = {
     surfaces.delete(key);
     order = order.filter((k) => k !== key);
     applyRanks();
-    persist();
+    // 全部拆除（登出，surfaces 清空）時重置快照，讓下一輪（同頁再登入）重讀「最新」
+    // 存檔而非沿用頁載當時的舊快照（審查 #5）。
+    if (surfaces.size === 0) savedSnapshot = undefined;
+    if (!quiet) persist();
   },
 
   raise(key) {

@@ -152,6 +152,18 @@ s = await snapshot();
 assert(s.length === 1, `1 window after merge (got ${s.length})`);
 assert(s[0].tabs.includes('courselog') && s[0].tabs.length === 4, `merged window has 4 tabs (${JSON.stringify(s[0].tabs)})`);
 assert((await loadSum()) === base, `no reload on merge (delta ${await loadSum() - base})`);
+// 一般 sanity：合併後接手的 active pane 必須可見（有 .gl-stack-pane class、z 疊在自己
+// 視窗之上）。（#1/#2 的精確換手觸發由 stack-test 的 paneHandoff 單元測試覆蓋。）
+const mp = await page.evaluate(() => {
+  const win = document.querySelector('.wm-window');
+  const act = win.querySelector('.wm-tab.is-active').dataset.tab;
+  const pane = document.querySelector(`.wm-pane[data-tab="${act}"]`);
+  return { hasClass: pane.classList.contains('gl-stack-pane'), paneZ: parseInt(getComputedStyle(pane).zIndex, 10), winZ: parseInt(getComputedStyle(win).zIndex, 10) };
+});
+assert(mp.hasClass && mp.paneZ > mp.winZ, `合併後 active pane 可見(class=${mp.hasClass}, pane z=${mp.paneZ} > win z=${mp.winZ})（審查 #1/#2）`);
+// 審查 #4/#6：被清空的來源視窗須從 stack 卸除，order 不得洩漏死 key
+const orderLen = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('cspanel.stack.cs.v1')); return o ? o.order.length : -1; });
+assert(orderLen === 2, `合併後 stack order 無死 key 洩漏 (len=${orderLen}, 期望 2=視窗+假面板)（審查 #4/#6）`);
 
 console.log('— 同視窗重排：精確落點（off-by-one 防護，審查 #2）—');
 // 先 reset 取乾淨預設序 [naniclub,classlog,courselog,tools]
