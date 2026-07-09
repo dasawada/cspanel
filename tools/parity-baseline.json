@@ -85,11 +85,11 @@
     ".assist_googlesheet",
     ".roofbutton",
     ".DT_panel",
-    ".consultantlistgooglesheet",
     ".tool_zip_dl",
-    ".optitlepanel",
-    ".fudausearch-container",
+    ".consultantlistgooglesheet",
     ".linkout",
+    ".fudausearch-container",
+    ".optitlepanel",
     ".meeting-search-panel-menu"
   ]
 }
