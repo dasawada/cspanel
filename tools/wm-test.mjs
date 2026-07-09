@@ -77,7 +77,7 @@ async function alignment(winIdx) {
 
 // 乾淨起點：清持久化 key 後重載成預設
 await page.goto(URL_);
-await page.evaluate(() => localStorage.removeItem('cspanel.windows.cs.v1'));
+await page.evaluate(() => { localStorage.removeItem('cspanel.windows.cs.v1'); localStorage.removeItem('cspanel.stack.cs.v1'); });
 await page.reload();
 await ready();
 
@@ -92,6 +92,26 @@ assert(Math.abs(s[0].rect.x - 410) <= 2 && Math.abs(s[0].rect.y - 160) <= 2, `in
 
 const base = await loadSum();
 console.log(`  (iframe load baseline = ${base})`);
+
+console.log('— 跨類統一疊序（面板 ↔ tab 視窗，第四期併入）—');
+const zc = () => page.evaluate(() => {
+  const winZ = parseInt(getComputedStyle(document.querySelector('.wm-window')).zIndex, 10);
+  const act = document.querySelector('.wm-window .wm-tab.is-active').dataset.tab;
+  const paneZ = parseInt(getComputedStyle(document.querySelector(`.wm-pane[data-tab="${act}"]`)).zIndex, 10);
+  const fakeZ = parseInt(getComputedStyle(document.querySelector('.fake-panel')).zIndex, 10);
+  return { winZ, paneZ, fakeZ };
+});
+let zz = await zc();
+assert(zz.paneZ > zz.fakeZ, `初始視窗 pane 疊在面板之上 (pane=${zz.paneZ}, fake=${zz.fakeZ})`);
+await page.evaluate(() => window.__stack.raise('fake')); // 點面板 → 面板置頂
+await page.waitForTimeout(60);
+zz = await zc();
+assert(zz.fakeZ > zz.winZ && zz.fakeZ > zz.paneZ, `raise 面板後面板蓋過視窗 (fake=${zz.fakeZ}, win=${zz.winZ}, pane=${zz.paneZ})`);
+const barPt = await page.evaluate(() => { const b = document.querySelector('.wm-window .wm-tabbar').getBoundingClientRect(); return { x: b.right - 4, y: b.top + b.height / 2 }; });
+await page.mouse.move(barPt.x, barPt.y); await page.mouse.down(); await page.mouse.up(); // 點視窗 → 視窗置頂
+await page.waitForTimeout(80);
+zz = await zc();
+assert(zz.winZ > zz.fakeZ && zz.paneZ > zz.fakeZ, `raise 視窗後視窗蓋過面板 (win=${zz.winZ}, pane=${zz.paneZ}, fake=${zz.fakeZ})`);
 
 console.log('— 切 tab（display:none 不重載）—');
 await clickTab(0, 'classlog');

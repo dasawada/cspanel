@@ -9,11 +9,14 @@
 -->
 <link rel="stylesheet" href="/style/v2/tokens.css">
 <link rel="stylesheet" href="/style/v2/window-manager.css">
+<link rel="stylesheet" href="/style/v2/stack.css">
 <style>
   html, body { margin: 0; height: 100%; }
   .panel_all_container { position: absolute; left: 0; top: 0; width: 100%; height: 100vh; }
   .panel-tabs-container { position: absolute; left: 410px; top: 160px; width: 500px; height: 600px; }
   .panel-tab-content { display: none; }
+  /* 模擬一個與 tab 視窗重疊的普通面板 surface，測跨類（面板↔視窗）統一疊序 */
+  .fake-panel { position: absolute; left: 450px; top: 200px; width: 200px; height: 200px; background: rgba(255,0,0,.2); }
 </style>
 </head><body>
 <div class="panel_all_container">
@@ -35,11 +38,16 @@
       </div>
     </div>
   </div>
+  <div class="fake-panel"></div>
 </div>
 <script type="module">
   import { mountWindowManager } from '/script/window-manager.js';
+  import { stack } from '/script/stack-manager.js';
   const host = document.getElementById('auth-protected-tabs-placeholder');
   window.__wm = mountWindowManager(host);
+  // 註冊一個假面板 surface（initialRank 50，落在視窗 initialRank 100 之下），供跨類疊序測試
+  stack.register('fake', document.querySelector('.fake-panel'), { initialRank: 50 });
+  window.__stack = stack;
   // mount 後為常駐池的 iframe 掛 load 計數（延遲以略過初次載入），供測試驗
   // 「切 tab / 撕離 / 合併 / 縮放皆不重載」。
   setTimeout(() => {

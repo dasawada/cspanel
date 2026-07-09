@@ -26,6 +26,8 @@
 // 對外：mountWindowManager(host, opts) 回傳 { destroy, reset, syncPanes }，並掛
 // window.WindowManager 供引擎 resetLayout 呼叫（CanvasEdit.reset 一併回預設）。
 
+import { stack } from './stack-manager.js';
+
 const SHIELD_Z = '2147483647'; // 與 draggable.js:142 同一個全螢幕事件盾（白名單）
 const MIN_W = 240;
 const MIN_H = 160;
@@ -113,7 +115,8 @@ export function mountWindowManager(host, opts = {}) {
           pane.style.top = (cr.top - cb.top) + 'px';
           pane.style.width = cr.width + 'px';
           pane.style.height = cr.height + 'px';
-          pane.style.zIndex = `calc(var(--layer-panel) + ${win.z * 2 + 1})`;
+          // pane 的 z-index 由 stack-manager 經 .gl-stack-pane + --stack-rank 供給
+          // （第四期併入統一疊序）；此處只負責幾何與 display。
         } else {
           pane.style.display = 'none';
         }
@@ -126,23 +129,9 @@ export function mountWindowManager(host, opts = {}) {
     syncRaf = requestAnimationFrame(() => { syncRaf = 0; syncPanes(); });
   }
 
-  // ---- z 序 ----
-  function topZ() { return windows.reduce((m, w) => Math.max(m, w.z), -1); }
-  function normalizeZ() {
-    [...windows].sort((a, b) => a.z - b.z).forEach((w, i) => { w.z = i; });
-  }
-  function applyZ() {
-    for (const w of windows) if (w.el) w.el.style.zIndex = `calc(var(--layer-panel) + ${w.z * 2})`;
-    syncPanes();
-  }
-  function raise(win) {
-    if (windows.length <= 1) return;
-    if (win.z === topZ() && windows.filter((w) => w.z === win.z).length === 1) return;
-    win.z = topZ() + 1;
-    normalizeZ();
-    applyZ();
-    persist();
-  }
+  // ---- z 序（第四期併入統一疊序管理器）----
+  // 視窗與 pane 的 z-index 完全交給 stack-manager（面板 ↔ 視窗同一套疊序）。
+  function raise(win) { stack.raise(win.id); }
 
   // ---- 持久化 ----
   function persist() {
@@ -150,7 +139,7 @@ export function mountWindowManager(host, opts = {}) {
       const data = {
         windows: windows.map((w) => ({
           id: w.id, tabs: w.tabs.slice(), active: w.active,
-          x: w.x, y: w.y, w: w.w, h: w.h, z: w.z,
+          x: w.x, y: w.y, w: w.w, h: w.h, // z 已移除：疊序改由 stack-manager 單一權威
         })),
       };
       localStorage.setItem(WKEY, JSON.stringify(data));
@@ -160,7 +149,7 @@ export function mountWindowManager(host, opts = {}) {
   function newId() { return 'w' + Math.random().toString(36).slice(2, 8); }
   function defaultWindow() {
     return { id: newId(), tabs: tabOrder.slice(), active: tabOrder[0],
-      x: defaultRect.x, y: defaultRect.y, w: defaultRect.w, h: defaultRect.h, z: 0 };
+      x: defaultRect.x, y: defaultRect.y, w: defaultRect.w, h: defaultRect.h };
   }
 
   function loadWindows() {
@@ -176,7 +165,6 @@ export function mountWindowManager(host, opts = {}) {
       active: w.active,
       x: num(w.x, defaultRect.x), y: num(w.y, defaultRect.y),
       w: Math.max(MIN_W, num(w.w, defaultRect.w)), h: Math.max(MIN_H, num(w.h, defaultRect.h)),
-      z: num(w.z, i),
     }));
     // 跨視窗 tab 去重（第一次出現者勝）
     const seen = new Set();
@@ -188,22 +176,21 @@ export function mountWindowManager(host, opts = {}) {
     if (missing.length) wins[0].tabs.push(...missing);
     // active 合法化
     for (const win of wins) if (!win.tabs.includes(win.active)) win.active = win.tabs[0];
-    // z 正規化為 0..n-1
-    [...wins].sort((a, b) => a.z - b.z).forEach((w, i) => { w.z = i; });
+    // 疊序不再存於 windows；由 stack-manager 的 cspanel.stack.cs.v1 統一管理。
     return wins;
   }
 
   // ---- 渲染（重建視窗框；pane 池不動 → iframe 不重載） ----
   function render() {
     layer.innerHTML = '';
-    for (const win of windows) {
+    windows.forEach((win, i) => {
       const el = document.createElement('div');
       el.className = 'wm-window';
       el.style.left = win.x + 'px';
       el.style.top = win.y + 'px';
       el.style.width = win.w + 'px';
       el.style.height = win.h + 'px';
-      el.style.zIndex = `calc(var(--layer-panel) + ${win.z * 2})`;
+      // z-index 由 stack-manager 經 .gl-stack-surface + --stack-rank 供給（見迴圈尾 register）。
 
       const bar = document.createElement('div');
       bar.className = 'wm-tabbar';
@@ -229,7 +216,12 @@ export function mountWindowManager(host, opts = {}) {
       layer.appendChild(el);
 
       wireWindow(win, el, bar, resize);
-    }
+      // 併入統一疊序：視窗本體 .gl-stack-surface、作用中 pane .gl-stack-pane（同一 rank）。
+      // 新視窗 initialRank 給高值（100+i）→ 預設疊在面板之上（面板 initialRank 0..N）；
+      // 存檔的 stack 順序若存在則覆蓋（stack-manager savedSnapshot）。重繪時同 key 再
+      // register 只更新 el/pane 指向、不動疊序。
+      stack.register(win.id, el, { levels: 2, pane: panes[win.active], initialRank: 100 + i });
+    });
     syncPanes();
   }
 
@@ -363,9 +355,12 @@ export function mountWindowManager(host, opts = {}) {
       if (!bar) continue;
       const r = bar.getBoundingClientRect();
       if (x < r.left || x > r.right || y < r.top || y > r.bottom) continue;
-      // tab 列在畫面上重疊時，取「最上層」（z 最大）的視窗才與使用者所見一致，
-      // 不是陣列順序的第一個命中者（審查 #4）。
-      if (best && win.z <= best.win.z) continue;
+      // tab 列在畫面上重疊時，取「最上層」的視窗才與使用者所見一致，不是陣列順序的
+      // 第一個命中者（審查 #4）。z 已交給 stack-manager，改以它寫入的 --stack-rank
+      // 判定誰在上（rank 大者在上）。
+      const myRank = parseInt(win.el.style.getPropertyValue('--stack-rank'), 10) || 0;
+      const bestRank = best ? (parseInt(best.win.el.style.getPropertyValue('--stack-rank'), 10) || 0) : -1;
+      if (best && myRank <= bestRank) continue;
       const tabs = [...bar.querySelectorAll('.wm-tab')];
       let index = tabs.length;
       for (let i = 0; i < tabs.length; i++) {
@@ -380,6 +375,7 @@ export function mountWindowManager(host, opts = {}) {
   function applyTabDrop(srcWin, tabId, ev) {
     const target = tabBarAt(ev.clientX, ev.clientY);
     const clamp = (i, lo, hi) => Math.max(lo, Math.min(hi, i));
+    let tornWinId = null;
 
     if (target && target.win === srcWin) {
       // 同視窗內重排。target.index 是在「仍含被拖 tab」的 tab 列上算出的；移除被拖
@@ -404,18 +400,20 @@ export function mountWindowManager(host, opts = {}) {
       srcWin.tabs = srcWin.tabs.filter((t) => t !== tabId);
       if (srcWin.active === tabId) srcWin.active = srcWin.tabs[0] || null;
       const cb = containingBlockRect();
-      windows.push({
+      const nw = {
         id: newId(), tabs: [tabId], active: tabId,
         x: Math.round(ev.clientX - cb.left - 40),
         y: Math.round(ev.clientY - cb.top - 12),
-        w: srcWin.w, h: srcWin.h, z: topZ() + 1,
-      });
+        w: srcWin.w, h: srcWin.h,
+      };
+      windows.push(nw);
+      tornWinId = nw.id; // render 後提到最上層（新開視窗在最上）
     }
-    // 移除空視窗、正規化 z、重繪、存檔
+    // 移除空視窗、重繪、存檔（疊序由 stack-manager 管）
     windows = windows.filter((w) => w.tabs.length > 0);
-    normalizeZ();
     persist();
     render();
+    if (tornWinId) stack.raise(tornWinId);
   }
 
   // ---- 生命週期 ----
@@ -430,6 +428,7 @@ export function mountWindowManager(host, opts = {}) {
     document.removeEventListener('scroll', onScroll, true);
     if (syncRaf) cancelAnimationFrame(syncRaf);
     document.querySelectorAll('.wm-drag-ghost').forEach((g) => g.remove());
+    windows.forEach((w) => stack.unregister(w.id)); // 從統一疊序卸除所有視窗
     if (pool.parentNode) pool.remove();
     if (layer.parentNode) layer.remove();
     if (window.WindowManager === api) window.WindowManager = null;
@@ -437,8 +436,9 @@ export function mountWindowManager(host, opts = {}) {
 
   function reset() {
     try { localStorage.removeItem(WKEY); } catch (e) { /* noop */ }
+    windows.forEach((w) => stack.unregister(w.id)); // 卸除舊視窗的疊序條目
     windows = [defaultWindow()];
-    render();
+    render(); // 註冊新的預設視窗
   }
 
   const api = { destroy, reset, syncPanes };
