@@ -49,6 +49,14 @@ html.canvas-editing #gl-edit-bar { display: flex; }
 #gl-edit-bar .gl-edit-done { background: var(--accent); color: #fff; border-color: transparent; }
 #gl-edit-bar .gl-edit-done:hover { background: var(--accent-hover); }
 html.canvas-editing .gl-editable { outline: 1px dashed var(--accent-ring); outline-offset: 2px; }
+
+/* 會議面板 nav 讓位：編輯把手 position:absolute top:0 height:22px 附加在
+   .meeting-search-panel-menu（meeting-shell 的 rootSelector）頂端，會蓋住其第一個
+   子元素 <nav>。編輯模式下把 nav 下推 22px 避開把手，退出（class 移除）即復原。 */
+html.canvas-editing .meeting-search-panel-menu nav {
+    margin-top: 22px;
+}
+
 @media (prefers-reduced-motion: reduce) {
     #gl-edit-bar { animation: none; }
 }

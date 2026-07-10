@@ -1,0 +1,53 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">
+<title>window-manager fixture（子專案 B 回歸）</title>
+<!--
+  用交接文件 §3 的「真實伺服器 markup」做 fixture，讓 window-manager.js 可被
+  headless 自動測（parity harness 會 stub 掉伺服器內容，測不到本模組）。
+  用 tools/wm-test.mjs 跑。iframe 指向本機 stub 以便計 load 次數（驗 display:none
+  不重載）。.panel_all_container 與 .panel-tabs-container 幾何比照 app（cs.js
+  sharedGeometryCss）以還原同座標系。
+-->
+<link rel="stylesheet" href="/style/v2/tokens.css">
+<link rel="stylesheet" href="/style/v2/window-manager.css">
+<style>
+  html, body { margin: 0; height: 100%; }
+  .panel_all_container { position: absolute; left: 0; top: 0; width: 100%; height: 100vh; }
+  .panel-tabs-container { position: absolute; left: 410px; top: 160px; width: 500px; height: 600px; }
+  .panel-tab-content { display: none; }
+</style>
+</head><body>
+<div class="panel_all_container">
+  <div id="auth-protected-tabs-placeholder">
+    <div class="panel-tabs-container">
+      <div class="panel-tabs">
+        <input type="radio" id="panel-tab-naniclub" name="panel-tab" checked>
+        <label for="panel-tab-naniclub">🗝️帳號搜尋</label>
+        <div class="panel-tab-content"><iframe class="responsive-iframe" src="/tools/wm-iframe-stub.html?tab=naniclub"></iframe></div>
+        <input type="radio" name="panel-tab" id="panel-tab-classlog">
+        <label for="panel-tab-classlog">📊教室LOG</label>
+        <div class="panel-tab-content"><iframe class="responsive-iframe" src="/tools/wm-iframe-stub.html?tab=classlog"></iframe></div>
+        <input type="radio" name="panel-tab" id="panel-tab-courselog">
+        <label for="panel-tab-courselog">📝課程日誌</label>
+        <div class="panel-tab-content"><iframe class="responsive-iframe" src="/tools/wm-iframe-stub.html?tab=courselog"></iframe></div>
+        <input type="radio" name="panel-tab" id="panel-tab-tools">
+        <label for="panel-tab-tools">🚀快捷貼圖</label>
+        <div class="panel-tab-content"><div class="appicon">tools-dom-content</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+<script type="module">
+  import { mountWindowManager } from '/script/window-manager.js';
+  const host = document.getElementById('auth-protected-tabs-placeholder');
+  window.__wm = mountWindowManager(host);
+  // mount 後為常駐池的 iframe 掛 load 計數（延遲以略過初次載入），供測試驗
+  // 「切 tab / 撕離 / 合併 / 縮放皆不重載」。
+  setTimeout(() => {
+    document.querySelectorAll('.wm-pane iframe').forEach((f) => {
+      if (f.dataset.loads === undefined) f.dataset.loads = '0';
+      f.addEventListener('load', () => { f.dataset.loads = String((+f.dataset.loads || 0) + 1); });
+    });
+    window.__wmReady = true;
+  }, 400);
+</script>
+</body></html>

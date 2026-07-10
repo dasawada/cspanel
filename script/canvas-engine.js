@@ -247,6 +247,12 @@ export function resetLayout() {
   // 面板存續期間由 draggable.js 自己的 inline left/top 主導，此處刪 key
   // 不會讓它立即跳回預設值，要等下次 loadCanvas（頁面重新載入）才會套用。
   try { localStorage.removeItem(`draggable:${location.pathname}:canned-panel-main`); } catch (e) {}
+  // 分頁視窗管理器是獨立常駐系統（不受編輯模式管轄），但「重設佈局」語義上
+  // 應一併把視窗回預設：委派給 window.WindowManager.reset()（清 windows key +
+  // 重建預設單視窗）。未掛載（未登入/無 protected 內容）時安靜略過。
+  if (window.WindowManager && typeof window.WindowManager.reset === 'function') {
+    try { window.WindowManager.reset(); } catch (e) { console.error('WindowManager.reset 失敗:', e); }
+  }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   for (const { el } of panelRoots(activeCanvas.manifest)) {
     if (!reduced) {
