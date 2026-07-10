@@ -1,5 +1,7 @@
 # cspanel 畫布引擎化 Implementation Plan
 
+> 📌 歷史快照：已執行並上線（PR #2，2026-07-07 併入 main）。現行契約以 `docs/CANVAS.md` 為準。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 把客服畫布重構為「canvas-engine + manifest 實例」：座標與面板清單資料化、z-index 歸帶、編輯模式自訂佈局，未來部門畫布 = 一份新 manifest。

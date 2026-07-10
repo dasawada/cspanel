@@ -1,5 +1,7 @@
 # cspanel Liquid Glass 移植 Implementation Plan
 
+> 📌 歷史快照：已執行並上線（PR #1，2026-07-06 併入 main）。現行契約以 `docs/CANVAS.md` 為準。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
 **Goal:** 在 `redesign/liquid-glass` 分支上以 `style/v2/` 全新樣式組 + JS 樣式收斂，把 Tarkka 的 Liquid Glass 設計系統移植到 cspanel 主控台 panel_all.html，驗收後一次切換上線。

@@ -77,7 +77,7 @@ async function alignment(winIdx) {
 
 // 乾淨起點：清持久化 key 後重載成預設
 await page.goto(URL_);
-await page.evaluate(() => localStorage.removeItem('cspanel.windows.cs.v1'));
+await page.evaluate(() => { localStorage.removeItem('cspanel.windows.cs.v1'); localStorage.removeItem('cspanel.stack.cs.v1'); });
 await page.reload();
 await ready();
 
@@ -93,12 +93,58 @@ assert(Math.abs(s[0].rect.x - 410) <= 2 && Math.abs(s[0].rect.y - 160) <= 2, `in
 const base = await loadSum();
 console.log(`  (iframe load baseline = ${base})`);
 
+console.log('— 跨類統一疊序（面板 ↔ tab 視窗，第四期併入）—');
+const zc = () => page.evaluate(() => {
+  const winZ = parseInt(getComputedStyle(document.querySelector('.wm-window')).zIndex, 10);
+  const act = document.querySelector('.wm-window .wm-tab.is-active').dataset.tab;
+  const paneZ = parseInt(getComputedStyle(document.querySelector(`.wm-pane[data-tab="${act}"]`)).zIndex, 10);
+  const fakeZ = parseInt(getComputedStyle(document.querySelector('.fake-panel')).zIndex, 10);
+  return { winZ, paneZ, fakeZ };
+});
+let zz = await zc();
+assert(zz.paneZ > zz.fakeZ, `初始視窗 pane 疊在面板之上 (pane=${zz.paneZ}, fake=${zz.fakeZ})`);
+await page.evaluate(() => window.__stack.raise('fake')); // 點面板 → 面板置頂
+await page.waitForTimeout(60);
+zz = await zc();
+assert(zz.fakeZ > zz.winZ && zz.fakeZ > zz.paneZ, `raise 面板後面板蓋過視窗 (fake=${zz.fakeZ}, win=${zz.winZ}, pane=${zz.paneZ})`);
+const barPt = await page.evaluate(() => { const b = document.querySelector('.wm-window .wm-tabbar').getBoundingClientRect(); return { x: b.right - 4, y: b.top + b.height / 2 }; });
+await page.mouse.move(barPt.x, barPt.y); await page.mouse.down(); await page.mouse.up(); // 點視窗 → 視窗置頂
+await page.waitForTimeout(80);
+zz = await zc();
+assert(zz.winZ > zz.fakeZ && zz.paneZ > zz.fakeZ, `raise 視窗後視窗蓋過面板 (win=${zz.winZ}, pane=${zz.paneZ}, fake=${zz.fakeZ})`);
+
 console.log('— 切 tab（display:none 不重載）—');
 await clickTab(0, 'classlog');
 s = await snapshot();
 assert(s[0].active === 'classlog', `active after switch = ${s[0].active}`);
 assert(JSON.stringify(await visiblePanes()) === JSON.stringify(['classlog']), `visible pane = ${JSON.stringify(await visiblePanes())}`);
 assert((await loadSum()) === base, `no reload on switch (delta ${await loadSum() - base})`);
+
+console.log('— a11y（tablist 角色 + roving tabindex + 鍵盤切換不重載）—');
+const aria = await page.evaluate(() => {
+  const bar = document.querySelector('.wm-tabbar');
+  const tabs = [...bar.querySelectorAll('.wm-tab')];
+  return {
+    barRole: bar.getAttribute('role'),
+    tabRoles: tabs.every((t) => t.getAttribute('role') === 'tab'),
+    selected: tabs.filter((t) => t.getAttribute('aria-selected') === 'true').map((t) => t.dataset.tab),
+    roving: tabs.every((t) => (t.getAttribute('aria-selected') === 'true' ? t.tabIndex === 0 : t.tabIndex === -1)),
+  };
+});
+assert(aria.barRole === 'tablist', `tabbar role=tablist (got ${aria.barRole})`);
+assert(aria.tabRoles, `all tabs role=tab`);
+assert(aria.selected.length === 1 && aria.selected[0] === 'classlog', `aria-selected 唯一且=active (${JSON.stringify(aria.selected)})`);
+assert(aria.roving, `roving tabindex（active=0 其餘 -1）`);
+await page.evaluate(() => document.querySelector('.wm-tab.is-active').focus());
+await page.keyboard.press('ArrowRight');
+await page.keyboard.press('Enter');
+await page.waitForTimeout(120);
+s = await snapshot();
+assert(s[0].active === 'courselog', `方向鍵+Enter 切到下一 tab (active=${s[0].active})`);
+assert((await loadSum()) === base, `鍵盤切換不重載 iframe (delta ${await loadSum() - base})`);
+const focusRestored = await page.evaluate(() => document.activeElement && document.activeElement.dataset && document.activeElement.dataset.tab);
+assert(focusRestored === 'courselog', `重繪後焦點還在同一顆 tab (focus=${focusRestored})`);
+await clickTab(0, 'classlog'); // 還原狀態給後續測試
 
 console.log('— 初始對位（作用中 pane 貼合內容區）—');
 let a = await alignment(0);
@@ -132,6 +178,18 @@ s = await snapshot();
 assert(s.length === 1, `1 window after merge (got ${s.length})`);
 assert(s[0].tabs.includes('courselog') && s[0].tabs.length === 4, `merged window has 4 tabs (${JSON.stringify(s[0].tabs)})`);
 assert((await loadSum()) === base, `no reload on merge (delta ${await loadSum() - base})`);
+// 一般 sanity：合併後接手的 active pane 必須可見（有 .gl-stack-pane class、z 疊在自己
+// 視窗之上）。（#1/#2 的精確換手觸發由 stack-test 的 paneHandoff 單元測試覆蓋。）
+const mp = await page.evaluate(() => {
+  const win = document.querySelector('.wm-window');
+  const act = win.querySelector('.wm-tab.is-active').dataset.tab;
+  const pane = document.querySelector(`.wm-pane[data-tab="${act}"]`);
+  return { hasClass: pane.classList.contains('gl-stack-pane'), paneZ: parseInt(getComputedStyle(pane).zIndex, 10), winZ: parseInt(getComputedStyle(win).zIndex, 10) };
+});
+assert(mp.hasClass && mp.paneZ > mp.winZ, `合併後 active pane 可見(class=${mp.hasClass}, pane z=${mp.paneZ} > win z=${mp.winZ})（審查 #1/#2）`);
+// 審查 #4/#6：被清空的來源視窗須從 stack 卸除，order 不得洩漏死 key
+const orderLen = await page.evaluate(() => { const o = JSON.parse(localStorage.getItem('cspanel.stack.cs.v1')); return o ? o.order.length : -1; });
+assert(orderLen === 2, `合併後 stack order 無死 key 洩漏 (len=${orderLen}, 期望 2=視窗+假面板)（審查 #4/#6）`);
 
 console.log('— 同視窗重排：精確落點（off-by-one 防護，審查 #2）—');
 // 先 reset 取乾淨預設序 [naniclub,classlog,courselog,tools]

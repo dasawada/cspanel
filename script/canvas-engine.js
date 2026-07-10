@@ -2,6 +2,7 @@
 // 職責：slot 生成、幾何注入（manifest 為唯一座標權威）、init/clear 調度、
 //       編輯模式（enter/exitEditMode，Task 6 實作）。
 import { makeDraggable } from './draggable.js';
+import { stack } from './stack-manager.js';
 
 const LAYOUT_KEY = (canvasId) => `cspanel.layout.${canvasId}.v1`;
 
@@ -127,9 +128,12 @@ function emitGeometry(manifest, layout) {
   let css = manifest.sharedGeometryCss || '';
   for (const p of manifest.panels) {
     if (p.geometryCss) css += '\n' + p.geometryCss;
-    if (p.rootSelector && typeof p.zOrder === 'number') {
-      css += `\n${p.rootSelector} { z-index: calc(var(--layer-panel) + ${p.zOrder}); }`;
-    }
+    // 第四期：不再注入 `${rootSelector} { z-index: calc(--layer-panel + zOrder) }`。
+    // 面板疊序改由 stack-manager 以 .gl-stack-surface + --stack-rank 動態供給
+    // （見 style/v2/stack.css / stack-manager.js）；zOrder 降級為 registerPanelStack
+    // 計算 initialRank 的初始名次來源。若仍在此注入，其 canvas-geometry <style>
+    // 排在 stack.css 之後、特異度相同（0-1-0），會靜默遮蔽 .gl-stack-surface，
+    // 使動態疊序完全失效（headless 實測抓到：raise 不改 z）。
     const saved = layout[p.id];
     if (saved && p.rootSelector && Number.isFinite(saved.x) && Number.isFinite(saved.y)) {
       css += `\n${p.rootSelector} { left: ${saved.x}px; top: ${saved.y}px; }`;
@@ -173,6 +177,7 @@ async function initAllModules() {
       return Promise.resolve(m[p.init](...(p.initArgs || [])));
     })
   );
+  registerPanelStack();
   broadcastAuthState('login-ready');
   console.log('Engine: 所有模組初始化完成 ✅');
 }
@@ -187,8 +192,37 @@ function clearAllModules() {
     if (!m || !m[p.clear]) continue;
     try { m[p.clear](...(p.clearArgs || [])); } catch (e) { console.error(`${p.clear} 失敗:`, e); }
   }
+  unregisterPanelStack();
   broadcastAuthState('logout-complete');
   console.log('Engine: 所有模組已清理 🧹');
+}
+
+// ===== 統一動態疊序註冊（第四期）=====
+// surface = 有 rootSelector 的面板；點擊該面板任何處（pointerdown capture）即
+// stack.raise 提到最上層（面板 ↔ tab 視窗同一套疊序）。initialRank 依
+// (zOrder 升冪、同值依 panels[] 陣列序) 換算成連續名次，讓初始疊序等同舊 zOrder
+// 相對高低與 §4.2 tie 規則（陣列後者在上）。
+const stackRaisers = [];
+function registerPanelStack() {
+  if (!activeCanvas) return;
+  stack.setCanvasId(activeCanvas.manifest.id);
+  activeCanvas.manifest.panels
+    .map((p, i) => ({ p, i, el: p.rootSelector ? document.querySelector(p.rootSelector) : null }))
+    .filter((x) => x.el)
+    .sort((a, b) => ((a.p.zOrder || 0) - (b.p.zOrder || 0)) || (a.i - b.i))
+    .forEach((x, rank) => {
+      stack.register(x.p.id, x.el, { initialRank: rank });
+      const handler = () => stack.raise(x.p.id);
+      x.el.addEventListener('pointerdown', handler, true);
+      stackRaisers.push({ el: x.el, handler, id: x.p.id });
+    });
+}
+function unregisterPanelStack() {
+  stackRaisers.forEach(({ el, handler, id }) => {
+    el.removeEventListener('pointerdown', handler, true);
+    stack.unregister(id, true); // 登出批次拆除：quiet，不 persist（保住使用者的疊序存檔）
+  });
+  stackRaisers.length = 0;
 }
 
 // ===== 編輯模式 =====
@@ -213,7 +247,7 @@ export function enterEditMode() {
     el.classList.add('gl-editable');
     const handle = document.createElement('div');
     handle.className = 'gl-edit-handle';
-    handle.textContent = p.id;
+    handle.textContent = p.label || p.id;
     el.appendChild(handle);
     // persist:false —— 編輯把手的位置權威是引擎自身的統一 layout
     // （由 onPositionChange 寫入 LAYOUT_KEY），draggable.js 不應再讀寫
@@ -253,6 +287,8 @@ export function resetLayout() {
   if (window.WindowManager && typeof window.WindowManager.reset === 'function') {
     try { window.WindowManager.reset(); } catch (e) { console.error('WindowManager.reset 失敗:', e); }
   }
+  // 統一疊序也回預設（位置 + 分頁 + 疊序三合一，見設計 §2.6）。
+  try { stack.reset(); } catch (e) { /* noop */ }
   const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   for (const { el } of panelRoots(activeCanvas.manifest)) {
     if (!reduced) {

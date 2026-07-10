@@ -1,0 +1,8 @@
+/* ===== 統一動態疊序（第四期）=====
+   z-index 只引用 --layer-panel 帶；名次由 stack-manager.js 以 --stack-rank
+   自訂屬性供給（非 inline z-index，才不會蓋掉 :focus-within / .small-size 等
+   狀態提升的 CSS 規則）。每 surface 配 2 個 z 槽（rank*2、rank*2+1）：
+   面板用 .gl-stack-surface；tab 視窗本體用 .gl-stack-surface、其作用中 pane
+   用 .gl-stack-pane（疊在自己視窗之上，才看得到 iframe 且可互動）。 */
+.gl-stack-surface { z-index: calc(var(--layer-panel) + var(--stack-rank, 0) * 2); }
+.gl-stack-pane    { z-index: calc(var(--layer-panel) + var(--stack-rank, 0) * 2 + 1); }

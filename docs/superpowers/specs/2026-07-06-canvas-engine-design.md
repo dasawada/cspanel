@@ -1,5 +1,7 @@
 # cspanel 畫布模式引擎化（Canvas Engine）— 設計文件
 
+> 📌 歷史快照：已上線（PR #2，2026-07-07 併入 main）。現行契約以 `docs/CANVAS.md` 為準（含三、四期後續演進：分頁視窗管理器、統一動態疊序）。§9 範圍外的「SaaS 式左選單新殼」已於 2026-07-10 撤案（見 CANVAS.md §9）。
+
 日期：2026-07-06
 狀態：已由使用者核可（brainstorming 階段）
 前置條件：第一期 Liquid Glass 分支（redesign/liquid-glass）驗收合併後，本期疊在其上

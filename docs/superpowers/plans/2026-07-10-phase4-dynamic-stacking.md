@@ -1,5 +1,7 @@
 # 第四期：統一動態疊序 + 把手標籤 + 編輯模式修正 Implementation Plan
 
+> 📌 已執行完畢（分支 `phase4-dynamic-stacking`，全部 Task 完成 + 審查修正 + chrome 打磨）。現行契約以 `docs/CANVAS.md` 為準。
+
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development 或 superpowers:executing-plans 逐工實作。步驟用 checkbox（`- [ ]`）追蹤。
 
 **Goal:** 把畫布所有面板 + tab 視窗的疊序，從「靜態寫死名次」改成「統一動態管理（點擊置頂 + 持久化）」，把編輯把手改顯示中文業務標籤，並修掉 `#gl-edit-bar` 載入右偏與 draggable 點擊 +18px 兩個 bug。

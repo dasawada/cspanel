@@ -1,5 +1,7 @@
 # cspanel Liquid Glass 設計移植 — 設計文件
 
+> 📌 歷史快照：已上線（PR #1，2026-07-06 併入 main）。現行契約與最新狀態以 `docs/CANVAS.md` 為準。
+
 日期：2026-07-05
 狀態：已由使用者核可（brainstorming 階段）
 來源設計：noisy-waterfall-6ca5（Tarkka）的 Liquid Glass 設計系統

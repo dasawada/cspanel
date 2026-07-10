@@ -1,0 +1,17 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8"><title>drag noshift fixture</title>
+<!-- B2 回歸 fixture：模擬 app 的 containing block 有 margin/padding，面板用 CSS
+     定位、無 inline left（等同編輯把手 persist:false 情境）。點一下不移動不該位移。 -->
+<style>
+  html, body { margin: 8px; } /* 模擬 body 預設 margin */
+  .panel_all_container { position: absolute; left: 0; top: 0; margin: 10px; padding: 10px; }
+  #pnl { position: absolute; left: 200px; top: 120px; width: 150px; height: 80px; background: #cde; }
+  #h { height: 20px; background: #9ab; cursor: grab; }
+</style></head><body>
+<div class="panel_all_container"><div id="pnl"><div id="h">handle</div>body</div></div>
+<script type="module">
+  import { makeDraggable } from '/script/draggable.js';
+  const pnl = document.getElementById('pnl'), h = document.getElementById('h');
+  // persist:false 模擬編輯把手（初始不設 inline left/top）
+  makeDraggable(pnl, h, { persist: false });
+  window.__rect = () => { const r = pnl.getBoundingClientRect(); return { l: Math.round(r.left), t: Math.round(r.top) }; };
+</script></body></html>

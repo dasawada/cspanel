@@ -40,41 +40,52 @@
     overflow: hidden;
 }
 
-/* tab 列：空白處拖曳 = 移動視窗。 */
+/* 標題列色帶：讓框「一眼是視窗」——與內容區以底色 + 分隔線區隔（--bg-soft 即
+   product 慣例的工具列第二中性層）。空白處拖曳 = 移動視窗（hover 微加深當拖曳暗示）。 */
 .wm-tabbar {
     flex: 0 0 auto;
     display: flex;
-    align-items: flex-end;
+    align-items: center;
     gap: 4px;
-    height: 34px;
-    padding: 4px 6px 0 6px;
+    height: 36px;
+    padding: 5px 8px;
     box-sizing: border-box;
+    background: var(--bg-soft);
+    border-bottom: 1px solid var(--border);
     cursor: grab;
     overflow: hidden;
+    transition: background 0.15s ease-out;
 }
+.wm-tabbar:hover { background: color-mix(in srgb, var(--fg) 7%, transparent); }
 .wm-tabbar:active { cursor: grabbing; }
 
+/* tab 藥丸：沿用全站 pill 語彙（登入列鈕、編排列鈕皆 999px 圓角）。 */
 .wm-tab {
-    padding: 4px 10px;
+    padding: 4px 12px;
     font-size: 12px;
     line-height: 1.4;
-    color: var(--muted);
-    background: color-mix(in srgb, var(--glass-bg) 55%, transparent);
-    border: 1px solid var(--glass-border);
-    border-bottom: none;
-    border-radius: 8px 8px 0 0;
+    color: var(--fg-2);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 999px;
     cursor: grab;
     white-space: nowrap;
     user-select: none;
-    transition: background var(--spring), color 0.15s;
+    transition: background 0.15s ease-out, color 0.15s ease-out;
 }
-.wm-tab:hover { background: var(--glass-bg-hover); color: var(--fg-2); }
+.wm-tab:hover { background: var(--glass-bg-hover); color: var(--fg); }
 .wm-tab.is-active {
     color: var(--accent-hover);
-    background: var(--glass-bg-hover);
+    background: var(--elevated);
+    border-color: var(--border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
     font-weight: 600;
 }
 .wm-tab:active { cursor: grabbing; }
+.wm-tab:focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 1px;
+}
 
 /* 內容區：作用中 pane 對位貼合這塊（pane 是常駐池的兄弟、疊在其上）。 */
 .wm-content {
@@ -85,23 +96,39 @@
 
 /* 底部 chrome 條：容納右下角縮放把手，且「不被 pane 蓋住」（pane 只貼 .wm-content）。 */
 .wm-footer {
-    flex: 0 0 14px;
+    flex: 0 0 16px;
     position: relative;
 }
+/* 縮放把手：三道斜紋。用 --border-2（可見的深色描邊）——原本的 --glass-border 是
+   50% 白，疊在白玻璃上幾乎隱形，等於沒有 affordance。hover 加深回饋。 */
 .wm-resize-se {
     position: absolute;
-    right: 2px;
-    bottom: 1px;
-    width: 14px;
-    height: 14px;
+    right: 3px;
+    bottom: 2px;
+    width: 18px;
+    height: 18px;
     cursor: nwse-resize;
     background:
         linear-gradient(135deg,
-            transparent 0 55%,
-            var(--glass-border) 55% 63%,
-            transparent 63% 74%,
-            var(--glass-border) 74% 82%,
-            transparent 82%);
+            transparent 0 40%,
+            var(--border-2) 40% 47%,
+            transparent 47% 58%,
+            var(--border-2) 58% 65%,
+            transparent 65% 76%,
+            var(--border-2) 76% 83%,
+            transparent 83%);
+    transition: opacity 0.15s ease-out;
+}
+.wm-resize-se:hover {
+    background:
+        linear-gradient(135deg,
+            transparent 0 40%,
+            var(--muted) 40% 47%,
+            transparent 47% 58%,
+            var(--muted) 58% 65%,
+            transparent 65% 76%,
+            var(--muted) 76% 83%,
+            transparent 83%);
 }
 
 /* 拖曳 tab 時跟著游標的浮動標籤（純視覺、pointer-events:none）。 */

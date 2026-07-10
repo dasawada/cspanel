@@ -1,0 +1,22 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8"><title>stack-manager fixture</title>
+<link rel="stylesheet" href="/style/v2/tokens.css">
+<link rel="stylesheet" href="/style/v2/stack.css">
+<style>
+  .s { position: absolute; width: 120px; height: 80px; }
+  #a { left: 0; top: 0; background: #fcc; }
+  #b { left: 40px; top: 20px; background: #cfc; }
+  #w { left: 80px; top: 40px; background: #ccf; }
+  #wp { position: absolute; left: 80px; top: 60px; width: 120px; height: 60px; background: #eef; }
+</style></head><body>
+<div id="a" class="s"></div><div id="b" class="s"></div><div id="w" class="s"></div><div id="wp"></div>
+<script type="module">
+  import { stack } from '/script/stack-manager.js';
+  // 注意：不在此清 key——持久化測試靠「reload 後仍讀到存檔」驗證。乾淨起點由
+  // 測試端負責（goto → removeItem → reload）。
+  stack.setCanvasId('cs');
+  stack.register('a', document.getElementById('a'), { initialRank: 0 });
+  stack.register('b', document.getElementById('b'), { initialRank: 1 });
+  stack.register('w', document.getElementById('w'), { levels: 2, pane: document.getElementById('wp'), initialRank: 2 });
+  window.__stack = stack;
+  window.__z = (id) => parseInt(getComputedStyle(document.getElementById(id)).zIndex, 10);
+</script></body></html>
