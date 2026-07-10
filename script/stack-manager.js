@@ -36,6 +36,9 @@ function persist() {
   try { localStorage.setItem(KEY(canvasId), JSON.stringify({ order: order.slice() })); } catch (e) { /* 吞錯，不阻斷互動 */ }
 }
 function applyRanks() {
+  // 最上層 surface 標記 is-stack-top（第五期材質層的鉤子：高度可讀/聚焦表現吃它；
+  // 預設樣式全關，標記本身零視覺變化）。
+  const topKey = order.length ? order[order.length - 1] : null;
   order.forEach((key, rank) => {
     const s = surfaces.get(key);
     if (!s) return;
@@ -45,9 +48,11 @@ function applyRanks() {
     // 不留下「有 --stack-rank 卻無 class → z-index:auto、藏到視窗框後」的隱形 pane。
     s.el.classList.add('gl-stack-surface');
     s.el.style.setProperty('--stack-rank', String(rank));
+    s.el.classList.toggle('is-stack-top', key === topKey);
     if (s.pane) {
       s.pane.classList.add('gl-stack-pane');
       s.pane.style.setProperty('--stack-rank', String(rank));
+      s.pane.classList.toggle('is-stack-top', key === topKey);
     }
   });
 }
@@ -112,9 +117,9 @@ export const stack = {
   unregister(key, quiet) {
     const s = surfaces.get(key);
     if (s) {
-      s.el.classList.remove('gl-stack-surface');
+      s.el.classList.remove('gl-stack-surface', 'is-stack-top');
       s.el.style.removeProperty('--stack-rank');
-      if (s.pane) { s.pane.classList.remove('gl-stack-pane'); s.pane.style.removeProperty('--stack-rank'); }
+      if (s.pane) { s.pane.classList.remove('gl-stack-pane', 'is-stack-top'); s.pane.style.removeProperty('--stack-rank'); }
     }
     surfaces.delete(key);
     order = order.filter((k) => k !== key);

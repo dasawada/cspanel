@@ -1,0 +1,47 @@
+/* ===== 材質層（第五期）=====
+   高度可讀 / 聚焦表現 / 運動文法 / 拖曳浮起——全部經 --mat-* 自訂屬性供給，
+   由材質調校面板（script/mat-tune.js，?tune=1 才啟用）即時改寫。
+   預設值全部等於「關」：--mat-shadow-top = --glass-shadow、退後透明度 = 1、
+   聚焦環透明、運動只在 html[data-mat-motion] 存在時套用——未調校時零視覺變化
+   （parity 安全）。選定 spec 後，把選中的檔位數值烘成這裡的預設、面板退役。 */
+:root {
+    --mat-shadow-top: var(--glass-shadow);
+    --mat-recede-opacity: 1;
+    --mat-motion-ms: 200ms;
+    --mat-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --mat-focus-ring: 0 0 0 0 transparent;
+    --mat-lift-shadow: var(--glass-shadow);
+}
+
+/* 高度可讀 + 聚焦表現：最上層 surface 的影子與聚焦環（is-stack-top 由 stack-manager 維護） */
+.gl-stack-surface.is-stack-top {
+    box-shadow: var(--mat-shadow-top), var(--mat-focus-ring);
+}
+/* 非最上層 surface（含 tab 視窗的 pane，跟著自己的視窗一起退）微退 */
+.gl-stack-surface:not(.is-stack-top),
+.gl-stack-pane:not(.is-stack-top) {
+    opacity: var(--mat-recede-opacity);
+}
+/* 拖曳浮起：影子加深（只用影子表達，不用 scale——draggable.js 以 inline transform
+   translate3d 拖曳，CSS transform 會被 inline 蓋掉，兩系統只有影子是一致可用的通道）。
+   放在 is-stack-top 規則之後：拖曳中的面板通常同時是最上層，後者贏 → 拖起加深、放下回落。 */
+.gl-stack-surface.gl-dragging {
+    box-shadow: var(--mat-lift-shadow);
+}
+
+/* 運動文法：只在調校面板設了 data-mat-motion 時啟用（否則完全不動既有 transition——
+   sharedGeometryCss 的 transition:all 0.3s ease 是 .small-size 縮放動畫的依賴）。
+   啟用時保留 width/height/left/top/min-width/flex-basis 的 0.3s（.small-size 動畫不破）。 */
+@media (prefers-reduced-motion: no-preference) {
+    html[data-mat-motion] .gl-stack-surface {
+        transition:
+            box-shadow var(--mat-motion-ms) var(--mat-motion-ease),
+            opacity var(--mat-motion-ms) ease-out,
+            width 0.3s ease, height 0.3s ease,
+            left 0.3s ease, top 0.3s ease,
+            min-width 0.3s ease, flex-basis 0.3s ease;
+    }
+    html[data-mat-motion] .gl-stack-pane {
+        transition: opacity var(--mat-motion-ms) ease-out;
+    }
+}

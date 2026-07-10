@@ -465,7 +465,13 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 8. **視窗 chrome 打磨**（見第 7.6 節）：標題列色帶、藥丸 tab、可見縮放把手（`--border-2` 取代隱形的
    `--glass-border`）、`role="tablist"` + roving tabindex + 鍵盤切換。使用者回饋「看起來不像視窗」的
    直接修正——症狀是視覺層（chrome 太含蓄），非 DOM 結構問題。
-9. **「新殼」另案撤案（2026-07-10 決策記錄）**：第二期設計 §9 曾預留「SaaS 式左選單新殼與工作區切換」
+9. **材質層 + 調校面板（第五期，暫時態）**：`style/v2/materiality.css` 以 `--mat-*` 自訂屬性供給
+   「高度可讀／聚焦表現／運動文法／拖曳浮起」，鉤子為 stack-manager 維護的 `is-stack-top` 與
+   `gl-dragging`；**預設全關（零視覺變化，parity 安全）**。調校面板 `script/mat-tune.js` 只在
+   `?tune=1` 時啟用（無參數完全 no-op，同事零影響），檔位制（成套參數、非裸滑桿）、
+   「輸出 spec」產 JSON。**拆除日**：使用者選定 spec 後，把 `resolved` 值烘成 materiality.css
+   預設、面板與本項記錄一併退役。回歸：`tools/mat-tune-test.mjs`。
+10. **「新殼」另案撤案（2026-07-10 決策記錄）**：第二期設計 §9 曾預留「SaaS 式左選單新殼與工作區切換」
    另案。經四期演進（manifest 擴充路徑、編輯模式、統一動態疊序、分頁視窗管理器）後，使用者決議**撤案**：
    新增部門工作區的正式路徑就是第 3 節（新 manifest + 薄殼頁），不再維持「整體重寫的新殼」為待辦專案。
    **重啟條件**（屆時重新 brainstorm、勿沿用舊構想）：出現 manifest 模型裝不下的部門工作區需求，或

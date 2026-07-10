@@ -1,0 +1,123 @@
+/* ===== 材質調校面板（dev-only，由 mat-tune.js 於 ?tune=1 時動態載入）=====
+   面板本身即 taste 物件：玻璃語彙、藥丸分段、克制的層級。 */
+#mat-tune-panel {
+    position: absolute;
+    width: 264px;
+    box-sizing: border-box;
+    padding: 0 14px 14px;
+    background: var(--glass-bg-hover);
+    -webkit-backdrop-filter: blur(28px) saturate(1.8);
+    backdrop-filter: blur(28px) saturate(1.8);
+    border: 1px solid var(--glass-border);
+    border-radius: var(--radius);
+    box-shadow: 0 18px 48px rgba(0, 0, 0, 0.14), 0 0 0 1px rgba(255, 255, 255, 0.5) inset;
+    z-index: var(--layer-bar); /* 常駐 chrome 帶：恆在面板之上、modal 之下 */
+    font-size: 12px;
+    color: var(--fg);
+    user-select: none;
+}
+
+.mt-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 2px 10px;
+    cursor: grab;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 10px;
+}
+.mt-head:active { cursor: grabbing; }
+.mt-title { font-weight: 600; font-size: 13px; letter-spacing: 0.06em; }
+.mt-sub { font-size: 10px; color: var(--muted); white-space: nowrap; }
+
+.mt-presets {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 12px;
+}
+.mt-preset {
+    flex: 1;
+    padding: 5px 0;
+    font-size: 12px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-2);
+    cursor: pointer;
+    transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+.mt-preset:hover { background: var(--glass-bg-hover); color: var(--fg); }
+.mt-preset.is-on { background: var(--accent); color: #fff; border-color: transparent; font-weight: 600; }
+
+.mt-axis { margin-bottom: 10px; }
+.mt-axis-label {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 8px;
+    margin-bottom: 5px;
+    font-weight: 600;
+    color: var(--fg-2);
+    letter-spacing: 0.04em;
+}
+.mt-axis-label small { font-weight: 400; font-size: 10px; color: var(--muted); text-align: right; }
+
+.mt-seg {
+    display: flex;
+    gap: 4px;
+    padding: 3px;
+    background: var(--bg-soft);
+    border-radius: 999px;
+}
+.mt-step {
+    flex: 1;
+    padding: 4px 0;
+    font-size: 11px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--fg-2);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s ease-out, color 0.15s ease-out;
+}
+.mt-step:hover { color: var(--fg); }
+.mt-step.is-on {
+    background: var(--elevated);
+    color: var(--accent-hover);
+    border-color: var(--border);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    font-weight: 600;
+}
+.mt-step:focus-visible, .mt-preset:focus-visible, .mt-export:focus-visible {
+    outline: 2px solid var(--accent-ring);
+    outline-offset: 1px;
+}
+
+.mt-out { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+.mt-export {
+    align-self: flex-start;
+    padding: 5px 14px;
+    font-size: 12px;
+    border: none;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #fff;
+    cursor: pointer;
+    transition: background 0.15s ease-out;
+}
+.mt-export:hover { background: var(--accent-hover); }
+.mt-json {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: var(--mono);
+    font-size: 10px;
+    line-height: 1.5;
+    color: var(--fg-2);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 8px;
+    resize: vertical;
+}
