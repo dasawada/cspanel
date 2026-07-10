@@ -1,5 +1,7 @@
 # 第四期設計：統一動態疊序 + 把手標籤 + 編輯模式修正
 
+> 📌 已實作完成（分支 `phase4-dynamic-stacking`，含對抗式審查修正與視窗 chrome 打磨；未 merge，交使用者）。現行契約以 `docs/CANVAS.md` 為準。
+
 > 承接第三期（`2026-07-08-phase3-edit-mode-robustness-HANDOFF.md`）。動任何畫布/面板前先讀
 > `docs/CANVAS.md` 與 `2026-07-06-canvas-engine-design.md`。本文為 brainstorming 核可後的設計。
 

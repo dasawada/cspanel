@@ -46,11 +46,12 @@
    - `behaviors: ['draggable']`；若面板要「不受編輯模式管制、隨時可拖」則改用 `alwaysDraggable: true`（此時面板模組自己要負責呼叫 `makeDraggable`，`alwaysDraggable` 只是告訴引擎「編輯模式進出時不要對它掛/卸把手」）。
 4. 驗證（見第 2.4 節）。
 
-### 2.2 Manifest 面板欄位表（完整 15 欄，型別＋一句話說明＋來自 `cs.js` 的真實範例值）
+### 2.2 Manifest 面板欄位表（完整 16 欄，型別＋一句話說明＋來自 `cs.js` 的真實範例值）
 
 | 欄位 | 型別 | 說明 | 範例值（`script/canvases/cs.js`） |
 |---|---|---|---|
-| `id` | `string`（必填） | 面板在該畫布內的唯一識別字；引擎用它當 `mods` Map 的 key、驗證重複、佈局存檔的 key、編輯把手上顯示的文字。 | `'optitle'` |
+| `id` | `string`（必填） | 面板在該畫布內的唯一識別字；引擎用它當 `mods` Map 的 key、驗證重複、佈局/疊序存檔的 key。 | `'optitle'` |
+| `label` | `string`（可省略，第四期新增） | 面板的人類可讀業務名稱；編輯把手顯示 `label \|\| id`。純顯示用途，引擎不以它做任何索引。 | `'標題生成'` |
 | `module` | `string`（必填） | ES module 路徑，引擎以 `await import(p.module)` 動態載入。**路徑是相對於 `script/canvas-engine.js` 所在目錄解析，不是相對於 manifest 檔案！** `import()` 的相對路徑永遠以「執行 import 陳述式的模組」為基準，執行者是 `canvas-engine.js`（位於 `script/`），不是 `cs.js`（位於 `script/canvases/`）。因此即使 `cs.js` 深一層目錄，`'./optitleGG.js'` 仍正確指向 `script/optitleGG.js`。新增畫布若把面板模組放進子目錄，路徑要用 `script/canvas-engine.js` 的相對深度去寫（例如 `'./hr/panelA.js'` 對應 `script/hr/panelA.js`），**不要**用 manifest 檔案的相對深度去寫。 | `'./optitleGG.js'` |
 | `init` | `string`（必填） | 模組匯出的初始化函式**名稱字串**（不是函式參照）；登入後引擎以 `m[p.init](...(p.initArgs||[]))` 呼叫。 | `'initOptitlePanel'` |
 | `clear` | `string`（必填） | 模組匯出的清理函式名稱字串；登出時引擎以 `m[p.clear](...(p.clearArgs||[]))` 呼叫。 | `'clearOptitlePanel'` |
@@ -70,7 +71,7 @@
 ```bash
 node --input-type=module -e "import('./script/canvases/cs.js').then(m=>console.log([...new Set(m.default.panels.flatMap(p=>Object.keys(p)))].join(',')))"
 ```
-目前輸出：`id,module,init,clear,slot,initArgs,clearArgs,syncInit,rootSelector,geometryCss,zOrder,behaviors,extraSlots,quirks,alwaysDraggable`——與上表 15 欄一一對應。
+目前輸出：`id,module,init,clear,slot,label,initArgs,clearArgs,syncInit,rootSelector,geometryCss,zOrder,behaviors,extraSlots,quirks,alwaysDraggable`——與上表 16 欄一一對應。
 
 ### 2.3 順序契約（一般化規則）
 
@@ -106,14 +107,13 @@ node tools/layout-parity.mjs compare tools/parity-baseline.json /tmp/after.json
 `tools/parity-selectors.json` 的 `rects`／`zorder` 陣列後，重新 capture 覆蓋
 `tools/parity-baseline.json`，讓它從此納入回歸保護。
 
-**已知限制（zorder 驗收盲區）**：`tools/layout-parity.mjs` 的 `capture()` 對擷取到的 z 值用
-`Array.prototype.sort((p, q) => q.z - p.z)`（stable sort）排序後才寫入輸出；相同 z 值（即同帶內
-`zOrder` 相同，見第 4.2 節「tie 疊序」）的元素之間，排序結果只會照抄 `parity-selectors.json` 內
-`zorder` 陣列本身的原始順序，並不是量測當下瀏覽器實際的 DOM 疊序。也就是說：若某次改動把兩個
-tie 面板在 `manifest.panels[]` 內的相對位置互換（依第 4.2 節規則，這會讓實際畫面疊序跟著互換），
-只要沒有同時去改 `parity-selectors.json` 的 `zorder` 陣列順序，`compare()` 仍會回報 `PARITY OK`——
-harness 對「相同 z 值元素之間的疊序回歸」是盲區，這類變動需要人工開瀏覽器覆核，不能只看
-`PARITY OK` 就當作驗收通過。
+**已知限制（zorder 驗收盲區）——第四期後實質解除**：`tools/layout-parity.mjs` 的 `capture()` 對 z 值
+用 stable sort 排序，「相同 z 值」元素之間的順序只會照抄 `parity-selectors.json` 的陣列原序，不是實際
+DOM 疊序——這在二、三期（多面板共享同一 `zOrder`，見第 4.2 節 tie）是真實盲區。**第四期起** resting
+疊序由 stack-manager 給每個 surface **distinct** 的連續名次（`--stack-rank` 0..N-1，無 tie），harness
+量到的 z 全部相異、排序即真實疊序，盲區不再發生於面板。仍要注意：capture 是在「乾淨 stack 存檔」
+（stub 環境無 `cspanel.stack.*`）下量測初始序；若你在有殘留存檔的環境手動 capture，量到的是該存檔的
+疊序而非 manifest 初始序。
 
 ---
 
@@ -395,6 +395,18 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 - **`.panel-tabs-container` 不再是普通可拖面板**（它變成初始視窗的幾何來源後即被移除）——**不要**把它加進
   manifest 的 `rootSelector`/`behaviors`；其 `sharedGeometryCss` 幾何**保留**，作為初始視窗位置的來源。
 
+### 7.6 視窗 chrome 與無障礙（第四期打磨）
+
+- **標題列色帶**：`.wm-tabbar` 用 `--bg-soft` 底 + `--border` 底部分隔線，與內容區明確區隔（「一眼是
+  視窗」的關鍵）；空白處拖曳移動視窗，hover 微加深為拖曳暗示。
+- **tab 為藥丸**（沿全站 pill 語彙）：作用中 = `--elevated` 底 + `--accent-hover` 字 + 邊框與微陰影；
+  `:focus-visible` 用 `--accent-ring` 外框。
+- **縮放把手**：18px、三道斜紋用 `--border-2`。注意勿改回 `--glass-border`——它是 50% 白，疊在白玻璃上
+  等於隱形（第四期修正的缺陷）。
+- **a11y**：tab 列 `role="tablist"`、每個 tab `role="tab"` + `aria-selected` + roving tabindex（作用中
+  =0、其餘 -1）；方向鍵／Home／End 移動焦點、Enter／Space 切換。切換走 `render()`（重繪 chrome、
+  pane 池不動 → iframe 不重載），重繪後焦點還原到同一顆 tab。
+
 ---
 
 ## 8. 第三期刻意變更記錄（編輯模式健壯化 + 分頁視窗管理器）
@@ -450,3 +462,12 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 7. **回歸測試新增**：`tools/stack-test.mjs`（stack-manager）、`tools/panel-stack-test.mjs`（引擎整合：點擊
    置頂/持久化/中文標籤）、`tools/editbar-center-test.mjs`、`tools/drag-noshift-test.mjs`；`wm-test.mjs` 加
    跨類（面板↔視窗）疊序斷言。
+8. **視窗 chrome 打磨**（見第 7.6 節）：標題列色帶、藥丸 tab、可見縮放把手（`--border-2` 取代隱形的
+   `--glass-border`）、`role="tablist"` + roving tabindex + 鍵盤切換。使用者回饋「看起來不像視窗」的
+   直接修正——症狀是視覺層（chrome 太含蓄），非 DOM 結構問題。
+9. **「新殼」另案撤案（2026-07-10 決策記錄）**：第二期設計 §9 曾預留「SaaS 式左選單新殼與工作區切換」
+   另案。經四期演進（manifest 擴充路徑、編輯模式、統一動態疊序、分頁視窗管理器）後，使用者決議**撤案**：
+   新增部門工作區的正式路徑就是第 3 節（新 manifest + 薄殼頁），不再維持「整體重寫的新殼」為待辦專案。
+   **重啟條件**（屆時重新 brainstorm、勿沿用舊構想）：出現 manifest 模型裝不下的部門工作區需求，或
+   「任意面板拖進分頁群組」成為日常用法。屆時可帶走的 primitive：iframe 常駐池（第 7.2 節）與 stack-manager
+   （第 4.2、5 節）；新殼應為獨立 standards-mode 頁面，不受 panel_all 的 quirks 契約束縛。
