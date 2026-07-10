@@ -194,11 +194,18 @@ export function mountWindowManager(host, opts = {}) {
 
       const bar = document.createElement('div');
       bar.className = 'wm-tabbar';
+      bar.setAttribute('role', 'tablist');
+      bar.setAttribute('aria-label', '分頁視窗');
       for (const tabId of win.tabs) {
         const tab = document.createElement('div');
-        tab.className = 'wm-tab' + (tabId === win.active ? ' is-active' : '');
+        const isActive = tabId === win.active;
+        tab.className = 'wm-tab' + (isActive ? ' is-active' : '');
         tab.dataset.tab = tabId;
         tab.textContent = tabMeta[tabId] ? tabMeta[tabId].title : tabId;
+        // roving tabindex：只有作用中 tab 可被 Tab 鍵聚焦，方向鍵在列內移動
+        tab.setAttribute('role', 'tab');
+        tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
+        tab.tabIndex = isActive ? 0 : -1;
         bar.appendChild(tab);
       }
 
@@ -237,6 +244,33 @@ export function mountWindowManager(host, opts = {}) {
     // 每個 tab：拖曳（重排 / 撕離 / 合併）或點擊（切換）。
     bar.querySelectorAll('.wm-tab').forEach((tabEl) => {
       tabEl.addEventListener('pointerdown', (e) => startTabDrag(win, tabEl.dataset.tab, e));
+    });
+    // 鍵盤（WAI-ARIA tabs，手動觸發模式）：方向鍵移動焦點、Home/End 到頭尾、
+    // Enter/Space 切換到聚焦的 tab。切換走 render（重繪 chrome、pane 池不動 →
+    // iframe 不重載），重繪後把焦點還給新 DOM 裡的同一顆 tab。
+    bar.addEventListener('keydown', (e) => {
+      const tabs = [...bar.querySelectorAll('.wm-tab')];
+      const focused = document.activeElement && document.activeElement.closest ? document.activeElement.closest('.wm-tab') : null;
+      if (!tabs.length || !focused || !bar.contains(focused)) return;
+      const i = tabs.indexOf(focused);
+      if (e.key === 'ArrowRight' || e.key === 'ArrowLeft') {
+        e.preventDefault();
+        const next = tabs[(i + (e.key === 'ArrowRight' ? 1 : tabs.length - 1)) % tabs.length];
+        next.focus();
+      } else if (e.key === 'Home' || e.key === 'End') {
+        e.preventDefault();
+        tabs[e.key === 'Home' ? 0 : tabs.length - 1].focus();
+      } else if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        const tabId = focused.dataset.tab;
+        if (win.active !== tabId) {
+          win.active = tabId;
+          persist();
+          render();
+          const nt = win.el && win.el.querySelector(`.wm-tab[data-tab="${CSS.escape(tabId)}"]`);
+          if (nt) nt.focus();
+        }
+      }
     });
     // 右下角縮放。
     resize.addEventListener('pointerdown', (e) => startResize(win, e));

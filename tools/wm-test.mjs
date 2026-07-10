@@ -120,6 +120,32 @@ assert(s[0].active === 'classlog', `active after switch = ${s[0].active}`);
 assert(JSON.stringify(await visiblePanes()) === JSON.stringify(['classlog']), `visible pane = ${JSON.stringify(await visiblePanes())}`);
 assert((await loadSum()) === base, `no reload on switch (delta ${await loadSum() - base})`);
 
+console.log('— a11y（tablist 角色 + roving tabindex + 鍵盤切換不重載）—');
+const aria = await page.evaluate(() => {
+  const bar = document.querySelector('.wm-tabbar');
+  const tabs = [...bar.querySelectorAll('.wm-tab')];
+  return {
+    barRole: bar.getAttribute('role'),
+    tabRoles: tabs.every((t) => t.getAttribute('role') === 'tab'),
+    selected: tabs.filter((t) => t.getAttribute('aria-selected') === 'true').map((t) => t.dataset.tab),
+    roving: tabs.every((t) => (t.getAttribute('aria-selected') === 'true' ? t.tabIndex === 0 : t.tabIndex === -1)),
+  };
+});
+assert(aria.barRole === 'tablist', `tabbar role=tablist (got ${aria.barRole})`);
+assert(aria.tabRoles, `all tabs role=tab`);
+assert(aria.selected.length === 1 && aria.selected[0] === 'classlog', `aria-selected 唯一且=active (${JSON.stringify(aria.selected)})`);
+assert(aria.roving, `roving tabindex（active=0 其餘 -1）`);
+await page.evaluate(() => document.querySelector('.wm-tab.is-active').focus());
+await page.keyboard.press('ArrowRight');
+await page.keyboard.press('Enter');
+await page.waitForTimeout(120);
+s = await snapshot();
+assert(s[0].active === 'courselog', `方向鍵+Enter 切到下一 tab (active=${s[0].active})`);
+assert((await loadSum()) === base, `鍵盤切換不重載 iframe (delta ${await loadSum() - base})`);
+const focusRestored = await page.evaluate(() => document.activeElement && document.activeElement.dataset && document.activeElement.dataset.tab);
+assert(focusRestored === 'courselog', `重繪後焦點還在同一顆 tab (focus=${focusRestored})`);
+await clickTab(0, 'classlog'); // 還原狀態給後續測試
+
 console.log('— 初始對位（作用中 pane 貼合內容區）—');
 let a = await alignment(0);
 assert(a.dl < 1.5 && a.dt < 1.5 && a.dw < 1.5 && a.dh < 1.5, `pane aligns content ${JSON.stringify(a)}`);
