@@ -27,25 +27,14 @@
             max-height: 450px;
             overflow-y: auto;
             padding-right: 6px; /* Add padding to compensate for scrollbar */
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-2) transparent;
+            /* 捲軸樣式由全域單一權威供給（style/v2/scrollbar.css，CANVAS.md §4.7）——
+               局部 scrollbar-width/color 已移除（特異度會永久蓋過全域 *） */
             /* Prevent content shift in modern browsers */
             scrollbar-gutter: stable;
         }
 
         /* 针对Webkit引擎（Chrome, Safari, Edge） */
-        .meeting-now-result-flow::-webkit-scrollbar {
-            width: 6px;
-        }
 
-        .meeting-now-result-flow::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .meeting-now-result-flow::-webkit-scrollbar-thumb {
-            background-color: var(--border-2);
-            border-radius: 10px;
-        }
         .meetingsearch-meeting-item {
             margin-bottom: 5px;
             border-bottom: 1px solid var(--border);
@@ -75,10 +64,6 @@
             box-shadow: inset 0 0px 6px rgba(0, 0, 0, 0.06);
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
-        }
-
-        .meetingsearch-info::-webkit-scrollbar {
-            display: none;  /* Chrome, Safari and Opera */
         }
 
         .meetingsearch-ongoing {

@@ -9,24 +9,10 @@
     width: 320px; /* 調整寬度以匹配表單區域 */
     margin: 0 auto;
     overflow-y: auto;
-    scrollbar-width: thin; /* 對 Firefox 生效，設置滾動條寬度為細 */
-    scrollbar-color: var(--border-2) transparent; /* 對 Firefox 生效，設置滾動條顏色和軌道顏色 */
+    /* 捲軸樣式由全域單一權威供給（style/v2/scrollbar.css，CANVAS.md §4.7） */
 }
 
 /* Chrome、Edge、Safari 瀏覽器 */
-#meeting-check-result-scrollbar::-webkit-scrollbar {
-    width: 8px;
-}
-
-#meeting-check-result-scrollbar::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-#meeting-check-result-scrollbar::-webkit-scrollbar-thumb {
-    background-color: var(--border-2);
-    border-radius: 10px;
-    border: 2px solid transparent;
-}
 
 #meeting-check-result {
     color: var(--success);
@@ -86,7 +72,6 @@
     width: auto; /* 調整寬度以確保與其他元素對齊 */
     background: var(--bg-soft);
 }
-
 
 .meeting-check-title {
     margin-top: 5px;

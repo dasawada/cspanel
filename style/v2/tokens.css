@@ -59,4 +59,12 @@
   --layer-bar: 400;           /* 登入列等常駐 chrome */
   --layer-modal: 500;         /* modal 與 scrim */
   --layer-toast: 600;         /* toast */
+
+  /* 膠囊輸入 + 捲軸詞彙（第六期；capsule.css / scrollbar.css 自帶 fallback，
+     此處為主題側權威——thumb 色吃 --fg 隨 63 組主題連動） */
+  --capsule-inset: 8px;
+  --capsule-slot-w: 22px;
+  --capsule-fg: var(--muted);
+  --capsule-fg-hover: var(--fg);
+  --scrollbar-thumb: color-mix(in srgb, var(--fg) 25%, transparent);
 }

@@ -252,6 +252,33 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
   `overflow`、`transition`），這是「先搬運、後增能」兩階段策略下的刻意妥協；新增面板不必比照此
   包山包海的作法，但也不強制拆分，只要遵守上列 z-index 規則即符合鐵律。
 
+### 4.7 表面以下的詞彙：膠囊輸入與捲軸（第六期鐵律）
+
+**膠囊輸入（`style/v2/capsule.css`）**：任何「意圖放在 input 內」的動作元素（clear 鈕、輸入中
+spinner…）**不得自造定位**，一律組合詞彙——wrapper 加 `.gl-capsule`（唯一定位權威）、尾端動作加
+`.gl-capsule__end`（第二槽 `__end-2`）、spinner 外觀加 `.gl-capsule__spinner`（in-flow，勿與槽同
+元素合用——rotate 會蓋掉置中 translate）。機制唯一、參數走 token：`--capsule-inset`／
+`--capsule-slot-w`／`--capsule-fg(-hover)`（tokens.css 供權威值；capsule.css 自帶 fallback，可被
+不載 tokens 的頁面獨立引用）。實例可**局部覆寫 token 值**（如 canned 的 `--capsule-inset: 42px`，
+因 input 僅佔 90% 寬）——調參不算破例，換機制才是。已遷移實例：fudausearch（panel_all 模板／
+轉單頁／fu_s_popup 三處）、canned（clear + spinner）。`.ip-search-spinner`（Firestore markup，
+class 不可改）與 `.gl-capsule__spinner` **配方一致**（2px 邊框、`--border-2`/`--accent` 雙色、
+1s linear 旋轉），但**兩處刻意不同**：尺寸——ip 固定 20px（Firestore markup 字級脈絡不受控，
+勿改成 em）、capsule 用 1.25em 隨輸入框字級；reduced-motion——capsule 降速 2.5s、ip 無此處理。
+改配方（邊框/色/轉速）時兩處同步，尺寸與 reduced-motion 各自維持。
+
+**捲軸（`style/v2/scrollbar.css`）**：全站單一權威，**只用標準屬性**（`scrollbar-width: thin` +
+`scrollbar-color` token）——Chrome 121+ 設了標準屬性即忽略 `::-webkit-scrollbar`，故**禁止再寫任何
+webkit 捲軸私有語法**（本期已拆除全站六處，含 cspanel_netlify 兩頁）。Safari 回退系統原生。
+cspanel 全部頁面已掛 link；cspanel_netlify 頁面以完整網址熱連本檔（跨 repo 單一輪子，部署順序
+cspanel 先於 netlify）。
+
+**白名單（非 input 內嵌，不受本節管轄）**：`.clearIcon`（optitle 面板角落垃圾桶）、
+`.ui-spinner`（轉場遮罩）、`.meeting-loading-spinner`（區塊級 loading）、
+`.fudausearch-fixed-button`（區塊按鈕）。捲軸唯一例外：`.meetingsearch-info` 的
+`scrollbar-width: none`（meeting-now-css.css，刻意隱藏捲軸，需高於全域 `*` 的特異度）——
+除「隱藏」外不得有其他局部捲軸宣告。
+
 ---
 
 ## 5. 佈局持久化格式與重設語義

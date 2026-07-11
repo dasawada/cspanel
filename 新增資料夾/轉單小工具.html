@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device=1.0">
   <title>轉單小幫手</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="../style/v2/capsule.css">
+  <link rel="stylesheet" href="../style/v2/scrollbar.css">
   <link rel="icon" href="favicon.ico">
   <style>
 html,body { margin:0; height:100%; }
@@ -51,7 +53,8 @@ html,body { margin:0; height:100%; }
 /* 建議選單樣式 */
 .fudausearch-suggestions {
     position: absolute;
-    top: 100%;
+    /* wrapper padding 對稱化後 padding box 底緣多 5px；扣回讓下拉貼齊輸入框底緣（審查修正） */
+    top: calc(100% - 5px);
     left: 10px;
     width: 90%;
     background-color: #fff;
@@ -130,8 +133,9 @@ html,body { margin:0; height:100%; }
   position: relative;
   display: flex;
   align-items: center;
-  margin-bottom: 5px;
-  padding: 5px 10px 0px 10px;
+  /* 垂直 padding 對稱（原 5/0 不對稱會讓膠囊槽的 wrapper 置中與 input 中心差 2.5px）；
+     原 margin-bottom:5px 併入 padding-bottom，總間距不變 */
+  padding: 5px 10px;
 }
 
 #fudausearch-input {
@@ -139,20 +143,9 @@ html,body { margin:0; height:100%; }
 }
 
 /* 清除按鈕樣式 */
-.fudausearch-clear-btn {
-  position: absolute;
-  right: 15px;
-  background-color: transparent;
-  border: none;
-  font-size: 15px;
-  color: #aaa;
-  cursor: pointer;
-  width: 15px;
-}
-
-.fudausearch-clear-btn:hover {
-  color: #000;
-}
+/* 定位/色彩/hover 由膠囊詞彙供給（../style/v2/capsule.css .gl-capsule__end）；僅實例尺寸 */
+.fudausearch-clear-btn { font-size: 15px; width: 15px; }
+.fudausearch-input-wrapper { --capsule-inset: 15px; }
 .draggable-handle{color: darkgrey;}
 
     /* Auth (Login) Unified Style */
@@ -478,9 +471,9 @@ html,body { margin:0; height:100%; }
           職代是誰 (⁎⁍̴̛ᴗ⁍̴̛⁎)
       </div>
       <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
-      <div class="fudausearch-input-wrapper">
+      <div class="fudausearch-input-wrapper gl-capsule">
           <input type="text" id="fudausearch-input" placeholder="輔導職代、顧問組長查詢" style="padding:2px 6px;font-size: 13px;" autocomplete="off" />
-          <button class="fudausearch-clear-btn" id="fudausearch-clear-btn">x</button>
+          <button class="fudausearch-clear-btn gl-capsule__end" id="fudausearch-clear-btn">x</button>
           <div id="fudausearch-suggestions" class="fudausearch-suggestions"></div>
       </div>
       <div id="fudausearch-results" style="padding: 0 10px;"></div>

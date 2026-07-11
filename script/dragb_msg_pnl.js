@@ -48,6 +48,9 @@ const PANEL_CSS = `
   width: 100%;
   display: flex;
   align-items: center;
+  /* 膠囊詞彙實例參數：input 只佔 90% 寬，尾端槽自 wrapper 右緣內縮 42px 才落在
+     input 內（capsule.css 的機制唯一、參數走 token） */
+  --capsule-inset: 42px;
 }
 .canned-panel-search-bar .canned-panel-search-input {
   width: 90%;
@@ -61,15 +64,9 @@ const PANEL_CSS = `
   transition: width 0.2s;
 }
 .canned-panel-clear-btn {
-  position: absolute;
-  right: 42px;
-  top: 50%;
-  transform: translateY(-50%);
-  cursor: pointer;
+  /* 定位/色彩/hover 由膠囊詞彙供給（capsule.css .gl-capsule__end）；此處僅實例尺寸與顯示邏輯 */
   width: 24px;
   height: 24px;
-  text-align: center;
-  color: #999;
   font-size: 24px;
   display: none;
   z-index: 1004;
@@ -153,13 +150,7 @@ const PANEL_CSS = `
   border-bottom-left-radius: 10px;
 }
 .canned-panel-search-spinner {
-  display: inline-block;
-  width: 20px;
-  height: 20px;
-  border: 2px solid #f3f3f3;
-  border-top: 2px solid #b1cbdb;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
+  /* 外觀配方由膠囊詞彙供給（capsule.css .gl-capsule__spinner）；此處僅實例排版 */
   margin-left: 8px;
   vertical-align: middle;
 }
@@ -270,10 +261,10 @@ export function createCannedMessagesPanel(options = {}) {
   panel.innerHTML = `
     <div class="canned-panel-handle">代課罐頭生成器</div>
     <div style="padding:0px 10px 10px 10px">
-      <div class="canned-panel-search-bar">
+      <div class="canned-panel-search-bar gl-capsule">
           <input type="text" class="canned-panel-search-input" placeholder="輸入課程ID" autocomplete="off" data-form-type="other" data-lpignore="true" data-1p-ignore="true" />
-          <span class="canned-panel-search-spinner" id="canned-panel-search-spinner" style="display:none"></span>
-          <span class="canned-panel-clear-btn"></span>
+          <span class="canned-panel-search-spinner gl-capsule__spinner" id="canned-panel-search-spinner" style="display:none"></span>
+          <span class="canned-panel-clear-btn gl-capsule__end"></span>
       </div>
       <div class="canned-panel-course-result"></div>
       <div class="canned-panel-tab-container">
@@ -844,7 +835,7 @@ export function createCannedMessagesPanel(options = {}) {
   // 替換原有的 input 事件處理
   searchInput.addEventListener('input', async () => {
     const currentValue = searchInput.value.trim();
-    clearBtn.style.display = currentValue ? 'block' : 'none';
+    clearBtn.style.display = currentValue ? 'flex' : 'none'; // flex＝膠囊詞彙的置中機制（capsule.css）
     
     if (!currentValue) {
       // 重置面板
@@ -871,7 +862,7 @@ export function createCannedMessagesPanel(options = {}) {
   searchInput.addEventListener('paste', () => {
     setTimeout(async () => {
       const pastedValue = searchInput.value.trim();
-      clearBtn.style.display = pastedValue ? 'block' : 'none';
+      clearBtn.style.display = pastedValue ? 'flex' : 'none'; // flex＝膠囊詞彙的置中機制
       
       if (pastedValue && isValidCourseIdFormat(pastedValue)) {
         debouncedDispatch.cancel?.();

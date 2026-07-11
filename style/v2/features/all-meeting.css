@@ -65,30 +65,16 @@
 }
 
 /* 自定義捲動條 */
-#all-meeting-result-container::-webkit-scrollbar {
-    width: 5px; /* 設置垂直捲動條的寬度 */
-}
 
 /* 捲動條軌道 */
-#all-meeting-result-container::-webkit-scrollbar-track {
-    background: transparent; /* 捲動條軌道背景色 */
-}
 
 /* 捲動條滑塊 */
-#all-meeting-result-container::-webkit-scrollbar-thumb {
-    background: var(--border-2); /* 滑塊顏色 */
-    border-radius: 10px; /* 滑塊圓角 */
-}
 
 /* 滑塊懸停效果 */
-#all-meeting-result-container::-webkit-scrollbar-thumb:hover {
-    background: var(--fg-2); /* 滑塊在懸停時的顏色 */
-}
 
 #all-meeting-result-container div {
     padding: 5px;
 }
-
 
 /* 錯誤顯示區域樣式 */
 #all-meeting-error {
