@@ -22,7 +22,7 @@
 
 /* 設定所有結果段落字體、間距與顏色 */
 #ip_result_container p {
-    font-size: 13px;
+    font-size: var(--text-md);
     line-height: 1.4;
     margin: 0;
     padding: 6px 0;
@@ -49,23 +49,22 @@
     line-height: 1.4;
 }
 
-/* 與膠囊詞彙 .gl-capsule__spinner 配方一致（邊框/雙色/轉速，見 CANVAS.md §4.7）；
-   刻意不同：尺寸固定 20px（Firestore markup 字級不受控，勿改 em）、無 reduced-motion 降速。
-   class 名為 Firestore 既定契約不可改；改「配方」時兩處同步，尺寸各自維持。 */
+/* 與膠囊詞彙 .gl-capsule__spinner 完全同配方同尺寸（--icon-md，第七期尺寸階梯統一，
+   見 CANVAS.md §4.7/§4.8）。class 名為 Firestore 既定契約不可改；改配方時兩處同步。 */
 .ip-search-spinner {
     display: inline-block;
-    width: 20px;
-    height: 20px;
+    width: var(--icon-md);
+    height: var(--icon-md);
     border: 2px solid var(--border-2);
     border-top: 2px solid var(--accent);
     border-radius: 50%;
     animation: ip-search-spin 1s linear infinite;
-    margin-left: 8px;
+    margin-left: var(--space-4);
     vertical-align: middle;
     box-sizing: border-box;
-    flex: 0 0 20px;
-    min-width: 20px;
-    min-height: 20px;
+    flex: 0 0 var(--icon-md);
+    min-width: var(--icon-md);
+    min-height: var(--icon-md);
     aspect-ratio: 1 / 1;
     visibility: hidden;
 }
@@ -78,38 +77,41 @@
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
 }
+@media (prefers-reduced-motion: reduce) {
+    .ip-search-spinner { animation-duration: 2.5s; } /* 與 .gl-capsule__spinner 同步降速 */
+}
 
 /* IP dashboard layout */
 .ip-dashboard {
     border: 1px solid var(--border);
     border-radius: 6px;
-    padding: 6px;
+    padding: var(--space-3);
     background: var(--bg-soft);
     color: var(--fg);
-    font-size: 12px;
+    font-size: var(--text-sm);
     line-height: 1.4;
     display: grid;
-    gap: 6px;
+    gap: var(--space-3);
 }
 
 .ip-dashboard__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
-    padding-bottom: 4px;
+    gap: var(--space-3);
+    padding-bottom: var(--space-2);
     border-bottom: 1px solid var(--border);
 }
 
 .ip-dashboard__badges {
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-2);
 }
 
 .ip-dashboard__location {
     font-weight: 600;
-    font-size: 13px;
+    font-size: var(--text-md);
     color: var(--fg);
     overflow: hidden;
     text-overflow: ellipsis;
@@ -119,9 +121,9 @@
 .ip-badge {
     display: inline-flex;
     align-items: center;
-    padding: 2px 6px;
+    padding: var(--space-1) var(--space-3);
     border-radius: 4px;
-    font-size: 10px;
+    font-size: var(--text-2xs);
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.02em;
@@ -154,7 +156,7 @@
 
 /* Confidence Badge Styles */
 .ip-confidence-badge {
-    font-size: 9px;
+    font-size: var(--text-3xs);
 }
 
 .confidence-high {
@@ -177,25 +179,25 @@
 
 .ip-dashboard__identity {
     display: grid;
-    gap: 2px;
+    gap: var(--space-1);
 }
 
 .ip-dashboard__identity-row {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 6px;
+    gap: var(--space-3);
 }
 
 .ip-dashboard__asn {
-    font-size: 10px;
+    font-size: var(--text-2xs);
     color: var(--fg-2);
     font-family: var(--mono);
 }
 
 .ip-dashboard__access {
-    font-size: 10px;
-    padding: 2px 6px;
+    font-size: var(--text-2xs);
+    padding: var(--space-1) var(--space-3);
     border-radius: 3px;
     font-weight: 600;
     text-transform: uppercase;
@@ -226,7 +228,7 @@
 }
 
 .ip-dashboard__isp {
-    font-size: 13px;
+    font-size: var(--text-md);
     font-weight: 600;
     color: var(--fg);
 }
@@ -234,14 +236,14 @@
 .ip-dashboard__grid {
     display: grid;
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    gap: 4px;
+    gap: var(--space-2);
 }
 
 .ip-stat {
     background: var(--elevated);
     border: 1px solid var(--border-2);
     border-radius: 4px;
-    padding: 4px 6px;
+    padding: var(--space-2) var(--space-3);
 }
 
 .ip-stat--wide {
@@ -256,7 +258,7 @@
 
 .ip-stat__label {
     display: block;
-    font-size: 10px;
+    font-size: var(--text-2xs);
     color: var(--fg-2);
 }
 
@@ -270,7 +272,7 @@
     border-radius: 50%;
     background: var(--muted);
     color: #ffffff;
-    font-size: 9px;
+    font-size: var(--text-3xs);
     font-weight: bold;
     cursor: help;
     position: relative;
@@ -294,9 +296,9 @@
     background: var(--ip-tooltip-bg);
     color: var(--ip-tooltip-fg);
     border: 1px solid var(--ip-tooltip-border);
-    padding: 8px 10px;
+    padding: var(--space-4) var(--space-5);
     border-radius: 8px;
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 400;
     line-height: 1.45;
     max-width: 320px;
@@ -343,7 +345,7 @@
 .ip-tooltip-compact {
     max-width: 240px;
     min-width: 110px;
-    padding: 8px 10px;
+    padding: var(--space-4) var(--space-5);
     text-align: left;
 }
 
@@ -356,7 +358,7 @@
 }
 
 .ip-tooltip-section {
-    padding: 10px 12px;
+    padding: var(--space-5) var(--space-6);
     border-bottom: 1px solid var(--border);
 }
 
@@ -365,19 +367,19 @@
 }
 
 .ip-tooltip-header {
-    font-size: 13px;
+    font-size: var(--text-md);
     font-weight: 600;
     color: var(--fg);
-    margin-bottom: 8px;
+    margin-bottom: var(--space-4);
 }
 
 .ip-tooltip-subheader {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     color: var(--fg-2);
     text-transform: uppercase;
     letter-spacing: 0.5px;
-    margin-bottom: 6px;
+    margin-bottom: var(--space-3);
 }
 
 .ip-tooltip-divider {
@@ -391,13 +393,13 @@
     justify-content: space-between;
     align-items: baseline;
     margin: 4px 0;
-    font-size: 11px;
+    font-size: var(--text-xs);
     line-height: 1.4;
 }
 
 .ip-tooltip-label {
     color: var(--fg-2);
-    margin-right: 12px;
+    margin-right: var(--space-6);
 }
 
 .ip-tooltip-value {
@@ -424,13 +426,13 @@
 
 .ip-tooltip-list {
     margin: 6px 0;
-    padding-left: 16px;
+    padding-left: var(--space-8);
     list-style: none;
 }
 
 .ip-tooltip-list li {
     position: relative;
-    font-size: 11px;
+    font-size: var(--text-xs);
     line-height: 1.5;
     color: var(--fg-2);
     margin: 3px 0;
@@ -444,7 +446,7 @@
 }
 
 .ip-tooltip-list--compact {
-    padding-left: 12px;
+    padding-left: var(--space-6);
 }
 
 .ip-tooltip-list--compact li {
@@ -456,41 +458,41 @@
 }
 
 .ip-tooltip-text {
-    font-size: 11px;
+    font-size: var(--text-xs);
     line-height: 1.5;
     color: var(--fg-2);
 }
 
 .ip-tooltip-note {
-    font-size: 10px;
+    font-size: var(--text-2xs);
     line-height: 1.4;
     color: var(--fg-2);
     font-style: italic;
-    margin-top: 4px;
+    margin-top: var(--space-2);
 }
 
 .ip-tooltip-subsection {
-    margin-top: 8px;
+    margin-top: var(--space-4);
 }
 
 .ip-tooltip-prior {
     display: flex;
     flex-wrap: wrap;
-    gap: 6px;
-    margin-top: 4px;
-    font-size: 10px;
+    gap: var(--space-3);
+    margin-top: var(--space-2);
+    font-size: var(--text-2xs);
 }
 
 .ip-tooltip-prior span {
     background: var(--bg-soft);
     color: var(--fg-2);
-    padding: 2px 6px;
+    padding: var(--space-1) var(--space-3);
     border-radius: 3px;
     font-weight: 500;
 }
 
 .ip-stat__value {
-    font-size: 12px;
+    font-size: var(--text-sm);
     font-weight: 500;
     color: var(--fg);
     white-space: nowrap;
@@ -516,11 +518,11 @@
 .ip-dashboard__tags {
     display: flex;
     flex-wrap: wrap;
-    gap: 4px;
+    gap: var(--space-2);
 }
 
 .ip-tag {
-    font-size: 10px;
+    font-size: var(--text-2xs);
     padding: 1px 5px;
     border-radius: 3px;
     background: var(--bg-soft);
@@ -569,27 +571,27 @@
     background: var(--bg-soft);
     border: 1px solid var(--border);
     border-radius: 4px;
-    padding: 6px;
+    padding: var(--space-3);
 }
 
 .ip-dashboard__evidence-header {
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     color: var(--fg-2);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-2);
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-2);
 }
 
 .ip-dashboard__evidence-summary {
-    font-size: 11px;
+    font-size: var(--text-xs);
     line-height: 1.45;
     color: var(--fg);
     background: var(--elevated);
     border: 1px solid var(--border-2);
     border-radius: 3px;
-    padding: 4px 6px;
+    padding: var(--space-2) var(--space-3);
     cursor: pointer;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -611,7 +613,7 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    font-size: 11px;
+    font-size: var(--text-xs);
     padding: 3px 5px;
     background: var(--elevated);
     border: 1px solid var(--border-2);
@@ -625,7 +627,7 @@
 }
 
 .ip-evidence-item__weight {
-    font-size: 10px;
+    font-size: var(--text-2xs);
     font-weight: 700;
     font-family: var(--mono);
     padding: 1px 4px;
@@ -645,10 +647,10 @@
 .ip-dashboard__footer {
     display: flex;
     justify-content: space-between;
-    gap: 8px;
-    font-size: 10px;
+    gap: var(--space-4);
+    font-size: var(--text-2xs);
     color: var(--fg-2);
-    padding-top: 4px;
+    padding-top: var(--space-2);
     border-top: 1px dashed var(--border);
 }
 

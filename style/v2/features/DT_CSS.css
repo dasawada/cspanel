@@ -21,12 +21,12 @@
             padding: 5px; /* 減少padding */
             box-sizing: border-box;
             display: flex;
-            gap: 10px;
+            gap: var(--space-5);
         }
         .DT_left_panel, .DT_right_panel {
             background: transparent;
             border-radius: 5px;
-            padding: 10px;
+            padding: var(--space-5);
         }
         .DT_left_panel {
             flex: 3;  /* 佔據更多空間 */
@@ -69,7 +69,7 @@
         }
         .output {
             margin-top: 20px;
-            padding: 10px;
+            padding: var(--space-5);
             border: 1px solid var(--border);
 	word-break: break-word;
         }
@@ -86,7 +86,7 @@
             border: 1px solid var(--border);
             border-radius: 10px;
             box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-            padding: 8px; /* 減少padding */
+            padding: var(--space-4); /* 減少padding */
             margin-bottom: 5px; /* 減少margin */
         }
         /* 調整 #DT_devices 中 input 元素的寬度 */
@@ -102,7 +102,7 @@
         }
         .DTDV_grid-item {
             text-align: left; /* 保持單選按鈕跟文字同一行 */
-			padding-left:10px;
+			padding-left:var(--space-5);
         }
         /* DTYN 樣式 */
         .DTYN {
@@ -113,13 +113,13 @@
             white-space: nowrap; /* 禁止換行 */
         }
         .DTYN label {
-            margin-right: 8px; /* 調整標籤和輸入框之間的間距 */
+            margin-right: var(--space-4); /* 調整標籤和輸入框之間的間距 */
         }
         .DTYN input[type=radio] {
             margin: 0 4px 0 4px; /* 調整間距 */
         }
         .DTYN .error {
-            margin-left: 8px; /* 調整錯誤消息和輸入框之間的間距 */
+            margin-left: var(--space-4); /* 調整錯誤消息和輸入框之間的間距 */
             color: var(--danger); /* 設置錯誤消息顏色 */
         }
 	.DV_sutable {
@@ -140,7 +140,7 @@
     position: absolute;
     top: 2px;
     right: 0px;
-    font-size: 24px;
+    font-size: var(--text-4xl);
     font-weight: bold;
     line-height: 1;
     color: var(--fg);
@@ -148,8 +148,8 @@
     opacity: .5;
     border: none;
     background: none;
-	width: 20px;  /* 可以增加或減少這些值來調整按鈕的大小 */
-    height: 20px;
+	width: var(--icon-md);  /* 可以增加或減少這些值來調整按鈕的大小 */
+    height: var(--icon-md);
     display: flex;
     justify-content: center;
     align-items: center;
@@ -185,7 +185,7 @@
 #output_content br {
     display: block;
     content: "";
-    margin-top: 10px;
+    margin-top: var(--space-5);
 }
 
 /* 滾動條美化 */
@@ -193,7 +193,7 @@
 /* 確保面板內容在展開時的寬度分配 */
 .form_container {
     display: flex;
-    gap: 10px;
+    gap: var(--space-5);
     padding: 5px;
     box-sizing: border-box;
     width: 100%;     /* 確保填滿父容器 */
@@ -220,7 +220,7 @@
 .form-row {
     display: flex;
     flex-direction: row;
-    gap: 10px;
+    gap: var(--space-5);
     width: 100%;
 }
 
@@ -241,7 +241,7 @@
 .input-row {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: var(--space-5);
 }
 
 .input-row label {

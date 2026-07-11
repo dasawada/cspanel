@@ -44,6 +44,9 @@ A(r.dCenter <= 2, `canned clear 垂直置中 ±2px (Δ=${r.dCenter && r.dCenter.
 A(r.inRef, `canned clear 落在輸入框水平範圍內（--capsule-inset:42px 局部參數）`);
 const cannedInset = await p.evaluate(() => getComputedStyle(document.querySelector('.canned-panel-clear-btn')).getPropertyValue('inset-inline-end') || getComputedStyle(document.querySelector('.canned-panel-clear-btn')).right);
 A(parseInt(cannedInset, 10) === 42, `canned inset token 生效 (${cannedInset})`);
+// 第七期：全站 spinner 統一 --icon-md（20px）——canned 與 ip 同值，調 --icon-md 一處全變
+const spinnerW = await p.evaluate(() => getComputedStyle(document.getElementById('canned-panel-search-spinner')).width);
+A(spinnerW === '20px', `canned spinner=--icon-md 20px（全站統一）(${spinnerW})`);
 
 console.log('— 捲軸單一權威（標準屬性）—');
 const sb = await p.evaluate(() => ({

@@ -262,10 +262,9 @@ spinner…）**不得自造定位**，一律組合詞彙——wrapper 加 `.gl-c
 不載 tokens 的頁面獨立引用）。實例可**局部覆寫 token 值**（如 canned 的 `--capsule-inset: 42px`，
 因 input 僅佔 90% 寬）——調參不算破例，換機制才是。已遷移實例：fudausearch（panel_all 模板／
 轉單頁／fu_s_popup 三處）、canned（clear + spinner）。`.ip-search-spinner`（Firestore markup，
-class 不可改）與 `.gl-capsule__spinner` **配方一致**（2px 邊框、`--border-2`/`--accent` 雙色、
-1s linear 旋轉），但**兩處刻意不同**：尺寸——ip 固定 20px（Firestore markup 字級脈絡不受控，
-勿改成 em）、capsule 用 1.25em 隨輸入框字級；reduced-motion——capsule 降速 2.5s、ip 無此處理。
-改配方（邊框/色/轉速）時兩處同步，尺寸與 reduced-motion 各自維持。
+class 不可改）與 `.gl-capsule__spinner` **完全同配方同尺寸**（第七期起皆為 `var(--icon-md)` 20px、
+2px 邊框、`--border-2`/`--accent` 雙色、1s linear 旋轉、reduced-motion 同步降速 2.5s）。
+改配方時兩處同步——尺寸要變就改 `--icon-md`，全站 spinner 一起變（§4.8）。
 
 **捲軸（`style/v2/scrollbar.css`）**：全站單一權威，**只用標準屬性**（`scrollbar-width: thin` +
 `scrollbar-color` token）——Chrome 121+ 設了標準屬性即忽略 `::-webkit-scrollbar`，故**禁止再寫任何
@@ -278,6 +277,26 @@ cspanel 先於 netlify）。
 `.fudausearch-fixed-button`（區塊按鈕）。捲軸唯一例外：`.meetingsearch-info` 的
 `scrollbar-width: none`（meeting-now-css.css，刻意隱藏捲軸，需高於全域 `*` 的特異度）——
 除「隱藏」外不得有其他局部捲軸宣告。
+
+### 4.8 尺寸鐵律：階梯 + 元件映射（第七期）
+
+尺寸單一權威在 `style/v2/tokens.css`，分兩層：
+
+- **階梯（原始值層）**：字級 `--text-3xs…4xl`（9/10/11/12/13/14/15/16/18/20/24px）、圖示
+  `--icon-sm/md/lg`（16/**20**/24px，20px 為全站 spinner/圖示標準）、間距 `--space-1…10`
+  （2/4/6/8/10/12/14/16/20/24px）。
+- **元件映射（未來唯一要改的那一處）**：`--control-font`／`--control-line`／`--control-pad-y/x`／
+  `--control-radius`（button 基底）、`--input-pad-y/x`／`--input-radius`／`--input-pad-compact-y/x`
+  （輸入框基底）。調整映射即全站表單/輸入/按鈕一起變；controls.css 的全域 recipe 只准引用映射。
+
+**鐵律**：新 CSS 的字級、圖示/spinner 尺寸、間距、控制件內距/圓角**不得裸寫 px**，一律引用階梯或
+元件映射；值不在階梯內是「先擴階梯再用」而不是裸寫的理由。**不受管轄**：面板佈局幾何（manifest
+的領域，§4.1）、border 寬度、box-shadow、`--capsule-slot-w` 等既有詞彙參數、白名單檔
+（ui-conductor-v2.js）。**範圍**：v2 系統的字級/圖示/控制件基底已全量遷移（第七期，268 處等值代換 + 逐檔 diff 稽核）；
+間距遷移主流階梯值，**長尾殘值刻意留原樣**（5px/3px 舊格網、定位偏移、含 `%`/`0` 的 shorthand、
+`22px` 佈局契約值等——清單見第七期 commit 訊息），它們屬 legacy 排版細節、非控制元素尺寸，
+migrate-on-touch。legacy 三檔（body/button/font.css，DT_report 與 fu_s_popup 用）凍結不回填；
+netlify 頁自有樣式不納入（僅共用捲軸）。
 
 ---
 

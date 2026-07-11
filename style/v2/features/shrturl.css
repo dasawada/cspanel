@@ -1,8 +1,8 @@
 /* 長網址input */
 #ShrtURL_longUrl {
     width: 200px; 
-    margin-right: 6px;
-	margin-bottom: 2px;
+    margin-right: var(--space-3);
+	margin-bottom: var(--space-1);
 }
 
 /* '製作短網址'按鈕 */
@@ -29,7 +29,7 @@
 /* 短網址輸出欄 (is.gd) */
 #ShrtURL_isGdOutput {
     width: 350px;
-    margin-right: 6px;
+    margin-right: var(--space-3);
     background-color: var(--bg-soft);
 }
 
@@ -49,14 +49,14 @@
 /* 短網址輸出欄 (reurl.cc) */
 #ShrtURL_reurlOutput {
     width: 350px;
-    margin-right: 6px;
+    margin-right: var(--space-3);
     background-color: var(--bg-soft);
 }
 
 /* 清除按鈕 */
 #ShrtURL_clearButton {
-    width: 20px;
-    height: 20px;
+    width: var(--icon-md);
+    height: var(--icon-md);
     border: none;
     background: none;
     cursor: pointer;
@@ -75,7 +75,7 @@
 
 /* 清除按鈕圖標 */
 #ShrtURL_clearButton i {
-    font-size: 20px; /* 根據需要調整圖標大小 */
+    font-size: var(--text-3xl); /* 根據需要調整圖標大小 */
     color: inherit; /* 繼承按鈕的顏色 */
 }
 
@@ -117,6 +117,6 @@
 #ShrtURL_isGdOutput,
 #ShrtURL_reurlOutput {
     width: 200px;
-    margin-right: 6px;
+    margin-right: var(--space-3);
     background-color: var(--bg-soft);
 }

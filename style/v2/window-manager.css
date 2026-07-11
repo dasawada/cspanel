@@ -46,7 +46,7 @@
     flex: 0 0 auto;
     display: flex;
     align-items: center;
-    gap: 4px;
+    gap: var(--space-2);
     height: 36px;
     padding: 5px 8px;
     box-sizing: border-box;
@@ -61,8 +61,8 @@
 
 /* tab 藥丸：沿用全站 pill 語彙（登入列鈕、編排列鈕皆 999px 圓角）。 */
 .wm-tab {
-    padding: 4px 12px;
-    font-size: 12px;
+    padding: var(--space-2) var(--space-6);
+    font-size: var(--text-sm);
     line-height: 1.4;
     color: var(--fg-2);
     background: transparent;
@@ -136,8 +136,8 @@
     position: fixed;
     z-index: 2147483647;
     pointer-events: none;
-    padding: 4px 10px;
-    font-size: 12px;
+    padding: var(--space-2) var(--space-5);
+    font-size: var(--text-sm);
     font-weight: 600;
     color: var(--accent-hover);
     background: var(--glass-bg-hover);

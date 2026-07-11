@@ -156,14 +156,14 @@ function showLoadingIndicator() {
                 border-top: 4px solid #3498db;
                 border-radius: 50%;
                 animation: meeting-spin 1s linear infinite;
-                margin-bottom: 16px;
+                margin-bottom: var(--space-8);
             }
             @keyframes meeting-spin {
                 0% { transform: rotate(0deg); }
                 100% { transform: rotate(360deg); }
             }
             .meeting-loading-text {
-                font-size: 14px;
+                font-size: var(--text-base);
                 color: #666;
             }
             .meeting-error-container {
@@ -176,37 +176,37 @@ function showLoadingIndicator() {
             .meeting-error-title {
                 color: #c62828;
                 font-weight: bold;
-                margin-bottom: 8px;
+                margin-bottom: var(--space-4);
                 display: flex;
                 align-items: center;
-                gap: 8px;
+                gap: var(--space-4);
             }
             .meeting-error-message {
                 color: #666;
-                font-size: 13px;
+                font-size: var(--text-md);
                 line-height: 1.5;
             }
             .meeting-error-retry {
-                margin-top: 12px;
+                margin-top: var(--space-6);
             }
             .meeting-error-retry button {
                 background-color: #1976d2;
                 color: white;
                 border: none;
-                padding: 8px 16px;
+                padding: var(--space-4) var(--space-8);
                 border-radius: 4px;
                 cursor: pointer;
-                font-size: 13px;
+                font-size: var(--text-md);
             }
             .meeting-error-retry button:hover {
                 background-color: #1565c0;
             }
             .meeting-last-update {
-                font-size: 11px;
+                font-size: var(--text-xs);
                 color: #999;
                 text-align: right;
-                padding: 4px 8px;
-                margin-bottom: 8px;
+                padding: var(--space-2) var(--space-4);
+                margin-bottom: var(--space-4);
             }
         `;
         document.head.appendChild(style);
@@ -919,13 +919,13 @@ function createMeetingItem(meeting, className, index, accountid) {
                 </tr>
             </table>
             <div class="meeting-info-divider"></div>
-            <div style="font-size: 12px; color: var(--fg-2); margin-top: 8px;">
+            <div style="font-size: var(--text-sm); color: var(--fg-2); margin-top: var(--space-4);">
                 會議資訊：
             </div>
-            <div style="font-size: 12px; color: var(--fg); margin-top: 4px; line-height: 1.4;">
+            <div style="font-size: var(--text-sm); color: var(--fg); margin-top: var(--space-2); line-height: 1.4;">
                 ${meeting.info.replace(/\n/g, '<br>')}
             </div>
-            <div style="margin-top: 8px; font-size: 12px;" id="account-span-container-${uniqueId}">
+            <div style="margin-top: var(--space-4); font-size: var(--text-sm);" id="account-span-container-${uniqueId}">
             </div>
         </div>
     `;
