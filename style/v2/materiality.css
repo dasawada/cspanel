@@ -1,0 +1,43 @@
+/* ===== 材質層（第五期，已烘焙定案 2026-07-11）=====
+   使用者以調校面板選定 materiality-spec v1：
+     elevation=clear（清晰）、focus=bright（邊框微亮）、lift=subtle（微浮）、motion=off（無）
+   調校面板已退役（git 歷史 3c4e39d / fdc6ade 可考）；本檔數值即最終權威。
+
+   規則沿用審查定案的排除條款，不可移除：
+   - :not(.meeting-search-panel-menu)——透明無影容器，畫玻璃影會是懸空影子框
+   - :not(.gl-dragging)（高度規則）——拖曳中交給 lift 影
+   - :not(.gl-editable)（聚焦 outline）——編輯模式的虛線 outline 不可覆蓋
+   - :not(:hover):not(:focus-within)（退後）——正在互動的面板不退暗
+   運動軸定案為「無」：materiality 不引入任何 transition（DT/顧問/IPsearch/輔導四個
+   legacy 面板的 transition:all 0.3s 沿舊，屬既有行為）。 */
+:root {
+    --mat-shadow-top: 0 18px 48px rgba(0, 0, 0, 0.14), 0 3px 10px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+    --mat-recede-opacity: 0.93;
+    --mat-focus-outline: 1px solid rgba(255, 255, 255, 0.9);
+    --mat-focus-outline-offset: -1px;
+    --mat-lift-shadow: 0 16px 44px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+}
+
+/* 高度可讀：最上層影子（清晰檔） */
+.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-dragging) {
+    box-shadow: var(--mat-shadow-top);
+}
+/* 高度可讀：非最上層微退（0.93）。特異度 (0,4,0) 壓過 base.css 的
+   html.auth-active .canned-panel（0,2,1），話術面板一樣退。 */
+.gl-stack-surface:not(.is-stack-top):not(:hover):not(:focus-within),
+.gl-stack-pane:not(.is-stack-top) {
+    opacity: var(--mat-recede-opacity);
+}
+
+/* 聚焦表現：最上層邊框微亮（outline 模型，不參與 box-shadow 組合） */
+.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-editable) {
+    outline: var(--mat-focus-outline);
+    outline-offset: var(--mat-focus-outline-offset);
+}
+
+/* 拖曳浮起：抓起時影子加深（微浮檔；面板與 tab 視窗同語彙）。
+   本規則（0,2,0）取代 draggable.js 注入的 .draggable-dragging 深影（0,1,0）——
+   spec 定案的刻意變更，非疏漏。 */
+.gl-stack-surface.gl-dragging:not(.meeting-search-panel-menu) {
+    box-shadow: var(--mat-lift-shadow);
+}
