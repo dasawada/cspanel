@@ -262,7 +262,10 @@ spinner…）**不得自造定位**，一律組合詞彙——wrapper 加 `.gl-c
 不載 tokens 的頁面獨立引用）。實例可**局部覆寫 token 值**（如 canned 的 `--capsule-inset: 42px`，
 因 input 僅佔 90% 寬）——調參不算破例，換機制才是。已遷移實例：fudausearch（panel_all 模板／
 轉單頁／fu_s_popup 三處）、canned（clear + spinner）。`.ip-search-spinner`（Firestore markup，
-class 不可改）之配方即本詞彙 spinner 的權威來源，兩者值一致（ipsearch_css.css 註記）。
+class 不可改）與 `.gl-capsule__spinner` **配方一致**（2px 邊框、`--border-2`/`--accent` 雙色、
+1s linear 旋轉），但**兩處刻意不同**：尺寸——ip 固定 20px（Firestore markup 字級脈絡不受控，
+勿改成 em）、capsule 用 1.25em 隨輸入框字級；reduced-motion——capsule 降速 2.5s、ip 無此處理。
+改配方（邊框/色/轉速）時兩處同步，尺寸與 reduced-motion 各自維持。
 
 **捲軸（`style/v2/scrollbar.css`）**：全站單一權威，**只用標準屬性**（`scrollbar-width: thin` +
 `scrollbar-color` token）——Chrome 121+ 設了標準屬性即忽略 `::-webkit-scrollbar`，故**禁止再寫任何
@@ -272,7 +275,9 @@ cspanel 先於 netlify）。
 
 **白名單（非 input 內嵌，不受本節管轄）**：`.clearIcon`（optitle 面板角落垃圾桶）、
 `.ui-spinner`（轉場遮罩）、`.meeting-loading-spinner`（區塊級 loading）、
-`.fudausearch-fixed-button`（區塊按鈕）。
+`.fudausearch-fixed-button`（區塊按鈕）。捲軸唯一例外：`.meetingsearch-info` 的
+`scrollbar-width: none`（meeting-now-css.css，刻意隱藏捲軸，需高於全域 `*` 的特異度）——
+除「隱藏」外不得有其他局部捲軸宣告。
 
 ---
 

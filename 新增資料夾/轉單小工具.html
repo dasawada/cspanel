@@ -53,7 +53,8 @@ html,body { margin:0; height:100%; }
 /* 建議選單樣式 */
 .fudausearch-suggestions {
     position: absolute;
-    top: 100%;
+    /* wrapper padding 對稱化後 padding box 底緣多 5px；扣回讓下拉貼齊輸入框底緣（審查修正） */
+    top: calc(100% - 5px);
     left: 10px;
     width: 90%;
     background-color: #fff;

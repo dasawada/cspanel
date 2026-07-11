@@ -27,8 +27,8 @@
             max-height: 450px;
             overflow-y: auto;
             padding-right: 6px; /* Add padding to compensate for scrollbar */
-            scrollbar-width: thin;
-            scrollbar-color: var(--border-2) transparent;
+            /* 捲軸樣式由全域單一權威供給（style/v2/scrollbar.css，CANVAS.md §4.7）——
+               局部 scrollbar-width/color 已移除（特異度會永久蓋過全域 *） */
             /* Prevent content shift in modern browsers */
             scrollbar-gutter: stable;
         }

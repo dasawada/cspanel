@@ -52,6 +52,13 @@ const sb = await p.evaluate(() => ({
 }));
 A(sb.width === 'thin', `scrollbar-width=thin (${sb.width})`);
 A(sb.color && sb.color !== 'auto', `scrollbar-color 已設 (${String(sb.color).slice(0, 40)})`);
+// 審查 #5：局部標準屬性殘留會以特異度永久蓋過全域 *——會議兩容器必須與全域一致
+const localOverride = await p.evaluate(() => {
+  const globalColor = getComputedStyle(document.documentElement).scrollbarColor;
+  const check = (sel) => { const el = document.querySelector(sel); return el ? getComputedStyle(el).scrollbarColor === globalColor : true; };
+  return { now: check('.meeting-now-result-flow'), match: check('#meeting-check-result-scrollbar') };
+});
+A(localOverride.now && localOverride.match, `會議容器捲軸色與全域一致（無局部覆蓋）(now=${localOverride.now}, match=${localOverride.match})`);
 
 console.log('— 轉單頁：同一詞彙 —');
 await p.goto('http://localhost:8123/' + encodeURI('新增資料夾/轉單小工具.html'));
@@ -62,6 +69,15 @@ r = await centered('#fudausearch-clear-btn', '#fudausearch-input');
 A(!r.err && r.position === 'absolute' && r.dCenter <= 2, `轉單頁 clear 同機制且置中 (Δ=${r.dCenter && r.dCenter.toFixed(1)})`);
 const zsb = await p.evaluate(() => getComputedStyle(document.documentElement).scrollbarWidth);
 A(zsb === 'thin', `轉單頁捲軸也走單一權威 (${zsb})`);
+// 審查 #3/#6：wrapper padding 對稱化後，suggestions 下拉仍須貼齊輸入框底緣（top: calc(100%-5px) 補償）
+const gap = await p.evaluate(() => {
+  const s = document.getElementById('fudausearch-suggestions');
+  s.style.display = 'block';
+  const g = Math.abs(s.getBoundingClientRect().top - document.getElementById('fudausearch-input').getBoundingClientRect().bottom);
+  s.style.display = 'none';
+  return g;
+});
+A(gap <= 1, `轉單頁建議下拉貼齊輸入框（審查 #3）(gap=${gap.toFixed(1)}px)`);
 
 await b.close();
 if (fails.length) { console.error(`CAPSULE/SCROLLBAR TEST FAIL (${fails.length})`); process.exit(1); }

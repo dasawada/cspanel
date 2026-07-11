@@ -9,8 +9,7 @@
     width: 320px; /* 調整寬度以匹配表單區域 */
     margin: 0 auto;
     overflow-y: auto;
-    scrollbar-width: thin; /* 對 Firefox 生效，設置滾動條寬度為細 */
-    scrollbar-color: var(--border-2) transparent; /* 對 Firefox 生效，設置滾動條顏色和軌道顏色 */
+    /* 捲軸樣式由全域單一權威供給（style/v2/scrollbar.css，CANVAS.md §4.7） */
 }
 
 /* Chrome、Edge、Safari 瀏覽器 */

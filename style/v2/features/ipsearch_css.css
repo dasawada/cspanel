@@ -49,8 +49,9 @@
     line-height: 1.4;
 }
 
-/* 本配方＝膠囊詞彙 .gl-capsule__spinner 的權威來源（capsule.css，CANVAS.md §4.7）。
-   class 名為 Firestore markup 既定契約不可改；改配方值時兩處同步。 */
+/* 與膠囊詞彙 .gl-capsule__spinner 配方一致（邊框/雙色/轉速，見 CANVAS.md §4.7）；
+   刻意不同：尺寸固定 20px（Firestore markup 字級不受控，勿改 em）、無 reduced-motion 降速。
+   class 名為 Firestore 既定契約不可改；改「配方」時兩處同步，尺寸各自維持。 */
 .ip-search-spinner {
     display: inline-block;
     width: 20px;
