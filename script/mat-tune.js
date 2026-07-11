@@ -42,9 +42,10 @@ const AXES = {
     label: '聚焦表現',
     note: '最上層的 chrome 處理',
     steps: {
-      off:    { label: '無',       ring: '0 0 0 0 transparent' },
-      bright: { label: '邊框微亮', ring: 'inset 0 0 0 1px rgba(255,255,255,0.9)' },
-      accent: { label: '亮框+外圈', ring: 'inset 0 0 0 1px rgba(255,255,255,0.9), 0 0 0 2px var(--accent-ring)' },
+      // outline 模型（不參與 box-shadow 組合，可獨立於高度軸開關）
+      off:    { label: '無',       outline: 'none', offset: '0px' },
+      bright: { label: '邊框微亮', outline: '1px solid rgba(255,255,255,0.9)', offset: '-1px' },
+      accent: { label: '重點外圈', outline: '2px solid var(--accent-ring)', offset: '0px' },
     },
   },
   lift: {
@@ -73,7 +74,11 @@ function loadState() {
     const raw = JSON.parse(localStorage.getItem(STORE_KEY));
     if (raw && typeof raw === 'object') {
       for (const axis of Object.keys(DEFAULT_STATE)) {
-        if (raw[axis] && AXES[axis].steps[raw[axis]]) state[axis] = raw[axis];
+        // hasOwnProperty：擋掉原型鏈鍵（'constructor' 等）騙過真值檢查、
+        // 把 undefined 寫進 --mat-* 的路徑（審查 #11）
+        if (typeof raw[axis] === 'string' && Object.prototype.hasOwnProperty.call(AXES[axis].steps, raw[axis])) {
+          state[axis] = raw[axis];
+        }
       }
     }
   } catch (e) { /* 壞存檔回預設 */ }
@@ -82,24 +87,33 @@ function saveState() {
   try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch (e) { /* noop */ }
 }
 
-// ===== 套用：state → :root 的 --mat-* ＋ html[data-mat-motion] =====
+// ===== 套用：state → :root 的 --mat-* ＋ html[data-mat-*] 屬性閘門 =====
+// 每軸的 CSS 規則都以 html[data-mat-<axis>] 閘門（materiality.css）：off = 移除
+// 屬性 = 零規則命中，預設/關閉時對既有樣式零干擾（審查 #1/#2/#8 的修法）。
 function apply() {
   const root = document.documentElement;
   const el = AXES.elevation.steps[state.elevation];
   const mo = AXES.motion.steps[state.motion];
   const fo = AXES.focus.steps[state.focus];
   const li = AXES.lift.steps[state.lift];
+  const gate = (name, on) => { if (on) root.setAttribute(name, '1'); else root.removeAttribute(name); };
+
   root.style.setProperty('--mat-shadow-top', el.shadow);
   root.style.setProperty('--mat-recede-opacity', el.recede);
-  root.style.setProperty('--mat-focus-ring', fo.ring);
+  gate('data-mat-elevation', state.elevation !== 'off');
+
+  root.style.setProperty('--mat-focus-outline', fo.outline);
+  root.style.setProperty('--mat-focus-outline-offset', fo.offset);
+  gate('data-mat-focus', state.focus !== 'off');
+
   root.style.setProperty('--mat-lift-shadow', li.shadow);
+  gate('data-mat-lift', state.lift !== 'off');
+
   if (mo.ms > 0) {
     root.style.setProperty('--mat-motion-ms', mo.ms + 'ms');
     root.style.setProperty('--mat-motion-ease', mo.ease);
-    root.setAttribute('data-mat-motion', '1');
-  } else {
-    root.removeAttribute('data-mat-motion');
   }
+  gate('data-mat-motion', mo.ms > 0);
 }
 
 // ===== spec 輸出 =====
@@ -109,14 +123,25 @@ function buildSpec() {
     'materiality-spec': 'v1',
     date: new Date().toISOString().slice(0, 10),
     elevation: state.elevation,
-    motion: state.motion === 'off' ? { preset: 'off' } : { preset: state.motion, ms: mo.ms, easing: mo.easeName },
+    motion: state.motion === 'off'
+      ? { preset: 'off' }
+      : { preset: state.motion, ms: mo.ms, easing: mo.easeName, easingCss: mo.ease },
     focus: state.focus,
     lift: state.lift,
-    resolved: { // 給實作者烘焙用的實際值（免再查表）
+    resolved: { // 給實作者烘焙用的完整實際值（免再查表；含 apply() 寫入的每一項，審查 #12）
       '--mat-shadow-top': AXES.elevation.steps[state.elevation].shadow,
       '--mat-recede-opacity': AXES.elevation.steps[state.elevation].recede,
-      '--mat-focus-ring': AXES.focus.steps[state.focus].ring,
+      '--mat-focus-outline': AXES.focus.steps[state.focus].outline,
+      '--mat-focus-outline-offset': AXES.focus.steps[state.focus].offset,
       '--mat-lift-shadow': AXES.lift.steps[state.lift].shadow,
+      '--mat-motion-ms': state.motion === 'off' ? null : mo.ms + 'ms',
+      '--mat-motion-ease': state.motion === 'off' ? null : mo.ease,
+      gates: {
+        'data-mat-elevation': state.elevation !== 'off',
+        'data-mat-focus': state.focus !== 'off',
+        'data-mat-lift': state.lift !== 'off',
+        'data-mat-motion': state.motion !== 'off',
+      },
     },
   };
 }
