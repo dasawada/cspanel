@@ -195,13 +195,12 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
 | `9998` | `script/ui-conductor-v2.js:33` | 登入後立即插入的防閃爍預遮罩（`immediateOverlayCheck`），先於主轉場遮罩出現。 |
 | `9999` | `script/ui-conductor-v2.js:66` | 轉場主遮罩 `#ui-transition-overlay`。 |
 | `0` / `10` | `script/ui-conductor-v2.js:87,93` | `.ui-overlay-decoration`／`.ui-loader-container`，只在轉場遮罩內部相對排序，非全域競爭。 |
-| `9999` | `script/snowfall.js:22` | 雪花特效 canvas 的 `zIndex`。此檔目前**未被任何 html 頁面載入**（孤兒特效檔），保留原值不歸帶。 |
-| `-1` | `script/rippleEffect.js:57` | 漣漪特效 canvas 的 `zIndex`。同上，目前未被任何 html 頁面載入，孤兒特效檔。 |
+<!-- snowfall.js(9999) / rippleEffect.js(-1) 兩列已隨檔案於第五期倉庫清理刪除（孤兒特效檔，見 §9 清理記錄） -->
 | `801` / `800` | `style/v2/panels.css:228,245` | `nav a` / `nav .animation`（`vvgglesht` iframe modal 內部的 tab 動畫底），僅相對彼此排序，與全域層帶無關。 |
 | `999` | `style/v2/panels.css:587` | `.fudausearch-suggestions`。沿襲舊值的局部堆疊，與相鄰面板的全域比較無關（其父層 `.fudausearch-container` 已用 `--layer-panel-active` 在 hover/focus-within 時整體提升）。 |
 | `2` | `style/v2/panels.css:40` | `.update-header`，相對其自身覆蓋範圍的局部值，非全域競爭。 |
 | `2` | `style/v2/panels.css:549` | `vvgglesht` modal 內關閉鈕相對 iframe 的局部值。 |
-| `2` | `script/capsuleinput.js:84` | `.enhanced-clear-btn` 相對輸入框的局部值。 |
+<!-- capsuleinput.js(2) 一列已隨檔案於第五期倉庫清理刪除（孤兒模組，見 §9 清理記錄） -->
 | `900` | `style/v2/features/DT_CSS.css:15` | `.DTV_iframe`（DT_report 頁內部 iframe 遮擋修正），非畫布面板局部值。 |
 | `897` / `896` | `style/v2/features/all-meeting.css:13,60` | 會議搜尋框／結果清單的局部堆疊。 |
 | `1004` | `script/dragb_msg_pnl.js:76` | `.canned-panel-clear-btn` 相對 `.canned-panel` 內部子元素的局部值（`.canned-panel` 本身的全域 z-index 一律由 `zOrder:15` 供給，即 `calc(var(--layer-panel) + 15)`；模組注入的 `PANEL_CSS` 不再帶 `.canned-panel` 的 `z-index` 宣告——原本兩處同時宣告、數值恰好都是 15 的雙重權威已於審查中移除，`zOrder` 自此為唯一來源，同 `.DT_panel` 的處理方式。此 `1004` 值只在該面板內部的 stacking context 生效，不影響跨面板比較）。 |
@@ -482,3 +481,11 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
    **重啟條件**（屆時重新 brainstorm、勿沿用舊構想）：出現 manifest 模型裝不下的部門工作區需求，或
    「任意面板拖進分頁群組」成為日常用法。屆時可帶走的 primitive：iframe 常駐池（第 7.2 節）與 stack-manager
    （第 4.2、5 節）；新殼應為獨立 standards-mode 頁面，不受 panel_all 的 quirks 契約束縛。
+11. **倉庫清理記錄（2026-07-11）**：刪除 9 個全域零引用的孤兒 script（`DTcheckfuction.js`／
+    `assist_issue.js`／`buttonstylepack.js`／`capsuleinput.js`／`cursorspk.js`／`github.js`／
+    `meeting-search-panel.js`（已被 `-module` 版取代）／`snowfall.js`／`rippleEffect.js`，皆自
+    2025-12-23 未動、repo + board + 轉單頁 + cspanel_netlify 全查無引用；git 歷史可考）與被追蹤的
+    `新增資料夾/.DS_Store`；§4.3 白名單同步移除三列。**刻意保留**：`img/` 全部（話術面板 innerHTML
+    渲染 Sheet 內容，瀏覽器教學截圖可能活在話術或客服外發連結中，repo 內無法證死）；`tool_zip/*.zip`
+    （tool-download-panel 以完整網址熱連）；`新增資料夾/` 目錄名（醜但是線上 URL 的一部分，改名即斷鏈）；
+    12 個獨立頁與其 `style/*.css` 舊樣式（頁面存活）。
