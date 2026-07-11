@@ -303,7 +303,7 @@ function ensureEditBar() {
   if (document.getElementById('gl-edit-bar')) return;
   const bar = document.createElement('div');
   bar.id = 'gl-edit-bar';
-  bar.innerHTML = `<span style="font-size:12px;color:var(--fg-2)">編排模式</span>
+  bar.innerHTML = `<span style="font-size:var(--text-sm);color:var(--fg-2)">編排模式</span>
     <button type="button" class="gl-edit-reset">重設佈局</button>
     <button type="button" class="gl-edit-done">完成</button>`;
   document.body.appendChild(bar);

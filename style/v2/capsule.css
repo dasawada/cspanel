@@ -46,8 +46,8 @@
    配方值即既有 .ip-search-spinner（Firestore markup 的既定契約）之權威化。 */
 .gl-capsule__spinner {
     display: inline-block;
-    width: 1.25em;
-    height: 1.25em;
+    width: var(--icon-md, 20px);
+    height: var(--icon-md, 20px);
     border: 2px solid var(--border-2, rgba(0, 0, 0, 0.12));
     border-top-color: var(--accent, #3a3a3c);
     border-radius: 50%;

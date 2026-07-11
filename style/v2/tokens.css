@@ -67,4 +67,39 @@
   --capsule-fg: var(--muted);
   --capsule-fg-hover: var(--fg);
   --scrollbar-thumb: color-mix(in srgb, var(--fg) 25%, transparent);
+
+  /* ===== 尺寸階梯（第七期）＝原始值層 =====
+     值自 v2 實際分布提煉（12/13px 為 UI 主體、20px 為圖示標準）。
+     新 CSS 一律引用階梯或下方元件映射，裸寫 px 違規（CANVAS.md §4.8）。 */
+  --text-3xs: 9px;   /* 極小徽章（ipsearch） */
+  --text-2xs: 10px;  /* 細字備註 */
+  --text-xs:  11px;  /* 標籤/副標 */
+  --text-sm:  12px;  /* 密集 UI 主體 */
+  --text-md:  13px;  /* 控制件標準（button/input 基底） */
+  --text-base: 14px;
+  --text-lg:  15px;
+  --text-xl:  16px;
+  --text-2xl: 18px;
+  --text-3xl: 20px;
+  --text-4xl: 24px;
+  --icon-sm: 16px;
+  --icon-md: 20px;   /* 全站圖示/spinner 標準（ip spinner 即此值） */
+  --icon-lg: 24px;
+  --space-1: 2px;  --space-2: 4px;  --space-3: 6px;  --space-4: 8px;
+  --space-5: 10px; --space-6: 12px; --space-7: 14px; --space-8: 16px;
+  --space-9: 20px; --space-10: 24px;
+
+  /* ===== 控制件映射（第七期）＝未來唯一要改的那一處 =====
+     表單/輸入欄位/按鈕的尺寸全由此供給；調整下列映射即全站生效，
+     開發者不需（也不准）在個別規則裸寫控制件尺寸。 */
+  --control-font: var(--text-md);   /* 控制件字級 */
+  --control-line: 1.5;              /* 控制件行高 */
+  --control-pad-y: 3px;             /* button 垂直內距 */
+  --control-pad-x: var(--space-4);  /* button 水平內距 8px */
+  --control-radius: 9px;            /* button 圓角 */
+  --input-pad-y: var(--space-2);    /* 輸入框垂直內距 4px */
+  --input-pad-x: var(--space-4);    /* 輸入框水平內距 8px */
+  --input-radius: var(--radius-sm); /* 輸入框圓角 8px */
+  --input-pad-compact-y: var(--space-1); /* date/select 緊湊內距 2px */
+  --input-pad-compact-x: var(--space-2); /* 4px */
 }

@@ -8,7 +8,7 @@ export async function loadLoginPanel() {
       z-index: var(--layer-toast);
       display: flex;
       flex-direction: column-reverse;
-      gap: 8px;
+      gap: var(--space-4);
       pointer-events: none;
     }
     .firework-toast {
@@ -19,7 +19,7 @@ export async function loadLoginPanel() {
       padding: 12px 20px;
       border-radius: 12px;
       border: 1px solid var(--glass-border);
-      font-size: 14px;
+      font-size: var(--text-base);
       box-shadow: 0 8px 24px rgba(0,0,0,0.12);
       opacity: 0;
       transform: translateX(-20px);
@@ -27,7 +27,7 @@ export async function loadLoginPanel() {
       pointer-events: auto;
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: var(--space-4);
     }
     .firework-toast.show {
       opacity: 1;

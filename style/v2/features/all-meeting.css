@@ -9,7 +9,7 @@
     padding: 5px;
     width: auto;
     position: relative; /* 讓結果框能夠依附在搜尋框下方 */
-    margin-bottom: 10px; /* 添加底部間距，讓結果區域與搜尋框分開 */
+    margin-bottom: var(--space-5); /* 添加底部間距，讓結果區域與搜尋框分開 */
     z-index: 897;
     transition: box-shadow var(--spring), background var(--spring);
 }
@@ -20,8 +20,8 @@
 }
 
 #all-meeting-search-container i {
-    margin-right: 10px;
-    margin-left: 6px;
+    margin-right: var(--space-5);
+    margin-left: var(--space-3);
     color: var(--muted);
     transition: color var(--spring);
 }
@@ -35,7 +35,7 @@
     outline: none;
     background: none;
     flex-grow: 1;
-    padding-left: 10px;
+    padding-left: var(--space-5);
     color: var(--fg);
 }
 
@@ -80,27 +80,27 @@
 #all-meeting-error {
     margin-top: 20px;
     color: var(--danger);
-    font-size: 14px;
+    font-size: var(--text-base);
     width: auto; /* 與搜尋框寬度一致 */
     text-align: left;
-    padding-left: 10px;
+    padding-left: var(--space-5);
 }
 
 /* 沒有結果的樣式 */
 .all-no-results {
     color: var(--muted);
-    font-size: 14px;
+    font-size: var(--text-base);
     text-align: center;
 }
 
 .all-meeting-result-item {
-    margin-bottom: 4px; /* 縮小間隔 */
-    font-size: 12px; /* 縮小字體 */
+    margin-bottom: var(--space-2); /* 縮小間隔 */
+    font-size: var(--text-sm); /* 縮小字體 */
     border-bottom: 1px solid var(--border); /* 結果項目間的髮絲分隔線 */
 }
 /* 提高特異度以覆蓋 #all-meeting-result-container div 的 padding: 5px */
 #all-meeting-result-container .all-meeting-result-item {
-    padding-bottom: 8px;
+    padding-bottom: var(--space-4);
 }
 .all-meeting-result-item:last-child {
     border-bottom: none;
@@ -113,7 +113,7 @@
     position: relative;
     border-radius: 8px;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-2);
     max-height: 200px;
     overflow-y: auto;
     border: 1px solid var(--border-2);
@@ -138,7 +138,7 @@
     margin: 2px 0; /* 縮小段落之間的間距 */
     line-height: 1.2; /* 縮小行距 */
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--text-sm);
 }
 
 /* 結果標題：var(--fg) 600；hover 用 accent-tint 標示為可互動項目 */
@@ -146,10 +146,10 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 14px;
+    font-size: var(--text-base);
     font-weight: 600;
     color: var(--fg);
-    margin-bottom: 4px;
+    margin-bottom: var(--space-2);
     position: relative;
     border-radius: 6px;
 
@@ -231,23 +231,23 @@
 .all-meeting-repeat {
     display: block; /* 保證每個項目換行垂直排列 */
     position: relative;
-    padding: 6px 10px;
+    padding: var(--space-3) var(--space-5);
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--text-sm);
 }
 
 /* 標籤群組表頭（週期/一次性等標籤文字），與 meta 文字同一套詞彙 */
 .tag-header {
     padding: 4px 10px 0;
     color: var(--muted);
-    font-size: 11px;
+    font-size: var(--text-xs);
     font-weight: 600;
     letter-spacing: 0.02em;
 }
 .all-meeting-per-list {
     border: 1px solid var(--border);
     transition: all .5s ease 0s;
-	margin-bottom: 10px;
+	margin-bottom: var(--space-5);
 	border-radius: 10px;
 	background-color: var(--bg-soft);
 }
@@ -261,7 +261,7 @@
 .all-white-background-div {
     display: grid;
     grid-template-columns: 1fr; /* 每層占滿一列，垂直排列 */
-    gap: 10px; /* 每層之間的間隔 */
+    gap: var(--space-5); /* 每層之間的間隔 */
 	border-left: 1px dashed var(--border);
     margin-left: 13px;
 }
@@ -274,7 +274,7 @@
     flex-grow: 1; /* 讓時間範圍自動佔滿剩餘寬度 */
     width: 100%; /* 強制佔滿父級寬度 */
     color: var(--muted);
-    font-size: 12px;
+    font-size: var(--text-sm);
 }
 .meeting-wrapper:hover,.meeting-icon-wrapper:hover,.all-meeting-time-range:hover {
     background-color: var(--bg-soft) !important;
@@ -286,7 +286,7 @@
 
 /* 調整標籤元素的位置 */
 .all-meeting-time-range div {
-    margin-right: 8px;
+    margin-right: var(--space-4);
     justify-content: center;
     display: grid;
     width: fit-content;
@@ -298,7 +298,7 @@
     position: relative;
 }
 .icon-container {
-    margin-left: 10px; /* icon 和時間範圍之間留出一些空間 */
+    margin-left: var(--space-5); /* icon 和時間範圍之間留出一些空間 */
 }
 /* 標籤群組：與其餘結果區共用 hairline 詞彙（取代 JS 內聯的 #ddd 原始灰） */
 .tag-group {

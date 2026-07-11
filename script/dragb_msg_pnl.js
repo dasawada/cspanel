@@ -57,7 +57,7 @@ const PANEL_CSS = `
   border: 1px solid #ccc;
   border-radius: 9999px;
   padding: 5px 30px 5px 10px;
-  font-size: 13px;
+  font-size: var(--text-md);
   box-sizing: border-box;
   background: #fff;
   color: #333;
@@ -65,9 +65,9 @@ const PANEL_CSS = `
 }
 .canned-panel-clear-btn {
   /* 定位/色彩/hover 由膠囊詞彙供給（capsule.css .gl-capsule__end）；此處僅實例尺寸與顯示邏輯 */
-  width: 24px;
-  height: 24px;
-  font-size: 24px;
+  width: var(--icon-lg);
+  height: var(--icon-lg);
+  font-size: var(--text-4xl);
   display: none;
   z-index: 1004;
 }
@@ -77,7 +77,7 @@ const PANEL_CSS = `
   border: 1px solid #ddd;
   border-radius: 10px;
   background: rgba(255,255,255,0.35);
-  margin-top: 10px;
+  margin-top: var(--space-5);
 }
 .canned-panel-tab-menu {
   width: 70px;
@@ -94,7 +94,7 @@ const PANEL_CSS = `
   padding: 10px 5px;
   cursor: pointer;
   border-bottom: 1px solid #eee;
-  font-size: 13px;
+  font-size: var(--text-md);
   TEXT-ALIGN: CENTER;
 }
 .canned-panel-tab-menu li.active {
@@ -103,7 +103,7 @@ const PANEL_CSS = `
 }
 .canned-panel-tab-content {
   flex: 1;
-  padding: 10px;
+  padding: var(--space-5);
   overflow-y: auto;
 }
 .canned-panel-tab-item { display: none; }
@@ -111,8 +111,8 @@ const PANEL_CSS = `
 .canned-panel-tab-item textarea {
   width: 100%;
   height: 180px;
-  font-size: 13px;
-  padding: 10px;
+  font-size: var(--text-md);
+  padding: var(--space-5);
   box-sizing: border-box;
   resize: vertical;
 }
@@ -122,15 +122,15 @@ const PANEL_CSS = `
   cursor: not-allowed;
 }
 .canned-panel-btn-group {
-  margin-top: 10px;
+  margin-top: var(--space-5);
   display: flex;
   justify-content: flex-end;
-  margin-top: 10px; 
+  margin-top: var(--space-5); 
   }
 .canned-panel-btn-group button {
   padding: 5px 8px;
-  margin-right: 10px;
-  font-size: 13px;
+  margin-right: var(--space-5);
+  font-size: var(--text-md);
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -141,7 +141,7 @@ const PANEL_CSS = `
 .canned-panel-warning {
   color: red;
   font-weight: bold;
-  margin-top: 10px;
+  margin-top: var(--space-5);
 }
 .canned-panel-tab-menu li:first-child {
   border-top-left-radius: 10px;
@@ -151,7 +151,7 @@ const PANEL_CSS = `
 }
 .canned-panel-search-spinner {
   /* 外觀配方由膠囊詞彙供給（capsule.css .gl-capsule__spinner）；此處僅實例排版 */
-  margin-left: 8px;
+  margin-left: var(--space-4);
   vertical-align: middle;
 }
 @keyframes spin {
@@ -566,7 +566,7 @@ export function createCannedMessagesPanel(options = {}) {
         const chatResult = json.chat;
         if (chatResult && chatResult.chats && chatResult.portal) {
             const chatCards = chatResult.chats.map(chat => `
-                <div class="card ${chat.status}" style="margin-bottom:4px;padding:4px 8px;border-radius:6px;border:1px solid var(--border-2);cursor:pointer;background:${chat.status==='open'?'color-mix(in srgb, var(--success) 14%, white)':'var(--bg-soft)'};color:${chat.status==='open'?'var(--success)':'var(--fg-2)'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
+                <div class="card ${chat.status}" style="margin-bottom:var(--space-2);padding:var(--space-2) var(--space-4);border-radius:6px;border:1px solid var(--border-2);cursor:pointer;background:${chat.status==='open'?'color-mix(in srgb, var(--success) 14%, white)':'var(--bg-soft)'};color:${chat.status==='open'?'var(--success)':'var(--fg-2)'}" onclick="window.open('${chatResult.portal}/online/?IM_DIALOG=chat${chat.id}','_blank')">
                     ${chat.title.replace(/[- ]?OneClass體驗接待大廳/g, '')}
                 </div>
             `).join('');
@@ -792,7 +792,7 @@ export function createCannedMessagesPanel(options = {}) {
             ['tab1', 'tab4'].forEach(tab => {
               const warning = panel.querySelector(`#${panelId}-${tab} .canned-panel-warning`);
               if (warning && !panel.querySelector(`#${panelId}-${tab}-copy-preparing`)) {
-                warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-${tab}-copy-preparing" style="margin-left:8px;padding:2px 8px;font-size:12px;cursor:pointer;">複製搶課</button>`);
+                warning.insertAdjacentHTML('beforeend', ` <button id="${panelId}-${tab}-copy-preparing" style="margin-left:var(--space-4);padding:var(--space-1) var(--space-4);font-size:var(--text-sm);cursor:pointer;">複製搶課</button>`);
                 const copyBtn = panel.querySelector(`#${panelId}-${tab}-copy-preparing`);
                 copyBtn.addEventListener('click', () => {
                   const url = `https://oneclub.backstage.oneclass.com.tw/audition/courseclaim/formal/copy/${courseData.id}`;
