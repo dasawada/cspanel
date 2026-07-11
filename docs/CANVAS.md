@@ -488,4 +488,8 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
     `新增資料夾/.DS_Store`；§4.3 白名單同步移除三列。**刻意保留**：`img/` 全部（話術面板 innerHTML
     渲染 Sheet 內容，瀏覽器教學截圖可能活在話術或客服外發連結中，repo 內無法證死）；`tool_zip/*.zip`
     （tool-download-panel 以完整網址熱連）；`新增資料夾/` 目錄名（醜但是線上 URL 的一部分，改名即斷鏈）；
-    12 個獨立頁與其 `style/*.css` 舊樣式（頁面存活）。
+    12 個獨立頁（頁面存活）。**style/ 盤點（同日）**：刪除 8 個被 v2/features 取代的孤兒舊樣式
+    （`DT_CSS`／`all-meeting`／`ipsearch_css`／`meeting-match-check`／`meeting-now-css`／`panel-all`／
+    `report`／`shrturl`.css，精確路徑查證——注意舊檔名是 v2 路徑的子字串，basename grep 會假陽性）；
+    保留 `body.css`／`button.css`／`font.css`（DT_report 與 fu_s_popup 仍引用）與 `favicon.ico`。
+    style/ 自此僅剩「3 個活舊頁樣式 + v2 現行系統」。
