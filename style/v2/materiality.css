@@ -1,75 +1,43 @@
-/* ===== 材質層（第五期）=====
-   高度可讀 / 聚焦表現 / 運動文法 / 拖曳浮起——由材質調校面板（script/mat-tune.js，
-   ?tune=1 才啟用）以 --mat-* 自訂屬性 + html[data-mat-*] 屬性供給。
+/* ===== 材質層（第五期，已烘焙定案 2026-07-11）=====
+   使用者以調校面板選定 materiality-spec v1：
+     elevation=clear（清晰）、focus=bright（邊框微亮）、lift=subtle（微浮）、motion=off（無）
+   調校面板已退役（git 歷史 3c4e39d / fdc6ade 可考）；本檔數值即最終權威。
 
-   鐵律（審查 #1/#2/#8 的教訓）：**所有規則一律以 html[data-mat-*] 閘門**。
-   「預設全關」的正確實作是「預設零規則命中」（DOM 無屬性 → 選擇器不匹配），
-   不是「預設值視覺等值」——後者隱含假設所有 surface 的靜置陰影都是
-   --glass-shadow，而 .meeting-search-panel-menu（透明容器、無陰影）與
-   draggable.js 拖曳中的 0 4px 20px 深影都是反例，會被無條件規則蓋掉。
-   選定 spec 後烘焙時，把選中檔位的值寫進本檔並「把對應閘門改為恆真或移除」。 */
+   規則沿用審查定案的排除條款，不可移除：
+   - :not(.meeting-search-panel-menu)——透明無影容器，畫玻璃影會是懸空影子框
+   - :not(.gl-dragging)（高度規則）——拖曳中交給 lift 影
+   - :not(.gl-editable)（聚焦 outline）——編輯模式的虛線 outline 不可覆蓋
+   - :not(:hover):not(:focus-within)（退後）——正在互動的面板不退暗
+   運動軸定案為「無」：materiality 不引入任何 transition（DT/顧問/IPsearch/輔導四個
+   legacy 面板的 transition:all 0.3s 沿舊，屬既有行為）。 */
 :root {
-    --mat-shadow-top: var(--glass-shadow);
-    --mat-recede-opacity: 1;
-    --mat-motion-ms: 200ms;
-    --mat-motion-ease: cubic-bezier(0.22, 1, 0.36, 1);
+    --mat-shadow-top: 0 18px 48px rgba(0, 0, 0, 0.14), 0 3px 10px rgba(0, 0, 0, 0.06), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
+    --mat-recede-opacity: 0.93;
     --mat-focus-outline: 1px solid rgba(255, 255, 255, 0.9);
     --mat-focus-outline-offset: -1px;
-    --mat-lift-shadow: var(--glass-shadow);
+    --mat-lift-shadow: 0 16px 44px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(255, 255, 255, 0.55) inset;
 }
 
-/* 高度可讀：最上層影子。排除 .meeting-search-panel-menu（透明容器，畫上玻璃影
-   會是懸空的影子框）；排除 .gl-dragging（拖曳中交給 lift 軸或 draggable.js 原生深影）。 */
-html[data-mat-elevation] .gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-dragging) {
+/* 高度可讀：最上層影子（清晰檔） */
+.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-dragging) {
     box-shadow: var(--mat-shadow-top);
 }
-/* 高度可讀：非最上層微退。:hover/:focus-within 豁免——正在互動的面板不退暗
-   （審查 #7：fudausearch 靠 :focus-within 自我提升 z 但不會成為 is-stack-top）。
-   pane 跟著自己的視窗一起退（點視窗即置頂，故不需 hover 豁免）。
-   本選擇器特異度 (0,5,1) 亦壓過 base.css 的 html.auth-active .canned-panel
-   （0,2,1），話術面板同樣會退（審查 #10）。 */
-html[data-mat-elevation] .gl-stack-surface:not(.is-stack-top):not(:hover):not(:focus-within),
-html[data-mat-elevation] .gl-stack-pane:not(.is-stack-top) {
+/* 高度可讀：非最上層微退（0.93）。特異度 (0,4,0) 壓過 base.css 的
+   html.auth-active .canned-panel（0,2,1），話術面板一樣退。 */
+.gl-stack-surface:not(.is-stack-top):not(:hover):not(:focus-within),
+.gl-stack-pane:not(.is-stack-top) {
     opacity: var(--mat-recede-opacity);
 }
 
-/* 聚焦表現：改用 outline（不參與 box-shadow 組合，可獨立於高度軸開關，不會
-   為了畫環而被迫替無影面板鋪底影）。排除編輯模式的 .gl-editable（它用虛線
-   outline 標示可編輯，不可覆蓋）。 */
-html[data-mat-focus] .gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-editable) {
+/* 聚焦表現：最上層邊框微亮（outline 模型，不參與 box-shadow 組合） */
+.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-editable) {
     outline: var(--mat-focus-outline);
     outline-offset: var(--mat-focus-outline-offset);
 }
 
-/* 拖曳浮起：抓起時影子加深（面板與 tab 視窗同語彙）。lift=無 時無此規則，
-   draggable.js 原生的 .draggable-dragging 深影（0 4px 20px）維持原樣。 */
-html[data-mat-lift] .gl-stack-surface.gl-dragging:not(.meeting-search-panel-menu) {
+/* 拖曳浮起：抓起時影子加深（微浮檔；面板與 tab 視窗同語彙）。
+   本規則（0,2,0）取代 draggable.js 注入的 .draggable-dragging 深影（0,1,0）——
+   spec 定案的刻意變更，非疏漏。 */
+.gl-stack-surface.gl-dragging:not(.meeting-search-panel-menu) {
     box-shadow: var(--mat-lift-shadow);
-}
-
-/* 運動文法：置頂/退後的影子與透明度過渡。
-   - .wm-window 排除幾何過渡（審查 #5/#9：視窗拖曳/縮放逐 frame 寫 inline left/top，
-     幾何 transition 會橡皮筋滯後且放開後 pane 與框永久錯位）——它只拿影子/透明度過渡。
-   - 面板保留 transform/width/height/left/top/min-width/flex-basis 的 0.3s：
-     (a) .small-size 縮放動畫依賴（sharedGeometryCss 的 transition:all 被本規則以
-     特異度蓋掉，故在此逐項補回）；(b) transform 必須與 left/top 同步過渡（審查 #6：
-     draggable.js 放開時 transform 歸零與 left/top 寫入互相抵銷，兩者過渡節奏不同
-     會先跳回起點再滑到落點）。
-   - pane 只過渡透明度（幾何由 syncPanes 逐 frame 對位，不可過渡）。 */
-@media (prefers-reduced-motion: no-preference) {
-    html[data-mat-motion] .gl-stack-surface:not(.wm-window) {
-        transition:
-            box-shadow var(--mat-motion-ms) var(--mat-motion-ease),
-            opacity var(--mat-motion-ms) ease-out,
-            transform 0.3s ease,
-            width 0.3s ease, height 0.3s ease,
-            left 0.3s ease, top 0.3s ease,
-            min-width 0.3s ease, flex-basis 0.3s ease;
-    }
-    html[data-mat-motion] .wm-window.gl-stack-surface,
-    html[data-mat-motion] .gl-stack-pane {
-        transition:
-            box-shadow var(--mat-motion-ms) var(--mat-motion-ease),
-            opacity var(--mat-motion-ms) ease-out;
-    }
 }

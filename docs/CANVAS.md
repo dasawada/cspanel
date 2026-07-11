@@ -465,17 +465,17 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 8. **視窗 chrome 打磨**（見第 7.6 節）：標題列色帶、藥丸 tab、可見縮放把手（`--border-2` 取代隱形的
    `--glass-border`）、`role="tablist"` + roving tabindex + 鍵盤切換。使用者回饋「看起來不像視窗」的
    直接修正——症狀是視覺層（chrome 太含蓄），非 DOM 結構問題。
-9. **材質層 + 調校面板（第五期，暫時態）**：`style/v2/materiality.css` 以 `--mat-*` 自訂屬性 +
-   **`html[data-mat-*]` 屬性閘門**供給「高度可讀／聚焦表現／運動文法／拖曳浮起」，鉤子為
-   stack-manager 維護的 `is-stack-top` 與 `gl-dragging`。**「預設全關」的正確實作是「零規則命中」
-   （DOM 無屬性 → 選擇器不匹配），不是「預設值視覺等值」**——後者隱含假設所有 surface 靜置陰影
-   都是 `--glass-shadow`，被 `.meeting-search-panel-menu`（透明無影容器）與 draggable.js 拖曳深影
-   兩個反例打破（本期對抗式審查 12 項的共同根因，已修正並有回歸）。聚焦環用 `outline`（不參與
-   box-shadow 組合）；`.wm-window` 不吃幾何 transition（拖曳/縮放逐 frame 寫 inline）；退後豁免
-   `:hover`/`:focus-within`（互動中的面板不退暗）。調校面板 `script/mat-tune.js` 只在 `?tune=1`
-   時啟用（無參數完全 no-op），檔位制、「輸出 spec」產 JSON（含 resolved 實值與閘門狀態）。
-   **拆除日**：使用者選定 spec 後，把 `resolved` 值烘成預設、對應閘門改恆真、面板退役。
-   回歸：`tools/mat-tune-test.mjs`（23 斷言）。
+9. **材質層（第五期，已定案烘焙 2026-07-11）**：`style/v2/materiality.css` 供給畫布的物質性，
+   鉤子為 stack-manager 維護的 `is-stack-top` 與 `gl-dragging`（面板與 tab 視窗同語彙）。
+   使用者以調校面板（暫時態工具，已退役，git 歷史 `3c4e39d`/`fdc6ade` 可考）選定
+   **materiality-spec v1**：高度可讀=清晰（置頂影 `0 18px 48px @.14`、其餘退 `0.93`）、
+   聚焦=邊框微亮（`outline 1px rgba(255,255,255,.9)` inset）、拖曳浮起=微浮（`0 16px 44px @.16`，
+   **刻意取代** draggable.js 的 `.draggable-dragging` 深影）、**運動=無**（不引入任何 transition）。
+   排除條款不可移除：`.meeting-search-panel-menu`（透明無影容器）不吃影/框；`.gl-editable` 的
+   虛線 outline 不被聚焦框覆蓋；`:hover`/`:focus-within` 的面板不退暗。
+   歷史教訓（審查 12 項共同根因）：**「預設全關」須以「零規則命中」實作，不可用「預設值視覺
+   等值」**——後者隱含「所有 surface 靜置影都是 `--glass-shadow`」的錯誤假設。
+   回歸：`tools/materiality-test.mjs`。
 10. **「新殼」另案撤案（2026-07-10 決策記錄）**：第二期設計 §9 曾預留「SaaS 式左選單新殼與工作區切換」
    另案。經四期演進（manifest 擴充路徑、編輯模式、統一動態疊序、分頁視窗管理器）後，使用者決議**撤案**：
    新增部門工作區的正式路徑就是第 3 節（新 manifest + 薄殼頁），不再維持「整體重寫的新殼」為待辦專案。
