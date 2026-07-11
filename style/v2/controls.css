@@ -384,20 +384,9 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
   flex: 1;
 }
 
-/* 清除按鈕樣式 */
-.fudausearch-clear-btn {
-  position: absolute;
-  right: 5px;
-  background-color: transparent;
-  border: none;
-  font-size: 12px;
-  color: var(--muted);
-  cursor: pointer;
-}
-
-.fudausearch-clear-btn:hover {
-  color: var(--fg);
-}
+/* 清除按鈕：定位/色彩/hover 由膠囊詞彙供給（capsule.css .gl-capsule__end，
+   見 CANVAS.md §4.7）；此處僅保留實例字級 */
+.fudausearch-clear-btn { font-size: 12px; }
 #meetingsearch-refresh-btn:hover {
     color: var(--muted);
   }

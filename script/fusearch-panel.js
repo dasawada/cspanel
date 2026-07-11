@@ -10,9 +10,9 @@ let fudausearch_cachedData = [];
 const fudausearchPanelHTML = `
 <div class="fudausearch-container" id="fudausearch-container">
   <button class="fudausearch-fixed-button" id="fudausearch-fixed-button" style="display: none;">學務部</button>
-  <div class="fudausearch-input-wrapper">
+  <div class="fudausearch-input-wrapper gl-capsule">
     <input type="text" id="fudausearch-input" placeholder="輔導職代、顧問組長查詢" autocomplete="off" />
-    <button class="fudausearch-clear-btn" id="fudausearch-clear-btn">x</button>
+    <button class="fudausearch-clear-btn gl-capsule__end" id="fudausearch-clear-btn">x</button>
     <div id="fudausearch-suggestions" class="fudausearch-suggestions"></div>
   </div>
   <div id="fudausearch-results"></div>

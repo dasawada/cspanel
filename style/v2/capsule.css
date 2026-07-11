@@ -1,0 +1,62 @@
+/* ===== 膠囊輸入詞彙（第六期）=====
+   「意圖放在 input 內」的動作元素之單一權威。機制唯一：wrapper 定位 +
+   absolute 尾端槽 + 垂直置中；參數走 --capsule-* token（可於實例局部覆寫值，
+   如 canned 的 --capsule-inset:42px——調參不算破例，換機制才是）。
+   所有 token 皆帶 fallback：本檔可被不載 tokens.css 的頁面（轉單頁、fu_s_popup、
+   跨 repo 頁）獨立引用，詞彙檔自足。
+   鐵律見 docs/CANVAS.md §4.7：新的 input 內嵌動作一律組合本詞彙，不得自造定位。 */
+
+/* wrapper：唯一定位權威 */
+.gl-capsule { position: relative; }
+
+/* 尾端動作槽（clear 鈕等）；__end-2 = 第二槽（再往內一格） */
+.gl-capsule__end,
+.gl-capsule__end-2 {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    inset-inline-end: var(--capsule-inset, 8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: none;
+    background: none;
+    padding: 0;
+    margin: 0;
+    line-height: 1;
+    cursor: pointer;
+    color: var(--capsule-fg, var(--muted, #8e8e93));
+}
+.gl-capsule__end-2 {
+    inset-inline-end: calc(var(--capsule-inset, 8px) + var(--capsule-slot-w, 22px));
+}
+.gl-capsule__end:hover,
+.gl-capsule__end-2:hover {
+    color: var(--capsule-fg-hover, var(--fg, #1d1d1f));
+}
+.gl-capsule__end:focus-visible,
+.gl-capsule__end-2:focus-visible {
+    outline: 2px solid var(--accent-ring, rgba(58, 58, 60, 0.25));
+    outline-offset: 1px;
+    border-radius: 4px;
+}
+
+/* 輸入中 spinner 配方（外觀，不含定位——in-flow 使用，或由呼叫端決定顯示時機。
+   注意：勿與 __end 槽同元素合用——spin 的 rotate 會覆蓋槽的 translateY 置中。
+   配方值即既有 .ip-search-spinner（Firestore markup 的既定契約）之權威化。 */
+.gl-capsule__spinner {
+    display: inline-block;
+    width: 1.25em;
+    height: 1.25em;
+    border: 2px solid var(--border-2, rgba(0, 0, 0, 0.12));
+    border-top-color: var(--accent, #3a3a3c);
+    border-radius: 50%;
+    box-sizing: border-box;
+    animation: gl-capsule-spin 1s linear infinite;
+}
+@keyframes gl-capsule-spin {
+    to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+    .gl-capsule__spinner { animation-duration: 2.5s; }
+}

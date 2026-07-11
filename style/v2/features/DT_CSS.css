@@ -189,23 +189,6 @@
 }
 
 /* 滾動條美化 */
-.DT_panel #content::-webkit-scrollbar {
-    width: 8px;
-}
-
-.DT_panel #content::-webkit-scrollbar-track {
-    background: transparent;
-}
-
-.DT_panel #content::-webkit-scrollbar-thumb {
-    background: var(--border-2);
-    border-radius: 4px;
-}
-
-.DT_panel #content::-webkit-scrollbar-thumb:hover {
-    background: var(--fg-2);
-}
-
 
 /* 確保面板內容在展開時的寬度分配 */
 .form_container {

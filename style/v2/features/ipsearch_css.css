@@ -49,6 +49,8 @@
     line-height: 1.4;
 }
 
+/* 本配方＝膠囊詞彙 .gl-capsule__spinner 的權威來源（capsule.css，CANVAS.md §4.7）。
+   class 名為 Firestore markup 既定契約不可改；改配方值時兩處同步。 */
 .ip-search-spinner {
     display: inline-block;
     width: 20px;

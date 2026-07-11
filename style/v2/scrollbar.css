@@ -1,0 +1,12 @@
+/* ===== 全站捲軸單一權威（第六期）=====
+   只用標準屬性（scrollbar-width / scrollbar-color）：Chrome 121+ 與 Firefox 全吃；
+   Safari 不支援則回退系統原生 overlay（macOS 本就合宜）。刻意不寫
+   ::-webkit-scrollbar——Chrome 一旦設了標準屬性即忽略 webkit 私有語法，
+   兩者並存等於維護死碼（本檔取代全站六處各自手刻的 webkit 區塊）。
+   thumb 色帶 fallback：本檔可被跨 repo 頁面（cspanel_netlify 熱連）獨立引用；
+   在 cspanel 內則 color-mix 吃 --fg 隨 63 組主題連動。
+   鐵律見 docs/CANVAS.md §4.7：不得再局部自刻 scrollbar 樣式。 */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scrollbar-thumb, color-mix(in srgb, var(--fg, #1d1d1f) 25%, transparent)) transparent;
+}

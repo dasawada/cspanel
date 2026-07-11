@@ -34,18 +34,7 @@
         }
 
         /* 针对Webkit引擎（Chrome, Safari, Edge） */
-        .meeting-now-result-flow::-webkit-scrollbar {
-            width: 6px;
-        }
 
-        .meeting-now-result-flow::-webkit-scrollbar-track {
-            background: transparent;
-        }
-
-        .meeting-now-result-flow::-webkit-scrollbar-thumb {
-            background-color: var(--border-2);
-            border-radius: 10px;
-        }
         .meetingsearch-meeting-item {
             margin-bottom: 5px;
             border-bottom: 1px solid var(--border);
@@ -75,10 +64,6 @@
             box-shadow: inset 0 0px 6px rgba(0, 0, 0, 0.06);
             -ms-overflow-style: none;  /* IE and Edge */
             scrollbar-width: none;  /* Firefox */
-        }
-
-        .meetingsearch-info::-webkit-scrollbar {
-            display: none;  /* Chrome, Safari and Opera */
         }
 
         .meetingsearch-ongoing {
