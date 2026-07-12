@@ -11,7 +11,11 @@
 //
 // 對外：`stack.register/unregister/raise/reset/setCanvasId`，並掛 window.CanvasStack。
 
-const KEY = (id) => `cspanel.stack.${id}.v1`;
+// 九期A：頁級旗標 window.CSPANEL_ENGINE_V2（<head> 最早的 inline script 設定，
+// 模組載入時必已可讀）選 v1/v2 儲存命名空間。未設旗標（production panel_all.html
+// 現況）→ 恆 v1，key 與改動前逐位元相同。
+const STORE_VER = (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) ? 'v2' : 'v1';
+const KEY = (id) => `cspanel.stack.${id}.${STORE_VER}`;
 
 let canvasId = 'cs';
 const surfaces = new Map(); // key -> { el, pane, levels, _initialRank }

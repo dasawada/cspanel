@@ -1,0 +1,40 @@
+<!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">
+<title>page-engine (Task 1) fixture — loadCanvas config / layout 版本隔離</title>
+<!--
+  九期A Task 1 專用 fixture：驗證 loadCanvas(manifest, config) 的
+  config.storageVersion 正確決定 layout key 命名空間
+  （cspanel.layout.<id>.v1 / .v2），且互不污染。單一 probe 面板，其 rootSelector
+  幾何由 layout 覆蓋（見 canvas-engine.js emitGeometry）。
+
+  透過 URL ?ver=v1|v2 控制傳給 loadCanvas 的 config；省略 ?ver 時以「單參數」
+  呼叫 loadCanvas(manifest)——逐字對應 production panel_all.html 的
+  loadCanvas(cs) 呼叫形狀（不傳 config）。
+-->
+<style>
+  html, body { margin: 0; }
+  .panel_all_container { position: relative; width: 400px; height: 300px; }
+  .probe-el { position: absolute; width: 40px; height: 30px; background: #cfc; }
+</style>
+</head><body>
+<div class="panel_all_container"><div class="probe-el"></div></div>
+<script type="module">
+  import { loadCanvas } from '/script/canvas-engine.js';
+  const params = new URLSearchParams(location.search);
+  const ver = params.get('ver');
+  const manifest = {
+    id: 'p9a-probe',
+    panels: [
+      {
+        id: 'probe',
+        module: '/tools/page-engine-a-stub-module.mjs',
+        init: 'init',
+        clear: 'clear',
+        slot: 'p9a-probe-slot',
+        rootSelector: '.probe-el',
+      },
+    ],
+  };
+  const ready = ver ? loadCanvas(manifest, { storageVersion: ver }) : loadCanvas(manifest);
+  window.__ready = ready.then(() => { window.__loaded = true; });
+</script>
+</body></html>

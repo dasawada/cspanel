@@ -17,7 +17,8 @@
 // 透明 shield 防 iframe 吃滑鼠事件。
 //
 // 幾何 / 疊序鐵律：
-//   - 視窗座標存於 localStorage['cspanel.windows.<canvasId>.v1']（唯一權威）。
+//   - 視窗座標存於 localStorage['cspanel.windows.<canvasId>.v1'|'.v2']（唯一權威；
+//     九期A 起依頁級旗標 window.CSPANEL_ENGINE_V2 選版本，見 mountWindowManager 內）。
 //   - z-index 只引用 --layer-panel 層帶：視窗 = calc(var(--layer-panel) + z*2)、
 //     其作用中 pane = calc(var(--layer-panel) + z*2 + 1)（pane 疊在自己的視窗
 //     之上，才看得到 iframe 且可互動）；z 為 0..n-1 的視窗堆疊名次，提升時
@@ -36,7 +37,10 @@ const DRAG_THRESHOLD = 6; // px，未超過視為點擊（切換 tab）而非拖
 export function mountWindowManager(host, opts = {}) {
   if (!host) return null;
   const canvasId = opts.canvasId || 'cs';
-  const WKEY = `cspanel.windows.${canvasId}.v1`;
+  // 九期A：同 stack-manager.js——頁級旗標 window.CSPANEL_ENGINE_V2 選 v1/v2 儲存
+  // 命名空間；未設旗標恆 v1，key 與改動前逐位元相同。
+  const STORE_VER = (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) ? 'v2' : 'v1';
+  const WKEY = `cspanel.windows.${canvasId}.${STORE_VER}`;
 
   const tabsContainer = host.querySelector('.panel-tabs-container');
   if (!tabsContainer) {
