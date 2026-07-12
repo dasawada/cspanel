@@ -37,7 +37,7 @@
 - Test: `tools/page-engine-b-test.mjs`（新檔骨架＋A 區）
 
 **Interfaces:**
-- Produces: 引擎側 wrapper：`onPositionChange` 只在「與拖曳起點位移 ≥ 6px」時寫 layout（閾值常數 `ENGINE_DRAG_THRESHOLD = 6` 匯出供測試/後續 Task 引用）；同時引擎記錄「目前拖曳中的面板 id 與即時 rect」到模組級 `dragTelemetry`（`{ panelId, rect } | null`，Task 4 成組偵測消費）。draggable.js 零改動——位移判定用「down 時 rect vs 結束 pos」在引擎側計算。
+- Produces: 引擎側 wrapper：`onPositionChange` 只在「與拖曳起點位移 ≥ 6px」時寫 layout（閾值常數 `ENGINE_DRAG_THRESHOLD = 6` 匯出供測試/後續 Task 引用）；同時引擎記錄「目前拖曳中的面板」到模組級 `dragTelemetry`（**定案形狀 `{ panelId, el } | null`**——存 el 而非凍結 rect，Task 4 成組偵測每 rAF 以 `el.getBoundingClientRect()` 讀**即時**位置；down 時凍結的 rect 無法支撐重疊偵測。此為裁定修訂：原文誤寫 `{panelId, rect}`）。draggable.js 零改動——位移判定的起點座標比照 draggable.js 的 `elementX/Y` 公式（`style.left ?? offsetLeft`，**不可用 getBoundingClientRect**，見 draggable.js:105-115 註解的 +18px 陷阱）。
 - Consumes: 九期A 的 attachHoverHandles／makeDraggable 管線。
 
 - [ ] **Step 1: 失敗測試（page-engine-b-test.mjs 新檔）**
@@ -70,7 +70,7 @@ Run `node tools/page-engine-b-test.mjs` → Expected: 第一條 FAIL（現況零
 
 - [ ] **Step 2: 實作 wrapper 與 dragTelemetry**
 
-attachHoverHandles 內，makeDraggable 呼叫改為：面板 pointerdown（熱區/把手）時記 `startRect = el.getBoundingClientRect()` 與 `dragTelemetry = { panelId: p.id, el }`；`onPositionChange(pos)` 時計算 `Math.hypot(pos.left - startLeft, pos.top - startTop)`（startLeft/Top 取自 down 時 offset）——`< ENGINE_DRAG_THRESHOLD` 則 return 不寫；結束時 `dragTelemetry = null`。dragTelemetry 供 Task 4 的重疊偵測在 pointermove 節流回呼中讀取（本 Task 先建狀態，未消費）。
+attachHoverHandles 內，makeDraggable 呼叫改為：面板 pointerdown（熱區/把手）時記 `startLeft/startTop`（比照 draggable.js `elementX/Y` 公式：`el.style.left ? parseInt(el.style.left,10) : el.offsetLeft`——不可用 getBoundingClientRect，會踩 draggable.js:105-115 註解的視窗座標陷阱）與 `dragTelemetry = { panelId: p.id, el }`；`onPositionChange(pos)` 時計算 `Math.hypot(pos.left - startLeft, pos.top - startTop)`——`< ENGINE_DRAG_THRESHOLD` 則 return 不寫；結束時 `dragTelemetry = null`。dragTelemetry 供 Task 4 的重疊偵測在 pointermove 節流回呼中讀取（本 Task 先建狀態，未消費）。
 
 - [ ] **Step 3: 綠燈＋回歸**
 
