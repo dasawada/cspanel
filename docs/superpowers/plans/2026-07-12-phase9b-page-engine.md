@@ -37,7 +37,7 @@
 - Test: `tools/page-engine-b-test.mjs`（新檔骨架＋A 區）
 
 **Interfaces:**
-- Produces: 引擎側 wrapper：`onPositionChange` 只在「與拖曳起點位移 ≥ 6px」時寫 layout（閾值常數 `ENGINE_DRAG_THRESHOLD = 6` 匯出供測試/後續 Task 引用）；同時引擎記錄「目前拖曳中的面板」到模組級 `dragTelemetry`（**定案形狀 `{ panelId, el } | null`**——存 el 而非凍結 rect，Task 4 成組偵測每 rAF 以 `el.getBoundingClientRect()` 讀**即時**位置；down 時凍結的 rect 無法支撐重疊偵測。此為裁定修訂：原文誤寫 `{panelId, rect}`）。draggable.js 零改動——位移判定的起點座標比照 draggable.js 的 `elementX/Y` 公式（`style.left ?? offsetLeft`，**不可用 getBoundingClientRect**，見 draggable.js:105-115 註解的 +18px 陷阱）。
+- Produces: 引擎側 wrapper：`onPositionChange` 只在「與拖曳起點位移 ≥ 6px」時寫 layout（閾值常數 `ENGINE_DRAG_THRESHOLD = 6` 匯出供測試/後續 Task 引用）；同時引擎記錄「目前拖曳中的面板」到模組級 `dragTelemetry`（**定案形狀 `{ panelId, el } | null`**——存 el 而非凍結 rect，Task 4 成組偵測每次節流輪詢以 `el.getBoundingClientRect()` 讀**即時**位置；down 時凍結的 rect 無法支撐重疊偵測。此為裁定修訂：原文誤寫 `{panelId, rect}`）。draggable.js 零改動——位移判定的起點座標比照 draggable.js 的 `elementX/Y` 公式（`style.left ?? offsetLeft`，**不可用 getBoundingClientRect**，見 draggable.js:105-115 註解的 +18px 陷阱）。
 - Consumes: 九期A 的 attachHoverHandles／makeDraggable 管線。
 
 - [ ] **Step 1: 失敗測試（page-engine-b-test.mjs 新檔）**
@@ -194,7 +194,7 @@ A(await page.evaluate(() =>
 - Test: `tools/page-engine-b-test.mjs`（D 區）
 
 **Interfaces:**
-- Produces: 拖曳面板（dragTelemetry 進行中）時，每 rAF 節流檢查與其他面板 root／既有 page 視窗內容區的重疊：`重疊面積 / min(兩者面積) ≥ 0.4` 持續 `≥ 500ms`（常數 `GROUP_OVERLAP_RATIO`/`GROUP_DWELL_MS` 匯出）→ 顯示 `.gl-group-preview`（絕對定位罩在目標上，token 樣式：`--accent-ring` 外框＋`--accent-tint` 底＋居中「組成一頁」字樣）；此時放開 → `PageEngine.create([目標id, 拖曳id])`（目標已是 page 視窗則 `addMember`）；拖離重疊或按 Esc → 預覽消失、正常落位。**成組後拖曳面板不寫畫布 layout**（成組即接管）。
+- Produces: 拖曳面板（dragTelemetry 進行中）時，以 `setTimeout(tick, GROUP_TICK_MS=16)` 節流輪詢檢查與其他面板（**裁定修訂**：原文「每 rAF」——rAF 會與 draggable.js 的拖曳 rAF 鏈搶同一顆幀造成間歇性 layout 遺失，A/B 實測後定案 setTimeout，見 5781c85） root／既有 page 視窗內容區的重疊：`重疊面積 / min(兩者面積) ≥ 0.4` 持續 `≥ 500ms`（常數 `GROUP_OVERLAP_RATIO`/`GROUP_DWELL_MS` 匯出）→ 顯示 `.gl-group-preview`（絕對定位罩在目標上，token 樣式：`--accent-ring` 外框＋`--accent-tint` 底＋居中「組成一頁」字樣）；此時放開 → `PageEngine.create([目標id, 拖曳id])`（目標已是 page 視窗則 `addMember`）；拖離重疊或按 Esc → 預覽消失、正常落位。**成組後拖曳面板不寫畫布 layout**（成組即接管）。
 - Consumes: Task 1 dragTelemetry、Task 3 PageEngine/pageHost。
 
 - [ ] **Step 1: 失敗測試（D 區）**
@@ -237,7 +237,7 @@ await page.evaluate(() => {
 });
 ```
 
-- [ ] **Step 2: 實作**（重疊偵測掛在引擎自己的 pointermove rAF——不動 draggable.js；Esc 用 keydown 一次性監聽）
+- [ ] **Step 2: 實作**（重疊偵測掛在引擎自己的 setTimeout 節流輪詢，裁定同上——不動 draggable.js；Esc 用 keydown 一次性監聽）
 - [ ] **Step 3: 綠燈＋B 全區＋A 測試**
 - [ ] **Step 4: Commit**（`feat(page): 拖重疊懸停成組手勢＋預覽框（九期B Task 4）`）
 
