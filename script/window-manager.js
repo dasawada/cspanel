@@ -24,8 +24,38 @@
 //     之上，才看得到 iframe 且可互動）；z 為 0..n-1 的視窗堆疊名次，提升時
 //     重新正規化，永不無限增長、恆在層帶內。
 //
-// 對外：mountWindowManager(host, opts) 回傳 { destroy, reset, syncPanes }，並掛
+// 對外：mountWindowManager(host, opts) 回傳 { destroy, reset, syncPanes, adoptTabs,
+// hasTabs, createPageWindow, addPageTab, removePageTab, findWindowForTab }，並掛
 // window.WindowManager 供引擎 resetLayout 呼叫（CanvasEdit.reset 一併回預設）。
+//
+// 九期B Task 2：兩段掛載（v2 模式限定；v1 模式下 mount 內仍單段直呼，逐位元不變）。
+//   - 核心可在零 iframe tab 狀態下掛載（tabsContainer 缺席也不 no-op），供
+//     canvas-engine 在 initAllModules 無條件呼叫，windows 可為空陣列。
+//   - api.adoptTabs(tabsContainer) 供 auth-protected-tabs 在伺服器內容注入完成後
+//     認養：探索/搬池/丟 chrome（adoptTabsInternal），再依已知 tab 集合重跑
+//     loadWindows() 歸位（saved windows 記得的位置優先，其餘塞第一個視窗）。
+//     冪等——已認養（tabOrder 已含）的 id 略過，不重複搬移 DOM。
+//
+// 九期B Task 3：page tab 支援（wm 不懂面板——tabs[] 接受 'pg:' 前綴 id，標題／
+// 成員定位/隱藏／頁空通知全數經 opts.pageHost = { getTitle, layout, onPageEmpty }
+// 委派給 canvas-engine；tabMeta/panes 兩個既有內部表完全不參與 page tab）。
+//   - render()：page tab 的 tab 文字每次重繪即時呼 pageHost.getTitle（不快取進
+//     tabMeta——page 標題會隨 addMember/removeMember 變動，快取會過期）。
+//   - syncPanes()：page tab 略過 panes[] 查找，改呼 pageHost.layout(id, 作用中 ?
+//     { left, top, width, height }（.wm-content 之 getBoundingClientRect）: null,
+//     win.el)。視窗被點擊置頂（wireWindow 的 pointerdown raise）後追加
+//     scheduleSync()——page 成員的 --stack-rank 不像 pane 隨 stack.raise 自動跟著
+//     宿主更新（一宿主對多名成員，非 1:1 pane 參照），需重跑 syncPanes 讓
+//     pageHost.layout 重新讀取宿主最新 rank 蓋回成員。
+//   - api.createPageWindow(pageId, rect)／api.addPageTab(winId, pageId)：供
+//     PageEngine.create/addMember 呼叫，建立/併入 page tab 的宿主視窗。
+//   - api.removePageTab(pageId)／api.findWindowForTab(tabId)：供 PageEngine
+//     dissolve/removeMember 呼叫，把 page 的 tab 自其宿主視窗移除（比照
+//     applyTabDrop 既有「移除空視窗」清理形狀）／查目前宿主視窗 id（供成員
+//     pointerdown 置頂 handler 動態解析，見 canvas-engine.js joinMember）。
+//   - applyTabDrop：若拖放後某 page tab 不再出現在任何視窗（結構上目前三分支
+//     皆會為被拖 tab 找到落點，此為前瞻防呆，非現行可達路徑）→ 呼
+//     pageHost.onPageEmpty(pageId)（引擎端實作＝清 store＋成員回畫布）。
 
 import { stack } from './stack-manager.js';
 
@@ -34,61 +64,104 @@ const MIN_W = 240;
 const MIN_H = 160;
 const DRAG_THRESHOLD = 6; // px，未超過視為點擊（切換 tab）而非拖曳
 
+// page id 一律 'pg:' 前綴（與 iframe tab id 命名空間隔離——後者來自伺服器 radio
+// id，不含冒號）。純函式，wm 模組內任何地方都可判斷 tab 型別。
+function isPageTab(id) { return typeof id === 'string' && id.startsWith('pg:'); }
+
 export function mountWindowManager(host, opts = {}) {
   if (!host) return null;
   const canvasId = opts.canvasId || 'cs';
+  // 'pg:' 開頭的 tab id 是否存在於 pages store（canvas-engine 的 isKnownPageId；
+  // 未傳一律 false——v1 永遠不會有 'pg:' id，不受影響）。
+  const isPageId = typeof opts.isPageId === 'function' ? opts.isPageId : () => false;
+  // pageHost：wm 不懂面板，page tab 的標題／成員定位隱藏／頁空通知全委派於此
+  // （canvas-engine 的 pageHostImpl；未傳則 page tab 只剩裸 tab 殼，無成員定位——
+  // 理論上不會發生，isPageId 與 pageHost 恆同時由 canvas-engine 一起傳入）。
+  const pageHost = opts.pageHost || null;
   // 九期A：同 stack-manager.js——頁級旗標 window.CSPANEL_ENGINE_V2 選 v1/v2 儲存
   // 命名空間；未設旗標恆 v1，key 與改動前逐位元相同。
   const STORE_VER = (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) ? 'v2' : 'v1';
+  const isV2 = STORE_VER === 'v2';
   const WKEY = `cspanel.windows.${canvasId}.${STORE_VER}`;
 
   const tabsContainer = host.querySelector('.panel-tabs-container');
-  if (!tabsContainer) {
-    // 沒有可管理的 markup（例如伺服器回傳空內容）——安靜退場，回無操作管理器。
+  // v1 路徑鐵律：tabsContainer 必在，否則安靜退場，回無操作管理器（行為逐位元
+  // 不變）。v2 路徑：核心不需要 tabsContainer 就能掛載（零 tab 啟動），稍後由
+  // api.adoptTabs() 認養伺服器注入的 iframe tabs。
+  if (!isV2 && !tabsContainer) {
     console.warn('WindowManager: 找不到 .panel-tabs-container，略過');
     return { destroy() {}, reset() {}, syncPanes() {} };
   }
 
-  // ===== 1. 探索 tab（id / 標題 / 內容元素） =====
-  const discovered = discoverTabs(tabsContainer);
-  if (!discovered.length) {
-    console.warn('WindowManager: 未探索到任何 tab，略過');
-    return { destroy() {}, reset() {}, syncPanes() {} };
-  }
-  const tabOrder = discovered.map((d) => d.id);
-  const tabMeta = Object.fromEntries(discovered.map((d) => [d.id, { title: d.title }]));
-  const defaultRect = readContainerRect(tabsContainer);
-
-  // ===== 2. 常駐池 + pane：把內容「一次性」搬進來 =====
-  const pool = document.createElement('div');
-  pool.className = 'wm-pool';
-  host.appendChild(pool);
-
+  // ===== 可變閉包狀態（Task 2：原本探索完立刻定案的一次性 const，改為 adoptTabs
+  // 可持續擴充的狀態——v1 仍只會被填一次，行為不變）=====
+  const tabOrder = [];
+  const tabMeta = {};
   const panes = {}; // tabId -> paneEl
-  for (const d of discovered) {
-    const pane = document.createElement('div');
-    pane.className = 'wm-pane';
-    pane.dataset.tab = d.id;
-    pane.style.display = 'none';
-    pool.appendChild(pane);
-    if (d.contentEl) {
-      // 搬「內容元素的子節點」（iframe 或 .appicon）進 pane。這是唯一一次
-      // DOM 移動；之後 pane 永遠留在池中，切 tab / 撕離 / 合併都只改「所屬視窗」
-      // 關係與 display，不再 re-parent，故 iframe 不再重載。
-      while (d.contentEl.firstChild) pane.appendChild(d.contentEl.firstChild);
-    }
-    panes[d.id] = pane;
+  let defaultRect = null;
+  let pool = null; // 常駐池：懶建立，首次有 tab 可搬時才建（與舊行為一致——零 tab 早退路徑不留空池）
+
+  // 淨化（loadWindows）用的合法 id 判定：iframe 已認養集合 ∪ 'pg:' 開頭且經
+  // isPageId 認可（Task 3 注入 pages store 查詢）。
+  function isKnownTab(id) {
+    if (tabOrder.includes(id)) return true;
+    return typeof id === 'string' && id.startsWith('pg:') ? !!isPageId(id) : false;
   }
 
-  // ===== 3. 丟棄伺服器 chrome =====
-  tabsContainer.remove();
+  function ensurePool() {
+    if (!pool) { pool = document.createElement('div'); pool.className = 'wm-pool'; host.appendChild(pool); }
+    return pool;
+  }
 
-  // ===== 4. 視窗層 =====
+  // ===== 探索/搬池/丟 chrome（原 mountWindowManager 步驟 1-3，抽成可重入的認養
+  // 函式）：v1 mount 內直呼一次；v2 由 api.adoptTabs 呼叫。冪等——回傳「這次新
+  // 認養」的 tab 描述陣列，已知 id（tabOrder 已含）略過，全數已知則整段 no-op
+  // （含不移除 container——冪等定義為「同 id 再 adopt 忽略」，非清場）。
+  function adoptTabsInternal(container) {
+    if (!container) return [];
+    const discovered = discoverTabs(container);
+    const newOnes = discovered.filter((d) => !tabOrder.includes(d.id));
+    if (!newOnes.length) return [];
+    if (!defaultRect) defaultRect = readContainerRect(container);
+    ensurePool();
+    for (const d of newOnes) {
+      const pane = document.createElement('div');
+      pane.className = 'wm-pane';
+      pane.dataset.tab = d.id;
+      pane.style.display = 'none';
+      pool.appendChild(pane);
+      if (d.contentEl) {
+        // 搬「內容元素的子節點」（iframe 或 .appicon）進 pane。這是唯一一次
+        // DOM 移動；之後 pane 永遠留在池中，切 tab / 撕離 / 合併都只改「所屬視窗」
+        // 關係與 display，不再 re-parent，故 iframe 不再重載。
+        while (d.contentEl.firstChild) pane.appendChild(d.contentEl.firstChild);
+      }
+      panes[d.id] = pane;
+      tabMeta[d.id] = { title: d.title };
+      tabOrder.push(d.id);
+    }
+    // 丟棄伺服器 chrome
+    container.remove();
+    return newOnes;
+  }
+
+  if (isV2) {
+    adoptTabsInternal(tabsContainer); // tabsContainer 可能為 null（零 tab 啟動）——no-op
+  } else {
+    // v1：mount 內直接呼叫，行為不變（tabsContainer 已由上方鐵律保證存在）。
+    adoptTabsInternal(tabsContainer);
+    if (!tabOrder.length) {
+      console.warn('WindowManager: 未探索到任何 tab，略過');
+      return { destroy() {}, reset() {}, syncPanes() {} };
+    }
+  }
+
+  // ===== 視窗層 =====
   const layer = document.createElement('div');
   layer.className = 'wm-layer';
   host.appendChild(layer);
 
-  // ===== 5. 狀態 =====
+  // ===== 狀態 =====
   let windows = loadWindows();
   let activeDrag = null; // { teardown } —— 供 destroy 中斷進行中的拖曳
   let syncRaf = 0;
@@ -111,6 +184,15 @@ export function mountWindowManager(host, opts = {}) {
       if (!contentEl) continue;
       const cr = contentEl.getBoundingClientRect();
       for (const tabId of win.tabs) {
+        if (isPageTab(tabId)) {
+          // page tab：不查 panes[]（成員本就不是常駐池 pane，DOM 全程留在
+          // .panel_all_container 原地）。作用中傳 contentRect（viewport 座標）、
+          // 非作用中傳 null——由 pageHost.layout 決定顯示/隱藏與定位。
+          if (!pageHost) continue;
+          const isActive = tabId === win.active;
+          pageHost.layout(tabId, isActive ? { left: cr.left, top: cr.top, width: cr.width, height: cr.height } : null, win.el);
+          continue;
+        }
         const pane = panes[tabId];
         if (!pane) continue;
         if (tabId === win.active) {
@@ -151,7 +233,11 @@ export function mountWindowManager(host, opts = {}) {
   }
 
   function newId() { return 'w' + Math.random().toString(36).slice(2, 8); }
+  // 零 tab 時不預建（v2 核心可在零 iframe tab 狀態掛載）——tabOrder 空代表尚無
+  // 任何已知 tab（且此刻也沒有已知 page，opts.isPageId 本 Task 預設恆 false），
+  // 回 null 由呼叫端決定要不要塞進陣列。v1 恆有 tabOrder（早退鐵律保證），行為不變。
   function defaultWindow() {
+    if (!tabOrder.length) return null;
     return { id: newId(), tabs: tabOrder.slice(), active: tabOrder[0],
       x: defaultRect.x, y: defaultRect.y, w: defaultRect.w, h: defaultRect.h };
   }
@@ -160,22 +246,27 @@ export function mountWindowManager(host, opts = {}) {
     let raw = null;
     try { raw = JSON.parse(localStorage.getItem(WKEY)); } catch (e) { raw = null; }
     let wins = (raw && Array.isArray(raw.windows) && raw.windows.length) ? raw.windows : null;
-    if (!wins) return [defaultWindow()];
+    if (!wins) { const dw = defaultWindow(); return dw ? [dw] : []; }
 
-    // 淨化 + 只保留已知 tab
+    // 幾何 fallback：v1 mount 時 defaultRect 恆已算好（早退鐵律保證）；v2 零 tab
+    // 啟動時可能尚無任何 rect 依據（Task 3 的純 page 視窗會另有 rect 來源），
+    // 這裡退回 readContainerRect 原本使用的同一組硬編碼預設值。
+    const fx = defaultRect || { x: 410, y: 160, w: 500, h: 600 };
+    // 淨化 + 只保留已知 tab（isKnownTab 泛化：iframe 已認養集合 ∪ 'pg:' 開頭經 isPageId 認可）
     wins = wins.map((w, i) => ({
       id: typeof w.id === 'string' ? w.id : newId(),
-      tabs: Array.isArray(w.tabs) ? w.tabs.filter((t) => tabOrder.includes(t)) : [],
+      tabs: Array.isArray(w.tabs) ? w.tabs.filter((t) => isKnownTab(t)) : [],
       active: w.active,
-      x: num(w.x, defaultRect.x), y: num(w.y, defaultRect.y),
-      w: Math.max(MIN_W, num(w.w, defaultRect.w)), h: Math.max(MIN_H, num(w.h, defaultRect.h)),
+      x: num(w.x, fx.x), y: num(w.y, fx.y),
+      w: Math.max(MIN_W, num(w.w, fx.w)), h: Math.max(MIN_H, num(w.h, fx.h)),
     }));
     // 跨視窗 tab 去重（第一次出現者勝）
     const seen = new Set();
     for (const win of wins) win.tabs = win.tabs.filter((t) => (seen.has(t) ? false : (seen.add(t), true)));
     wins = wins.filter((w) => w.tabs.length > 0);
-    if (!wins.length) return [defaultWindow()];
-    // 補齊遺漏的已知 tab（塞進第一個視窗），確保每個 tab 恰好出現一次
+    if (!wins.length) { const dw = defaultWindow(); return dw ? [dw] : []; }
+    // 補齊遺漏的已知 iframe tab（塞進第一個視窗），確保每個 tab 恰好出現一次
+    // （'pg:' id 的補齊屬 Task 3 pages store 自己的職責，不在 tabOrder 掃描範圍）
     const missing = tabOrder.filter((t) => !seen.has(t));
     if (missing.length) wins[0].tabs.push(...missing);
     // active 合法化
@@ -183,6 +274,18 @@ export function mountWindowManager(host, opts = {}) {
     // 疊序不再存於 windows；由 stack-manager 的 cspanel.stack.cs.v1 統一管理。
     return wins;
   }
+
+  // ===== api.adoptTabs：Task 2 兩段掛載的第二段——auth-protected-tabs 於伺服器
+  // 內容注入完成後呼叫，認養剛出現的 iframe tabs。冪等：adoptTabsInternal 內部
+  // 已濾掉已知 id，若這次完全沒有新 tab 就安靜返回，不重繪。 =====
+  function adoptTabs(container) {
+    const newOnes = adoptTabsInternal(container);
+    if (!newOnes.length) return;
+    windows = loadWindows(); // 依擴充後的 tabOrder 重新歸位（saved windows 記得的位置優先，其餘塞第一個視窗）
+    render();
+  }
+
+  function hasTabs() { return tabOrder.length > 0; }
 
   // ---- 渲染（重建視窗框；pane 池不動 → iframe 不重載） ----
   function render() {
@@ -205,7 +308,10 @@ export function mountWindowManager(host, opts = {}) {
         const isActive = tabId === win.active;
         tab.className = 'wm-tab' + (isActive ? ' is-active' : '');
         tab.dataset.tab = tabId;
-        tab.textContent = tabMeta[tabId] ? tabMeta[tabId].title : tabId;
+        // page tab 標題即時委派 pageHost.getTitle（不快取——成員增減會變動）；
+        // iframe tab 沿用既有 tabMeta 快取。
+        tab.textContent = (isPageTab(tabId) && pageHost) ? pageHost.getTitle(tabId)
+          : (tabMeta[tabId] ? tabMeta[tabId].title : tabId);
         // roving tabindex：只有作用中 tab 可被 Tab 鍵聚焦，方向鍵在列內移動
         tab.setAttribute('role', 'tab');
         tab.setAttribute('aria-selected', isActive ? 'true' : 'false');
@@ -238,8 +344,11 @@ export function mountWindowManager(host, opts = {}) {
 
   function wireWindow(win, el, bar, resize) {
     // 提到最上層：capture 階段，先於任何 bubble handler（不重繪，故不會把使用者
-    // 正壓著的元素抽換掉；只改 inline z-index）。
-    el.addEventListener('pointerdown', () => raise(win), true);
+    // 正壓著的元素抽換掉；只改 inline z-index）。scheduleSync()：page tab 的
+    // 成員 --stack-rank 不隨 stack.raise 自動跟著宿主更新（見檔頭 Task 3 註解），
+    // 視窗一被點擊置頂就補跑一次同步；對一般 iframe pane 是無副作用的多餘呼叫
+    // （raise 已經同步更新其 --stack-rank）。
+    el.addEventListener('pointerdown', () => { raise(win); scheduleSync(); }, true);
     // tab 列空白處拖曳 = 移動視窗；點在 tab 上則交給 tab 自己處理。
     bar.addEventListener('pointerdown', (e) => {
       if (e.target.closest('.wm-tab')) return;
@@ -367,7 +476,8 @@ export function mountWindowManager(host, opts = {}) {
           dragging = true;
           ghost = document.createElement('div');
           ghost.className = 'wm-drag-ghost';
-          ghost.textContent = tabMeta[tabId] ? tabMeta[tabId].title : tabId;
+          ghost.textContent = (isPageTab(tabId) && pageHost) ? pageHost.getTitle(tabId)
+            : (tabMeta[tabId] ? tabMeta[tabId].title : tabId);
           document.body.appendChild(ghost);
         }
         ghost.style.left = (ev.clientX + 8) + 'px';
@@ -454,9 +564,68 @@ export function mountWindowManager(host, opts = {}) {
     const removedWins = windows.filter((w) => w.tabs.length === 0);
     windows = windows.filter((w) => w.tabs.length > 0);
     removedWins.forEach((w) => stack.unregister(w.id));
+    // 空頁通知（前瞻防呆）：上面三分支（同視窗重排／合併／撕離成新視窗）皆一定會
+    // 為被拖 tab 找到落點，故此路徑現行不可達；仍保留檢查以完整落實
+    // pageHost.onPageEmpty 契約，防未來 applyTabDrop 邏輯調整意外遺失 page tab。
+    if (isPageTab(tabId) && pageHost && !windows.some((w) => w.tabs.includes(tabId))) {
+      pageHost.onPageEmpty(tabId);
+    }
     persist();
     render();
     if (tornWinId) stack.raise(tornWinId);
+  }
+
+  // ===== 九期B Task 3：page tab 支援 API =====
+  // createPageWindow：PageEngine.create 呼叫，為新頁建立宿主視窗（單一 page tab）。
+  // rect 未傳時退回 defaultRect（v2 零 iframe tab 啟動時通常為 null）或硬編碼
+  // 預設值，與 loadWindows()/readContainerRect() 既有 fallback 同一組數值一致。
+  function createPageWindow(pageId, rect) {
+    const r = rect || defaultRect || { x: 410, y: 160, w: 500, h: 600 };
+    const win = {
+      id: newId(), tabs: [pageId], active: pageId,
+      x: num(r.x, 410), y: num(r.y, 160),
+      w: Math.max(MIN_W, num(r.w, 500)), h: Math.max(MIN_H, num(r.h, 600)),
+    };
+    windows.push(win);
+    persist();
+    render();
+    stack.raise(win.id);
+    return win.id;
+  }
+  // addPageTab：PageEngine（或未來合併手勢）把既有 page 併入某已存在視窗的 tabbar。
+  function addPageTab(winId, pageId) {
+    const win = windows.find((w) => w.id === winId);
+    if (!win) return false;
+    if (!win.tabs.includes(pageId)) win.tabs.push(pageId);
+    win.active = pageId;
+    persist();
+    render();
+    return true;
+  }
+  // removePageTab：PageEngine.dissolve/removeMember（剩一自動解散）呼叫，把 page
+  // 的 tab 自其宿主視窗移除；比照 applyTabDrop 既有「移除空視窗」清理形狀
+  // （stack.unregister 空視窗，避免 order/cspanel.stack 累積死 key）。
+  function removePageTab(pageId) {
+    let found = false;
+    for (const win of windows) {
+      if (!win.tabs.includes(pageId)) continue;
+      found = true;
+      win.tabs = win.tabs.filter((t) => t !== pageId);
+      if (win.active === pageId) win.active = win.tabs[0] || null;
+    }
+    if (!found) return false;
+    const removedWins = windows.filter((w) => w.tabs.length === 0);
+    windows = windows.filter((w) => w.tabs.length > 0);
+    removedWins.forEach((w) => stack.unregister(w.id));
+    persist();
+    render();
+    return true;
+  }
+  // findWindowForTab：查某 tab（含 page id）目前所屬視窗 id；供 canvas-engine 的
+  // 成員 pointerdown raise handler 動態解析宿主（頁可能已被拖去合併/撕離）。
+  function findWindowForTab(tabId) {
+    const win = windows.find((w) => w.tabs.includes(tabId));
+    return win ? win.id : null;
   }
 
   // ---- 生命週期 ----
@@ -472,7 +641,7 @@ export function mountWindowManager(host, opts = {}) {
     if (syncRaf) cancelAnimationFrame(syncRaf);
     document.querySelectorAll('.wm-drag-ghost').forEach((g) => g.remove());
     windows.forEach((w) => stack.unregister(w.id, true)); // 登出批次拆除：quiet，不動 stack 存檔
-    if (pool.parentNode) pool.remove();
+    if (pool && pool.parentNode) pool.remove(); // v2 零 tab 全程未認養時 pool 從未建立
     if (layer.parentNode) layer.remove();
     if (window.WindowManager === api) window.WindowManager = null;
   }
@@ -480,11 +649,12 @@ export function mountWindowManager(host, opts = {}) {
   function reset() {
     try { localStorage.removeItem(WKEY); } catch (e) { /* noop */ }
     windows.forEach((w) => stack.unregister(w.id)); // 卸除舊視窗的疊序條目
-    windows = [defaultWindow()];
+    const dw = defaultWindow(); // v2 零 tab 時 dw 為 null——回空陣列，不是 [null]
+    windows = dw ? [dw] : [];
     render(); // 註冊新的預設視窗
   }
 
-  const api = { destroy, reset, syncPanes };
+  const api = { destroy, reset, syncPanes, adoptTabs, hasTabs, createPageWindow, addPageTab, removePageTab, findWindowForTab };
   window.WindowManager = api;
 
   // 初次渲染 + 佈局穩定後再同步一次（字型/reflow 落定）

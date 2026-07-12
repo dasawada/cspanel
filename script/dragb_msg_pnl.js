@@ -201,6 +201,13 @@ const defaultTexts = {
 
 // ===== 面板實例管理 =====
 let cannedPanelInstance = null;
+// 九期B Task 6：quirks 歸隊——保留傳給 makeDraggable 的 options 物件參照（而非
+// 就地字面量），讓 canvas-engine 能在罐頭入組/退組時動態切換 persist（見下方
+// setSelfPersistPaused）。draggable.js 的 handleDragEnd 在每次拖曳結束「當下」
+// 才讀 options.persist（非呼叫 makeDraggable 那一刻的快照值），只要引擎與這裡
+// 共用同一個物件參照，之後對它賦值就會在下一次拖曳結束時生效——draggable.js
+// 零改動鐵律下唯一可行的攔法。
+let cannedDragOptions = null;
 
 const TAB4_TOTAL_COLUMNS = 13; // A~M
 const TAB4_TIMESTAMP_INDEX = 12; // Column N（貼上起點為B欄，故index 12對應N）
@@ -907,11 +914,12 @@ export function createCannedMessagesPanel(options = {}) {
 
   // ===== 3.7. 拖曳功能（改用 makeDraggable） =====
   const dragHandle = panel.querySelector('.canned-panel-handle');
-  makeDraggable(panel, dragHandle, {
+  cannedDragOptions = {
     left: 1300,
     top: 75,
     ...options
-  });
+  };
+  makeDraggable(panel, dragHandle, cannedDragOptions);
 
   // ===== 3.8. 不再自行監聽登入/登出事件，改由 mediator 管理 =====
   // 移除原有的事件監聽器
@@ -940,6 +948,15 @@ export function initCannedMessagesPanel(containerId, options = {}) {
   panel.style.display = 'block';
   console.log('CannedMessagesPanel 已初始化 ✅');
   return panel;
+}
+
+// 九期B Task 6：quirks 歸隊——罐頭入組期間暫停 self-persist 寫入（per-panel
+// draggable:<path>:canned-panel-main key），入組期間位置權威改由 canvas-engine
+// 的 pageHost.layout 統一 layout schema 供給；退組時恢復正常寫入。canvas-engine
+// 依 manifest quirks 是否含 'self-persisted' 動態呼叫本函式（見 canvas-engine.js
+// 的 joinMember/leaveMember），本模組自身不認得 page/入組概念，維持單一職責邊界。
+export function setSelfPersistPaused(paused) {
+  if (cannedDragOptions) cannedDragOptions.persist = paused ? false : undefined;
 }
 
 export function clearCannedMessagesPanel() {
