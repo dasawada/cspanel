@@ -37,9 +37,24 @@ assert(rest.cur === 'grab', `cursor: grab（實得 ${rest.cur}）`);
 assert(rest.fw === '400', `詞彙不設字重（實得 ${rest.fw}，防 wm 藥丸全 bold）`);
 
 // A4. hover 暗示（自 wm 吸收）：微加深
+// 修復（第八期 Task 1 審查 Important #2）：原字串不等式 `hoverBg !== 'rgba(0, 0, 0, 0)'`
+// 在 page.hover() 觸發瞬間常採樣到 transition 起點（t≈0，alpha 仍為 0），且該透明值
+// 經 color-mix() 轉場插值後瀏覽器以 oklab(...) 序列化——字串上恰好不等於 'rgba(0, 0, 0, 0)'
+// 字面，讓斷言僥倖通過而未真的驗證到「變深」。改為：(a) 等待 transition（0.15s）完成再取樣，
+// (b) 用 canvas 2D 解析任意 CSS 顏色語法（rgba/oklab/color(...) 皆可）得到真實數值化 alpha，
+// 取代字串不等式，才能偵測到「hover 沒變深」的迴歸。
 await page.hover('#h');
-const hoverBg = await page.evaluate(() => getComputedStyle(document.getElementById('h')).backgroundColor);
-assert(hoverBg !== 'rgba(0, 0, 0, 0)', `hover 微加深（實得 ${hoverBg}）`);
+await page.waitForTimeout(200);
+const hoverAlpha = await page.evaluate(() => {
+  const bg = getComputedStyle(document.getElementById('h')).backgroundColor;
+  const canvas = document.createElement('canvas');
+  canvas.width = 1; canvas.height = 1;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = bg;
+  ctx.fillRect(0, 0, 1, 1);
+  return { bg, a: ctx.getImageData(0, 0, 1, 1).data[3] };
+});
+assert(hoverAlpha.a > 0, `hover 微加深，數值化 alpha>0（實得 ${hoverAlpha.bg}，解析 alpha=${hoverAlpha.a}/255）`);
 
 // A5. 拖曳中：面板掛 draggable-dragging＋gl-dragging，把手漸層（accent fallback）
 const hb = await page.locator('#h').boundingBox();
@@ -82,14 +97,26 @@ await page.addInitScript(() => {
   };
   window.verifyFireworkAuth = async () => true;
 });
-await page.goto(BASE + '/panel_all.html');
-await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
-const pa = await page.evaluate(() => ({
-  links: document.querySelectorAll('link[data-draggable-chrome]').length,
-  handleH: getComputedStyle(document.querySelector('.canned-panel-handle')).height,
-}));
-assert(pa.links === 1, `panel_all 靜態 link 存在且 runtime 未重複注入（實得 ${pa.links}）`);
-assert(pa.handleH === '36px', `quirks mode 下罐頭把手高度 36px（實得 ${pa.handleH}）`);
+// 修復（第八期 Task 1 審查 Important #1）：stub token 在真實後端 .../api/order-tool-api
+// 上會收到 401，觸發 script/auth-protected-tabs.js 的「❌ 認證徹底失敗，執行強制登出」，
+// 把 .canned-panel-handle 隱藏，且與 page.goto() 等待外部 CDN 資源 load 幾乎同時發生，
+// 造成下方 waitForSelector 100% 逾時。比照既有 tools/panel-stack-test.mjs 先例攔截此端點。
+await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
+try {
+  await page.goto(BASE + '/panel_all.html');
+  await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
+  const pa = await page.evaluate(() => ({
+    links: document.querySelectorAll('link[data-draggable-chrome]').length,
+    handleH: getComputedStyle(document.querySelector('.canned-panel-handle')).height,
+  }));
+  assert(pa.links === 1, `panel_all 靜態 link 存在且 runtime 未重複注入（實得 ${pa.links}）`);
+  assert(pa.handleH === '36px', `quirks mode 下罐頭把手高度 36px（實得 ${pa.handleH}）`);
+} catch (e) {
+  // 優雅降級：B 區若仍因未知原因逾時/例外，回報具名失敗而非讓 process 崩潰
+  // （即便本 Task 未能觸及的問題導致此區失敗，A 區與後續任務仍可信任本工具的輸出）。
+  fails.push(`B 區例外或逾時（優雅降級，未讓 process 崩潰）：${e.message}`);
+  console.error('  ✗ B 區例外或逾時：' + e.message);
+}
 
 await browser.close();
 if (fails.length) { console.error(`\n${fails.length} 項失敗`); process.exit(1); }
