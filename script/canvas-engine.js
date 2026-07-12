@@ -645,18 +645,47 @@ window.CanvasEdit = {
 // draggable.js 零改動——位移判定與拖曳遙測全在引擎側計算/記錄。
 export const ENGINE_DRAG_THRESHOLD = 6; // px：與拖曳起點位移小於此值視為零位移點擊，不寫 layout。
 // 目前拖曳中面板：{ panelId, el } | null。存 el（而非一次性 rect 快照）是刻意
-// 選擇——Task 4 的重疊偵測在 rAF 節流回呼中自行 el.getBoundingClientRect()，
+// 選擇——Task 4 的重疊偵測在節流輪詢回呼中自行 el.getBoundingClientRect()，
 // 存 el 才能每次讀到「即時」（而非拖曳起點凍結）的 rect；只有一根滑鼠/觸點能
 // 同時拖曳，模組級單例狀態足夠，不需 per-panel 隔離。
 let dragTelemetry = null;
 
 // ===== 九期B Task 4：成組手勢（拖重疊＋懸停預覽）=====
-// 重疊偵測掛在引擎自己的 rAF 鏈上（不依賴 pointermove 事件次數——滑鼠停在
-// 原地不動時懸停計時仍要推進），不動 draggable.js；draggable.js 的
-// updateElementPosition 用 CSS transform 即時挪動面板，el.getBoundingClientRect()
-// 每幀讀到的正是拖曳中的即時視覺位置（transform 已套用）。
+// 重疊偵測節流輪詢（不依賴 pointermove 事件次數——滑鼠停在原地不動時懸停計時
+// 仍要推進），不動 draggable.js；draggable.js 的 updateElementPosition 用 CSS
+// transform 即時挪動面板，el.getBoundingClientRect() 每次讀到的正是拖曳中的
+// 即時視覺位置（transform 已套用）。
+//
+// 節流輪詢改用 setTimeout(tick, GROUP_TICK_MS)（原實作用 requestAnimationFrame，
+// commit c6ef285 起同開發分支自行以 git stash 對照發現：一旦本 Task 程式碼併入，
+// Task 1 既有斷言「實際拖曳仍寫 layout」出現約 1–8%（多輪抽樣不同批次觀察值）
+// 間歇性失敗，同條件 stash 回 Task 3 基準 0 失敗——本 Task 4 修復者已用「同一個
+// 同步 JS turn 內連續 dispatch pointerdown/pointermove/pointerup（保證事件圈
+// 不跑任何一次 rAF）」直接證實根因：draggable.js 的 updateElementPosition 只在
+// 第一次 pointermove 時才 requestAnimationFrame 排入，若 pointerup 搶在瀏覽器
+// 送出下一個動畫幀之前就處理完，dragState.translateX/Y 停在初始值 0，
+// handleDragEnd 算出的 finalX/Y 等於起點，onPositionChange 的
+// moved<ENGINE_DRAG_THRESHOLD 判定為真而略過 saveLayoutEntry——此為 draggable.js
+// 既有、與 Task 4 無關的潛在計時縫隙，只是機率極低；本 Task 4 新增的 tick() 若也
+// 用 requestAnimationFrame，會和 draggable.js 自己的 updateElementPosition 排進
+// 同一顆動畫幀、共用同一份「每幀時間預算」，tick() 每幀的 groupTargets() 強制
+// 多次 layout reflow 加重了那顆幀的執行成本，統計上加寬了上述賽跑的獲勝窗口
+// （draggable.js 零改動鐵律不可觸碰，故只能從本檔這端降低競爭）。setTimeout 排
+// 程走獨立的巨集任務佇列，不會佔用/推遲瀏覽器合成器判定「這顆動畫幀何時該送」
+// 的時機，16ms 節流粒度仍等效於「每禎」（60Hz）供懸停計時使用，不改變任何對外
+// 行為（GROUP_OVERLAP_RATIO/GROUP_DWELL_MS 語義、D 區測試斷言皆不變）。
+//
+// 誠實揭露（見任務報告「修復驗證」節的完整數據）：這只是「降低競爭」的緩解，
+// 不是根除——同一份同步 dispatch 實驗證明，即使完全沒有 Task 4 程式碼，只要
+// pointerdown→pointermove→pointerup 快到中間連一次動畫幀都沒發生，
+// draggable.js 自身就會出現同樣的 translateX/Y 停在 0 現象；本檔任何改法都無法
+// 把機率壓到數學上的 0（那需要動 draggable.js 本身，觸犯零改動鐵律）。同機器
+// 同批次 N=150 次全新頁面 A/B 對照：改前（rAF）2/150（1.3%）、改後（setTimeout）
+// 1/150（0.7%）——方向一致變好，但仍是機率性緩解而非保證清零，殘餘機率屬
+// draggable.js 既有、跨越本 Task 範圍的縫隙。
 export const GROUP_OVERLAP_RATIO = 0.4; // 重疊面積 / min(兩者面積) 達此比例才算「疊上」
 export const GROUP_DWELL_MS = 500;      // 疊上需連續懸停此毫秒數才觸發成組預覽
+const GROUP_TICK_MS = 16;               // 節流輪詢間隔（約等效 60Hz，不與 draggable.js 的 rAF 鏈搶同一顆幀）
 
 function rectOverlapRatio(a, b) {
   const left = Math.max(a.left, b.left);
@@ -718,34 +747,36 @@ function hideGroupPreview() {
   if (el) el.remove();
 }
 // startGroupWatch：面板 pointerdown 時建立（僅限「目前不是任何 page 成員」的
-// 面板——成員拖曳的頁內/退組語義屬 Task 5，本 Task 範圍是自由面板互拖）。掛自己
-// 的 rAF 鏈持續檢查與候選目標的重疊比例；達 GROUP_OVERLAP_RATIO 且連續
-// ≥GROUP_DWELL_MS 才浮現預覽框、鎖定目標。Esc（一次性 keydown 監聽，drop 或
-// Esc 時卸除）取消本次成組意圖——預覽消失，但不中斷拖曳本身，放開仍走正常落位。
-// finish() 供 onPositionChange（drop）呼叫，回傳當下鎖定的目標（{kind,id}｜null）
-// 並收尾（停 rAF、拆預覽、卸 Esc 監聽）。myTelemetry：呼叫端傳入 onHandleDown 剛
-// 指派的 dragTelemetry 物件參照本身（非 panelId 字串）——guard 用物件恆等比對，
-// 同一面板連續兩次拖曳會產生兩個不同的 dragTelemetry 物件，字串 panelId 相同無法
-// 區分「這一輪」與「上一輪」，物件參照恆等才能保證上一輪的殘留 tick 一定自我終止。
+// 面板——成員拖曳的頁內/退組語義屬 Task 5，本 Task 範圍是自由面板互拖）。掛
+// setTimeout(GROUP_TICK_MS) 節流輪詢（理由見上方檔頭註解——不用 requestAnimationFrame
+// 是為了不與 draggable.js 自己的 rAF 鏈搶同一顆動畫幀）持續檢查與候選目標的重疊
+// 比例；達 GROUP_OVERLAP_RATIO 且連續 ≥GROUP_DWELL_MS 才浮現預覽框、鎖定目標。
+// Esc（一次性 keydown 監聽，drop 或 Esc 時卸除）取消本次成組意圖——預覽消失，
+// 但不中斷拖曳本身，放開仍走正常落位。finish() 供 onPositionChange（drop）呼叫，
+// 回傳當下鎖定的目標（{kind,id}｜null）並收尾（停輪詢、拆預覽、卸 Esc 監聽）。
+// myTelemetry：呼叫端傳入 onHandleDown 剛指派的 dragTelemetry 物件參照本身（非
+// panelId 字串）——guard 用物件恆等比對，同一面板連續兩次拖曳會產生兩個不同的
+// dragTelemetry 物件，字串 panelId 相同無法區分「這一輪」與「上一輪」，物件參照
+// 恆等才能保證上一輪的殘留 tick 一定自我終止。
 function startGroupWatch(panelId, el, myTelemetry) {
-  let raf = null;
+  let timer = null;
   let sinceTs = 0;
   let sinceKey = null;
   let locked = null; // 已達懸停門檻、預覽框顯示中的目標 {kind,id}
   let cancelled = false;
 
-  function stopRaf() { if (raf) cancelAnimationFrame(raf); raf = null; }
+  function stopTick() { if (timer) clearTimeout(timer); timer = null; }
   function onKeydown(e) {
     if (e.key !== 'Escape') return;
     cancelled = true;
     locked = null;
     hideGroupPreview();
-    stopRaf();
+    stopTick();
   }
   document.addEventListener('keydown', onKeydown);
 
   function tick() {
-    if (cancelled || dragTelemetry !== myTelemetry) { stopRaf(); return; }
+    if (cancelled || dragTelemetry !== myTelemetry) { stopTick(); return; }
     const dragRect = el.getBoundingClientRect();
     let best = null;
     for (const t of groupTargets(panelId)) {
@@ -762,14 +793,14 @@ function startGroupWatch(panelId, el, myTelemetry) {
       locked = null;
       hideGroupPreview();
     }
-    raf = requestAnimationFrame(tick);
+    timer = setTimeout(tick, GROUP_TICK_MS);
   }
-  raf = requestAnimationFrame(tick);
+  timer = setTimeout(tick, GROUP_TICK_MS);
 
   return {
     finish() {
       document.removeEventListener('keydown', onKeydown);
-      stopRaf();
+      stopTick();
       hideGroupPreview();
       return cancelled ? null : locked;
     },
@@ -820,7 +851,7 @@ function attachHoverHandles() {
         dragTelemetry = null;
         const gw = groupWatch;
         groupWatch = null;
-        const target = gw ? gw.finish() : null; // 停 rAF、拆預覽、卸 Esc 監聽，回傳鎖定目標｜null
+        const target = gw ? gw.finish() : null; // 停輪詢、拆預覽、卸 Esc 監聽，回傳鎖定目標｜null
         if (target && commitGroup(target, p.id)) return; // 成組即接管，不寫畫布 layout
         const moved = Math.hypot(pos.left - startLeft, pos.top - startTop);
         if (moved < ENGINE_DRAG_THRESHOLD) return; // 零位移點擊不寫 layout（九期A 審查歸位）
