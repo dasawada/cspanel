@@ -102,6 +102,7 @@ await page.addInitScript(() => {
 // 把 .canned-panel-handle 隱藏，且與 page.goto() 等待外部 CDN 資源 load 幾乎同時發生，
 // 造成下方 waitForSelector 100% 逾時。比照既有 tools/panel-stack-test.mjs 先例攔截此端點。
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
+let panelAllOk = false;
 try {
   await page.goto(BASE + '/panel_all.html');
   await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
@@ -111,6 +112,7 @@ try {
   }));
   assert(pa.links === 1, `panel_all 靜態 link 存在且 runtime 未重複注入（實得 ${pa.links}）`);
   assert(pa.handleH === '36px', `quirks mode 下罐頭把手高度 36px（實得 ${pa.handleH}）`);
+  panelAllOk = true;
 } catch (e) {
   // 優雅降級：B 區若仍因未知原因逾時/例外，回報具名失敗而非讓 process 崩潰
   // （即便本 Task 未能觸及的問題導致此區失敗，A 區與後續任務仍可信任本工具的輸出）。
@@ -118,46 +120,54 @@ try {
   console.error('  ✗ B 區例外或逾時：' + e.message);
 }
 
-// ===== C. 罐頭面板：讓位＋token 色債（Task 3）=====
-const canned = await page.evaluate(() => {
-  const css = document.getElementById('canned-panel-style').textContent;
-  const panel = document.querySelector('.canned-panel');
-  const handle = document.querySelector('.canned-panel-handle');
-  return {
-    hexLeft: (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []),
-    redLeft: /(^|[^-\w])red\b/.test(css.replace(/border-radius/g, '')),
-    radius: getComputedStyle(panel).borderTopLeftRadius,
-    handleH: getComputedStyle(handle).height,
-    handleFw: getComputedStyle(handle).fontWeight,
-  };
-});
-assert(canned.hexLeft.length === 0, `PANEL_CSS 色債清零（殘留：${canned.hexLeft.join(',') || '無'}）`);
-assert(!canned.redLeft, 'PANEL_CSS 無 red 關鍵字（→ --danger）');
-assert(canned.radius === '12px', `罐頭外框圓角 --radius-md（實得 ${canned.radius}）`);
-assert(canned.handleH === '36px', `罐頭把手高度歸詞彙（實得 ${canned.handleH}）`);
-assert(canned.handleFw === '600', `罐頭標題字重 600（實得 ${canned.handleFw}）`);
+// C/D 區皆讀取 B 區載入的 panel_all 頁面；B 失敗時頁面未就緒，需具名跳過而非崩潰。
+if (panelAllOk) {
+  // ===== C. 罐頭面板：讓位＋token 色債（Task 3）=====
+  const canned = await page.evaluate(() => {
+    const css = document.getElementById('canned-panel-style').textContent;
+    const panel = document.querySelector('.canned-panel');
+    const handle = document.querySelector('.canned-panel-handle');
+    return {
+      hexLeft: (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []),
+      redLeft: /(^|[^-\w])red\b/.test(css.replace(/border-radius/g, '')),
+      radius: getComputedStyle(panel).borderTopLeftRadius,
+      handleH: getComputedStyle(handle).height,
+      handleFw: getComputedStyle(handle).fontWeight,
+    };
+  });
+  assert(canned.hexLeft.length === 0, `PANEL_CSS 色債清零（殘留：${canned.hexLeft.join(',') || '無'}）`);
+  assert(!canned.redLeft, 'PANEL_CSS 無 red 關鍵字（→ --danger）');
+  assert(canned.radius === '12px', `罐頭外框圓角 --radius-md（實得 ${canned.radius}）`);
+  assert(canned.handleH === '36px', `罐頭把手高度歸詞彙（實得 ${canned.handleH}）`);
+  assert(canned.handleFw === '600', `罐頭標題字重 600（實得 ${canned.handleFw}）`);
 
-// ===== D. 主題跟隨：拖曳漸層與 active tab 隨 palette 變 =====
-const grad = async () => page.evaluate(() => {
-  const p = document.querySelector('.canned-panel');
-  p.classList.add('draggable-dragging');
-  const g = getComputedStyle(document.querySelector('.canned-panel-handle')).backgroundImage;
-  p.classList.remove('draggable-dragging');
-  return g;
-});
-const activeTabBg = () => page.evaluate(() =>
-  getComputedStyle(document.querySelector('.canned-panel-tab-menu li.active')).backgroundColor);
-const oliveGrad = await grad();
-const oliveTabBg = await activeTabBg();
-await page.evaluate(() => window.CspanelTheme.setTheme('copenhagen-harbour'));
-await page.waitForTimeout(100);
-const chGrad = await grad();
-const chTabBg = await activeTabBg();
-assert(oliveGrad.includes('linear-gradient') && chGrad.includes('linear-gradient') && oliveGrad !== chGrad,
-  `拖曳漸層隨主題（olive ≠ copenhagen-harbour）`);
-assert(oliveTabBg !== chTabBg,
-  `active tab 底色隨主題（--accent-tint：${oliveTabBg} ≠ ${chTabBg}）`);
-await page.evaluate(() => window.CspanelTheme.setTheme('olive'));
+  // ===== D. 主題跟隨：拖曳漸層與 active tab 隨 palette 變 =====
+  const grad = async () => page.evaluate(() => {
+    const p = document.querySelector('.canned-panel');
+    p.classList.add('draggable-dragging');
+    const g = getComputedStyle(document.querySelector('.canned-panel-handle')).backgroundImage;
+    p.classList.remove('draggable-dragging');
+    return g;
+  });
+  const activeTabBg = () => page.evaluate(() =>
+    getComputedStyle(document.querySelector('.canned-panel-tab-menu li.active')).backgroundColor);
+  const oliveGrad = await grad();
+  const oliveTabBg = await activeTabBg();
+  await page.evaluate(() => window.CspanelTheme.setTheme('copenhagen-harbour'));
+  await page.waitForTimeout(100);
+  const chGrad = await grad();
+  const chTabBg = await activeTabBg();
+  assert(oliveGrad.includes('linear-gradient') && chGrad.includes('linear-gradient') && oliveGrad !== chGrad,
+    `拖曳漸層隨主題（olive ≠ copenhagen-harbour）`);
+  assert(oliveTabBg !== chTabBg,
+    `active tab 底色隨主題（--accent-tint：${oliveTabBg} ≠ ${chTabBg}）`);
+  await page.evaluate(() => window.CspanelTheme.setTheme('olive'));
+} else {
+  fails.push('C 區跳過：panel_all 未載入');
+  fails.push('D 區跳過：panel_all 未載入');
+  console.error('  ✗ C 區跳過：panel_all 未載入');
+  console.error('  ✗ D 區跳過：panel_all 未載入');
+}
 
 await browser.close();
 if (fails.length) { console.error(`\n${fails.length} 項失敗`); process.exit(1); }

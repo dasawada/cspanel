@@ -280,7 +280,7 @@ cspanel 先於 netlify）。
 
 - **把手（第八期）**：全站「可拖帶子」視覺唯一來源 `style/v2/draggable-chrome.css`
   （`.draggable-handle` 常態/hover、`.draggable-dragging` 拖曳態）。新可拖面板不得自寫
-  把手視覺——掛 class 即得（`makeDraggable` 會自動掛）。詞彙**不設字重/字色/對齊**
+  把手視覺——掛 class 即得（`makeDraggable` 會自動掛）。詞彙**不設字重/常態字色/對齊**
   （會繼承進 wm 藥丸 tab），字樣式歸各消費者。token 皆帶 fallback，未載 tokens.css
   的獨立頁亦可用。draggable.js 以 `<link data-draggable-chrome>` 冪等注入本檔；
   panel_all.html 另有靜態 link（同 data 屬性）先行。高度 token `--handle-h`。
