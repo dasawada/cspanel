@@ -152,7 +152,54 @@ A(await page.evaluate(() => document.compatMode === 'BackCompat'), 'quirks mode 
 const v1Snapshot = await page.evaluate(() =>
   JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
     .map((k) => [k, localStorage.getItem(k)])));
-// （Task 3 會在此之後插入「拖曳一個面板」操作；骨架階段先驗載入本身不寫 v1）
+// ===== C. hover 把手：浮現、可拖、即時持久化 =====
+const opt = '.optitlepanel'; // 標題生成面板：一般面板代表
+await page.waitForSelector(opt, { timeout: 10000 });
+const hotCount = await page.evaluate((sel) =>
+  document.querySelector(sel).querySelectorAll('.gl-hover-hot').length, opt);
+A(hotCount === 1, `一般面板有頂緣熱區（實得 ${hotCount}）`);
+A(await page.evaluate(() =>
+  document.querySelector('.canned-panel .gl-hover-hot') === null), '罐頭不重複生成（自帶把手）');
+
+// 常態：把手帶隱形且不吃事件
+const restState = await page.evaluate((sel) => {
+  const h = document.querySelector(sel + ' .gl-hover-handle');
+  const cs = getComputedStyle(h);
+  return { op: cs.opacity, pe: cs.pointerEvents, cls: h.classList.contains('draggable-handle') };
+}, opt);
+A(restState.op === '0' && restState.pe === 'none', `常態隱形不佔互動（op=${restState.op} pe=${restState.pe}）`);
+A(restState.cls, '把手帶掛 .draggable-handle 詞彙');
+
+// 熱區 hover → 浮現
+const optBox = await page.locator(opt).boundingBox();
+await page.mouse.move(optBox.x + optBox.width / 2, optBox.y + 4); // 頂緣熱區內
+await page.waitForFunction((sel) =>
+  getComputedStyle(document.querySelector(sel + ' .gl-hover-handle')).opacity === '1', opt, { timeout: 3000 });
+A(true, '熱區 hover 浮現把手');
+
+// 拖曳：從熱區壓下拖 60,40 → 面板位移且寫入 v2 layout
+await page.mouse.down();
+await page.mouse.move(optBox.x + optBox.width / 2 + 60, optBox.y + 4 + 40, { steps: 5 });
+await page.mouse.up();
+await page.waitForTimeout(100);
+const afterDrag = await page.evaluate((sel) => ({
+  left: document.querySelector(sel).style.left,
+  v2: localStorage.getItem('cspanel.layout.cs.v2'),
+}), opt);
+A(parseInt(afterDrag.left, 10) > 0, `拖曳移動面板（left=${afterDrag.left}）`);
+A(afterDrag.v2 && JSON.parse(afterDrag.v2).optitle, 'v2 layout 即時持久化（optitle 條目存在）');
+
+// reload 還原
+await page.reload();
+await page.waitForSelector(opt + ' .gl-hover-hot', { timeout: 15000 });
+const restored = await page.evaluate((sel) => {
+  const saved = JSON.parse(localStorage.getItem('cspanel.layout.cs.v2')).optitle;
+  const el = document.querySelector(sel);
+  return { saved, actualLeft: parseInt(getComputedStyle(el).left, 10) };
+}, opt);
+A(Math.abs(restored.saved.x - restored.actualLeft) < 2,
+  `reload 後 v2 佈局還原（saved.x=${restored.saved.x} vs computed left=${restored.actualLeft}）`);
+
 const v2PageV1After = await page.evaluate(() =>
   JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
     .map((k) => [k, localStorage.getItem(k)])));

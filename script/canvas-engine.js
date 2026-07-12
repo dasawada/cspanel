@@ -183,6 +183,7 @@ async function initAllModules() {
     })
   );
   registerPanelStack();
+  attachHoverHandles();
   broadcastAuthState('login-ready');
   console.log('Engine: 所有模組初始化完成 ✅');
 }
@@ -197,6 +198,7 @@ function clearAllModules() {
     if (!m || !m[p.clear]) continue;
     try { m[p.clear](...(p.clearArgs || [])); } catch (e) { console.error(`${p.clear} 失敗:`, e); }
   }
+  detachHoverHandles();
   unregisterPanelStack();
   broadcastAuthState('logout-complete');
   console.log('Engine: 所有模組已清理 🧹');
@@ -324,6 +326,38 @@ window.CanvasEdit = {
   toggle: () => (activeCanvas && activeCanvas.editing ? exitEditMode() : enterEditMode()),
   enter: enterEditMode, exit: exitEditMode, reset: resetLayout,
 };
+
+// ===== 九期A：hover 浮現把手（pageEngine 模式；隨時可拖，取代編輯模式）=====
+const hoverState = { detachers: [] };
+function attachHoverHandles() {
+  if (!activeCanvas?.config?.pageEngine) return;
+  for (const { p, el } of panelRoots(activeCanvas.manifest)) {
+    if (el.querySelector('.gl-hover-hot')) continue; // 冪等（登入登出循環）
+    const hot = document.createElement('div');
+    hot.className = 'gl-hover-hot';
+    const handle = document.createElement('div');
+    handle.className = 'gl-hover-handle draggable-handle';
+    handle.textContent = p.label || p.id;
+    el.append(hot, handle);
+    // 熱區與把手帶都是拖曳表面：兩者對同一 panel 各綁一次 makeDraggable 會產生
+    // 兩份獨立 dragState——改為把 pointerdown 從熱區轉發到把手帶（把手帶為唯一
+    // 綁定點），熱區只負責「常駐可按」與浮現觸發。
+    const detach = makeDraggable(el, handle, {
+      persist: false,
+      onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
+    });
+    const forward = (e) => { handle.dispatchEvent(new PointerEvent('pointerdown', e)); e.preventDefault(); };
+    hot.addEventListener('pointerdown', forward);
+    hoverState.detachers.push(() => {
+      hot.removeEventListener('pointerdown', forward);
+      detach(); hot.remove(); handle.remove();
+    });
+  }
+}
+function detachHoverHandles() {
+  hoverState.detachers.forEach((fn) => fn());
+  hoverState.detachers = [];
+}
 
 // ===== 入口 =====
 export async function loadCanvas(manifest, config = {}) {

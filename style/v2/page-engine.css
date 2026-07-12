@@ -3,3 +3,26 @@
    把手視覺一律引用把手詞彙（draggable-chrome.css，§4.7），本檔只放
    hover 浮現機制與 page 引擎專屬佈局。不寫 z-index（§4.2）、
    不裸寫尺寸 px（§4.8，var fallback 除外）。 */
+
+/* 頂緣熱區：常駐可互動的隱形窄帶（拖曳起點＋浮現觸發）。高度刻意窄於把手帶，
+   避免吃掉面板頂部內容的點擊。 */
+.gl-hover-hot {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: var(--space-5, 10px);
+    cursor: grab;
+}
+/* 把手帶：常態隱形、不佔互動；熱區或自身 hover 時浮現（opacity 狀態切換，
+   非動畫——遵 materiality v1）。視覺全由把手詞彙供給。 */
+.gl-hover-handle {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    opacity: 0;
+    pointer-events: none;
+}
+.gl-hover-hot:hover ~ .gl-hover-handle,
+.gl-hover-handle:hover,
+.draggable-dragging .gl-hover-handle {
+    opacity: 1;
+    pointer-events: auto;
+}
