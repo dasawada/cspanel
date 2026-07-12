@@ -94,6 +94,43 @@ A(await page.evaluate(() =>
   JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 0),
   'dissolve：成員回畫布、store 清空');
 
+// ===== D. 成組手勢 =====
+console.log('— D. 成組手勢（拖重疊＋懸停預覽）—');
+// 把 shrturl 拖到 roof 上懸停 600ms → 成組
+const s = await page.locator('.linkout').boundingBox();
+const r = await page.locator('.roofbutton').boundingBox();
+await page.mouse.move(s.x + s.width / 2, s.y + 4);
+await page.mouse.down();
+await page.mouse.move(r.x + r.width / 2, r.y + r.height / 2, { steps: 8 });
+await page.waitForSelector('.gl-group-preview', { timeout: 3000 });
+A(true, '重疊懸停浮現成組預覽');
+await page.waitForTimeout(600);
+await page.mouse.up();
+await page.waitForTimeout(300);
+const d1 = await page.evaluate(() => {
+  const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  return { n: pgs.length, members: pgs[0] ? pgs[0].members.map((m) => m.panelId) : [] };
+});
+A(d1.n === 1 && d1.members.includes('shrturl') && d1.members.includes('roof'),
+  `放開成組（members=${d1.members.join(',')}）`);
+// 誤觸護欄：快速掠過不成組
+const o2 = await page.locator('.optitlepanel').boundingBox();
+const f2 = await page.locator('.fudausearch-container').boundingBox();
+await page.mouse.move(o2.x + o2.width / 2, o2.y + 4);
+await page.mouse.down();
+await page.mouse.move(f2.x + f2.width / 2, f2.y + f2.height / 2, { steps: 3 }); // 掠過
+await page.mouse.move(f2.x + f2.width / 2 + 300, f2.y + 200, { steps: 3 });     // <500ms 內離開
+await page.mouse.up();
+await page.waitForTimeout(200);
+A(await page.evaluate(() =>
+  JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 1),
+  '快速掠過不成組（護欄）');
+// 清場供後續區段
+await page.evaluate(() => {
+  const pg = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1'))[0];
+  window.PageEngine.dissolve(pg.id);
+});
+
 await page.close();
 
 const anyFail = fails.length > 0;

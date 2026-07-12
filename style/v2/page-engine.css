@@ -26,3 +26,24 @@
     opacity: 1;
     pointer-events: auto;
 }
+
+/* 成組預覽框（九期B Task 4）：拖曳重疊目標面積 ≥40% 且懸停 ≥500ms 顯示，
+   罩在目標矩形上（JS 逐幀寫 left/top/width/height，見 canvas-engine.js
+   startGroupWatch/showGroupPreview；left/top/width/height 為運算所得的動態
+   值，非本檔硬寫尺寸）。z-index 引用 --layer-panel-active（拖曳中互動提升層帶，
+   §4.2）——不裸寫；不接收指標事件，避免擋住拖曳中滑鼠事件的傳遞路徑。 */
+.gl-group-preview {
+    position: fixed;
+    z-index: var(--layer-panel-active);
+    box-sizing: border-box;
+    border: 2px solid var(--accent-ring, rgba(58, 58, 60, 0.25));
+    background: var(--accent-tint, rgba(58, 58, 60, 0.10));
+    border-radius: var(--radius-md, 12px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: var(--text-sm, 12px);
+    font-weight: 600;
+    color: var(--fg, #1d1d1f);
+    pointer-events: none;
+}
