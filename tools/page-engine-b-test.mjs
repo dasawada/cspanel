@@ -13,8 +13,9 @@ const A = (c, m) => { if (!c) { fails.push(m); console.error('  ✗ ' + m); } el
 const BASE = process.env.PE_URL || 'http://localhost:8123';
 const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
 
-// 登入 stub（同 page-engine-a-test.mjs）＋ order-tool-api 攔截
-await page.addInitScript(() => {
+// 登入 stub（同 page-engine-a-test.mjs）＋ order-tool-api 攔截。
+// loginStub 抽成具名函式：J 區（success:true 真伺服器路徑）的獨立 context 重用同一份。
+const loginStub = () => {
   localStorage.setItem('firebase_id_token', 'parity-stub');
   localStorage.setItem('cspanel.theme.v1', 'olive');
   const fakeUser = { getIdToken: async () => 'parity-stub' };
@@ -28,7 +29,8 @@ await page.addInitScript(() => {
     firestore: () => ({}),
   };
   window.verifyFireworkAuth = async () => true;
-});
+};
+await page.addInitScript(loginStub);
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 
 await page.goto(BASE + '/panel_all_v2.html');
@@ -667,7 +669,202 @@ const hWinsAfterReset = await page.evaluate(() =>
 A(hWinsAfterReset.every((tabs) => tabs.every((t) => !t.startsWith('pg:'))), 'H4: 重設後無殘留 page tab');
 A(await hV1Snapshot() === hV1Base, 'H4: v1 keys 位元不變（CanvasEdit.toggle 重設後，全程終驗）');
 
+// ===== I. 邊界回彈重新斷言：handleMemberDrop 全路徑（九期B 終審 I2）=====
+// E 區已驗 commitGroup 成功分支的 GROUP_BOUNCE_REASSERT_MS 重新斷言；本區補齊
+// handleMemberDrop 的兩條路徑——draggable.js 的 needsBounce 計時器（300ms 後
+// 無條件覆寫 el.style.left/top 為回彈落點）同樣會蓋掉：
+//   I1（頁內 free 分支）：syncPanes 剛寫入的頁內定位；
+//   I2（拖出退組分支）：leaveMember 剛寫回的 detachedRect。
+// 手法沿用 E 區：把 page 視窗搬到 viewport 右下角貼邊，讓「頁內拖曳落點」與
+// 「拖曳面板自身觸發邊界回彈」同時成立。斷言比照 e2/e3 的冪等性檢查（settled
+// 位置手動補跑 syncPanes 不應再變）與 G4 的 detachedRect 回復比對。
+console.log('— I. 頁內拖曳/拖出退組 ＋ 邊界回彈：計時器後仍是 canonical 位置 —');
+const iPreJoin = await page.evaluate(() => {
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const pgI = await page.evaluate(() => window.PageEngine.create(['roof', 'shrturl']));
+A(typeof pgI === 'string' && pgI.startsWith('pg:'), `I: 成組兩員（${pgI}）`);
+await page.waitForTimeout(200);
+// 視窗搬到右下角貼邊（重用 E 手法）；直接改 style 不經 wm 拖曳 API，補一次
+// syncPanes 讓成員跟上新內容區位置。
+await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  win.style.left = '1300px';
+  win.style.top = '800px';
+  win.style.width = '550px';
+  win.style.height = '400px';
+  window.WindowManager.syncPanes();
+}, pgI);
+// -- I1: 頁內 free 拖曳＋回彈——拖 roof 到內容區內、但貼近 viewport 右緣
+//    （roof 寬 110px，落點 x=1790 → 元素右緣 ≈1845 > viewport 1800 → 觸發
+//    needsBounce；落點仍與內容區重疊 ≥0.4 → 走頁內 free 分支）。--
+const iRoofBox = await page.locator('.roofbutton').boundingBox();
+await page.mouse.move(iRoofBox.x + iRoofBox.width / 2, iRoofBox.y + 4);
+await page.mouse.down();
+await page.mouse.move(1790, 900, { steps: 8 });
+await page.mouse.up();
+// 900ms：跨過 draggable.js BOUNCE_DURATION(300ms) 與 GROUP_BOUNCE_REASSERT_MS(500ms)
+// 兩顆計時器，讓畫面完全落定後再讀最終視覺位置。
+await page.waitForTimeout(900);
+const i1 = await page.evaluate((id) => {
+  const pg = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').find((p) => p.id === id);
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  window.WindowManager.syncPanes(); // 冪等性檢查（比照 e3）：settled 應已是 canonical
+  const r2 = document.querySelector('.roofbutton').getBoundingClientRect();
+  return {
+    mode: pg ? pg.layoutMode : null,
+    settled: { left: r.left, top: r.top },
+    canonical: { left: r2.left, top: r2.top },
+  };
+}, pgI);
+A(i1.mode === 'free', `I1: 頁內拖曳轉 free（${i1.mode}）`);
+A(Math.abs(i1.settled.left - i1.canonical.left) < 1 && Math.abs(i1.settled.top - i1.canonical.top) < 1,
+  `I1: 回彈計時器後 settled 已是 canonical 頁內定位（Δ=(${(i1.settled.left - i1.canonical.left).toFixed(1)},${(i1.settled.top - i1.canonical.top).toFixed(1)})）`);
+// -- I2: 拖出退組＋回彈——把 roof 拖離內容區、貼近 viewport 左緣（落點 x=5 →
+//    元素左緣 ≈-50 < 0 → 觸發 needsBounce）。兩員頁拖出一員 → 剩一自動解散，
+//    roof 應回 detachedRect（入組前座標），而非回彈計時器覆寫的邊界落點。--
+const iRoofBox2 = await page.locator('.roofbutton').boundingBox();
+await page.mouse.move(iRoofBox2.x + iRoofBox2.width / 2, iRoofBox2.y + 4);
+await page.mouse.down();
+await page.mouse.move(5, 600, { steps: 10 });
+await page.mouse.up();
+await page.waitForTimeout(900);
+const i2 = await page.evaluate(() => {
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return {
+    n: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length,
+    roof: { left: r.left, top: r.top },
+    roofVisible: getComputedStyle(document.querySelector('.roofbutton')).display !== 'none',
+  };
+});
+A(i2.n === 0, `I2: 拖出剩一自動解散，store 清空（n=${i2.n}）`);
+A(i2.roofVisible, 'I2: 退組面板回畫布可見');
+A(Math.abs(i2.roof.left - iPreJoin.left) < 3 && Math.abs(i2.roof.top - iPreJoin.top) < 3,
+  `I2: 回彈計時器後仍回 detachedRect（pre=(${iPreJoin.left.toFixed(1)},${iPreJoin.top.toFixed(1)}), post=(${i2.roof.left.toFixed(1)},${i2.roof.top.toFixed(1)})）`);
+
 await page.close();
+
+// ===== J. 真伺服器路徑（success:true）：wm 生產路徑掛載＋二輪注入防護（九期B 終審 C1/I1）=====
+// A–I 區全程走 {"success":false} stub，從未覆蓋「fetch 成功、tabsHTML 注入、
+// adoptTabs 交棒」的生產路徑——正是 C1（掛載時序）與 I1（二輪注入覆寫）的測試
+// 盲區。本區用獨立 browser context（乾淨 localStorage）＋ success:true 攔截，
+// tabsHTML 取 tools/wm-fixture.html 的真實 markup 形狀（input[type=radio]
+// [name=panel-tab]#panel-tab-X ＋ label[for] ＋ .panel-tab-content，兩顆 tab、
+// 其一含 iframe 指向 tools/wm-iframe-stub.html）。
+console.log('— J. 真伺服器路徑（success:true）：核心先起→adoptTabs 認養、pageHost 具備、pg: 持久化不被淨化 —');
+const TABS_HTML = [
+  '<div class="panel-tabs-container">',
+  '  <div class="panel-tabs">',
+  '    <input type="radio" id="panel-tab-naniclub" name="panel-tab" checked>',
+  '    <label for="panel-tab-naniclub">🗝️帳號搜尋</label>',
+  '    <div class="panel-tab-content"><iframe class="responsive-iframe" src="/tools/wm-iframe-stub.html?tab=naniclub"></iframe></div>',
+  '    <input type="radio" name="panel-tab" id="panel-tab-tools">',
+  '    <label for="panel-tab-tools">🚀快捷貼圖</label>',
+  '    <div class="panel-tab-content"><div class="appicon">tools-dom-content</div></div>',
+  '  </div>',
+  '</div>',
+].join('\n');
+const ctxJ = await browser.newContext({ viewport: { width: 1800, height: 1200 } });
+const pj = await ctxJ.newPage();
+await pj.addInitScript(loginStub);
+await pj.route('**/api/order-tool-api', (r) => r.fulfill({
+  status: 200, contentType: 'application/json',
+  body: JSON.stringify({
+    success: true, tabsHTML: TABS_HTML,
+    ipHTML: '<div class="IPsearch_in_panelALL"><table><tbody><tr><td>ip-stub</td></tr></tbody></table></div>',
+  }),
+}));
+await pj.goto(BASE + '/panel_all_v2.html');
+await pj.waitForSelector('.wm-pane[data-tab="naniclub"]', { state: 'attached', timeout: 15000 });
+await pj.waitForTimeout(300); // 自然第二輪窗口（onAuthStateChanged 50ms → firework-login-success）
+
+// -- J0: 二輪完整注入不殺 pool/layer（I1）——顯式再派發一次 firework-login-success
+//    （生產環境 checkExistingAuth 與 onAuthStateChanged 雙觸發的確定性重現；上面
+//    的自然第二輪與首輪的先後是計時競賽，不足以穩定覆蓋「首輪已完成後再來一輪」）。--
+await pj.evaluate(() => window.dispatchEvent(new Event('firework-login-success')));
+await pj.waitForTimeout(500);
+const j0 = await pj.evaluate(() => {
+  const win = document.querySelector('.wm-window');
+  const pane = document.querySelector('.wm-pane[data-tab="naniclub"]');
+  const ifr = pane && pane.querySelector('iframe');
+  const tab = document.querySelector('.wm-tab[data-tab="naniclub"]');
+  return {
+    winInDoc: !!win && win.isConnected,
+    paneAlive: !!pane && pane.isConnected && !!ifr && ifr.isConnected,
+    title: tab ? tab.textContent : null,
+    tabCount: document.querySelectorAll('.wm-window .wm-tab').length,
+  };
+});
+A(j0.winInDoc, 'J0: 二輪注入後 .wm-window 仍在 DOM（pool/layer 未被 innerHTML 覆寫殺掉）');
+A(j0.paneAlive, 'J0: 常駐池 iframe pane（含 iframe）存活');
+A(j0.title === '🗝️帳號搜尋', `J0: iframe tab 標題正確（${j0.title}）`);
+A(j0.tabCount === 2, `J0: 兩顆 iframe tab 都被認養（${j0.tabCount}）`);
+
+// -- J1: 引擎掛載的核心具 pageHost（C1）——PageEngine.create 後 page tab 標題是
+//    成員 label 串接（computeTitle）而非裸 'pg:' id，且成員定位進視窗內容區。--
+const pgJ = await pj.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));
+A(typeof pgJ === 'string' && pgJ.startsWith('pg:'), `J1: PageEngine.create 回 pg: id（${pgJ}）`);
+await pj.waitForTimeout(300);
+const j1 = await pj.evaluate((id) => {
+  const tab = document.querySelector(`.wm-tab[data-tab="${CSS.escape(id)}"]`);
+  const win = tab && tab.closest('.wm-window');
+  const content = win && win.querySelector('.wm-content').getBoundingClientRect();
+  const o = document.querySelector('.optitlepanel').getBoundingClientRect();
+  return {
+    title: tab ? tab.textContent : null,
+    memberIn: content ? (o.top >= content.top - 1 && o.left >= content.left - 1) : false,
+  };
+}, pgJ);
+A(!!j1.title && j1.title.includes('標題生成') && j1.title.includes('職代查詢') && !j1.title.startsWith('pg:'),
+  `J1: page tab 標題為成員 label 串接而非裸 id（${j1.title}）`);
+A(j1.memberIn, 'J1: 成員定位進 page 視窗內容區（pageHost.layout 生效）');
+
+// -- J2: 含 'pg:' 視窗的持久化在 reload 後存活（C1 淨化盲區）——reload 後 page
+//    tab 視窗還原（loadWindows 不得因 isPageId 缺席而濾掉 'pg:' tab），且對
+//    windows 存檔做一次「觸發 persist」（拖動視窗 tabbar 空白處幾 px）後，存檔
+//    仍含 pg: tab（淨化若發生，這次 persist 就是「永久丟失」的定錨點）。--
+await pj.reload();
+await pj.waitForSelector('.wm-pane[data-tab="naniclub"]', { state: 'attached', timeout: 15000 });
+await pj.waitForTimeout(500); // wm 掛載＋adoptTabs＋hydratePageJoins＋syncPanes 落定
+const j2a = await pj.evaluate((id) => {
+  const tab = document.querySelector(`.wm-tab[data-tab="${CSS.escape(id)}"]`);
+  const win = tab && tab.closest('.wm-window');
+  const content = win && win.querySelector('.wm-content').getBoundingClientRect();
+  const o = document.querySelector('.optitlepanel').getBoundingClientRect();
+  return {
+    tabAlive: !!tab,
+    title: tab ? tab.textContent : null,
+    memberIn: content ? (o.top >= content.top - 1 && o.left >= content.left - 1) : false,
+    pagesLen: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length,
+  };
+}, pgJ);
+A(j2a.tabAlive, 'J2: reload 後 page tab 視窗存活（未被 loadWindows 淨化）');
+A(!!j2a.title && j2a.title.includes('標題生成'), `J2: reload 後 page tab 標題仍為成員 label（${j2a.title}）`);
+A(j2a.memberIn, 'J2: reload 後成員重新定位進內容區（hydratePageJoins＋pageHost）');
+A(j2a.pagesLen === 1, `J2: pages store 跨 reload 保留（len=${j2a.pagesLen}）`);
+// 觸發一次 persist：拖 iframe 視窗的 tabbar 空白處位移 12px（走 wm 自身的視窗
+// 移動路徑，結束時 persist()）。
+const jBar = await pj.evaluate(() => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === 'naniclub'));
+  const b = win.querySelector('.wm-tabbar').getBoundingClientRect();
+  return { x: b.right - 8, y: b.top + b.height / 2 };
+});
+await pj.mouse.move(jBar.x, jBar.y);
+await pj.mouse.down();
+await pj.mouse.move(jBar.x + 12, jBar.y + 12, { steps: 4 });
+await pj.waitForTimeout(50);
+await pj.mouse.up();
+await pj.waitForTimeout(200);
+const j2b = await pj.evaluate(() => {
+  const stored = JSON.parse(localStorage.getItem('cspanel.windows.cs.v2') || '{"windows":[]}');
+  return { storedHasPg: (stored.windows || []).some((w) => (w.tabs || []).some((t) => String(t).startsWith('pg:'))) };
+});
+A(j2b.storedHasPg, 'J2: persist 後 windows .v2 存檔仍含 pg: tab（持久化未被淨化）');
+await pj.close();
+await ctxJ.close();
 
 const anyFail = fails.length > 0;
 await browser.close();
