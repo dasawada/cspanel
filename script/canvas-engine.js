@@ -200,27 +200,32 @@ async function initAllModules() {
     const m = mods.get(p.id);
     if (m && m[p.init]) { try { m[p.init](...(p.initArgs || [])); } catch (e) { console.error(`${p.init} 失敗:`, e); } }
   }
-  await Promise.allSettled(
-    manifest.panels.filter((p) => !p.syncInit).map((p) => {
-      const m = mods.get(p.id);
-      if (!m || !m[p.init]) return Promise.resolve();
-      return Promise.resolve(m[p.init](...(p.initArgs || [])));
-    })
-  );
-  registerPanelStack();
-  // 九期B Task 2：v2 模式下 wm 核心無條件掛載（可零 tab 啟動）；auth-protected-tabs
-  // 稍後注入伺服器內容完成時改呼叫 WindowManager.adoptTabs() 認養 iframe tabs
-  // （見 auth-protected-tabs.js glDecorate 交棒點）。host 與 auth-protected-tabs
-  // 傳給 mountWindowManager 的是同一個 placeholder（grep 確認）。以
-  // !window.WindowManager 防重複掛載——'protected' 面板的 init（non-syncInit）已
-  // 被上面的 Promise.allSettled 等過，若其防呆 fallback 因核心尚未掛載而搶先單段
-  // mount 完成，這裡就不再動作，避免蓋掉已認養好 tab 的實例。v1 模式
+  // 九期B Task 2／九期B 終審 C1 修復：v2 模式下 wm 核心無條件掛載（可零 tab 啟動）；
+  // auth-protected-tabs 稍後注入伺服器內容完成時呼叫 WindowManager.adoptTabs()
+  // 認養 iframe tabs（見 auth-protected-tabs.js glDecorate 交棒點）。host 與
+  // auth-protected-tabs 傳給 mountWindowManager 的是同一個 placeholder（grep 確認）。
+  // 【時序鐵律（C1）】本掛載必須在下方 await Promise.allSettled(...) 之「前」完成——
+  // 'protected' 面板的 initProtectedTabs 就在該等待集內，其 fetch 成功後的 v2
+  // 交棒點假設 window.WindowManager 已存在才能 adoptTabs；掛載若排在 allSettled
+  // 之後（原 Task 2 位置），真伺服器路徑（success:true）下交棒點必然撲空、落入
+  // fallback 裸掛載（無 canvasId/pageHost/isPageId opts）：isPageId 恆 false 使
+  // loadWindows 淨化掉全部 'pg:' tab（下一次 persist 即永久丟失）、pageHost null
+  // 使 page tab 淪為裸 id、syncPanes 跳過成員定位——page 引擎生產路徑整組癱瘓。
+  // 這正是計畫「v2 核心無條件起」「核心必已由引擎先掛」（plan Task 2）的原意；
+  // 掛載時本 placeholder 尚空（伺服器內容未注入）→ 零 tab 啟動，是 Task 2 設計
+  // 明文支援的形態。page-engine-b-test.mjs J 區（success:true）覆蓋本時序。
+  // 以 !window.WindowManager ＋ wmMountClaimed 同步搶佔防重複掛載（見檔頭
+  // wmMountClaimed 註解），clearAllModules 登出時對稱重置。v1 模式
   // （config.pageEngine 恆 false）完全不進這個分支，零變化。
   if (activeCanvas.config.pageEngine) {
     const wmHost = document.getElementById('auth-protected-tabs-placeholder');
     if (wmHost && !window.WindowManager && !wmMountClaimed) {
       wmMountClaimed = true; // 同步搶佔（見上方 wmMountClaimed 檔頭註解）——關掉 await import() 造成的競態縫隙
       try {
+        // stack 疊序存檔 key 先對準本畫布：mount 內 render() 會 stack.register
+        // 視窗，而 registerPanelStack()（原本的掛載時序中先於 mount）要到
+        // allSettled 之後才呼叫 setCanvasId。同 id 重複呼叫為 no-op，不影響快照。
+        stack.setCanvasId(activeCanvas.manifest.id);
         const { mountWindowManager } = await import('./window-manager.js');
         // 二次檢查：理論上不會發生（搶佔已同步關閉縫隙），仍防呆——若 await 期間
         // 已有別的路徑完成掛載，不重複 mount，避免蓋掉已認養好 tab 的實例。
@@ -232,9 +237,20 @@ async function initAllModules() {
         }
       } catch (e) { console.error('WindowManager 核心掛載失敗:', e); }
     }
+  }
+  await Promise.allSettled(
+    manifest.panels.filter((p) => !p.syncInit).map((p) => {
+      const m = mods.get(p.id);
+      if (!m || !m[p.init]) return Promise.resolve();
+      return Promise.resolve(m[p.init](...(p.initArgs || [])));
+    })
+  );
+  registerPanelStack();
+  if (activeCanvas.config.pageEngine) {
     // 每次登入（含重新整理已登入態）都跑：registerPanelStack() 剛把「目前是
     // page 成員」的面板當成個別 surface 重新註冊過一輪，這裡把持久化 pages
     // store 記得的成員關係重新 joinMember 回去，復原分組疊序不變式。
+    // （wm 核心此刻必已掛載——見上方 allSettled 之前的 C1 掛載段。）
     hydratePageJoins();
   }
   attachHoverHandles();

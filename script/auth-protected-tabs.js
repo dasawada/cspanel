@@ -135,35 +135,74 @@ async function fetchProtectedContentWithRetry(retries = 3) {
         const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
 
         if (tabsPlaceholder && data.tabsHTML) {
-          tabsPlaceholder.innerHTML = data.tabsHTML;
-          glDecorate(tabsPlaceholder);
-          // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
-          // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
-          // （見 window-manager.js）。此刻 iframe 本就在載入，唯一一次 DOM 移動免費。
-          //
-          // 九期B Task 2：v2 模式（window.CSPANEL_ENGINE_V2）下核心已由 canvas-engine
-          // 在 initAllModules 無條件掛載（可能是零 tab 狀態）；這裡只負責「認養」
-          // 剛注入的 iframe tabs（window.WindowManager.adoptTabs，冪等），不再持有
-          // 自己的 windowManager 參照——mount/destroy 生命權統一交給 canvas-engine
-          // 對稱管理（initAllModules/clearAllModules），避免雙重擁有權互相銷毀對方
-          // 剛搬入常駐池的 iframe。若核心因故尚未掛載（理論上不該發生——防呆），
-          // fallback 退回原本的單段 mount，這次呼叫順便建核心＋認養一次到位。
-          // v1 模式（旗標未設）：呼叫形狀與行為逐位元不變。
-          try {
-            if (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) {
-              if (window.WindowManager && typeof window.WindowManager.adoptTabs === 'function') {
-                window.WindowManager.adoptTabs(tabsPlaceholder.querySelector('.panel-tabs-container'));
+          const engineV2 = typeof window !== 'undefined' && !!window.CSPANEL_ENGINE_V2;
+          if (engineV2) {
+            // 九期B 終審 C1/I1 修復：v2 模式下 wm 核心的視窗層（layer）與常駐池
+            // （pool，含所有 iframe）都住在 tabsPlaceholder「裡面」（mountWindowManager
+            // 的 host 即本 placeholder，且核心已由 canvas-engine 在 initAllModules
+            // 的 await Promise.allSettled 之「前」掛妥——本函式屬該等待集，執行至
+            // 此核心必已存在）。因此 v2 絕不可 `innerHTML = data.tabsHTML` 覆寫
+            // host——第一輪會殺掉剛掛載核心的 layer（render 從此畫進 detached
+            // 節點，分頁整組不可見）；第二輪（checkExistingAuth 與
+            // firework-login-success 先後各觸發一輪 initAllModules 時發生）更會
+            // 連 pool 帶 iframe 一起銷毀，而 adoptTabs 是冪等設計（同 id 略過）
+            // 不會重建，iframe 一旦被摧毀也沒有任何「重新收養」能免重載救回
+            // （違反 iframe 零重載鐵律）——唯一正確修法是「防止覆寫」而非「事後
+            // 自癒」。改法：tabsHTML 解析進 staging「子節點」（appendChild 不動
+            // 同住 host 的 layer/pool），.panel-tabs-container 是 absolute 定位、
+            // containing block 仍是 .panel_all_container，adoptTabs 內
+            // readContainerRect 量到與 v1 注入完全相同的預設幾何；iframe 在
+            // staging 開始載入、由 adoptTabs 一次性搬進常駐池（與 v1「唯一一次
+            // DOM 移動免費」同一形狀），容器本身由 adoptTabs 丟棄、staging 隨後
+            // 同步移除（同一 JS turn，無中間繪製）。
+            // 已認養（hasTabs）時整段跳過：本輪是同一 session 的重複注入（tab 集
+            // 合 per-session 穩定；真正的新集合來自登出→再登入，該路徑經
+            // clearProtectedTabs 清空 host、clearAllModules 銷毀核心，下一輪
+            // hasTabs() 為 false 照常注入），跳過可免解析/丟棄一份多餘 DOM。
+            const wm = window.WindowManager;
+            if (wm && typeof wm.adoptTabs === 'function') {
+              if (typeof wm.hasTabs === 'function' && wm.hasTabs()) {
+                console.log('WindowManager 已認養 iframe tabs，跳過本輪 tabsHTML 注入（保護常駐池/視窗層）');
               } else {
-                const { mountWindowManager } = await import('./window-manager.js');
-                mountWindowManager(tabsPlaceholder);
+                const staging = document.createElement('div');
+                staging.innerHTML = data.tabsHTML;
+                tabsPlaceholder.appendChild(staging);
+                // host 補 .gl-injected（池中內容依 .gl-injected 後代規則取色）＋
+                // staging 內 tables 標 .gl-table（class 跟著內容搬進池）。
+                glDecorate(tabsPlaceholder);
+                try {
+                  wm.adoptTabs(staging.querySelector('.panel-tabs-container'));
+                } catch (error) {
+                  console.error('❌ 分頁視窗管理器認養失敗:', error);
+                } finally {
+                  staging.remove();
+                }
               }
             } else {
+              // 理論不可達（C1 時序契約：核心先掛）。原 fallback「單段裸 mount」
+              // 不可保留——裸 mount 不帶 canvasId/pageHost/isPageId opts，會讓
+              // loadWindows 淨化掉全部 'pg:' tab（page 視窗存檔於下一次 persist
+              // 永久丟失）、page tab 淪為裸 id、成員定位失效，比「不接管」破壞
+              // 性更大。降級：console.error＋直接注入保留伺服器原生 tab 可見
+              // （此路徑 host 內必無 layer/pool，innerHTML 無誤傷對象）。
+              console.error('❌ WindowManager 核心未掛載（v2 時序契約違反，見 canvas-engine.js initAllModules C1 註解）：略過認養，注入伺服器原生 tab 降級顯示');
+              tabsPlaceholder.innerHTML = data.tabsHTML;
+              glDecorate(tabsPlaceholder);
+            }
+          } else {
+            // v1 模式（旗標未設）：呼叫形狀與行為逐位元不變。
+            tabsPlaceholder.innerHTML = data.tabsHTML;
+            glDecorate(tabsPlaceholder);
+            // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
+            // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
+            // （見 window-manager.js）。此刻 iframe 本就在載入，唯一一次 DOM 移動免費。
+            try {
               const { mountWindowManager } = await import('./window-manager.js');
               if (windowManager) { windowManager.destroy(); windowManager = null; }
               windowManager = mountWindowManager(tabsPlaceholder);
+            } catch (error) {
+              console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
             }
-          } catch (error) {
-            console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
           }
         }
 
