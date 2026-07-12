@@ -567,10 +567,14 @@ a.no-nth-child {
 }
 
 /* backdrop-filter 會建立新的 stacking context，導致 .fudausearch-suggestions
-   的 z-index 出不了自己的面板而被其他面板蓋住；互動中把整個面板浮到頂層，
-   離開即自動還原。hover 一併提升：建議項 div 不可聚焦，滑鼠 mousedown 會先
-   blur 容器，僅靠 :focus-within 會在點擊完成前掉回下層 */
-.fudausearch-container:hover,
+   的 z-index 出不了自己的面板而被其他面板蓋住；聚焦互動中把整個面板浮到
+   --layer-panel-active，離開即還原（stack.css 明文保護的狀態提升，鍵盤 Tab
+   進輸入框也適用）。
+   第九期收尾：原本另有 :hover 一併提升（一期補丁，防「mousedown 建議項先
+   blur 容器、:focus-within 在點擊完成前掉回下層」的競態）——四期 stack-manager
+   的 pointerdown capture 置頂已涵蓋該競態（點擊瞬間面板先被提到帶內最高，
+   blur 不影響），:hover 反而造成「唯獨此面板 hover 即蓋住所有面板」的
+   不一致（使用者回報），已移除。回歸斷言見 tools/panel-stack-test.mjs 2.5 節。 */
 .fudausearch-container:focus-within { z-index: var(--layer-panel-active); }
 
 /* 建議選單樣式 */

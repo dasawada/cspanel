@@ -36,6 +36,26 @@ const afterReload = await zOf('.meeting-search-panel-menu');
 const topReload = await maxZ();
 A(afterReload === topReload, `reload 後 meeting 仍最高（持久化）(${afterReload}===${topReload})`);
 
+// 2.5) hover 不得改變疊序（第九期收尾：fudausearch 一期 :hover 置頂補丁移除——
+//      pointerdown 置頂（stack-manager）已涵蓋其原始用途；:focus-within 提升保留
+//      給鍵盤使用者，屬 stack.css 明文保護的狀態提升）
+{
+  const fudauRest = await zOf('.fudausearch-container');
+  const fb = await p.locator('.fudausearch-container').boundingBox();
+  await p.mouse.move(fb.x + fb.width / 2, fb.y + fb.height - 10);
+  await p.waitForTimeout(150);
+  const fudauHover = await zOf('.fudausearch-container');
+  A(fudauHover === fudauRest, `hover 不改 fudausearch z（${fudauRest}→${fudauHover}）`);
+  const fudauFocus = await p.evaluate(() => {
+    const inp = document.querySelector('.fudausearch-container input');
+    inp.focus();
+    return parseInt(getComputedStyle(document.querySelector('.fudausearch-container')).zIndex, 10);
+  });
+  A(fudauFocus === 200, `:focus-within 仍升 --layer-panel-active（實得 ${fudauFocus}）`);
+  await p.evaluate(() => document.activeElement && document.activeElement.blur());
+  await p.mouse.move(10, 1100);
+}
+
 // 3) 編輯把手顯示中文標籤（非原始 id）
 await p.evaluate(() => window.CanvasEdit.enter());
 await p.waitForTimeout(150);
