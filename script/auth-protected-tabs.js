@@ -140,10 +140,28 @@ async function fetchProtectedContentWithRetry(retries = 3) {
           // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
           // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
           // （見 window-manager.js）。此刻 iframe 本就在載入，唯一一次 DOM 移動免費。
+          //
+          // 九期B Task 2：v2 模式（window.CSPANEL_ENGINE_V2）下核心已由 canvas-engine
+          // 在 initAllModules 無條件掛載（可能是零 tab 狀態）；這裡只負責「認養」
+          // 剛注入的 iframe tabs（window.WindowManager.adoptTabs，冪等），不再持有
+          // 自己的 windowManager 參照——mount/destroy 生命權統一交給 canvas-engine
+          // 對稱管理（initAllModules/clearAllModules），避免雙重擁有權互相銷毀對方
+          // 剛搬入常駐池的 iframe。若核心因故尚未掛載（理論上不該發生——防呆），
+          // fallback 退回原本的單段 mount，這次呼叫順便建核心＋認養一次到位。
+          // v1 模式（旗標未設）：呼叫形狀與行為逐位元不變。
           try {
-            const { mountWindowManager } = await import('./window-manager.js');
-            if (windowManager) { windowManager.destroy(); windowManager = null; }
-            windowManager = mountWindowManager(tabsPlaceholder);
+            if (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) {
+              if (window.WindowManager && typeof window.WindowManager.adoptTabs === 'function') {
+                window.WindowManager.adoptTabs(tabsPlaceholder.querySelector('.panel-tabs-container'));
+              } else {
+                const { mountWindowManager } = await import('./window-manager.js');
+                mountWindowManager(tabsPlaceholder);
+              }
+            } else {
+              const { mountWindowManager } = await import('./window-manager.js');
+              if (windowManager) { windowManager.destroy(); windowManager = null; }
+              windowManager = mountWindowManager(tabsPlaceholder);
+            }
           } catch (error) {
             console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
           }

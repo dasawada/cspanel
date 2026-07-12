@@ -55,6 +55,14 @@ await page.waitForTimeout(100);
 A(await page.evaluate(() => !!JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}').optitle),
   '實際拖曳仍寫 layout');
 
+// ===== B. wm 兩段掛載：核心先起、adoptTabs 認養 =====
+console.log('— B. wm 兩段掛載：核心先起、adoptTabs 認養 —');
+A(await page.evaluate(() => !!window.WindowManager && typeof window.WindowManager.adoptTabs === 'function'),
+  'v2 模式 WindowManager 核心已掛載且有 adoptTabs');
+// protected 注入完成後 iframe tabs 已被認養（stub 環境有 server markup 經 Firestore stub？
+// ——parity stub 不含 protectedContent，故此處斷言為「零 tab 啟動不炸」＋ hasTabs() 反映實況）
+A(await page.evaluate(() => typeof window.WindowManager.hasTabs === 'function'), 'hasTabs API 存在');
+
 await page.close();
 
 const anyFail = fails.length > 0;

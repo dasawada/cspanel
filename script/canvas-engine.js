@@ -183,6 +183,23 @@ async function initAllModules() {
     })
   );
   registerPanelStack();
+  // 九期B Task 2：v2 模式下 wm 核心無條件掛載（可零 tab 啟動）；auth-protected-tabs
+  // 稍後注入伺服器內容完成時改呼叫 WindowManager.adoptTabs() 認養 iframe tabs
+  // （見 auth-protected-tabs.js glDecorate 交棒點）。host 與 auth-protected-tabs
+  // 傳給 mountWindowManager 的是同一個 placeholder（grep 確認）。以
+  // !window.WindowManager 防重複掛載——'protected' 面板的 init（non-syncInit）已
+  // 被上面的 Promise.allSettled 等過，若其防呆 fallback 因核心尚未掛載而搶先單段
+  // mount 完成，這裡就不再動作，避免蓋掉已認養好 tab 的實例。v1 模式
+  // （config.pageEngine 恆 false）完全不進這個分支，零變化。
+  if (activeCanvas.config.pageEngine) {
+    const wmHost = document.getElementById('auth-protected-tabs-placeholder');
+    if (wmHost && !window.WindowManager) {
+      try {
+        const { mountWindowManager } = await import('./window-manager.js');
+        mountWindowManager(wmHost, { canvasId: activeCanvas.manifest.id, isPageId: activeCanvas.config.isPageId });
+      } catch (e) { console.error('WindowManager 核心掛載失敗:', e); }
+    }
+  }
   attachHoverHandles();
   broadcastAuthState('login-ready');
   console.log('Engine: 所有模組初始化完成 ✅');
@@ -201,6 +218,12 @@ function clearAllModules() {
     const m = mods.get(p.id);
     if (!m || !m[p.clear]) continue;
     try { m[p.clear](...(p.clearArgs || [])); } catch (e) { console.error(`${p.clear} 失敗:`, e); }
+  }
+  // 九期B Task 2：對稱 initAllModules 的無條件核心掛載——v2 模式下 wm 生命權在
+  // canvas-engine，登出時一併拆除。v1 模式：destroy 仍由 clearProtectedTabs 呼叫
+  // 既有的 windowManager 參照（此處 config.pageEngine 恆 false，完全不進這個分支）。
+  if (activeCanvas.config.pageEngine && window.WindowManager) {
+    try { window.WindowManager.destroy(); } catch (e) { console.error('WindowManager destroy 失敗:', e); }
   }
   detachHoverHandles();
   unregisterPanelStack();
