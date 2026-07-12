@@ -40,24 +40,15 @@
     overflow: hidden;
 }
 
-/* 標題列色帶：讓框「一眼是視窗」——與內容區以底色 + 分隔線區隔（--bg-soft 即
-   product 慣例的工具列第二中性層）。空白處拖曳 = 移動視窗（hover 微加深當拖曳暗示）。 */
+/* 標題帶＝把手詞彙消費者（render() 掛 .draggable-handle，視覺歸
+   draggable-chrome.css：透明底、--handle-h 高、hover 微加深、拖曳中 accent
+   漸層）。第八期刻意推翻四期「色帶＋分隔線」——見 CANVAS.md §7.6。
+   此處只留 tab 列自身佈局。 */
 .wm-tabbar {
     flex: 0 0 auto;
-    display: flex;
-    align-items: center;
     gap: var(--space-2);
-    height: 36px;
-    padding: 5px 8px;
-    box-sizing: border-box;
-    background: var(--bg-soft);
-    border-bottom: 1px solid var(--border);
-    cursor: grab;
     overflow: hidden;
-    transition: background 0.15s ease-out;
 }
-.wm-tabbar:hover { background: color-mix(in srgb, var(--fg) 7%, transparent); }
-.wm-tabbar:active { cursor: grabbing; }
 
 /* tab 藥丸：沿用全站 pill 語彙（登入列鈕、編排列鈕皆 999px 圓角）。 */
 .wm-tab {
