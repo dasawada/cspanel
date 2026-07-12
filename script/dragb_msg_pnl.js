@@ -12,7 +12,7 @@ const PANEL_CSS = `
   position: absolute;
   touch-action: none;
   user-select: none;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   margin: 0;
   margin-bottom: 20px;
   will-change: transform;
@@ -34,15 +34,12 @@ const PANEL_CSS = `
   box-shadow: 0 18px 48px rgba(0,0,0,0.18);
 }
 .canned-panel-handle {
-  padding: 5px 10px;
-  border-radius: 10px 10px 0 0;
-  text-align: left;
-  font-weight: bold;
-  cursor: grab;
-  height: 19px;
-  user-select: none;
+  /* 帶子視覺（高度/內距/透明底/hover/拖曳漸層/圓角/cursor）歸把手詞彙
+     draggable-chrome.css；此處只留本面板的標題字樣式 */
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--fg-2);
 }
-.canned-panel-handle:active { cursor: grabbing; }
 .canned-panel-search-bar {
   position: relative;
   width: 100%;
@@ -54,13 +51,13 @@ const PANEL_CSS = `
 }
 .canned-panel-search-bar .canned-panel-search-input {
   width: 90%;
-  border: 1px solid #ccc;
+  border: 1px solid var(--border-2);
   border-radius: 9999px;
   padding: 5px 30px 5px 10px;
   font-size: var(--text-md);
   box-sizing: border-box;
-  background: #fff;
-  color: #333;
+  background: var(--elevated);
+  color: var(--fg);
   transition: width 0.2s;
 }
 .canned-panel-clear-btn {
@@ -74,15 +71,15 @@ const PANEL_CSS = `
 .canned-panel-clear-btn::before { content: '×'; }
 .canned-panel-tab-container {
   display: flex;
-  border: 1px solid #ddd;
+  border: 1px solid var(--border-2);
   border-radius: 10px;
   background: rgba(255,255,255,0.35);
   margin-top: var(--space-5);
 }
 .canned-panel-tab-menu {
   width: 70px;
-  border-right: 1px solid #ddd;
-  background: #f9f9f9;
+  border-right: 1px solid var(--border-2);
+  background: var(--bg-soft);
   border-radius: 10px 0 0 10px;
 }
 .canned-panel-tab-menu ul {
@@ -93,12 +90,13 @@ const PANEL_CSS = `
 .canned-panel-tab-menu li {
   padding: 10px 5px;
   cursor: pointer;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border);
   font-size: var(--text-md);
-  TEXT-ALIGN: CENTER;
+  text-align: center;
 }
 .canned-panel-tab-menu li.active {
-  background: #e0e0e0;
+  background: var(--accent-tint);
+  color: var(--accent-hover);
   font-weight: bold;
 }
 .canned-panel-tab-content {
@@ -117,8 +115,8 @@ const PANEL_CSS = `
   resize: vertical;
 }
 .canned-panel-tab-item textarea:disabled {
-  background-color: #f5f5f5;
-  color: #666;
+  background-color: var(--bg-soft);
+  color: var(--muted);
   cursor: not-allowed;
 }
 .canned-panel-btn-group {
@@ -135,11 +133,11 @@ const PANEL_CSS = `
   transition: all 0.3s ease;
 }
 .canned-panel-btn-group button.copied {
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--success);
+  color: var(--elevated);
 }
 .canned-panel-warning {
-  color: red;
+  color: var(--danger);
   font-weight: bold;
   margin-top: var(--space-5);
 }
@@ -912,7 +910,6 @@ export function createCannedMessagesPanel(options = {}) {
   makeDraggable(panel, dragHandle, {
     left: 1300,
     top: 75,
-    color: 'accent', // 僅作 handle 主題 class 識別字；實際樣式為 --accent 系 color-mix 漸層（見 draggable.js）
     ...options
   });
 

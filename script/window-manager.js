@@ -193,7 +193,7 @@ export function mountWindowManager(host, opts = {}) {
       // z-index 由 stack-manager 經 .gl-stack-surface + --stack-rank 供給（見迴圈尾 register）。
 
       const bar = document.createElement('div');
-      bar.className = 'wm-tabbar';
+      bar.className = 'wm-tabbar draggable-handle';
       bar.setAttribute('role', 'tablist');
       bar.setAttribute('aria-label', '分頁視窗');
       for (const tabId of win.tabs) {
@@ -317,7 +317,7 @@ export function mountWindowManager(host, opts = {}) {
   function startWindowMove(win, e) {
     e.preventDefault();
     const sx = e.clientX, sy = e.clientY, ox = win.x, oy = win.y;
-    win.el.classList.add('gl-dragging'); // 材質層拖曳浮起鉤子（與 draggable.js 同名 class）
+    win.el.classList.add('gl-dragging', 'draggable-dragging'); // 材質鉤子＋把手詞彙拖曳態（第八期統一）
     beginPointerDrag({
       cursor: 'grabbing',
       onMove: (ev) => {
@@ -327,7 +327,7 @@ export function mountWindowManager(host, opts = {}) {
         win.el.style.top = win.y + 'px';
         syncPanes();
       },
-      onEnd: () => { win.el.classList.remove('gl-dragging'); persist(); },
+      onEnd: () => { win.el.classList.remove('gl-dragging', 'draggable-dragging'); persist(); },
     });
   }
 

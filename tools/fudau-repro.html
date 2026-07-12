@@ -22,7 +22,7 @@
   import { initFudausearchPanel, clearFudausearchPanel } from '/script/fusearch-panel.js';
   const panel = document.getElementById('fudausearch-container');
   const handle = panel.querySelector('.fudausearch-drag-handle');
-  makeDraggable(panel, handle, { left:300, top:185, color:'#a9bcc7'});
+  makeDraggable(panel, handle, { left:300, top:185});
   // 模擬「Firebase null-first + 反覆登出/登入」多輪 clear→init 循環：非破壞式 clear
   // 應讓容器/把手全程存活、init guard 見 input 尚在即略過注入，故不論幾輪都維持
   // 單層容器與把手（破壞式 clear 第一輪就變成 {containers:2, dragHandles:0}）。

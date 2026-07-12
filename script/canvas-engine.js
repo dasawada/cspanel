@@ -253,7 +253,6 @@ export function enterEditMode() {
     // （由 onPositionChange 寫入 LAYOUT_KEY），draggable.js 不應再讀寫
     // 各面板獨立的 draggable:<path>:<id> key（見檔案內註解與任務報告）。
     const detach = makeDraggable(el, handle, {
-      color: 'accent',
       persist: false,
       onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
     });

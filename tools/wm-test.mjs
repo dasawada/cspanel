@@ -90,6 +90,22 @@ assert((await paneCount()) === 4, `4 panes (got ${await paneCount()})`);
 assert(JSON.stringify(await visiblePanes()) === JSON.stringify(['naniclub']), `visible pane = ${JSON.stringify(await visiblePanes())}`);
 assert(Math.abs(s[0].rect.x - 410) <= 2 && Math.abs(s[0].rect.y - 160) <= 2, `initial pos ~ (410,160) got (${s[0].rect.x},${s[0].rect.y})`);
 
+// ===== 第八期：把手詞彙 =====
+assert(await page.$eval('.wm-tabbar', (el) => el.classList.contains('draggable-handle')),
+  'tabbar 掛 .draggable-handle 詞彙 class');
+{
+  const bar = await page.locator('.wm-tabbar').first().boundingBox();
+  // 抓 tab 列「空白處」（最右端內縮 8px）壓住拖 20px，途中驗 draggable-dragging
+  await page.mouse.move(bar.x + bar.width - 8, bar.y + bar.height / 2);
+  await page.mouse.down();
+  await page.mouse.move(bar.x + bar.width - 8 + 20, bar.y + bar.height / 2 + 20, { steps: 3 });
+  assert(await page.$eval('.wm-window', (el) => el.classList.contains('draggable-dragging')),
+    '視窗拖曳中掛 .draggable-dragging（拖曳視覺與 draggable 統一）');
+  await page.mouse.up();
+  assert(await page.$eval('.wm-window', (el) => !el.classList.contains('draggable-dragging')),
+    '放開後 .draggable-dragging 移除');
+}
+
 const base = await loadSum();
 console.log(`  (iframe load baseline = ${base})`);
 
