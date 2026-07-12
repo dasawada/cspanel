@@ -137,6 +137,22 @@ assert(canned.radius === '12px', `罐頭外框圓角 --radius-md（實得 ${cann
 assert(canned.handleH === '36px', `罐頭把手高度歸詞彙（實得 ${canned.handleH}）`);
 assert(canned.handleFw === '600', `罐頭標題字重 600（實得 ${canned.handleFw}）`);
 
+// ===== D. 主題跟隨：拖曳漸層與 active tab 隨 palette 變 =====
+const grad = async () => page.evaluate(() => {
+  const p = document.querySelector('.canned-panel');
+  p.classList.add('draggable-dragging');
+  const g = getComputedStyle(document.querySelector('.canned-panel-handle')).backgroundImage;
+  p.classList.remove('draggable-dragging');
+  return g;
+});
+const oliveGrad = await grad();
+await page.evaluate(() => window.CspanelTheme.setTheme('copenhagen-harbour'));
+await page.waitForTimeout(100);
+const chGrad = await grad();
+assert(oliveGrad.includes('linear-gradient') && chGrad.includes('linear-gradient') && oliveGrad !== chGrad,
+  `拖曳漸層隨主題（olive ≠ copenhagen-harbour）`);
+await page.evaluate(() => window.CspanelTheme.setTheme('olive'));
+
 await browser.close();
 if (fails.length) { console.error(`\n${fails.length} 項失敗`); process.exit(1); }
 console.log('\nhandle-chrome 全數通過');
