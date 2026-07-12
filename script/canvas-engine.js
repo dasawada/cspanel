@@ -429,6 +429,16 @@ function resetPageJoins() {
 // 個別 surface 註冊一次（它不認得 page membership）。此函式在 wm 掛載後執行，
 // 把持久化 pages 的每個成員重新 joinMember（joinMember 內建「先拆個別註冊」
 // 的冪等路徑，故重覆呼叫安全），復原「成員不個別參與疊序」不變式。
+// 九期B Task 6：quirks 歸隊——IPsearch（'protected'，quirks:['server-markup']）
+// 的 rootSelector（.IPsearch_in_panelALL）markup 由 auth-protected-tabs.js 的
+// fetchProtectedContentWithRetry 在每次 initAllModules（登入）時 clear→重新
+// innerHTML 注入，DOM 節點因此每次登入都是全新實例；本函式呼叫時機（initAllModules
+// 內，await Promise.allSettled(...) 之後，即 protected.init 已完成、新 markup
+// 已存在）與 elFor()（每次都用 document.querySelector(rootSelector) 即時查
+// 詢，不快取節點參照）已足以泛化涵蓋這個情境——若 IPsearch 屬某 page，這裡會
+// 對「clear→init 重注入後的新節點」重新 joinMember，交給 pageHost.layout 歸隊，
+// 不需要額外程式碼（stub 環境無伺服器 markup，測試以罐頭＋consultant 覆蓋，見
+// page-engine-b-test.mjs G 區）。
 function hydratePageJoins() {
   if (!activeCanvas) return;
   const pages = readPages(activeCanvas.manifest.id);
