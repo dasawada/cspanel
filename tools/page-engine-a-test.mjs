@@ -209,10 +209,23 @@ await page.evaluate(() => window.CanvasEdit.toggle());
 A(await page.evaluate(() =>
   !document.documentElement.classList.contains('canvas-editing')), 'toggle 不進編輯模式（改重設 confirm）');
 
+// ===== E. 登出→再登入：hover 把手冪等重建（真實 lifecycle 事件路徑）=====
+const afterLogout = await page.evaluate(() => {
+  window.dispatchEvent(new CustomEvent('firework-logout-success'));
+  return document.querySelectorAll('.gl-hover-hot').length;
+});
+A(afterLogout === 0, `登出清空 hover 把手（實得 ${afterLogout}）`);
+await page.evaluate(() => window.dispatchEvent(new CustomEvent('firework-login-success')));
+await page.waitForFunction(() => document.querySelectorAll('.gl-hover-hot').length > 0, { timeout: 10000 });
+const dup = await page.evaluate(() =>
+  [...document.querySelectorAll('.gl-hover-hot')].some((h) => h.parentElement.querySelectorAll('.gl-hover-hot').length !== 1));
+A(!dup, '再登入冪等重建（每面板恰一組把手，無重複掛載）');
+
+// 最終隔離快照刻意放在 E 區之後：登出/登入整輪擾動也不得觸 v1 keys
 const v2PageV1After = await page.evaluate(() =>
   JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
     .map((k) => [k, localStorage.getItem(k)])));
-A(v1Snapshot === v2PageV1After, 'v1 keys 位元不變（隔離鐵律）');
+A(v1Snapshot === v2PageV1After, 'v1 keys 位元不變（隔離鐵律，含登出登入循環後）');
 
 await page.close();
 
