@@ -1,0 +1,5 @@
+/* ===== 圖形化視窗管理引擎（第九期）v2 頁專屬樣式 =====
+   只被 panel_all_v2.html 載入；production 頁不掛本檔。
+   把手視覺一律引用把手詞彙（draggable-chrome.css，§4.7），本檔只放
+   hover 浮現機制與 page 引擎專屬佈局。不寫 z-index（§4.2）、
+   不裸寫尺寸 px（§4.8，var fallback 除外）。 */

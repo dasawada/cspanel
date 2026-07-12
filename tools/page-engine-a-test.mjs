@@ -118,6 +118,48 @@ const win2b = await p2.evaluate((k) => localStorage.getItem(k), WIN_V2);
 A(!!win1b, `未設旗標時 window-manager 仍寫 .v1 key（got ${win1b}）`);
 A(win2b === null, `未設旗標時 .v2 key 從未被建立（got ${win2b}）`);
 
+// ===== 5. panel_all_v2.html：v2 頁載入、旗標、quirks、儲存隔離（真實頁面貫穿斷言）=====
+// 九期A 回歸：v2 平行頁（hover 把手基座）。
+console.log('— panel_all_v2.html：v2 旗標／quirks／儲存隔離 —');
+const BASE = process.env.PE_URL || 'http://localhost:8123';
+const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
+
+// 登入 stub（同 handle-chrome-test B 區）＋ order-tool-api 攔截
+await page.addInitScript(() => {
+  localStorage.setItem('firebase_id_token', 'parity-stub');
+  localStorage.setItem('cspanel.theme.v1', 'olive');
+  const fakeUser = { getIdToken: async () => 'parity-stub' };
+  window.firebase = {
+    apps: [{}], initializeApp: () => {},
+    auth: () => ({
+      onAuthStateChanged: (cb) => setTimeout(() => cb(fakeUser), 50),
+      currentUser: fakeUser, signOut: async () => {},
+      signInWithEmailAndPassword: async () => ({ user: fakeUser }),
+    }),
+    firestore: () => ({}),
+  };
+  window.verifyFireworkAuth = async () => true;
+});
+await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
+
+// ===== A. v2 頁載入與旗標 =====
+await page.goto(BASE + '/panel_all_v2.html');
+await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
+A(await page.evaluate(() => window.CSPANEL_ENGINE_V2 === true), 'v2 旗標生效');
+A(await page.evaluate(() => document.compatMode === 'BackCompat'), 'quirks mode 契約保留（無 DOCTYPE）');
+
+// ===== B. 儲存隔離：v2 頁操作不觸 v1 keys =====
+const v1Snapshot = await page.evaluate(() =>
+  JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
+    .map((k) => [k, localStorage.getItem(k)])));
+// （Task 3 會在此之後插入「拖曳一個面板」操作；骨架階段先驗載入本身不寫 v1）
+const v2PageV1After = await page.evaluate(() =>
+  JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
+    .map((k) => [k, localStorage.getItem(k)])));
+A(v1Snapshot === v2PageV1After, 'v1 keys 位元不變（隔離鐵律）');
+
+await page.close();
+
 const anyFail = fails.length > 0;
 await browser.close();
 if (anyFail) { console.error(`\n${fails.length} FAILURES`); process.exit(1); }
