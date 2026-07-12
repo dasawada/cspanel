@@ -131,6 +131,72 @@ await page.evaluate(() => {
   window.PageEngine.dissolve(pg.id);
 });
 
+// ===== E. 成組＋邊界回彈的視覺回歸（審查追加）=====
+// draggable.js 的 handleDragEnd 在 needsBounce 分支（拖出邊界回彈，hover-handle
+// 的 makeDraggable 呼叫未關 disableBoundary）會在 onPositionChange 呼叫「之後」
+// 排入一顆 BOUNCE_DURATION（300ms）的 setTimeout，無條件把 el.style.left/top
+// 覆寫回邊界修正後的落點——commitGroup 剛把面板放進目標 page 視窗（pageHostImpl.
+// layout 已寫入頁內座標）的成果會被那顆計時器蓋掉，面板放開 300ms 後彈出目標
+// 視窗外，即使 pages store 已正確記錄成員關係。本區段直接重現：把既有 page
+// 視窗搬到貼近視窗邊界，拖一顆自由面板到上面觸發「邊界回彈」與「成組」同時
+// 發生，驗證放開後面板最終仍留在目標視窗內容區（stack 模式下與內容區左緣
+// 對齊），而非停在回彈後的落點座標。
+console.log('— E. 成組＋邊界回彈：放開後不應被彈出目標視窗外 —');
+const pgId2 = await page.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));
+await page.waitForTimeout(200);
+const cornerRect = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  // 直接搬到視窗右下角、貼近邊界（僅供測試建構情境，不經 WindowManager 自身
+  // 的拖曳/resize API，不影響其內部狀態的持久化語意）。
+  win.style.left = '1300px';
+  win.style.top = '800px';
+  win.style.width = '550px';
+  win.style.height = '400px';
+  const content = win.querySelector('.wm-content').getBoundingClientRect();
+  return { left: content.left, top: content.top, right: content.right, bottom: content.bottom };
+}, pgId2);
+const roof2 = await page.locator('.roofbutton').boundingBox();
+await page.mouse.move(roof2.x + roof2.width / 2, roof2.y + 4);
+await page.mouse.down();
+// 落點刻意選在視窗邊界附近（1780,900，viewport 1800x1200）——同時滿足「與目標
+// page 視窗重疊 ≥0.4」與「拖曳面板自身觸發 draggable.js 邊界回彈」兩條件。
+await page.mouse.move((roof2.x + roof2.width / 2 + 1780) / 2, (roof2.y + 4 + 900) / 2, { steps: 6 });
+await page.mouse.move(1780, 900, { steps: 10 });
+await page.waitForSelector('.gl-group-preview', { timeout: 3000 });
+A(true, 'E: 邊界處仍可浮現成組預覽');
+await page.waitForTimeout(600);
+await page.mouse.up();
+await page.waitForTimeout(300);
+const e1 = await page.evaluate((id) => {
+  const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  const pg = pgs.find((p) => p.id === id);
+  return pg ? pg.members.map((m) => m.panelId) : [];
+}, pgId2);
+A(e1.includes('roof'), `E: 邊界處放開仍成組（members=${e1.join(',')}）`);
+// 500ms：跨過 draggable.js 的 BOUNCE_DURATION(300ms) 與本檔修復的重新斷言延遲，
+// 讓畫面完全落定（含 CSS transition 播放完畢）後再讀取最終視覺位置。
+await page.waitForTimeout(500);
+const e2 = await page.evaluate(() => {
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+A(Math.abs(e2.left - cornerRect.left) < 3,
+  `E: 300ms 回彈計時器後仍與目標視窗內容區左緣對齊（roofLeft=${e2.left.toFixed(1)}, contentLeft=${cornerRect.left}）`);
+// 冪等性檢查：settled 狀態應已等於 canonical layout 輸出——手動再補跑一次
+// syncPanes() 不該再改變位置。若本檔修復失效（回彈計時器蓋掉座標後未被
+// 重新斷言），e2 會停在錯誤的落點值，這裡手動 syncPanes() 校正後的 e3
+// 會與 e2 出現落差，直接暴露 e2 當下是錯的。
+const e3 = await page.evaluate(() => {
+  window.WindowManager.syncPanes();
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+A(Math.abs(e2.left - e3.left) < 1 && Math.abs(e2.top - e3.top) < 1,
+  `E: settled 位置已是 canonical layout，無需再手動 syncPanes 才正確（Δ=(${(e2.left - e3.left).toFixed(1)},${(e2.top - e3.top).toFixed(1)})）`);
+// 清場
+await page.evaluate((id) => window.PageEngine.dissolve(id), pgId2);
+
 await page.close();
 
 const anyFail = fails.length > 0;
