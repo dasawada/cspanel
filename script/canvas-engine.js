@@ -5,6 +5,11 @@ import { makeDraggable } from './draggable.js';
 import { stack } from './stack-manager.js';
 
 const LAYOUT_KEY = (canvasId, ver = 'v1') => `cspanel.layout.${canvasId}.${ver}`;
+// 九期B Task 3：pages store 固定 `.v1` 尾碼——不比照 layout/windows/stack 隨
+// storageVersion 分流。理由：pages 是全新 schema（v1 引擎從未寫過、也不會讀），
+// 沒有既有 v1 資料需要隔離；PageEngine 本身即 v2 模式限定（pageEngine 關閉時
+// window.PageEngine 的所有函式一律安全 no-op），單一固定 key 已足夠（spec §7）。
+const PAGES_KEY = (canvasId) => `cspanel.pages.${canvasId}.v1`;
 
 let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false, config }
 
@@ -196,9 +201,16 @@ async function initAllModules() {
     if (wmHost && !window.WindowManager) {
       try {
         const { mountWindowManager } = await import('./window-manager.js');
-        mountWindowManager(wmHost, { canvasId: activeCanvas.manifest.id, isPageId: activeCanvas.config.isPageId });
+        // 九期B Task 3：isPageId／pageHost 掛點——isKnownPageId 查 pages store
+        // （loadWindows 淨化用）；pageHostImpl 是 getTitle/layout/onPageEmpty 的
+        // 引擎端實作（wm 不懂面板，全部經此委派，見 window-manager.js 檔頭註解）。
+        mountWindowManager(wmHost, { canvasId: activeCanvas.manifest.id, isPageId: isKnownPageId, pageHost: pageHostImpl });
       } catch (e) { console.error('WindowManager 核心掛載失敗:', e); }
     }
+    // 每次登入（含重新整理已登入態）都跑：registerPanelStack() 剛把「目前是
+    // page 成員」的面板當成個別 surface 重新註冊過一輪，這裡把持久化 pages
+    // store 記得的成員關係重新 joinMember 回去，復原分組疊序不變式。
+    hydratePageJoins();
   }
   attachHoverHandles();
   broadcastAuthState('login-ready');
@@ -222,8 +234,11 @@ function clearAllModules() {
   // 九期B Task 2：對稱 initAllModules 的無條件核心掛載——v2 模式下 wm 生命權在
   // canvas-engine，登出時一併拆除。v1 模式：destroy 仍由 clearProtectedTabs 呼叫
   // 既有的 windowManager 參照（此處 config.pageEngine 恆 false，完全不進這個分支）。
-  if (activeCanvas.config.pageEngine && window.WindowManager) {
-    try { window.WindowManager.destroy(); } catch (e) { console.error('WindowManager destroy 失敗:', e); }
+  if (activeCanvas.config.pageEngine) {
+    resetPageJoins(); // 卸除入組監聽器（不清 pages store——持久化跨登出保留，見 spec §7）
+    if (window.WindowManager) {
+      try { window.WindowManager.destroy(); } catch (e) { console.error('WindowManager destroy 失敗:', e); }
+    }
   }
   detachHoverHandles();
   unregisterPanelStack();
@@ -258,6 +273,270 @@ function unregisterPanelStack() {
   });
   stackRaisers.length = 0;
 }
+
+// ===== 九期B Task 3：page 模型＋pageHost 介面 =====
+// pages store：純資料陣列，讀寫皆走 PAGES_KEY（固定 .v1，見上）。v2 模式限定
+// （pageEngineOn() 為 false 時所有 PageEngine 函式安全 no-op，不讀寫此 key）。
+function readPages(canvasId) {
+  try {
+    const raw = localStorage.getItem(PAGES_KEY(canvasId));
+    if (!raw) return [];
+    const arr = JSON.parse(raw);
+    return Array.isArray(arr) ? arr : [];
+  } catch (e) { return []; }
+}
+function writePages(canvasId, pages) {
+  try { localStorage.setItem(PAGES_KEY(canvasId), JSON.stringify(pages)); } catch (e) { /* 吞錯，不阻斷互動 */ }
+}
+let pageIdSeq = 0;
+function genPageId() {
+  pageIdSeq += 1;
+  return 'pg:' + Date.now().toString(36) + pageIdSeq.toString(36) + Math.random().toString(36).slice(2, 6);
+}
+function pageEngineOn() { return !!activeCanvas?.config?.pageEngine; }
+function getPage(pageId) {
+  if (!activeCanvas) return null;
+  return readPages(activeCanvas.manifest.id).find((pg) => pg.id === pageId) || null;
+}
+function isKnownPageId(id) { return !!getPage(id); }
+function removePageFromStore(pageId) {
+  if (!activeCanvas) return null;
+  const canvasId = activeCanvas.manifest.id;
+  const pages = readPages(canvasId);
+  const idx = pages.findIndex((pg) => pg.id === pageId);
+  if (idx === -1) return null;
+  const [page] = pages.splice(idx, 1);
+  writePages(canvasId, pages);
+  return page;
+}
+function labelFor(panelId) {
+  const p = activeCanvas?.manifest?.panels.find((x) => x.id === panelId);
+  return (p && (p.label || p.id)) || panelId;
+}
+function computeTitle(memberIds) { return memberIds.map(labelFor).join('・'); }
+function elFor(panelId) {
+  const p = activeCanvas?.manifest?.panels.find((x) => x.id === panelId);
+  return p && p.rootSelector ? document.querySelector(p.rootSelector) : null;
+}
+function spaceGapPx() {
+  const v = getComputedStyle(document.documentElement).getPropertyValue('--space-4');
+  const n = parseFloat(v);
+  return Number.isFinite(n) ? n : 8; // 8px 為 tokens.css --space-4 現值，供 token 讀取失敗時降級
+}
+
+// 成員入組期間：自 stack-manager 個別疊序身分退場（拆 registerPanelStack 掛的
+// pointerdown raiser＋stack.unregister），改掛「點擊＝置頂宿主視窗」監聽器。
+// hostWinId 僅為初始值——raiseHandler 每次觸發都透過 WindowManager.findWindowForTab
+// 動態查目前所屬視窗（頁可能已被拖去合併/撕離，Task 4/7 場景），避免存活期間
+// 積累的 stale 參照。panelId -> { el, raiseHandler, pageId }。
+const pageJoins = new Map();
+function joinMember(panelId, pageId, hostWinId) {
+  const el = elFor(panelId);
+  if (!el) return;
+  const existing = pageJoins.get(panelId);
+  if (existing) el.removeEventListener('pointerdown', existing.raiseHandler, true); // 防呆：重複 join（addMember 冪等路徑）
+  const raiserIdx = stackRaisers.findIndex((r) => r.id === panelId);
+  if (raiserIdx !== -1) {
+    const r = stackRaisers[raiserIdx];
+    r.el.removeEventListener('pointerdown', r.handler, true);
+    stackRaisers.splice(raiserIdx, 1);
+  }
+  stack.unregister(panelId);
+  const raiseHandler = () => {
+    const wm = window.WindowManager;
+    const winId = (wm && typeof wm.findWindowForTab === 'function' && wm.findWindowForTab(pageId)) || hostWinId;
+    if (winId) stack.raise(winId);
+    // 成員自身的 --stack-rank 不隨 stack.raise 自動更新（它不是 stack-manager
+    // 認得的 pane 參照——一個宿主視窗對多名成員，非 1:1）；raise 後立即重跑
+    // syncPanes()（同步、非 rAF 節流）讓 pageHost.layout 重新讀取宿主最新
+    // rank 蓋回成員，點擊成員置頂才會「看起來」也置頂。
+    if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+  };
+  el.addEventListener('pointerdown', raiseHandler, true);
+  pageJoins.set(panelId, { el, raiseHandler, pageId });
+}
+// 退組：卸除 join 監聽器＋清成員身上由 layout() 寫入的定位/疊序 inline 樣式
+// （回歸 canvas-geometry 樣式表或 manifest 預設幾何），重新掛回個別 stack 疊序
+// 身分（比照 registerPanelStack 的註冊形狀）。
+function leaveMember(panelId) {
+  const join = pageJoins.get(panelId);
+  if (!join) return;
+  join.el.removeEventListener('pointerdown', join.raiseHandler, true);
+  pageJoins.delete(panelId);
+  const el = join.el;
+  el.style.removeProperty('left');
+  el.style.removeProperty('top');
+  el.style.removeProperty('display');
+  el.classList.remove('gl-stack-pane', 'is-stack-top');
+  el.style.removeProperty('--stack-rank');
+  const manifestEntry = activeCanvas?.manifest?.panels.find((p) => p.id === panelId);
+  if (manifestEntry && manifestEntry.rootSelector) {
+    stack.register(panelId, el, {});
+    const handler = () => stack.raise(panelId);
+    el.addEventListener('pointerdown', handler, true);
+    stackRaisers.push({ el, handler, id: panelId });
+  }
+}
+// 登出：卸除所有入組監聽器（不清 pages store——持久化跨登出保留，見 spec §7）。
+function resetPageJoins() {
+  pageJoins.forEach((join) => join.el.removeEventListener('pointerdown', join.raiseHandler, true));
+  pageJoins.clear();
+}
+// 重新登入／頁面已登入時：pages store 是持久化的（跨登出保留），但
+// registerPanelStack() 每次登入都會把「目前是 page 成員」的面板重新當成
+// 個別 surface 註冊一次（它不認得 page membership）。此函式在 wm 掛載後執行，
+// 把持久化 pages 的每個成員重新 joinMember（joinMember 內建「先拆個別註冊」
+// 的冪等路徑，故重覆呼叫安全），復原「成員不個別參與疊序」不變式。
+function hydratePageJoins() {
+  if (!activeCanvas) return;
+  const pages = readPages(activeCanvas.manifest.id);
+  if (!pages.length) return;
+  const wm = window.WindowManager;
+  for (const page of pages) {
+    const winId = wm && typeof wm.findWindowForTab === 'function' ? wm.findWindowForTab(page.id) : null;
+    for (const m of page.members) joinMember(m.panelId, page.id, winId);
+  }
+  if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+}
+
+// pageHost 委派介面（wm 不懂面板，全部經此委派給引擎——見 window-manager.js
+// mountWindowManager 的 opts.pageHost）。
+const pageHostImpl = {
+  getTitle(pageId) {
+    const page = getPage(pageId);
+    return page ? page.name : '';
+  },
+  // contentRect：{ left, top, width, height }（viewport 座標，wm 傳作用中視窗
+  // .wm-content 的 getBoundingClientRect）｜null（非作用中，全成員隱藏）。
+  layout(pageId, contentRect, hostWin) {
+    const page = getPage(pageId);
+    if (!page) return;
+    if (!contentRect) {
+      for (const m of page.members) {
+        const el = elFor(m.panelId);
+        if (el) el.style.display = 'none';
+      }
+      return;
+    }
+    const rankRaw = hostWin ? hostWin.style.getPropertyValue('--stack-rank') : '';
+    const rank = rankRaw ? rankRaw.trim() : '';
+    let y = 0;
+    for (const m of page.members) {
+      const el = elFor(m.panelId);
+      if (!el) continue;
+      el.style.display = '';
+      el.classList.add('gl-stack-pane');
+      if (rank !== '') el.style.setProperty('--stack-rank', rank);
+      // 定位數學：目前 offsetLeft/Top（相對 offsetParent，對任何 containing
+      // block 皆成立，含 body-mounted 罐頭）＋（目標視口座標－目前 getBoundingClientRect）。
+      const rect = el.getBoundingClientRect();
+      let targetX, targetY;
+      if (page.layoutMode === 'free' && m.rect) {
+        targetX = contentRect.left + m.rect.x;
+        targetY = contentRect.top + m.rect.y;
+      } else {
+        // stack 模式：依 members 陣列序垂直排，y 累加成員高度＋var(--space-4) 間距，
+        // 成員維持原寬（不寫 width）。
+        targetX = contentRect.left;
+        targetY = contentRect.top + y;
+        y += rect.height + spaceGapPx();
+      }
+      el.style.left = (el.offsetLeft + (targetX - rect.left)) + 'px';
+      el.style.top = (el.offsetTop + (targetY - rect.top)) + 'px';
+    }
+  },
+  onPageEmpty(pageId) {
+    const page = removePageFromStore(pageId);
+    if (!page) return;
+    for (const m of page.members) leaveMember(m.panelId);
+  },
+};
+
+// ===== window.PageEngine（v2 模式限定；v1 模式下所有函式安全 no-op）=====
+function pgCreate(members, opts) {
+  if (!pageEngineOn() || !Array.isArray(members)) return null;
+  const ids = members.filter((id) => elFor(id) && !pageJoins.has(id));
+  if (ids.length < 2) return null; // 至少兩員才成頁（單員無分組意義，呼應 spec §3.4 剩一解散）
+  const canvasId = activeCanvas.manifest.id;
+  const id = genPageId();
+  const page = {
+    id,
+    name: computeTitle(ids),
+    members: ids.map((panelId) => ({ panelId, rect: null })),
+    layoutMode: (opts && opts.layoutMode === 'free') ? 'free' : 'stack',
+  };
+  const pages = readPages(canvasId);
+  pages.push(page);
+  writePages(canvasId, pages);
+  let winId = null;
+  if (window.WindowManager && typeof window.WindowManager.createPageWindow === 'function') {
+    winId = window.WindowManager.createPageWindow(id, opts && opts.rect);
+  }
+  for (const panelId of ids) joinMember(panelId, id, winId);
+  return id;
+}
+function pgAddMember(pageId, panelId) {
+  if (!pageEngineOn()) return false;
+  const canvasId = activeCanvas.manifest.id;
+  const pages = readPages(canvasId);
+  const page = pages.find((pg) => pg.id === pageId);
+  if (!page) return false;
+  if (page.members.some((m) => m.panelId === panelId)) return true; // 已是成員，冪等
+  const el = elFor(panelId);
+  if (!el) return false;
+  page.members.push({ panelId, rect: null });
+  page.name = computeTitle(page.members.map((m) => m.panelId));
+  writePages(canvasId, pages);
+  const wm = window.WindowManager;
+  const winId = wm && typeof wm.findWindowForTab === 'function' ? wm.findWindowForTab(pageId) : null;
+  joinMember(panelId, pageId, winId);
+  if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+  return true;
+}
+function pgRemoveMember(pageId, panelId) {
+  if (!pageEngineOn()) return false;
+  const canvasId = activeCanvas.manifest.id;
+  const pages = readPages(canvasId);
+  const idx = pages.findIndex((pg) => pg.id === pageId);
+  if (idx === -1) return false;
+  const page = pages[idx];
+  const memberIdx = page.members.findIndex((m) => m.panelId === panelId);
+  if (memberIdx === -1) return false;
+  page.members.splice(memberIdx, 1);
+  if (page.members.length <= 1) {
+    // 剩一員（或零）→ 整頁自動解散：連同最後一員一起回畫布、page 與其 tab 移除（spec §3.4）。
+    leaveMember(panelId);
+    for (const m of page.members) leaveMember(m.panelId);
+    pages.splice(idx, 1);
+    writePages(canvasId, pages);
+    if (window.WindowManager && typeof window.WindowManager.removePageTab === 'function') {
+      window.WindowManager.removePageTab(pageId);
+    }
+    return true;
+  }
+  page.name = computeTitle(page.members.map((m) => m.panelId));
+  writePages(canvasId, pages);
+  leaveMember(panelId);
+  const wm = window.WindowManager;
+  if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+  return true;
+}
+function pgDissolve(pageId) {
+  if (!pageEngineOn()) return false;
+  const page = removePageFromStore(pageId);
+  if (!page) return false;
+  for (const m of page.members) leaveMember(m.panelId);
+  if (window.WindowManager && typeof window.WindowManager.removePageTab === 'function') {
+    window.WindowManager.removePageTab(pageId);
+  }
+  return true;
+}
+function pgGet(pageId) { return pageEngineOn() ? getPage(pageId) : null; }
+function pgList() { return (pageEngineOn() && activeCanvas) ? readPages(activeCanvas.manifest.id) : []; }
+window.PageEngine = {
+  create: pgCreate, addMember: pgAddMember, removeMember: pgRemoveMember,
+  dissolve: pgDissolve, get: pgGet, list: pgList,
+};
 
 // ===== 編輯模式 =====
 const editState = { detachers: [] };

@@ -63,6 +63,37 @@ A(await page.evaluate(() => !!window.WindowManager && typeof window.WindowManage
 // ——parity stub 不含 protectedContent，故此處斷言為「零 tab 啟動不炸」＋ hasTabs() 反映實況）
 A(await page.evaluate(() => typeof window.WindowManager.hasTabs === 'function'), 'hasTabs API 存在');
 
+// ===== C. page 資料流（API 驅動；手勢在 D 區）=====
+console.log('— C. page 資料流（API 驅動）—');
+const pgId = await page.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));
+A(typeof pgId === 'string' && pgId.startsWith('pg:'), `PageEngine.create 回 pg: id（${pgId}）`);
+await page.waitForTimeout(200);
+const c1 = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const content = win.querySelector('.wm-content').getBoundingClientRect();
+  const o = document.querySelector('.optitlepanel').getBoundingClientRect();
+  const f = document.querySelector('.fudausearch-container').getBoundingClientRect();
+  return {
+    title: win.querySelector(`.wm-tab[data-tab="${CSS.escape(id)}"]`).textContent,
+    optIn: o.top >= content.top - 1 && o.left >= content.left - 1,
+    stackBelow: f.top >= o.bottom - 1, // 垂直依序
+    persisted: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 1,
+  };
+}, pgId);
+A(c1.title.includes('標題生成') && c1.title.includes('職代查詢'), `page tab 標題串接（${c1.title}）`);
+A(c1.optIn, '成員定位進視窗內容區');
+A(c1.stackBelow, 'stack 模式垂直依序排列');
+A(c1.persisted, 'pages store 持久化');
+// 切走 tab（若同視窗有其他 tab）→ 成員隱藏；此 stub 環境 page 視窗只有一顆 tab，
+// 改驗 dissolve：
+await page.evaluate((id) => window.PageEngine.dissolve(id), pgId);
+await page.waitForTimeout(200);
+A(await page.evaluate(() =>
+  getComputedStyle(document.querySelector('.optitlepanel')).display !== 'none' &&
+  JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 0),
+  'dissolve：成員回畫布、store 清空');
+
 await page.close();
 
 const anyFail = fails.length > 0;
