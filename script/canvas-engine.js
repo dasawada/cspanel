@@ -4,9 +4,14 @@
 import { makeDraggable } from './draggable.js';
 import { stack } from './stack-manager.js';
 
-const LAYOUT_KEY = (canvasId) => `cspanel.layout.${canvasId}.v1`;
+const LAYOUT_KEY = (canvasId, ver = 'v1') => `cspanel.layout.${canvasId}.${ver}`;
 
-let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false }
+let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false, config }
+
+// 九期A：儲存版本（v1/v2）一律以 activeCanvas.config.storageVersion 為準（loadCanvas
+// 正規化寫入），未設定（尚未 loadCanvas，或呼叫端沒傳 config）預設 'v1' —— production
+// （panel_all.html 不傳 config）因此永遠讀寫 .v1 key，行為零變化。
+function layoutVer() { return activeCanvas?.config?.storageVersion || 'v1'; }
 
 // ===== 全域認證狀態管理（原 mediator:20-88 逐字，僅 log 前綴 Mediator→Engine） =====
 let globalAuthInterceptor = null;
@@ -114,9 +119,9 @@ function buildSlots(manifest) {
 }
 
 // ===== 幾何注入（manifest 座標 + 使用者佈局覆蓋） =====
-function readLayout(canvasId) {
+function readLayout(canvasId, ver) {
   try {
-    const raw = localStorage.getItem(LAYOUT_KEY(canvasId));
+    const raw = localStorage.getItem(LAYOUT_KEY(canvasId, ver));
     if (!raw) return {};
     const obj = JSON.parse(raw);
     return (obj && typeof obj === 'object') ? obj : {};
@@ -233,10 +238,13 @@ function panelRoots(manifest) {
     .map((p) => ({ p, el: document.querySelector(p.rootSelector) }))
     .filter((x) => x.el);
 }
-function saveLayoutEntry(canvasId, panelId, pos) {
-  const layout = readLayout(canvasId);
+// ver 可選——預設 layoutVer()（讀 activeCanvas.config）；loadCanvas 內 activeCanvas
+// 尚未設好前呼叫（canned 舊 key 一次性遷移）需顯式傳 engineConfig.storageVersion，
+// 否則會落回預設 'v1'，違反 v2 頁儲存隔離鐵律。
+function saveLayoutEntry(canvasId, panelId, pos, ver = layoutVer()) {
+  const layout = readLayout(canvasId, ver);
   layout[panelId] = { x: pos.left, y: pos.top };
-  try { localStorage.setItem(LAYOUT_KEY(canvasId), JSON.stringify(layout)); } catch (e) {}
+  try { localStorage.setItem(LAYOUT_KEY(canvasId, ver), JSON.stringify(layout)); } catch (e) {}
 }
 export function enterEditMode() {
   if (!activeCanvas || activeCanvas.editing) return;
@@ -269,12 +277,12 @@ export function exitEditMode() {
   document.documentElement.classList.remove('canvas-editing');
   editState.detachers.forEach((fn) => fn());
   editState.detachers = [];
-  emitGeometry(activeCanvas.manifest, readLayout(activeCanvas.manifest.id));
+  emitGeometry(activeCanvas.manifest, readLayout(activeCanvas.manifest.id, layoutVer()));
   for (const { el } of panelRoots(activeCanvas.manifest)) { el.style.left = ''; el.style.top = ''; }
 }
 export function resetLayout() {
   if (!activeCanvas) return;
-  try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id)); } catch (e) {}
+  try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id, layoutVer())); } catch (e) {}
   // 同時清掉 canned 的舊版 per-panel key，否則「重設」對話術面板不完整
   // （見 loadCanvas 的一次性遷移邏輯）。已知行為：canned 目前畫面位置在
   // 面板存續期間由 draggable.js 自己的 inline left/top 主導，此處刪 key
@@ -318,7 +326,11 @@ window.CanvasEdit = {
 };
 
 // ===== 入口 =====
-export async function loadCanvas(manifest) {
+export async function loadCanvas(manifest, config = {}) {
+  // 九期A：引擎設定參數化。呼叫端不傳 config（production panel_all.html 現況）→
+  // 全走 v1 預設，行為與改動前逐位元相同。storageVersion 決定 layout/stack/windows
+  // 三個 schema 的 key 尾碼命名空間（見 layoutVer()、stack-manager.js、window-manager.js）。
+  const engineConfig = { pageEngine: false, storageVersion: 'v1', ...config };
   const problems = validateManifest(manifest);
   if (problems.length) {
     console.warn('Engine: manifest 異常，問題面板將被跳過', problems.map((p) => p.reason));
@@ -333,13 +345,15 @@ export async function loadCanvas(manifest) {
   // 話術面板（canned）舊版每頁獨立 storage key 一次性遷移入統一 layout
   // （不刪舊 key——canned 自身仍以 quirks:['self-persisted'] 走原本機制）
   const oldCanned = localStorage.getItem(`draggable:${location.pathname}:canned-panel-main`);
-  if (oldCanned && !readLayout(manifest.id).canned) {
+  // activeCanvas 尚未賦值（見下方），layoutVer() 此刻無從得知本次 config，故兩處
+  // readLayout 呼叫與 saveLayoutEntry 的 ver 皆顯式傳 engineConfig.storageVersion。
+  if (oldCanned && !readLayout(manifest.id, engineConfig.storageVersion).canned) {
     try {
       const p = JSON.parse(oldCanned);
-      saveLayoutEntry(manifest.id, 'canned', { left: p.left, top: p.top });
+      saveLayoutEntry(manifest.id, 'canned', { left: p.left, top: p.top }, engineConfig.storageVersion);
     } catch (e) {}
   }
-  const layout = readLayout(manifest.id);
+  const layout = readLayout(manifest.id, engineConfig.storageVersion);
   const cannedPanel = manifest.panels.find((x) => x.id === 'canned');
   if (layout.canned && cannedPanel) {
     cannedPanel.initArgs = [null, { left: layout.canned.x, top: layout.canned.y }];
@@ -347,7 +361,7 @@ export async function loadCanvas(manifest) {
 
   emitGeometry(manifest, layout);
   const mods = await loadModules(manifest);
-  activeCanvas = { manifest, mods, editing: false };
+  activeCanvas = { manifest, mods, editing: false, config: engineConfig };
 
   window.addEventListener('firework-login-success', () => { initAllModules(); });
   window.addEventListener('firework-logout-success', () => { exitEditMode(); clearAllModules(); });
