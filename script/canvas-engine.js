@@ -339,6 +339,14 @@ window.CanvasEdit = {
 };
 
 // ===== 九期A：hover 浮現把手（pageEngine 模式；隨時可拖，取代編輯模式）=====
+// ===== 九期B Task 1：零位移不寫 layout ＋ dragTelemetry 鉤子 =====
+// draggable.js 零改動——位移判定與拖曳遙測全在引擎側計算/記錄。
+export const ENGINE_DRAG_THRESHOLD = 6; // px：與拖曳起點位移小於此值視為零位移點擊，不寫 layout。
+// 目前拖曳中面板：{ panelId, el } | null。存 el（而非一次性 rect 快照）是刻意
+// 選擇——Task 4 的重疊偵測在 rAF 節流回呼中自行 el.getBoundingClientRect()，
+// 存 el 才能每次讀到「即時」（而非拖曳起點凍結）的 rect；只有一根滑鼠/觸點能
+// 同時拖曳，模組級單例狀態足夠，不需 per-panel 隔離。
+let dragTelemetry = null;
 const hoverState = { detachers: [] };
 function attachHoverHandles() {
   if (!activeCanvas?.config?.pageEngine) return;
@@ -353,14 +361,31 @@ function attachHoverHandles() {
     // 熱區與把手帶都是拖曳表面：兩者對同一 panel 各綁一次 makeDraggable 會產生
     // 兩份獨立 dragState——改為把 pointerdown 從熱區轉發到把手帶（把手帶為唯一
     // 綁定點），熱區只負責「常駐可按」與浮現觸發。
+    // startLeft/startTop：down 時的 offset（與 draggable.js 內部 dragState.elementX/Y
+    // 同一座標系、同一取值公式），供 onPositionChange 計算「與拖曳起點位移」用。
+    let startLeft = 0, startTop = 0;
+    const onHandleDown = () => {
+      dragTelemetry = { panelId: p.id, el };
+      startLeft = el.style.left ? parseInt(el.style.left, 10) : el.offsetLeft;
+      startTop = el.style.top ? parseInt(el.style.top, 10) : el.offsetTop;
+    };
+    handle.addEventListener('pointerdown', onHandleDown);
     const detach = makeDraggable(el, handle, {
       persist: false,
-      onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
+      onPositionChange: (pos) => {
+        // 結束時機（回彈與直接兩路徑皆會呼叫一次，涵蓋 blur/visibilitychange
+        // 觸發的 handleDragEnd）——dragTelemetry 在此收尾，不留殘留狀態。
+        dragTelemetry = null;
+        const moved = Math.hypot(pos.left - startLeft, pos.top - startTop);
+        if (moved < ENGINE_DRAG_THRESHOLD) return; // 零位移點擊不寫 layout（九期A 審查歸位）
+        saveLayoutEntry(activeCanvas.manifest.id, p.id, pos);
+      },
     });
     const forward = (e) => { handle.dispatchEvent(new PointerEvent('pointerdown', e)); e.preventDefault(); };
     hot.addEventListener('pointerdown', forward);
     hoverState.detachers.push(() => {
       hot.removeEventListener('pointerdown', forward);
+      handle.removeEventListener('pointerdown', onHandleDown);
       detach(); hot.remove(); handle.remove();
     });
   }
