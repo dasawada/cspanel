@@ -1,0 +1,40 @@
+/* ===== 把手詞彙（第八期）=====
+   全站「可拖帶子」視覺唯一來源（比照 capsule.css / scrollbar.css 單一輪子；
+   契約見 CANVAS.md §4.7）。行為歸 script/draggable.js——本檔由它 runtime 注入
+   <link>（data-draggable-chrome 為冪等鍵），panel_all 另有靜態 link 先行。
+   token 皆帶 fallback：未載 tokens.css 的獨立頁（新增資料夾/轉單小工具.html）
+   亦可用。本檔不寫 z-index（§4.2）、不設字重/字色/對齊（歸消費者——
+   否則會繼承進 wm 藥丸 tab）。 */
+
+.draggable-handle {
+    box-sizing: border-box;
+    height: var(--handle-h, 36px);
+    display: flex;
+    align-items: center;
+    padding: var(--space-2, 4px) var(--space-4, 8px);
+    border-radius: var(--radius-md, 12px) var(--radius-md, 12px) 0 0;
+    background: transparent;
+    cursor: grab;
+    user-select: none;
+    transition: background 0.15s ease-out; /* 沿 wm-tabbar 既有節奏（四期上線先例） */
+}
+.draggable-handle:hover {
+    background: color-mix(in srgb, var(--fg, #1d1d1f) 7%, transparent); /* wm 的「可拖暗示」升為全站 */
+}
+.draggable-handle:active { cursor: grabbing; }
+
+/* 拖曳中：面板浮起（原 draggable.js 注入樣式逐字），把手 accent 漸層
+   （原 options.color 那條 per-color 規則升為預設；配方同 canvas-edit.css
+   的 .gl-edit-handle——兩者刻意同源）。 */
+.draggable-dragging {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    opacity: 0.95;
+    cursor: grabbing;
+}
+.draggable-dragging .draggable-handle {
+    background: linear-gradient(180deg,
+        color-mix(in srgb, var(--accent, #3a3a3c) 30%, white),
+        color-mix(in srgb, var(--accent, #3a3a3c) 14%, white));
+    color: var(--accent-hover, #1d1d1f);
+    cursor: grabbing;
+}

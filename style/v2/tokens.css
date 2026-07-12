@@ -97,6 +97,7 @@
   --control-pad-y: 3px;             /* button 垂直內距 */
   --control-pad-x: var(--space-4);  /* button 水平內距 8px */
   --control-radius: 9px;            /* button 圓角 */
+  --handle-h: 36px;                 /* 可拖把手帶高度（draggable-chrome.css 唯一消費者） */
   --input-pad-y: var(--space-2);    /* 輸入框垂直內距 4px */
   --input-pad-x: var(--space-4);    /* 輸入框水平內距 8px */
   --input-radius: var(--radius-sm); /* 輸入框圓角 8px */

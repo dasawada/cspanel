@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html><head><meta charset="utf-8"><title>handle-chrome fixture</title>
+<style>
+  body { margin: 0; height: 1200px; }
+  .pnl { position: absolute; width: 300px; background: #eee; }
+</style>
+</head><body>
+<div id="pnl" class="pnl" style="left:40px; top:40px;">
+  <div id="h">把手A</div>
+  <div>內容</div>
+</div>
+<div id="pnl2" class="pnl" style="left:400px; top:40px;">
+  <div id="h2">把手B</div>
+</div>
+<script type="module">
+  import { makeDraggable } from '/script/draggable.js';
+  makeDraggable(document.getElementById('pnl'), document.getElementById('h'), { persist: false });
+  makeDraggable(document.getElementById('pnl2'), document.getElementById('h2'), { persist: false });
+  window.__fixtureReady = true;
+</script>
+</body></html>

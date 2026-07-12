@@ -1,11 +1,10 @@
 /**
- * 讓指定元素可拖曳，彼此互不影響，並自動套用拖曳樣式
+ * 讓指定元素可拖曳，彼此互不影響。視覺由 style/v2/draggable-chrome.css
+ * （把手詞彙單一來源，第八期）供給——本模組只確保該樣式表已載入
+ * （注入 <link data-draggable-chrome>，冪等），自身不再內嵌任何 CSS。
  * @param {HTMLElement} panel  要拖曳的主體元素
  * @param {HTMLElement} handle 拖曳把手（可選，預設整個 panel 可拖曳）
- * @param {Object} options     { left, top, width, height, color, boundaryElement, updateBoundary, disableBoundary, onPositionChange, persist }
- *   color: 若提供，handle 拖曳中會加上主題 class；實際顏色一律套用全域
- *   --accent / --accent-hover token 衍生的漸層（不再依 color 的字面值渲染色相），
- *   color 值僅用來產生穩定的 class 名稱。
+ * @param {Object} options     { left, top, width, height, boundaryElement, updateBoundary, disableBoundary, onPositionChange, persist }
  *   onPositionChange({left, top}): 拖曳結束（回彈與直接兩路徑皆會呼叫一次）時的回呼。
  *   persist: 預設 true（未傳等同 true）。false 時略過本模組自身的
  *   per-panel localStorage 初始還原/寫入與初始 inline left/top 設定，交由
@@ -15,67 +14,16 @@
 export function makeDraggable(panel, handle, options = {}) {
   handle = handle || panel;
 
-  // 自動注入通用拖曳樣式（只注入一次）
-  if (!window.__draggableStyleInjected) {
-    const style = document.createElement('style');
-    style.textContent = `
-.draggable-handle {
-  padding: 5px 10px;
-  border-radius: 10px 10px 0 0;
-  text-align: left;
-  font-weight: bold;
-  cursor: grab;
-  user-select: none;
-}
-.draggable-handle:active { cursor: grabbing; }
-.draggable-dragging {
-  box-shadow: 0 4px 20px rgba(0,0,0,0.3);
-  opacity: 0.95;
-  cursor: grabbing;
-}
-.draggable-dragging .draggable-handle {
-  background: linear-gradient(
-    180deg,
-    #f0f0f0 0%,
-    #d6d6d6 40%,
-    #ffffff 100%
-  );
-  box-shadow: inset 0 1px 3px rgba(255,255,255,0.8);
-  cursor: grabbing;
-}
-`;
-    document.head.appendChild(style);
-    window.__draggableStyleInjected = true;
+  // 確保把手詞彙樣式表已載入（單一來源：style/v2/draggable-chrome.css）。
+  // 以 import.meta.url 解析——不論頁面在哪個目錄（tools/、新增資料夾/）皆正確。
+  // panel_all.html 已靜態 link（帶同一 data 屬性），此處查無才注入，冪等。
+  if (!document.querySelector('link[data-draggable-chrome]')) {
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = new URL('../style/v2/draggable-chrome.css', import.meta.url);
+    link.setAttribute('data-draggable-chrome', '');
+    document.head.appendChild(link);
   }
-
-  // === options.color 僅作為 handle 主題 class 的識別字；實際顏色一律
-  // 套用全域 --accent token 衍生的漸層（登入後由 theme.js 主題化，未登入
-  // 時為單色基準），不再硬編碼特定色相。
-  // 還原自 main:script/draggable.js 的原始把手漸層（拖曳中 180deg、
-  // 由飽和色過渡到近透明的直向漸層），僅將色相來源換成 --accent token：
-  //   原始： linear-gradient(180deg, ${color} 0%, ${color}22 100%)
-  //   現在： linear-gradient(180deg, color-mix(...accent 30%...), color-mix(...accent 14%...))
-  if (options.color) {
-    const colorCode = String(options.color).replace('#', '').toLowerCase();
-    const themeClass = `draggable-handle-theme-${colorCode}`;
-    if (!document.querySelector(`style[data-draggable-theme="${themeClass}"]`)) {
-      const style = document.createElement('style');
-      style.setAttribute('data-draggable-theme', themeClass);
-      style.textContent = `
-.draggable-dragging .${themeClass} {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 30%, white),
-    color-mix(in srgb, var(--accent) 14%, white)
-  ) !important;
-  color: var(--accent-hover) !important;
-}
-`;
-      document.head.appendChild(style);
-    }
-    handle.classList.add(themeClass);
-  }
-  // ===
 
   // 自動加上通用 handle 樣式 class
   if (!handle.classList.contains('draggable-handle')) {
@@ -409,12 +357,12 @@ export function makeDraggable(panel, handle, options = {}) {
   // 啟用邊界限制 (預設行為)
   const panelA = document.getElementById('panelA');
   const handleA = panelA.querySelector('.handleA');
-  makeDraggable(panelA, handleA, { left: 100, top: 100, color: 'panelA' });
+  makeDraggable(panelA, handleA, { left: 100, top: 100 });
 
-  // 停用邊界限制，允許自由拖曳（color 只是 class 識別字，實際顏色為 --accent token）
+  // 停用邊界限制，允許自由拖曳
   const panelB = document.getElementById('panelB');
   const handleB = panelB.querySelector('.handleB');
-  makeDraggable(panelB, handleB, { left: 400, top: 200, color: 'panelB', disableBoundary: true });
+  makeDraggable(panelB, handleB, { left: 400, top: 200, disableBoundary: true });
 
   // 只要呼叫 makeDraggable(你的div, 你的把手)，每個都能獨立拖曳
 */
