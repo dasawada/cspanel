@@ -1,7 +1,7 @@
 # 第八期設計：把手詞彙元件化（draggable chrome 單一來源）
 
-> 📌 brainstorming 核可後的設計，尚未實作。動任何畫布/面板前先讀 `docs/CANVAS.md`。
-> 本期完成後需同步改寫 CANVAS.md §7.6 並於 §4.7 增列把手詞彙（見 §6）。
+> 📌 已實作完成（分支 `phase8-draggable-chrome`；CANVAS.md §4.7/§7.6/§10 已同步改寫）。
+> 現行契約以 `docs/CANVAS.md` 為準。動任何畫布/面板前先讀該檔。
 
 ---
 

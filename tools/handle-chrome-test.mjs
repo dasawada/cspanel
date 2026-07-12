@@ -145,12 +145,18 @@ const grad = async () => page.evaluate(() => {
   p.classList.remove('draggable-dragging');
   return g;
 });
+const activeTabBg = () => page.evaluate(() =>
+  getComputedStyle(document.querySelector('.canned-panel-tab-menu li.active')).backgroundColor);
 const oliveGrad = await grad();
+const oliveTabBg = await activeTabBg();
 await page.evaluate(() => window.CspanelTheme.setTheme('copenhagen-harbour'));
 await page.waitForTimeout(100);
 const chGrad = await grad();
+const chTabBg = await activeTabBg();
 assert(oliveGrad.includes('linear-gradient') && chGrad.includes('linear-gradient') && oliveGrad !== chGrad,
   `拖曳漸層隨主題（olive ≠ copenhagen-harbour）`);
+assert(oliveTabBg !== chTabBg,
+  `active tab 底色隨主題（--accent-tint：${oliveTabBg} ≠ ${chTabBg}）`);
 await page.evaluate(() => window.CspanelTheme.setTheme('olive'));
 
 await browser.close();
