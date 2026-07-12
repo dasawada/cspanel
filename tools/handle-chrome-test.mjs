@@ -118,6 +118,25 @@ try {
   console.error('  ✗ B 區例外或逾時：' + e.message);
 }
 
+// ===== C. 罐頭面板：讓位＋token 色債（Task 3）=====
+const canned = await page.evaluate(() => {
+  const css = document.getElementById('canned-panel-style').textContent;
+  const panel = document.querySelector('.canned-panel');
+  const handle = document.querySelector('.canned-panel-handle');
+  return {
+    hexLeft: (css.match(/#[0-9a-fA-F]{3,8}\b/g) || []),
+    redLeft: /(^|[^-\w])red\b/.test(css.replace(/border-radius/g, '')),
+    radius: getComputedStyle(panel).borderTopLeftRadius,
+    handleH: getComputedStyle(handle).height,
+    handleFw: getComputedStyle(handle).fontWeight,
+  };
+});
+assert(canned.hexLeft.length === 0, `PANEL_CSS 色債清零（殘留：${canned.hexLeft.join(',') || '無'}）`);
+assert(!canned.redLeft, 'PANEL_CSS 無 red 關鍵字（→ --danger）');
+assert(canned.radius === '12px', `罐頭外框圓角 --radius-md（實得 ${canned.radius}）`);
+assert(canned.handleH === '36px', `罐頭把手高度歸詞彙（實得 ${canned.handleH}）`);
+assert(canned.handleFw === '600', `罐頭標題字重 600（實得 ${canned.handleFw}）`);
+
 await browser.close();
 if (fails.length) { console.error(`\n${fails.length} 項失敗`); process.exit(1); }
 console.log('\nhandle-chrome 全數通過');
