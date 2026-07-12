@@ -200,6 +200,15 @@ const restored = await page.evaluate((sel) => {
 A(Math.abs(restored.saved.x - restored.actualLeft) < 2,
   `reload 後 v2 佈局還原（saved.x=${restored.saved.x} vs computed left=${restored.actualLeft}）`);
 
+// ===== D. 編輯模式停用＋重設入口 =====
+await page.evaluate(() => window.CanvasEdit.enter());
+A(await page.evaluate(() =>
+  !document.documentElement.classList.contains('canvas-editing')), 'v2 模式 enterEditMode 為 no-op');
+page.once('dialog', (d) => d.dismiss()); // toggle 觸發 confirm → 取消
+await page.evaluate(() => window.CanvasEdit.toggle());
+A(await page.evaluate(() =>
+  !document.documentElement.classList.contains('canvas-editing')), 'toggle 不進編輯模式（改重設 confirm）');
+
 const v2PageV1After = await page.evaluate(() =>
   JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
     .map((k) => [k, localStorage.getItem(k)])));

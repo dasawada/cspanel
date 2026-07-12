@@ -186,6 +186,10 @@ async function initAllModules() {
   attachHoverHandles();
   broadcastAuthState('login-ready');
   console.log('Engine: 所有模組初始化完成 ✅');
+  if (activeCanvas.config.pageEngine) {
+    const btn = document.getElementById('fw-edit-btn');
+    if (btn) { btn.title = '重設佈局'; btn.setAttribute('aria-label', '重設佈局'); }
+  }
 }
 function clearAllModules() {
   const { manifest, mods } = activeCanvas;
@@ -249,6 +253,7 @@ function saveLayoutEntry(canvasId, panelId, pos, ver = layoutVer()) {
   try { localStorage.setItem(LAYOUT_KEY(canvasId, ver), JSON.stringify(layout)); } catch (e) {}
 }
 export function enterEditMode() {
+  if (activeCanvas?.config?.pageEngine) return; // 九期A：v2 隨時可拖，編輯模式停用（物理拆除屬九期C）
   if (!activeCanvas || activeCanvas.editing) return;
   activeCanvas.editing = true;
   document.documentElement.classList.add('canvas-editing');
@@ -323,7 +328,13 @@ function ensureEditBar() {
   });
 }
 window.CanvasEdit = {
-  toggle: () => (activeCanvas && activeCanvas.editing ? exitEditMode() : enterEditMode()),
+  toggle: () => {
+    if (activeCanvas?.config?.pageEngine) {
+      if (window.confirm('重設佈局？（面板位置、視窗、疊序都會回到預設）')) resetLayout();
+      return;
+    }
+    return activeCanvas && activeCanvas.editing ? exitEditMode() : enterEditMode();
+  },
   enter: enterEditMode, exit: exitEditMode, reset: resetLayout,
 };
 
