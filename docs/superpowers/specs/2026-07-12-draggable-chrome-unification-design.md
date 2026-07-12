@@ -120,8 +120,13 @@ panel_all.html 同一畫面存在**兩種視窗語彙**：
 
 ### 3.6 不改程式碼的消費者
 
-`canvas-engine.js` 編輯把手、`fusearch-panel.js`／轉單頁——`makeDraggable` 本就自動加
-`.draggable-handle`，樣式來源切換後自動統一。實作時盤點 `canvas-edit.css` 有無覆蓋衝突。
+- `fusearch-panel.js`／轉單頁 makeDraggable 呼叫端：樣式來源切換後自動統一（轉單頁
+  額外移除 `color: '#a9bcc7'` 參數）。
+- **編輯模式把手（實作時修正原設計敘述）**：`canvas-edit.css` 的
+  `html.canvas-editing .gl-edit-handle`（特異度 0-2-1）高於詞彙（0-1-0），且其漸層配方
+  與詞彙拖曳態同源（accent 30%/14% color-mix）——編輯把手**刻意維持**四期專屬樣貌，
+  不受詞彙覆蓋，視覺無回歸。
+- 實作前盤點結果：cspanel_netlify 無任何 draggable.js 使用，無部署順序約束。
 
 ---
 

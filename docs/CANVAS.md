@@ -278,6 +278,15 @@ cspanel 先於 netlify）。
 `scrollbar-width: none`（meeting-now-css.css，刻意隱藏捲軸，需高於全域 `*` 的特異度）——
 除「隱藏」外不得有其他局部捲軸宣告。
 
+- **把手（第八期）**：全站「可拖帶子」視覺唯一來源 `style/v2/draggable-chrome.css`
+  （`.draggable-handle` 常態/hover、`.draggable-dragging` 拖曳態）。新可拖面板不得自寫
+  把手視覺——掛 class 即得（`makeDraggable` 會自動掛）。詞彙**不設字重/字色/對齊**
+  （會繼承進 wm 藥丸 tab），字樣式歸各消費者。token 皆帶 fallback，未載 tokens.css
+  的獨立頁亦可用。draggable.js 以 `<link data-draggable-chrome>` 冪等注入本檔；
+  panel_all.html 另有靜態 link（同 data 屬性）先行。高度 token `--handle-h`。
+  編輯模式把手 `.gl-edit-handle` 為刻意例外（特異度較高的專屬樣式，漸層配方與
+  詞彙拖曳態同源），不受本詞彙管轄。
+
 ### 4.8 尺寸鐵律：階梯 + 元件映射（第七期）
 
 尺寸單一權威在 `style/v2/tokens.css`，分兩層：
@@ -442,8 +451,12 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 
 ### 7.6 視窗 chrome 與無障礙（第四期打磨）
 
-- **標題列色帶**：`.wm-tabbar` 用 `--bg-soft` 底 + `--border` 底部分隔線，與內容區明確區隔（「一眼是
-  視窗」的關鍵）；空白處拖曳移動視窗，hover 微加深為拖曳暗示。
+- **標題帶＝把手詞彙消費者（第八期改）**：`.wm-tabbar` 掛 `.draggable-handle`，視覺
+  （透明底、`--handle-h` 高、hover 微加深、拖曳中 accent 漸層）歸 `draggable-chrome.css`；
+  自身只留 tab 列佈局（gap/overflow）。四期「`--bg-soft` 色帶＋分隔線」於第八期**刻意
+  推翻**——同畫面雙視窗語彙（wm 色帶 vs draggable 透明帶）混淆 > 色帶辨識度，「一眼是
+  視窗」改由玻璃框＋陰影＋hover 拖曳暗示承擔。視窗拖曳中同時掛
+  `gl-dragging`＋`draggable-dragging`。
 - **tab 為藥丸**（沿全站 pill 語彙）：作用中 = `--elevated` 底 + `--accent-hover` 字 + 邊框與微陰影；
   `:focus-visible` 用 `--accent-ring` 外框。
 - **縮放把手**：18px、三道斜紋用 `--border-2`。注意勿改回 `--glass-border`——它是 50% 白，疊在白玻璃上
@@ -539,3 +552,25 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
     `report`／`shrturl`.css，精確路徑查證——注意舊檔名是 v2 路徑的子字串，basename grep 會假陽性）；
     保留 `body.css`／`button.css`／`font.css`（DT_report 與 fu_s_popup 仍引用）與 `favicon.ico`。
     style/ 自此僅剩「3 個活舊頁樣式 + v2 現行系統」。
+
+---
+
+## 10. 第八期刻意變更記錄（把手詞彙元件化）
+
+1. **draggable.js 不再內嵌 CSS**：runtime 字串注入（基礎把手＋per-color accent 漸層
+   class）整段移除，改冪等注入 `<link data-draggable-chrome>` 指向
+   `style/v2/draggable-chrome.css`（以 `import.meta.url` 解析，獨立頁不需自行加 link）。
+   `options.color` 參數廢除，三處呼叫端（dragb_msg_pnl / canvas-engine / 轉單小工具）
+   同步移除。行為零改動。
+2. **wm 標題列色帶推翻**（§7.6）：tabbar 結構性共用把手詞彙；藥丸 tab 與 a11y 不動。
+   `padding: 5px 8px` 裸 px 長尾隨讓位償清。
+3. **罐頭面板**：把手視覺歸詞彙（高 29→36px，parity 基線重建、刻意 diff 僅
+   `.canned-panel` 高度）；外框圓角 10→12px（`--radius-md`）對齊 wm-window；內部硬編碼
+   色（#ccc/#ddd/#fff/#333/#f9f9f9/#eee/#e0e0e0/#4CAF50/red/#f5f5f5/#666）全數 token 化。
+4. **編輯模式把手刻意不統一**：`.gl-edit-handle` 專屬樣式特異度較高（0-2-1）、漸層配方
+   本就與詞彙拖曳態同源，維持四期樣貌。附帶修正：詞彙的 `box-sizing: border-box` 使
+   編輯把手渲染高度從 32px（舊注入 padding 外加）回到 canvas-edit.css 宣告的 22px，
+   與「nav 讓位 margin-top: 22px」自此精確對齊。
+5. **盤點記錄**：cspanel_netlify 全站無 draggable.js 使用——本期無跨 repo 部署順序約束。
+6. **回歸**：tools/handle-chrome-test.mjs 新套（詞彙注入冪等/fallback/拖曳態/色債清零/
+   主題跟隨）；全套 headless 綠燈後上線。
