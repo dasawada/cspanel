@@ -12,6 +12,26 @@ const LAYOUT_KEY = (canvasId, ver = 'v1') => `cspanel.layout.${canvasId}.${ver}`
 const PAGES_KEY = (canvasId) => `cspanel.pages.${canvasId}.v1`;
 
 let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false, config }
+// 九期B Task 7 修復：initAllModules() 在同一次頁面載入可能被呼叫兩次——
+// checkExistingAuth() 的 IIFE 見到 localStorage 已有 firebase_id_token 會直接呼叫
+// 一次；fireworkeffect.js 的 firebase.auth().onAuthStateChanged 之後又會
+// dispatchEvent('firework-login-success')，觸發 loadCanvas() 掛的另一個監聽器
+// 再呼叫一次（見下方 loadCanvas 內兩處呼叫點）。多數面板 init/registerPanelStack
+// 對重入是安全的（joinMember／stack.register 皆有「已存在」的冪等分支），但 v2
+// 模式下的 WindowManager 掛載本身沒有這種冪等性——`mountWindowManager()` 每次呼叫
+// 都會建一份全新的模組級閉包狀態＋一個新的 DOM layer；下方原本的
+// `!window.WindowManager` 檢查與實際指派（發生在 `await import(...)` 之後）之間
+// 有一段可被搶入的非同步縫隙：若兩次 initAllModules() 呼叫都在對方完成指派前讀到
+// `window.WindowManager` 仍是 undefined，會各自掛載一份，產生兩份重疊的
+// `.wm-window` DOM（同一批視窗座標各兩份）——後掛載者覆寫全域 `window.WindowManager`
+// 參照，但先掛載者的 DOM／內部監聽器從未被清理，導致「頁 tab 拖曳合併」等操作
+// 命中的是舊份實例的 tabBarAt()（看不到新份的視窗），偶發性把合併誤判成撕離
+// （page-engine-b-test.mjs H3 區揪出，重載後偶發触發，機率視模組載入時序而定）。
+// 用一個同步搶佔旗標關閉這段縫隙：進入掛載分支「當下」（await 之前）就搶佔，
+// 第二次呼叫即使 `window.WindowManager` 仍是 undefined 也會被這個旗標擋下。
+// 只在 v2（pageEngine）模式使用，登出時對稱重置（見 clearAllModules），v1 模式
+// 完全不受影響（該分支本就不會被 v1 進入）。
+let wmMountClaimed = false;
 
 // 九期A：儲存版本（v1/v2）一律以 activeCanvas.config.storageVersion 為準（loadCanvas
 // 正規化寫入），未設定（尚未 loadCanvas，或呼叫端沒傳 config）預設 'v1' —— production
@@ -198,13 +218,18 @@ async function initAllModules() {
   // （config.pageEngine 恆 false）完全不進這個分支，零變化。
   if (activeCanvas.config.pageEngine) {
     const wmHost = document.getElementById('auth-protected-tabs-placeholder');
-    if (wmHost && !window.WindowManager) {
+    if (wmHost && !window.WindowManager && !wmMountClaimed) {
+      wmMountClaimed = true; // 同步搶佔（見上方 wmMountClaimed 檔頭註解）——關掉 await import() 造成的競態縫隙
       try {
         const { mountWindowManager } = await import('./window-manager.js');
-        // 九期B Task 3：isPageId／pageHost 掛點——isKnownPageId 查 pages store
-        // （loadWindows 淨化用）；pageHostImpl 是 getTitle/layout/onPageEmpty 的
-        // 引擎端實作（wm 不懂面板，全部經此委派，見 window-manager.js 檔頭註解）。
-        mountWindowManager(wmHost, { canvasId: activeCanvas.manifest.id, isPageId: isKnownPageId, pageHost: pageHostImpl });
+        // 二次檢查：理論上不會發生（搶佔已同步關閉縫隙），仍防呆——若 await 期間
+        // 已有別的路徑完成掛載，不重複 mount，避免蓋掉已認養好 tab 的實例。
+        if (!window.WindowManager) {
+          // 九期B Task 3：isPageId／pageHost 掛點——isKnownPageId 查 pages store
+          // （loadWindows 淨化用）；pageHostImpl 是 getTitle/layout/onPageEmpty 的
+          // 引擎端實作（wm 不懂面板，全部經此委派，見 window-manager.js 檔頭註解）。
+          mountWindowManager(wmHost, { canvasId: activeCanvas.manifest.id, isPageId: isKnownPageId, pageHost: pageHostImpl });
+        }
       } catch (e) { console.error('WindowManager 核心掛載失敗:', e); }
     }
     // 每次登入（含重新整理已登入態）都跑：registerPanelStack() 剛把「目前是
@@ -239,6 +264,7 @@ function clearAllModules() {
     if (window.WindowManager) {
       try { window.WindowManager.destroy(); } catch (e) { console.error('WindowManager destroy 失敗:', e); }
     }
+    wmMountClaimed = false; // 對稱重置（見上方 wmMountClaimed 檔頭註解）：允許下次登入重新掛載
   }
   detachHoverHandles();
   unregisterPanelStack();
@@ -449,6 +475,25 @@ function hydratePageJoins() {
     for (const m of page.members) joinMember(m.panelId, page.id, winId);
   }
   if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+}
+// 九期B Task 7 修復：resetLayout()（CanvasEdit.toggle 重設佈局，confirm 接受後
+// 呼叫）原本只清 layout／windows／stack 三個 schema，漏了 pages store
+// （cspanel.pages.cs.v1）與進行中的 joinMember 監聽器狀態——留下的 page 定義
+// 會讓已入組成員維持「退出個別疊序身分」的狀態（joinMember 內
+// stack.unregister(panelId) 已把它們踢出 stack-manager），且非作用中 page tab
+// 的成員可能停在 display:none（pageHostImpl.layout 對非作用中頁的隱藏），兩者
+// 都不符合「面板回 manifest 預設」（spec §8／task-7-brief.md）的重設語意。
+// leaveMember() 本就是「單一成員退組回自由面板」的正確逆操作（卸監聽器、清
+// display/--stack-rank/.gl-stack-pane、重新掛回個別 stack 疊序身分——見上方
+// leaveMember 定義與其「沒有 detachedRect 時安全落回舊行為」分支），對「全域
+// 重設」呼叫它即可讓每個成員精確回到「從未入組」的樣子。detachedRects 在呼叫
+// 前先清空，確保 leaveMember 一律走「清 inline style、回 CSS 幾何預設」分支，
+// 而非誤用殘留的「入組前座標」（全域重設語意上不該套用任何個別歷史座標）。
+function resetAllPages() {
+  if (!activeCanvas) return;
+  detachedRects.clear();
+  for (const panelId of [...pageJoins.keys()]) leaveMember(panelId);
+  writePages(activeCanvas.manifest.id, []);
 }
 
 // pageHost 委派介面（wm 不懂面板，全部經此委派給引擎——見 window-manager.js
@@ -676,6 +721,12 @@ export function resetLayout() {
   // 面板存續期間由 draggable.js 自己的 inline left/top 主導，此處刪 key
   // 不會讓它立即跳回預設值，要等下次 loadCanvas（頁面重新載入）才會套用。
   try { localStorage.removeItem(`draggable:${location.pathname}:canned-panel-main`); } catch (e) {}
+  // 九期B Task 7 修復：pages store／入組狀態一併回預設，見 resetAllPages() 檔頭
+  // 註解。必須在 window.WindowManager.reset() 之前——leaveMember() 只處理面板
+  // 自身狀態，不觸碰 wm 的 windows／tabs，執行順序與 wm.reset() 互不相依，這裡
+  // 依語意順序（先讓成員退組，再讓視窗回預設）安排。v1 模式（pageEngine 關閉）
+  // 完全不進此分支，零變化。
+  if (activeCanvas.config.pageEngine) resetAllPages();
   // 分頁視窗管理器是獨立常駐系統（不受編輯模式管轄），但「重設佈局」語義上
   // 應一併把視窗回預設：委派給 window.WindowManager.reset()（清 windows key +
   // 重建預設單視窗）。未掛載（未登入/無 protected 內容）時安靜略過。

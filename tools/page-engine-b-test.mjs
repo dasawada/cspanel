@@ -406,6 +406,267 @@ const cannedKeyAfterLeaveDrag = await page.evaluate(() =>
 A(cannedKeyAfterLeaveDrag !== CANNED_KEY_SENTINEL,
   `G4: 退組後 self-persist 恢復，拖動再次寫回 per-path key（after=${cannedKeyAfterLeaveDrag}）`);
 
+// ===== H. 持久化整合終驗：reload 全還原＋撕出合併＋推版前全套（九期B Task 7）=====
+// 字母延續全檔既有序列——G 已被 Task 6 佔用（見該區段標頭與 task-6-report.md
+// 「疑慮 1」的明文交接：Task 7 應遞補為 H）；task-7-brief.md「G 區」以其描述的
+// 測試意圖為準（成組兩頁→reload 全還原→page tab 拖到另一視窗 tabbar 合併→撕
+// 出→v1 keys 位元不變→CanvasEdit.toggle 重設全清），非字面字母對應，同 F/G 區
+// 標頭一貫精神。
+console.log('— H. 持久化整合終驗：reload 還原＋撕出合併＋推版前全套 —');
+
+// v1 keys 快照（比照 page-engine-a-test.mjs 的 v1Snapshot 慣例）：整個 H 區操作
+// （成組→頁內拖曳→reload→合併→撕出→最終重設）全程都不得使 production（v1）
+// 儲存 key 出現任何一次寫入，逐點重新比對同一份快照。
+const hV1Snapshot = () => page.evaluate(() =>
+  JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
+    .map((k) => [k, localStorage.getItem(k)])));
+const hV1Base = await hV1Snapshot();
+
+const hWinSnapshot = (tabId) => page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  if (!win) return null;
+  const r = win.getBoundingClientRect();
+  const act = win.querySelector('.wm-tab.is-active');
+  return {
+    tabs: [...win.querySelectorAll('.wm-tab')].map((t) => t.dataset.tab),
+    active: act ? act.dataset.tab : null,
+    rect: { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) },
+  };
+}, tabId);
+const hContentRect = (tabId) => page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const c = win.querySelector('.wm-content').getBoundingClientRect();
+  return { left: c.left, top: c.top, width: c.width, height: c.height };
+}, tabId);
+const hMemberRects = () => page.evaluate(() => {
+  const r = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { left: Math.round(b.left), top: Math.round(b.top) }; };
+  return {
+    roof: r('.roofbutton'), shrturl: r('.linkout'), optitle: r('.optitlepanel'),
+    fudausearch: r('.fudausearch-container'), tooldl: r('.tool_zip_dl'),
+  };
+});
+const hPagesStore = () => page.evaluate(() => JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]'));
+const near = (a, b, tol) => Math.abs(a - b) <= tol;
+
+// -- H1：成組兩頁——頁一兩員（roof+shrturl）、頁二經 addMember 擴充第三員
+//    （optitle+fudausearch 建頁，再 addMember('tooldl')）。兩頁各自建立時明確
+//    傳入分開的 rect（畫布下半左右各一塊），避免兩者都落在同一組預設 rect
+//    （410,160,500,600）而完全疊在同一個像素區塊——那樣一來兩顆單 tab 視窗的
+//    tabbar 會像素對像素重疊，之後「拖某頁 tab 到另一視窗 tabbar」的滑鼠座標
+//    會失去對象意義（點下去分不出打中哪一顆），與 wm-test 既有拖 tab 測試手法
+//    的可靠性前提（來源/目標視窗幾何互不重疊）一致。 --
+console.log('  — H1: 成組兩頁（頁一兩員、頁二經 addMember 擴充第三員）—');
+const pgH1 = await page.evaluate(() =>
+  window.PageEngine.create(['roof', 'shrturl'], { rect: { x: 60, y: 700, w: 480, h: 380 } }));
+A(typeof pgH1 === 'string' && pgH1.startsWith('pg:'), `H1: 頁一（兩員）建立（${pgH1}）`);
+await page.waitForTimeout(200);
+const pgH2 = await page.evaluate(() =>
+  window.PageEngine.create(['optitle', 'fudausearch'], { rect: { x: 700, y: 700, w: 480, h: 380 } }));
+A(typeof pgH2 === 'string' && pgH2.startsWith('pg:'), `H1: 頁二種子（兩員）建立（${pgH2}）`);
+await page.waitForTimeout(200);
+const h1AddOk = await page.evaluate((id) => window.PageEngine.addMember(id, 'tooldl'), pgH2);
+A(h1AddOk === true, 'H1: 頁二經 addMember 擴充第三員（tooldl）');
+await page.waitForTimeout(200);
+const h1SeedPages = await hPagesStore();
+const h1Seed2 = h1SeedPages.find((p) => p.id === pgH2);
+A(!!h1Seed2 && h1Seed2.members.length === 3 && h1Seed2.members.some((m) => m.panelId === 'tooldl'),
+  `H1: 頁二成員數與內容正確（members=${h1Seed2 && h1Seed2.members.map((m) => m.panelId).join(',')}）`);
+
+// 把頁一其中一員（roof）拖往其宿主視窗內容區右側、結束仍在內容區內
+// → layoutMode 轉 free（手法比照 F1）。頁二維持預設 stack 模式，兩頁涵蓋
+// reload 需還原的兩種 layoutMode。
+const h1Content = await hContentRect(pgH1);
+const hRoofBox = await page.locator('.roofbutton').boundingBox();
+const h1TargetX = h1Content.left + h1Content.width * 0.6;
+const h1TargetY = h1Content.top + 30;
+await page.mouse.move(hRoofBox.x + hRoofBox.width / 2, hRoofBox.y + 4);
+await page.mouse.down();
+await page.mouse.move(h1TargetX, h1TargetY, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+const h1PageAfterDrag = (await hPagesStore()).find((p) => p.id === pgH1);
+A(!!h1PageAfterDrag && h1PageAfterDrag.layoutMode === 'free',
+  `H1: 頁一頁內拖曳後 layoutMode 轉 free（${h1PageAfterDrag && h1PageAfterDrag.layoutMode}）`);
+
+// -- H2：reload → 斷言視窗/tab/成員定位/layoutMode 全還原 --
+console.log('  — H2: reload → 視窗/tab/成員定位/layoutMode 全還原 —');
+const hPreReload = {
+  win1: await hWinSnapshot(pgH1),
+  win2: await hWinSnapshot(pgH2),
+  pages: await hPagesStore(),
+  rects: await hMemberRects(),
+};
+A(!!hPreReload.win1 && !!hPreReload.win2, 'H2: reload 前兩頁視窗皆存在（前置檢查）');
+
+await page.reload();
+await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
+await page.waitForTimeout(500); // wm 兩段掛載＋hydratePageJoins＋syncPanes 落定
+
+const hPostReload = {
+  win1: await hWinSnapshot(pgH1),
+  win2: await hWinSnapshot(pgH2),
+  pages: await hPagesStore(),
+  rects: await hMemberRects(),
+};
+A(!!hPostReload.win1 && !!hPostReload.win2, 'H2: reload 後兩頁視窗皆還原');
+for (const [label, pre, post] of [['頁一', hPreReload.win1, hPostReload.win1], ['頁二', hPreReload.win2, hPostReload.win2]]) {
+  if (!pre || !post) continue;
+  A(near(pre.rect.x, post.rect.x, 2) && near(pre.rect.y, post.rect.y, 2) &&
+    near(pre.rect.w, post.rect.w, 2) && near(pre.rect.h, post.rect.h, 2),
+    `H2: ${label}視窗幾何跨 reload 還原（pre=${JSON.stringify(pre.rect)} post=${JSON.stringify(post.rect)}）`);
+  A(JSON.stringify(pre.tabs) === JSON.stringify(post.tabs) && pre.active === post.active,
+    `H2: ${label} tab 組成／作用中 tab 還原（tabs=${JSON.stringify(post.tabs)}, active=${post.active}）`);
+}
+const h2PageAfterReload = hPostReload.pages.find((p) => p.id === pgH1);
+const h2Page2AfterReload = hPostReload.pages.find((p) => p.id === pgH2);
+A(!!h2PageAfterReload && h2PageAfterReload.layoutMode === 'free' &&
+  h2PageAfterReload.members.length === 2 && h2PageAfterReload.members.every((m) => ['roof', 'shrturl'].includes(m.panelId)),
+  `H2: 頁一成員與 layoutMode（free）還原（${JSON.stringify(h2PageAfterReload)}）`);
+A(!!h2Page2AfterReload && h2Page2AfterReload.layoutMode === 'stack' &&
+  h2Page2AfterReload.members.length === 3 && h2Page2AfterReload.members.some((m) => m.panelId === 'tooldl'),
+  `H2: 頁二成員（含 addMember 擴充的 tooldl）與 layoutMode（stack）還原（${JSON.stringify(h2Page2AfterReload)}）`);
+for (const key of ['roof', 'shrturl', 'optitle', 'fudausearch', 'tooldl']) {
+  const p = hPreReload.rects[key], q = hPostReload.rects[key];
+  A(near(p.left, q.left, 3) && near(p.top, q.top, 3),
+    `H2: 成員 ${key} 定位跨 reload 還原（pre=(${p.left},${p.top}) post=(${q.left},${q.top})）`);
+}
+A(await hV1Snapshot() === hV1Base, 'H2: v1 keys 位元不變（reload 後）');
+
+// -- H3：page tab 拖到另一視窗 tabbar 合併（滑鼠模擬，比照 wm-test 拖 tab 手
+//    法：mousedown 於來源 tab → 移動穿越門檻 → 落在目標視窗 tabbar 範圍內 →
+//    mouseup）→ 再撕出 --
+console.log('  — H3: page tab 拖到另一視窗 tabbar 合併 → 撕出 —');
+const hTabCenter = (tabId) => page.evaluate((id) => {
+  const tab = document.querySelector(`.wm-tab[data-tab="${CSS.escape(id)}"]`);
+  const r = tab.getBoundingClientRect();
+  return { x: r.left + r.width / 2, y: r.top + r.height / 2 };
+}, tabId);
+const hTabBarEdge = (tabId) => page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const b = win.querySelector('.wm-tabbar').getBoundingClientRect();
+  return { x: b.right - 6, y: b.top + b.height / 2 };
+}, tabId);
+// window-manager.js 的 beginPointerDrag（Task 7 未改動、第三期既有）用
+// requestAnimationFrame 節流 pointermove→onMove（見 window-manager.js:402-405
+// 的 move/flush）：只有排入的那顆動畫幀真正觸發過一次 onMove，wm 的
+// startTabDrag 才會把 dragging 標記為 true。若 pointerup 在瀏覽器送出「這次拖
+// 曳的第一顆動畫幀」之前就已處理完（headless 環境、尤其是本檔案跑到 H 區已
+// 累積大量 DOM/監聽器時偶發），dragging 全程停在 false，放開會被誤判為「點擊
+// 切換 tab」而非「拖曳」，applyTabDrop 從未被呼叫——與九期B Task 4 A 區「實際
+// 拖曳仍寫 layout」偶發性 flaky 同一計時縫隙成因（見該區與 task-6-report.md
+// 「疑慮 3」），非本 Task 引入的新缺陷，亦非 page 專屬（iframe tab 拖曳同樣的
+// 拖法理論上一樣會踩）。修法比照該處既有共識——不動 window-manager.js 這個
+// 各類拖曳共用的第三期既有原語（改動影響面過大，超出本 Task「只修 G/H 區揪出
+// 的缺陷」範圍），改為在測試這端墊一次顯式等待，讓瀏覽器有機會在 pointerup 前
+// 先送出至少一顆動畫幀（真人手動拖曳的物理時間跨度本就遠超一顆動畫幀，這裡只
+// 是把該保證做顯式，不改變任何被測行為）。分 4 段移動、每段之間都留一次動畫幀
+// 空檔（而不只在起手式留一次）：一來確保 dragging 標記在往目標移動的全程都跟得
+// 上（不只是「翻成 true」那一瞬間），二來讓最終落點在 mouseup 前有一次額外落定
+// 機會，避免 tabBarAt() 命中判定用到還在過渡中的座標。
+const hDrag = async (from, to) => {
+  await page.mouse.move(from.x, from.y);
+  await page.mouse.down();
+  const segs = 4;
+  for (let i = 1; i <= segs; i++) {
+    const x = from.x + (to.x - from.x) * (i / segs);
+    const y = from.y + (to.y - from.y) * (i / segs);
+    await page.mouse.move(x, y, { steps: 3 });
+    await page.waitForTimeout(30);
+  }
+  await page.mouse.up();
+  await page.waitForTimeout(200);
+};
+const hWinTabs = () => page.evaluate(() => [...document.querySelectorAll('.wm-window')].map((w) => ({
+  tabs: [...w.querySelectorAll('.wm-tab')].map((t) => t.dataset.tab),
+  active: (w.querySelector('.wm-tab.is-active') || {}).dataset && w.querySelector('.wm-tab.is-active').dataset.tab,
+})));
+
+const fromH1Tab = await hTabCenter(pgH1);
+const toH2BarEdge = await hTabBarEdge(pgH2);
+await hDrag(fromH1Tab, toH2BarEdge);
+const hMerged = await hWinTabs();
+A(hMerged.length === 1, `H3: 合併後只剩 1 個視窗（${hMerged.length}）`);
+A(!!hMerged[0] && hMerged[0].tabs.includes(pgH1) && hMerged[0].tabs.includes(pgH2) && hMerged[0].active === pgH1,
+  `H3: 合併視窗含兩頁 tab、剛拖入者作用中（tabs=${hMerged[0] && hMerged[0].tabs.join(',')}, active=${hMerged[0] && hMerged[0].active}）`);
+const hVisMerged = await page.evaluate(() => ({
+  roof: getComputedStyle(document.querySelector('.roofbutton')).display,
+  shrturl: getComputedStyle(document.querySelector('.linkout')).display,
+  optitle: getComputedStyle(document.querySelector('.optitlepanel')).display,
+  fudausearch: getComputedStyle(document.querySelector('.fudausearch-container')).display,
+  tooldl: getComputedStyle(document.querySelector('.tool_zip_dl')).display,
+}));
+A(hVisMerged.roof !== 'none' && hVisMerged.shrturl !== 'none', 'H3: 合併後作用中頁（頁一）成員可見');
+A(hVisMerged.optitle === 'none' && hVisMerged.fudausearch === 'none' && hVisMerged.tooldl === 'none',
+  'H3: 合併後非作用中頁（頁二）成員隱藏（display:none，非重載）');
+
+// 撕出：把剛併入的頁一 tab 拖離任何視窗 tabbar 範圍 → 落回獨立新視窗。
+const fromMergedTab = await hTabCenter(pgH1);
+await hDrag(fromMergedTab, { x: 1600, y: 1050 });
+const hAfterTear = await hWinTabs();
+A(hAfterTear.length === 2, `H3: 撕出後恢復 2 個視窗（${hAfterTear.length}）`);
+const hTornWin = hAfterTear.find((w) => w.tabs.length === 1 && w.tabs[0] === pgH1);
+const hOtherWin = hAfterTear.find((w) => w.tabs.includes(pgH2));
+A(!!hTornWin, `H3: 撕出視窗只含頁一 tab（${JSON.stringify(hAfterTear.map((w) => w.tabs))}）`);
+A(!!hOtherWin && hOtherWin.tabs.length === 1 && hOtherWin.tabs[0] === pgH2 && hOtherWin.active === pgH2,
+  'H3: 原視窗恢復只剩頁二 tab 且作用中');
+const hVisTorn = await page.evaluate(() => ({
+  roof: getComputedStyle(document.querySelector('.roofbutton')).display,
+  optitle: getComputedStyle(document.querySelector('.optitlepanel')).display,
+}));
+A(hVisTorn.roof !== 'none' && hVisTorn.optitle !== 'none', 'H3: 撕出後兩頁成員皆可見（各自視窗作用中 tab）');
+A(await hV1Snapshot() === hV1Base, 'H3: v1 keys 位元不變（合併/撕出後）');
+
+// -- H4：最後 CanvasEdit.toggle（confirm 接受）重設 → pages/windows/layout .v2
+//    全清、面板回 manifest 預設 --
+console.log('  — H4: CanvasEdit.toggle（confirm 接受）重設 → 全清＋面板回預設 —');
+page.once('dialog', (d) => d.accept()); // toggle 觸發 confirm → 接受（比照 page-engine-a-test.mjs 的 dismiss 分支，這裡走 accept）
+await page.evaluate(() => window.CanvasEdit.toggle());
+await page.waitForTimeout(500);
+
+const hAfterReset = await page.evaluate(() => ({
+  pages: localStorage.getItem('cspanel.pages.cs.v1'),
+  windowsKey: localStorage.getItem('cspanel.windows.cs.v2'),
+  layoutKey: localStorage.getItem('cspanel.layout.cs.v2'),
+  stackOrder: JSON.parse(localStorage.getItem('cspanel.stack.cs.v2') || '{"order":[]}').order,
+}));
+A(!hAfterReset.pages || JSON.parse(hAfterReset.pages).length === 0, `H4: pages store 全清（${hAfterReset.pages}）`);
+A(hAfterReset.windowsKey === null, 'H4: windows .v2 key 全清');
+A(hAfterReset.layoutKey === null, 'H4: layout .v2 key 全清');
+// stack key 不比照 pages/windows/layout 要求「全清為 null」——stack-manager.js 的
+// reset() 語意是「回到各 surface 的預設名次」，removeItem 後緊接著對仍註冊中的
+// surface（一般面板／視窗本體）重新 persist 一份新的預設 order，這是既有正確
+// 行為（wm-test.mjs「重設回預設」區段同樣不檢查 key 是否為 null）。這裡只驗證
+// 「疊序回預設」不留殘影：不再有任何 page id（'pg:' 前綴）或視窗 id（重設後
+// windows 已清空，不應殘留任何 'w' 開頭的視窗疊序條目）留在 order 內。
+A(hAfterReset.stackOrder.every((k) => !k.startsWith('pg:')) &&
+  hAfterReset.stackOrder.every((k) => !/^w[0-9a-z]+$/.test(k)),
+  `H4: 疊序回預設，無殘留 page/視窗 id（order=${JSON.stringify(hAfterReset.stackOrder)}）`);
+A((await page.evaluate(() => window.PageEngine.list())).length === 0, 'H4: PageEngine.list() 為空');
+
+const hResetVisual = await page.evaluate(() => {
+  const chk = (sel) => {
+    const el = document.querySelector(sel);
+    return { left: el.style.left, top: el.style.top, display: getComputedStyle(el).display, joined: el.classList.contains('gl-stack-pane') };
+  };
+  return {
+    roof: chk('.roofbutton'), shrturl: chk('.linkout'), optitle: chk('.optitlepanel'),
+    fudausearch: chk('.fudausearch-container'), tooldl: chk('.tool_zip_dl'),
+  };
+});
+for (const key of ['roof', 'shrturl', 'optitle', 'fudausearch', 'tooldl']) {
+  const v = hResetVisual[key];
+  A(v.left === '' && v.top === '', `H4: ${key} inline left/top 回 manifest 預設（left="${v.left}" top="${v.top}"）`);
+  A(v.display !== 'none', `H4: ${key} 重設後可見（display=${v.display}）`);
+  A(!v.joined, `H4: ${key} 已脫離頁疊序身分（無 .gl-stack-pane）`);
+}
+const hWinsAfterReset = await page.evaluate(() =>
+  [...document.querySelectorAll('.wm-window')].map((w) => [...w.querySelectorAll('.wm-tab')].map((t) => t.dataset.tab)));
+A(hWinsAfterReset.every((tabs) => tabs.every((t) => !t.startsWith('pg:'))), 'H4: 重設後無殘留 page tab');
+A(await hV1Snapshot() === hV1Base, 'H4: v1 keys 位元不變（CanvasEdit.toggle 重設後，全程終驗）');
+
 await page.close();
 
 const anyFail = fails.length > 0;
