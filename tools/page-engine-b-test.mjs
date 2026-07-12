@@ -197,6 +197,105 @@ A(Math.abs(e2.left - e3.left) < 1 && Math.abs(e2.top - e3.top) < 1,
 // 清場
 await page.evaluate((id) => window.PageEngine.dissolve(id), pgId2);
 
+// ===== F. 頁內互動：自由佈局、拖出退組、剩一解散（九期B Task 5）=====
+// 字母延續全檔既有序列——E 已被 Task 4 審查修復追加的「成組＋邊界回彈」區段
+// 佔用（見上方標頭），本區段依檔案既有慣例遞補下一個字母；task-5-brief.md
+// 「E 區」以其描述的測試意圖為準（成組三員→頁內拖一員 free 化→拖出一員退組→
+// 再拖出剩一解散），非字面字母對應，同 brief 開頭「行號僅供定位，以實際內容
+// 錨定」同一精神。三名成員選用未被前面區段觸碰過、幾何尺寸小、無 quirks 的
+// 面板（roof/shrturl/tooldl），確保頁內拖曳的重疊/邊界判定乾淨可控。
+console.log('— F. 頁內互動：自由佈局、拖出退組、剩一解散 —');
+const pgId3 = await page.evaluate(() => window.PageEngine.create(['roof', 'shrturl', 'tooldl']));
+A(typeof pgId3 === 'string' && pgId3.startsWith('pg:'), `F: 成組三員（${pgId3}）`);
+await page.waitForTimeout(200);
+
+const content3 = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const c = win.querySelector('.wm-content').getBoundingClientRect();
+  return { left: c.left, top: c.top, width: c.width, height: c.height };
+}, pgId3);
+const others0 = await page.evaluate(() => {
+  const r = (sel) => { const b = document.querySelector(sel).getBoundingClientRect(); return { left: b.left, top: b.top }; };
+  return { shrturl: r('.linkout'), tooldl: r('.tool_zip_dl') };
+});
+
+// -- F1: 拖一員（roof）到宿主內容區右側、結束仍在內容區內 → layoutMode 轉
+//    free、該員 rect 更新、其餘兩員（shrturl/tooldl）不動 --
+const roofBox = await page.locator('.roofbutton').boundingBox();
+const targetX = content3.left + content3.width * 0.6;
+const targetY = content3.top + 30;
+await page.mouse.move(roofBox.x + roofBox.width / 2, roofBox.y + 4);
+await page.mouse.down();
+await page.mouse.move(targetX, targetY, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+
+const g1 = await page.evaluate((id) => {
+  const pg = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').find((p) => p.id === id);
+  const roof = document.querySelector('.roofbutton').getBoundingClientRect();
+  const shrturl = document.querySelector('.linkout').getBoundingClientRect();
+  const tooldl = document.querySelector('.tool_zip_dl').getBoundingClientRect();
+  return {
+    layoutMode: pg ? pg.layoutMode : null,
+    memberCount: pg ? pg.members.length : 0,
+    roofRect: pg ? pg.members.find((m) => m.panelId === 'roof').rect : null,
+    roof: { left: roof.left, top: roof.top },
+    shrturl: { left: shrturl.left, top: shrturl.top },
+    tooldl: { left: tooldl.left, top: tooldl.top },
+  };
+}, pgId3);
+A(g1.layoutMode === 'free', `F1: 頁內拖曳後 layoutMode 轉 free（${g1.layoutMode}）`);
+A(g1.memberCount === 3, 'F1: 拖曳未改變成員數');
+const roofMoved = Math.hypot(g1.roof.left - roofBox.x, g1.roof.top - roofBox.y);
+A(roofMoved > 20, `F1: 拖曳成員畫面位置確實改變（Δ=${roofMoved.toFixed(1)}px）`);
+A(!!g1.roofRect &&
+  Math.abs((content3.left + g1.roofRect.x) - g1.roof.left) < 2 &&
+  Math.abs((content3.top + g1.roofRect.y) - g1.roof.top) < 2,
+  `F1: 該員 member.rect 與畫面位置一致（rect=(${g1.roofRect && g1.roofRect.x.toFixed(1)},${g1.roofRect && g1.roofRect.y.toFixed(1)})）`);
+A(Math.abs(g1.shrturl.left - others0.shrturl.left) < 2 && Math.abs(g1.shrturl.top - others0.shrturl.top) < 2,
+  `F1: 其餘成員（shrturl）位置不動（Δ=(${(g1.shrturl.left - others0.shrturl.left).toFixed(1)},${(g1.shrturl.top - others0.shrturl.top).toFixed(1)})）`);
+A(Math.abs(g1.tooldl.left - others0.tooldl.left) < 2 && Math.abs(g1.tooldl.top - others0.tooldl.top) < 2,
+  `F1: 其餘成員（tooldl）位置不動（Δ=(${(g1.tooldl.left - others0.tooldl.left).toFixed(1)},${(g1.tooldl.top - others0.tooldl.top).toFixed(1)})）`);
+
+// -- F2: 把 tooldl 拖出內容區外 → 退組回畫布（pages store 少一員、面板可見） --
+const tooldlBox = await page.locator('.tool_zip_dl').boundingBox();
+await page.mouse.move(tooldlBox.x + tooldlBox.width / 2, tooldlBox.y + 4);
+await page.mouse.down();
+await page.mouse.move(20, content3.top + 10, { steps: 8 }); // 遠離內容區左側
+await page.mouse.up();
+await page.waitForTimeout(200);
+const g2 = await page.evaluate((id) => {
+  const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  const pg = pgs.find((p) => p.id === id);
+  return {
+    pageExists: !!pg,
+    memberCount: pg ? pg.members.length : 0,
+    tooldlVisible: getComputedStyle(document.querySelector('.tool_zip_dl')).display !== 'none',
+  };
+}, pgId3);
+A(g2.pageExists && g2.memberCount === 2, `F2: 拖出內容區退組（memberCount=${g2.memberCount}）`);
+A(g2.tooldlVisible, 'F2: 退組面板回畫布可見');
+
+// -- F3: 再把剩兩員之一（shrturl）拖出內容區外 → 剩一自動解散
+//    （store 清空、最後成員與被拖成員皆回畫布） --
+const shrturlBox = await page.locator('.linkout').boundingBox();
+await page.mouse.move(shrturlBox.x + shrturlBox.width / 2, shrturlBox.y + 4);
+await page.mouse.down();
+await page.mouse.move(20, content3.top + 10, { steps: 8 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+const g3 = await page.evaluate(() => {
+  const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  return {
+    n: pgs.length,
+    roofVisible: getComputedStyle(document.querySelector('.roofbutton')).display !== 'none',
+    shrturlVisible: getComputedStyle(document.querySelector('.linkout')).display !== 'none',
+  };
+});
+A(g3.n === 0, `F3: 剩一自動解散，store 清空（n=${g3.n}）`);
+A(g3.roofVisible && g3.shrturlVisible, 'F3: 最後成員與被拖成員皆回畫布可見');
+
 await page.close();
 
 const anyFail = fails.length > 0;

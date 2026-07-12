@@ -469,10 +469,24 @@ function pgCreate(members, opts) {
   pages.push(page);
   writePages(canvasId, pages);
   let winId = null;
-  if (window.WindowManager && typeof window.WindowManager.createPageWindow === 'function') {
-    winId = window.WindowManager.createPageWindow(id, opts && opts.rect);
+  const wm = window.WindowManager;
+  if (wm && typeof wm.createPageWindow === 'function') {
+    winId = wm.createPageWindow(id, opts && opts.rect);
   }
   for (const panelId of ids) joinMember(panelId, id, winId);
+  // 九期B Task 5 修復（既有缺口，非本 Task 新增行為）：joinMember 內部
+  // stack.unregister(panelId) 會把成員原本個別身分的 --stack-rank inline 樣式
+  // 一併移除（見 stack-manager.js unregister）；createPageWindow 內部
+  // render()（設好視窗初始 rank）之後緊接呼叫 stack.raise(win.id) 把新視窗提到
+  // 最上層——若視窗初始 rank 原本就不是佇列最上層（例：本次登入 session 已有
+  // 更早建立、之後又被點擊置頂過的其他視窗/面板，把 initialRank 序列往後推），
+  // raise() 會改變其最終 rank；無論是否觸發改變，成員都需要一次 syncPanes()
+  // 讀「目前」視窗 rank 蓋回去，否則其 --stack-rank 維持空字串、CSS
+  // var(--stack-rank,0) 退回 0，可能矮於視窗本身的 z-index，成員疊在視窗
+  // chrome（.wm-content）之下、滑鼠事件被攔截、無法再被拖曳/點擊置頂
+  // （headless 實測抓到：hit-test 命中 .wm-content 而非成員本身）。pgAddMember
+  // 早已有這行（見下方），pgCreate 當時漏補；補齊使兩條入頁路徑對稱。
+  if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
   return id;
 }
 function pgAddMember(pageId, panelId) {
@@ -831,6 +845,64 @@ function commitGroup(target, draggedPanelId) {
   return !!pgCreate([target.id, draggedPanelId]);
 }
 
+// ===== 九期B Task 5：頁內互動——自由佈局、拖出退組、剩一解散 =====
+// 已入組成員的把手拖曳與自由面板走完全不同的語義（本節），故 onPositionChange
+// wrapper 對其提早分流（不落入上方成組偵測/畫布 layout 路徑——成員本就不啟動
+// startGroupWatch，見 onHandleDown 的 pageJoins.has 判斷）。
+// 查目前所屬視窗的 .wm-content viewport rect（找不到＝理論不可達：pageJoins
+// 有記錄即代表 joinMember 時宿主視窗已建立；查無時安全放棄，不動任何狀態）。
+// 沿用 C 區測試已驗證過的「由 tab 反查 .wm-window」寫法，不新增 wm 公開 API
+// （findWindowForTab 只回傳 id，非 DOM 元素）。
+function pageWinContentRect(pageId) {
+  const winEl = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === pageId));
+  const content = winEl && winEl.querySelector('.wm-content');
+  return content ? content.getBoundingClientRect() : null;
+}
+// 入組成員把手拖曳結束（呼叫端已濾過零位移）：結束位置與宿主內容區的重疊比例
+// ≥GROUP_OVERLAP_RATIO（沿用成組手勢同一門檻，語意對稱——都是「這塊區域算不算
+// 還在頁內」的判定）視為「仍在內容區內」→ 轉自由佈局；否則視為「拖出內容區」
+// →退組回畫布。
+//   自由佈局（spec §3.1「使用者頁內拖動任一成員 → 轉 free」）：page.layoutMode
+//   首次轉 free 時，先把「目前還沒有 rect」的成員（含 stack 模式下從未被拖過的
+//   其他成員）就地凍結——用它們此刻的畫面位置（由 stack 佈局算出、拖曳過程中
+//   從未被移動過）換算成內容區相對 rect，讓 layout() 之後用 free 分支重算時
+//   算出同一個位置，視覺上「其餘成員不動」。凍結完才覆寫被拖成員自己的 rect，
+//   兩者共用同一個 contentRect 快照，換算基準一致。
+//   退組（spec §3.4）：直接呼叫既有 pgRemoveMember——它已實作「清除入組期間
+//   寫入的 inline left/top/display，回落 canvas-geometry／manifest 座標」
+//   （leaveMember），等同「恢復離組前座標（detachedRect）」；剩一員時
+//   pgRemoveMember 本身即會連帶最後一員一起自動解散（spec §3.4 對稱解散）。
+function handleMemberDrop(panelId, pageId, el) {
+  const contentRect = pageWinContentRect(pageId);
+  if (!contentRect) return;
+  const dragRect = el.getBoundingClientRect();
+  if (rectOverlapRatio(dragRect, contentRect) < GROUP_OVERLAP_RATIO) {
+    pgRemoveMember(pageId, panelId);
+    return;
+  }
+  if (!activeCanvas) return;
+  const canvasId = activeCanvas.manifest.id;
+  const pages = readPages(canvasId);
+  const page = pages.find((pg) => pg.id === pageId);
+  if (!page) return;
+  if (page.layoutMode !== 'free') {
+    for (const m of page.members) {
+      if (m.rect) continue;
+      const mEl = elFor(m.panelId);
+      if (!mEl) continue;
+      const r = mEl.getBoundingClientRect();
+      m.rect = { x: r.left - contentRect.left, y: r.top - contentRect.top };
+    }
+    page.layoutMode = 'free';
+  }
+  const member = page.members.find((m) => m.panelId === panelId);
+  if (member) member.rect = { x: dragRect.left - contentRect.left, y: dragRect.top - contentRect.top };
+  writePages(canvasId, pages);
+  const wm = window.WindowManager;
+  if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
+}
+
 const hoverState = { detachers: [] };
 function attachHoverHandles() {
   if (!activeCanvas?.config?.pageEngine) return;
@@ -868,6 +940,16 @@ function attachHoverHandles() {
         dragTelemetry = null;
         const gw = groupWatch;
         groupWatch = null;
+        const moved = Math.hypot(pos.left - startLeft, pos.top - startTop);
+        // 九期B Task 5：入組成員的拖曳語義與自由面板完全不同（頁內自由佈局／
+        // 拖出退組，見 handleMemberDrop），提早分流——成員從不啟動 groupWatch
+        // （見上方 onHandleDown），gw 恆為 null，不會落入下方成組/畫布 layout 路徑。
+        // 零位移點擊（moved < ENGINE_DRAG_THRESHOLD）與自由面板同一泛化：只是
+        // 置頂/點擊，不觸發頁內語義。
+        if (pageJoins.has(p.id)) {
+          if (moved >= ENGINE_DRAG_THRESHOLD) handleMemberDrop(p.id, pageJoins.get(p.id).pageId, el);
+          return;
+        }
         const target = gw ? gw.finish() : null; // 停輪詢、拆預覽、卸 Esc 監聽，回傳鎖定目標｜null
         if (target && commitGroup(target, p.id)) {
           // 見上方 GROUP_BOUNCE_REASSERT_MS 檔頭註解：draggable.js 的邊界回彈
@@ -882,7 +964,6 @@ function attachHoverHandles() {
           }, GROUP_BOUNCE_REASSERT_MS);
           return; // 成組即接管，不寫畫布 layout
         }
-        const moved = Math.hypot(pos.left - startLeft, pos.top - startTop);
         if (moved < ENGINE_DRAG_THRESHOLD) return; // 零位移點擊不寫 layout（九期A 審查歸位）
         saveLayoutEntry(activeCanvas.manifest.id, p.id, pos);
       },
