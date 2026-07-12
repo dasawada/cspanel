@@ -296,6 +296,116 @@ const g3 = await page.evaluate(() => {
 A(g3.n === 0, `F3: 剩一自動解散，store 清空（n=${g3.n}）`);
 A(g3.roofVisible && g3.shrturlVisible, 'F3: 最後成員與被拖成員皆回畫布可見');
 
+// ===== G. quirks 歸隊：罐頭可入組 ＋ iframe 零重載命門（九期B Task 6）=====
+// 字母延續全檔既有序列——F 已被 Task 5 佔用（見該區段標頭：E 已被 Task 4 審查
+// 修復追加的「成組＋邊界回彈」區段佔用，F 遞補）；task-6-brief.md「F 區」以其
+// 描述的測試意圖為準（iframe 零重載命門＋罐頭入組期間 per-path key 暫停），非
+// 字面字母對應，同全檔既有慣例（見 F 區標頭同一說明）。
+// IPsearch（server-markup quirk）：stub 環境無伺服器 markup（.IPsearch_in_panelALL
+// 由 auth-protected-tabs.js 的 fetchProtectedContentWithRetry 依伺服器回應動態
+// 注入，此處 order-tool-api 攔截回傳 {success:false}，該面板從未存在於 DOM），
+// 無法在本測試環境驗證；歸隊邏輯（canvas-engine.js hydratePageJoins：每次登入
+// 皆重新 joinMember 持久化的 page 成員，elFor() 以 rootSelector 即時查詢、不管
+// DOM 節點是否為 clear→init 重新注入的新實例）與罐頭/consultant 共用同一套
+// 泛化機制，由下方 G2-G4（罐頭）與 G1（iframe）間接覆蓋，見 task brief 脈絡段
+// 「測試以罐頭＋consultant 覆蓋」。
+console.log('— G. quirks 歸隊：罐頭可入組 ＋ iframe 零重載命門 —');
+
+// -- G1：iframe 零重載命門——consultant 內嵌 iframe（SA_iframe.html，同源）
+//    種 contentWindow canary，成組/解散全程存活＝從未重載（零 re-parent）。--
+// iframe 的容器（.small-size 展開態的 #content）預設 display:none（收合狀態），
+// waitForSelector 預設等「visible」會逾時——只需等它已掛載（attached），
+// display:none 不影響 contentWindow 存在與否／canary 可寫入性。
+await page.waitForSelector('.consultantlistgooglesheet iframe', { state: 'attached', timeout: 15000 });
+await page.evaluate(() => {
+  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
+  ifr.contentWindow.__reloadCanary = 'alive';
+});
+const pg2 = await page.evaluate(() => window.PageEngine.create(['consultant', 'assist']));
+A(typeof pg2 === 'string' && pg2.startsWith('pg:'), `G1: consultant+assist 成組（${pg2}）`);
+await page.waitForTimeout(300);
+A(await page.evaluate(() => {
+  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
+  return !!ifr && !!ifr.contentWindow && ifr.contentWindow.__reloadCanary === 'alive';
+}), 'G1: 成組全程 iframe 零重載（canary 存活）');
+await page.evaluate((id) => window.PageEngine.dissolve(id), pg2);
+await page.waitForTimeout(200);
+A(await page.evaluate(() => {
+  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
+  return !!ifr && !!ifr.contentWindow && ifr.contentWindow.__reloadCanary === 'alive';
+}), 'G1: 解散後 iframe 仍零重載');
+
+// -- G2：罐頭（body-mounted/alwaysDraggable/self-persisted quirks）可入組——
+//    API create(['canned','optitle']) → 罐頭定位進視窗內容區。--
+// 先種一個 sentinel 值到罐頭自己的 per-path key，讓 G3 的「拖動後不更新」斷言
+// 有一個非空、已知的比較基準（避免僅靠「兩者皆 null」這種較弱的等價性）。
+const CANNED_KEY_SENTINEL = JSON.stringify({ left: 1300, top: 75 });
+await page.evaluate((sentinel) => {
+  localStorage.setItem(`draggable:${location.pathname}:canned-panel-main`, sentinel);
+}, CANNED_KEY_SENTINEL);
+const cannedPreJoin = await page.evaluate(() => {
+  const r = document.querySelector('.canned-panel').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const pg3 = await page.evaluate(() => window.PageEngine.create(['canned', 'optitle']));
+A(typeof pg3 === 'string' && pg3.startsWith('pg:'), `G2: 罐頭成組（${pg3}）`);
+await page.waitForTimeout(200);
+const g2a = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const content = win.querySelector('.wm-content').getBoundingClientRect();
+  const c = document.querySelector('.canned-panel').getBoundingClientRect();
+  return { inside: c.top >= content.top - 1 && c.left >= content.left - 1 };
+}, pg3);
+A(g2a.inside, 'G2: 罐頭定位進視窗內容區');
+
+// -- G3：入組期間拖動罐頭把手 → per-path key 不更新（引擎暫停其 self-persist
+//    寫入，見 dragb_msg_pnl.js setSelfPersistPaused／canvas-engine.js
+//    setQuirkPersistPaused）。--
+const cannedBeforeDrag = await page.evaluate(() => {
+  const r = document.querySelector('.canned-panel').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const cannedHandleBox = await page.locator('.canned-panel-handle').boundingBox();
+await page.mouse.move(cannedHandleBox.x + cannedHandleBox.width / 2, cannedHandleBox.y + cannedHandleBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(cannedHandleBox.x + 50, cannedHandleBox.y + 50, { steps: 6 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+const cannedKeyAfterDrag = await page.evaluate(() =>
+  localStorage.getItem(`draggable:${location.pathname}:canned-panel-main`));
+A(cannedKeyAfterDrag === CANNED_KEY_SENTINEL,
+  `G3: 入組期間拖動罐頭 per-path key 不更新（after=${cannedKeyAfterDrag}）`);
+// 拖動本身仍應產生可見位移（確認上面的「不更新」不是因為根本沒拖動到）。
+const cannedAfterDrag = await page.evaluate(() => {
+  const r = document.querySelector('.canned-panel').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const cannedDragMoved = Math.hypot(cannedAfterDrag.left - cannedBeforeDrag.left, cannedAfterDrag.top - cannedBeforeDrag.top);
+A(cannedDragMoved > 20, `G3: 拖動確實產生位移（Δ=${cannedDragMoved.toFixed(1)}px）`);
+
+// -- G4：dissolve 後罐頭回 detachedRect（入組前座標）。--
+await page.evaluate((id) => window.PageEngine.dissolve(id), pg3);
+await page.waitForTimeout(200);
+const cannedPostDissolve = await page.evaluate(() => {
+  const r = document.querySelector('.canned-panel').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+A(Math.abs(cannedPostDissolve.left - cannedPreJoin.left) < 2 && Math.abs(cannedPostDissolve.top - cannedPreJoin.top) < 2,
+  `G4: dissolve 後罐頭回 detachedRect（pre=(${cannedPreJoin.left.toFixed(1)},${cannedPreJoin.top.toFixed(1)}), post=(${cannedPostDissolve.left.toFixed(1)},${cannedPostDissolve.top.toFixed(1)})）`);
+// 退組後 self-persist 已恢復——之後再拖動應正常寫回 per-path key（對稱驗證，
+// 避免「暫停」的旗標卡死在關閉狀態、遺留成永久停用）。
+const cannedHandleBox2 = await page.locator('.canned-panel-handle').boundingBox();
+await page.mouse.move(cannedHandleBox2.x + cannedHandleBox2.width / 2, cannedHandleBox2.y + cannedHandleBox2.height / 2);
+await page.mouse.down();
+await page.mouse.move(cannedHandleBox2.x + 30, cannedHandleBox2.y + 30, { steps: 4 });
+await page.mouse.up();
+await page.waitForTimeout(200);
+const cannedKeyAfterLeaveDrag = await page.evaluate(() =>
+  localStorage.getItem(`draggable:${location.pathname}:canned-panel-main`));
+A(cannedKeyAfterLeaveDrag !== CANNED_KEY_SENTINEL,
+  `G4: 退組後 self-persist 恢復，拖動再次寫回 per-path key（after=${cannedKeyAfterLeaveDrag}）`);
+
 await page.close();
 
 const anyFail = fails.length > 0;

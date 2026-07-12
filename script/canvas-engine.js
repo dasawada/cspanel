@@ -330,9 +330,37 @@ function spaceGapPx() {
 // 動態查目前所屬視窗（頁可能已被拖去合併/撕離，Task 4/7 場景），避免存活期間
 // 積累的 stale 參照。panelId -> { el, raiseHandler, pageId }。
 const pageJoins = new Map();
+// 九期B Task 6：quirks 歸隊——detachedRect（spec §7：「面板畫布座標＋
+// detachedRect（離組恢復用）」）。panelId -> {left, top}，入組「當下」（尚未被
+// pageHost.layout 接管改寫之前）捕捉一次，退組時原樣寫回（含 body-mounted 罐頭
+// 同樣成立——captureDetachedRect 只讀 inline style／offsetLeft/Top，不管
+// containing block）。純記憶體狀態（不持久化）：跨登出/reload 後若面板已是
+// page 成員，hydratePageJoins 重新 joinMember 時不會補捕（它本就不是「即將
+// 退組」的操作），該次退組會安全落回舊行為（清 inline style、回 CSS 幾何）。
+const detachedRects = new Map();
+function captureDetachedRect(panelId) {
+  const el = elFor(panelId);
+  if (!el) return null;
+  const left = el.style.left ? parseFloat(el.style.left) : el.offsetLeft;
+  const top = el.style.top ? parseFloat(el.style.top) : el.offsetTop;
+  if (!Number.isFinite(left) || !Number.isFinite(top)) return null;
+  return { left, top };
+}
+// 九期B Task 6：quirks 歸隊——self-persisted 面板（目前僅罐頭）入組期間暫停其
+// 自身 per-path 儲存寫入（見 dragb_msg_pnl.js setSelfPersistPaused 檔頭註解），
+// 退組時恢復。經 manifest quirks 掛點動態尋找模組匯出的 setSelfPersistPaused，
+// 泛化於「任何 quirks 含 self-persisted 且匯出同名函式」的面板，非寫死罐頭
+// 字面（目前唯一符合者是罐頭）。
+function setQuirkPersistPaused(panelId, paused) {
+  const entry = activeCanvas?.manifest?.panels.find((p) => p.id === panelId);
+  if (!entry || !(entry.quirks || []).includes('self-persisted')) return;
+  const mod = activeCanvas.mods.get(panelId);
+  if (mod && typeof mod.setSelfPersistPaused === 'function') mod.setSelfPersistPaused(paused);
+}
 function joinMember(panelId, pageId, hostWinId) {
   const el = elFor(panelId);
   if (!el) return;
+  setQuirkPersistPaused(panelId, true);
   const existing = pageJoins.get(panelId);
   if (existing) el.removeEventListener('pointerdown', existing.raiseHandler, true); // 防呆：重複 join（addMember 冪等路徑）
   const raiserIdx = stackRaisers.findIndex((r) => r.id === panelId);
@@ -355,18 +383,32 @@ function joinMember(panelId, pageId, hostWinId) {
   el.addEventListener('pointerdown', raiseHandler, true);
   pageJoins.set(panelId, { el, raiseHandler, pageId });
 }
-// 退組：卸除 join 監聽器＋清成員身上由 layout() 寫入的定位/疊序 inline 樣式
-// （回歸 canvas-geometry 樣式表或 manifest 預設幾何），重新掛回個別 stack 疊序
-// 身分（比照 registerPanelStack 的註冊形狀）。
+// 退組：卸除 join 監聽器＋清成員身上由 layout() 寫入的定位/疊序 inline 樣式，
+// 重新掛回個別 stack 疊序身分（比照 registerPanelStack 的註冊形狀）。九期B
+// Task 6：若入組當下捕捉過 detachedRect，明確寫回該座標（並同步進統一 layout
+// store，spec §7「退組時恢復並以 detachedRect 寫回統一 layout」）——比單純清
+// inline style（回落 canvas-geometry，僅在面板入組前從未被拖過時才等價於
+// detachedRect）更精確；沒有捕捉到時（例：hydratePageJoins 重新登入路徑）安全
+// 落回舊行為。
 function leaveMember(panelId) {
   const join = pageJoins.get(panelId);
   if (!join) return;
   join.el.removeEventListener('pointerdown', join.raiseHandler, true);
   pageJoins.delete(panelId);
+  setQuirkPersistPaused(panelId, false);
   const el = join.el;
-  el.style.removeProperty('left');
-  el.style.removeProperty('top');
-  el.style.removeProperty('display');
+  const detached = detachedRects.get(panelId);
+  detachedRects.delete(panelId);
+  if (detached) {
+    el.style.left = detached.left + 'px';
+    el.style.top = detached.top + 'px';
+    el.style.removeProperty('display');
+    if (activeCanvas) saveLayoutEntry(activeCanvas.manifest.id, panelId, detached);
+  } else {
+    el.style.removeProperty('left');
+    el.style.removeProperty('top');
+    el.style.removeProperty('display');
+  }
   el.classList.remove('gl-stack-pane', 'is-stack-top');
   el.style.removeProperty('--stack-rank');
   const manifestEntry = activeCanvas?.manifest?.panels.find((p) => p.id === panelId);
@@ -457,6 +499,15 @@ function pgCreate(members, opts) {
   if (!pageEngineOn() || !Array.isArray(members)) return null;
   const ids = members.filter((id) => elFor(id) && !pageJoins.has(id));
   if (ids.length < 2) return null; // 至少兩員才成頁（單員無分組意義，呼應 spec §3.4 剩一解散）
+  // 九期B Task 6：detachedRect 必須在此刻（尚未 push 進 pages store／尚未
+  // wm.createPageWindow）捕捉——createPageWindow 內部 render() 會同步呼叫
+  // syncPanes()，屆時 page.members 已存在於 store，pageHostImpl.layout() 會
+  // 搶在下方 joinMember() 迴圈之前就把成員定位進頁內容區，晚捕捉會拿到「已被
+  // 頁接管改寫」後的座標，不是真正的入組前位置。
+  for (const id of ids) {
+    const r = captureDetachedRect(id);
+    if (r) detachedRects.set(id, r);
+  }
   const canvasId = activeCanvas.manifest.id;
   const id = genPageId();
   const page = {
@@ -498,6 +549,10 @@ function pgAddMember(pageId, panelId) {
   if (page.members.some((m) => m.panelId === panelId)) return true; // 已是成員，冪等
   const el = elFor(panelId);
   if (!el) return false;
+  // 九期B Task 6：detachedRect 同 pgCreate，必須在 push 進 page.members／
+  // writePages 之前捕捉（理由同上）。
+  const detached = captureDetachedRect(panelId);
+  if (detached) detachedRects.set(panelId, detached);
   page.members.push({ panelId, rect: null });
   page.name = computeTitle(page.members.map((m) => m.panelId));
   writePages(canvasId, pages);
@@ -903,6 +958,24 @@ function handleMemberDrop(panelId, pageId, el) {
   if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
 }
 
+// 九期B Task 6：quirks 歸隊——alwaysDraggable 面板（目前僅罐頭）已自帶常駐把手
+// （設計 §4.1：「其把手即分組拖曳表面」），不經 attachHoverHandles 生成的
+// onPositionChange wrapper（該函式明確跳過 alwaysDraggable，panelRoots 的
+// filter 條件）。罐頭的把手拖曳語義改由 initArgs 注入的 onPositionChange 回呼
+// 提供（見 loadCanvas），本函式即該回呼：入組期間比照一般成員（handleMemberDrop：
+// 內容區內→自由佈局、內容區外→退組），非成員時 no-op（native 拖曳/自身
+// self-persist 行為不變，v1/v2 非入組情境零差異）。零位移過濾比照
+// ENGINE_DRAG_THRESHOLD 同一泛化，起點由 attachHoverHandles 內建的輕量
+// pointerdown 監聽器（cannedDragStart）記錄。
+const cannedDragStart = { left: 0, top: 0 };
+function cannedOnPositionChange(pos) {
+  const join = pageJoins.get('canned');
+  if (!join) return; // 非成員：no-op，罐頭自身拖曳/儲存行為不受影響
+  const moved = Math.hypot(pos.left - cannedDragStart.left, pos.top - cannedDragStart.top);
+  if (moved < ENGINE_DRAG_THRESHOLD) return;
+  handleMemberDrop('canned', join.pageId, join.el);
+}
+
 const hoverState = { detachers: [] };
 function attachHoverHandles() {
   if (!activeCanvas?.config?.pageEngine) return;
@@ -976,6 +1049,31 @@ function attachHoverHandles() {
       detach(); hot.remove(); handle.remove();
     });
   }
+  // 九期B Task 6：alwaysDraggable 面板（目前僅罐頭）不落入上方 panelRoots 迴圈
+  // （filter 排除 alwaysDraggable，見 panelRoots），改在其既有把手（draggable.js
+  // 自動補上的 .draggable-handle class，通用發現，不寫死 .canned-panel-handle）
+  // 疊掛一顆輕量 pointerdown 監聽器，只記錄拖曳起點（cannedDragStart）供
+  // cannedOnPositionChange 判斷零位移——罐頭本身的拖曳/成組手勢（成組偵測、
+  // 預覽框）不在本期範圍（brief 唯一測試場景是 API create，非拖曳互疊成組），
+  // 故不比照上方 onHandleDown 啟動 startGroupWatch。冪等：dataset 旗標防重複
+  // 掛載（登入/登出循環，罐頭 DOM 跨登出存活，見 dragb_msg_pnl.js
+  // cannedPanelInstance 重用邏輯）。
+  for (const p of activeCanvas.manifest.panels) {
+    if (!p.alwaysDraggable || !p.rootSelector) continue;
+    const el = document.querySelector(p.rootSelector);
+    const bridgeHandle = el && el.querySelector('.draggable-handle');
+    if (!bridgeHandle || bridgeHandle.dataset.glBridged) continue;
+    bridgeHandle.dataset.glBridged = '1';
+    const onBridgeDown = () => {
+      cannedDragStart.left = el.style.left ? parseInt(el.style.left, 10) : el.offsetLeft;
+      cannedDragStart.top = el.style.top ? parseInt(el.style.top, 10) : el.offsetTop;
+    };
+    bridgeHandle.addEventListener('pointerdown', onBridgeDown);
+    hoverState.detachers.push(() => {
+      bridgeHandle.removeEventListener('pointerdown', onBridgeDown);
+      delete bridgeHandle.dataset.glBridged;
+    });
+  }
 }
 function detachHoverHandles() {
   hoverState.detachers.forEach((fn) => fn());
@@ -1014,6 +1112,15 @@ export async function loadCanvas(manifest, config = {}) {
   const cannedPanel = manifest.panels.find((x) => x.id === 'canned');
   if (layout.canned && cannedPanel) {
     cannedPanel.initArgs = [null, { left: layout.canned.x, top: layout.canned.y }];
+  }
+  // 九期B Task 6：quirks 歸隊——罐頭入組期間的把手拖曳語義（頁內自由佈局／
+  // 拖出退組）與一般成員相同，經 initArgs 注入 onPositionChange 回呼
+  // （cannedOnPositionChange 對非成員狀態 no-op，見該函式檔頭註解）。v1 模式
+  // （engineConfig.pageEngine 恆 false）完全不進這個分支，initArgs 形狀與罐頭
+  // 行為逐位元不變。
+  if (cannedPanel && engineConfig.pageEngine) {
+    const base = (cannedPanel.initArgs && cannedPanel.initArgs[1]) || {};
+    cannedPanel.initArgs = [null, { ...base, onPositionChange: cannedOnPositionChange }];
   }
 
   emitGeometry(manifest, layout);
