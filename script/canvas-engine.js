@@ -582,7 +582,15 @@ const pageHostImpl = {
 function pgCreate(members, opts) {
   if (!pageEngineOn() || !Array.isArray(members)) return null;
   const ids = members.filter((id) => elFor(id) && !pageJoins.has(id));
-  if (ids.length < 2) return null; // 至少兩員才成頁（單員無分組意義，呼應 spec §3.4 剩一解散）
+  const targetWindowId = opts && opts.targetWindowId;
+  if (!ids.length) return null;
+  // 九期B 回饋輪 Task 2：拖入既有視窗 tabbar（targetWindowId）允許建單員 page——
+  // 呼叫端（commitGroup tabbar 分支）保證恰傳一個 id，語意是「這顆面板成為該
+  // 視窗的一顆獨立分頁」，非「兩兩成組」。一般 API create（無 targetWindowId）
+  // 維持既有「至少兩員才成頁」語意逐位元不變（單員無分組意義，呼應 spec §3.4
+  // 剩一解散對稱——該自動解散只存在於 pgRemoveMember 的剩一路徑，此處新建的
+  // 單員 page 從未經過該路徑，不會被觸發，見 pgRemoveMember 定義）。
+  if (ids.length < 2 && !targetWindowId) return null;
   // 九期B Task 6：detachedRect 必須在此刻（尚未 push 進 pages store／尚未
   // wm.createPageWindow）捕捉——createPageWindow 內部 render() 會同步呼叫
   // syncPanes()，屆時 page.members 已存在於 store，pageHostImpl.layout() 會
@@ -605,7 +613,16 @@ function pgCreate(members, opts) {
   writePages(canvasId, pages);
   let winId = null;
   const wm = window.WindowManager;
-  if (wm && typeof wm.createPageWindow === 'function') {
+  if (targetWindowId && wm && typeof wm.addPageTab === 'function') {
+    // 九期B 回饋輪 Task 2：drop 於既有視窗 tabbar → 併入該視窗（不
+    // createPageWindow）。addPageTab 本身只切 active tab／persist／render，不含
+    // 置頂——由這裡明確補一次 stack.raise（stack 已於本檔頂部匯入），對應 spec
+    // 「並置頂該視窗」。stack.raise 對未註冊 key 安全 no-op（見 stack-manager.js），
+    // 但此刻該視窗必然已由 wm 的 render() 註冊過，不會落入該分支。
+    wm.addPageTab(targetWindowId, id);
+    winId = targetWindowId;
+    stack.raise(targetWindowId);
+  } else if (wm && typeof wm.createPageWindow === 'function') {
     winId = wm.createPageWindow(id, opts && opts.rect);
   }
   for (const panelId of ids) joinMember(panelId, id, winId);
@@ -889,12 +906,21 @@ function rectOverlapRatio(a, b) {
 // 候選重疊目標：其他獨立面板 root（排除自己與已入組成員——已入組成員的畫面
 // 位置即其宿主 page 視窗內容區，重疊判定改由下面的 page 視窗分支涵蓋，不重複
 // 列入，避免同一塊螢幕區域被算兩次）＋既有 page 視窗的內容區（.wm-content，
-// 取作用中 tab 為 'pg:' 開頭者，即已成頁且該頁正顯示中的視窗）。
+// 取作用中 tab 為 'pg:' 開頭者，即已成頁且該頁正顯示中的視窗）＋所有 wm 視窗的
+// tabbar（九期B 回饋輪 Task 2）。
+// pageSolo（manifest 欄位，語義：toggle 大面板不參與面板↔面板成組，只能拖進
+// tabbar 成單獨分頁）雙向排除：(a) pageSolo 面板永不出現在 panel 目標清單
+// （不管誰拖過來，疊上它都不該成組）；(b) 拖曳來源本身是 pageSolo 時，panel／
+// page 兩種目標全數排除（sourceIsSolo 分支直接跳過兩個迴圈）——但 tabbar 目標
+// 不受 (a)/(b) 任一條款限制：所有面板（含一般面板、含 pageSolo 來源）皆可拖進
+// 任一視窗 tabbar 成單獨分頁，見下方無條件的 tabbar 蒐集迴圈。
 function groupTargets(excludePanelId) {
   const targets = [];
-  if (activeCanvas) {
+  const sourceEntry = activeCanvas?.manifest?.panels.find((p) => p.id === excludePanelId);
+  const sourceIsSolo = !!(sourceEntry && sourceEntry.pageSolo);
+  if (activeCanvas && !sourceIsSolo) {
     for (const p of activeCanvas.manifest.panels) {
-      if (p.id === excludePanelId || pageJoins.has(p.id)) continue;
+      if (p.id === excludePanelId || pageJoins.has(p.id) || p.pageSolo) continue;
       const el = elFor(p.id);
       if (!el) continue;
       const rect = el.getBoundingClientRect();
@@ -902,29 +928,58 @@ function groupTargets(excludePanelId) {
       targets.push({ kind: 'panel', id: p.id, rect });
     }
   }
+  if (!sourceIsSolo) {
+    document.querySelectorAll('.wm-window').forEach((winEl) => {
+      const activeTab = winEl.querySelector('.wm-tab.is-active');
+      const tabId = activeTab && activeTab.dataset.tab;
+      if (!tabId || !tabId.startsWith('pg:')) return; // 只認 page tab（iframe tab 不可被拖入 page，§1 範圍決策）
+      const content = winEl.querySelector('.wm-content');
+      if (!content) return;
+      const rect = content.getBoundingClientRect();
+      if (rect.width <= 0 || rect.height <= 0) return;
+      targets.push({ kind: 'page', id: tabId, rect });
+    });
+  }
+  // tabbar 目標：winId 透過既有公開 API window.WindowManager.findWindowForTab
+  // 反查（.wm-window 本身不帶 win.id DOM 屬性，window-manager.js 屬本 Task
+  // 不可修改檔案——見 task-2-brief.md Files 清單，故不新增 dataset 屬性，改借用
+  // 視窗必然至少一顆 tab 這個不變式，取任一顆 tab 的 data-tab 反查宿主 winId）。
+  // rank：多視窗 tabbar 在畫面上重疊時，命中判定（tick() 內）取 --stack-rank
+  // 較大者（畫面最上層），比照 window-manager.js tabBarAt() 同一精神。
+  const wm = window.WindowManager;
   document.querySelectorAll('.wm-window').forEach((winEl) => {
-    const activeTab = winEl.querySelector('.wm-tab.is-active');
-    const tabId = activeTab && activeTab.dataset.tab;
-    if (!tabId || !tabId.startsWith('pg:')) return; // 只認 page tab（iframe tab 不可被拖入 page，§1 範圍決策）
-    const content = winEl.querySelector('.wm-content');
-    if (!content) return;
-    const rect = content.getBoundingClientRect();
+    const bar = winEl.querySelector('.wm-tabbar');
+    if (!bar) return;
+    const anyTab = bar.querySelector('.wm-tab');
+    const tabId = anyTab && anyTab.dataset.tab;
+    const winId = tabId && wm && typeof wm.findWindowForTab === 'function' ? wm.findWindowForTab(tabId) : null;
+    if (!winId) return;
+    const rect = bar.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
-    targets.push({ kind: 'page', id: tabId, rect });
+    const rank = parseInt(winEl.style.getPropertyValue('--stack-rank'), 10) || 0;
+    targets.push({ kind: 'tabbar', winId, rect, rank });
   });
   return targets;
+}
+function pointInRect(pt, rect) {
+  return pt.x >= rect.left && pt.x <= rect.right && pt.y >= rect.top && pt.y <= rect.bottom;
 }
 // 成組預覽框：絕對定位（position:fixed，與 getBoundingClientRect 同視窗座標系）
 // 罩在目標矩形上；token 樣式（--accent-ring 外框＋--accent-tint 底）見
 // style/v2/page-engine.css .gl-group-preview。同時只會有一個（單一滑鼠/觸點）。
-function showGroupPreview(rect) {
+// text：預覽框文案——一般面板/page 目標「組成一頁」、tabbar 目標「成為分頁」
+// （九期B 回饋輪 Task 2）；每次呼叫都重寫 textContent（而非只在建立時寫一次），
+// 因為目標鎖定切換時 hideGroupPreview() 會先整個移除元素，下一次 showGroupPreview
+// 必是「重新建立」，但寫在每次呼叫仍保險（避免未來若改成不整個移除的節流優化時
+// 文案卡在舊值）。
+function showGroupPreview(rect, text) {
   let el = document.querySelector('.gl-group-preview');
   if (!el) {
     el = document.createElement('div');
     el.className = 'gl-group-preview';
-    el.textContent = '組成一頁';
     document.body.appendChild(el);
   }
+  el.textContent = text || '組成一頁';
   el.style.left = rect.left + 'px';
   el.style.top = rect.top + 'px';
   el.style.width = rect.width + 'px';
@@ -939,9 +994,14 @@ function hideGroupPreview() {
 // setTimeout(GROUP_TICK_MS) 節流輪詢（理由見上方檔頭註解——不用 requestAnimationFrame
 // 是為了不與 draggable.js 自己的 rAF 鏈搶同一顆動畫幀）持續檢查與候選目標的重疊
 // 比例；達 GROUP_OVERLAP_RATIO 且連續 ≥GROUP_DWELL_MS 才浮現預覽框、鎖定目標。
+// 九期B 回饋輪 Task 2：另掛 document pointermove（passive）記錄 lastPointer——
+// tabbar 目標的命中判定不是面積重疊（tabbar 僅 36px 高，面積比永遠達不到
+// GROUP_OVERLAP_RATIO），改用指標座標是否落在 tabbar rect 內；teardown（finish()）
+// 一併移除這個監聽器，不隨拖曳結束外洩。
 // Esc（一次性 keydown 監聽，drop 或 Esc 時卸除）取消本次成組意圖——預覽消失，
 // 但不中斷拖曳本身，放開仍走正常落位。finish() 供 onPositionChange（drop）呼叫，
-// 回傳當下鎖定的目標（{kind,id}｜null）並收尾（停輪詢、拆預覽、卸 Esc 監聽）。
+// 回傳當下鎖定的目標（{kind,id}｜{kind:'tabbar',winId}｜null）並收尾（停輪詢、
+// 拆預覽、卸 Esc／pointermove 監聽）。
 // myTelemetry：呼叫端傳入 onHandleDown 剛指派的 dragTelemetry 物件參照本身（非
 // panelId 字串）——guard 用物件恆等比對，同一面板連續兩次拖曳會產生兩個不同的
 // dragTelemetry 物件，字串 panelId 相同無法區分「這一輪」與「上一輪」，物件參照
@@ -950,8 +1010,12 @@ function startGroupWatch(panelId, el, myTelemetry) {
   let timer = null;
   let sinceTs = 0;
   let sinceKey = null;
-  let locked = null; // 已達懸停門檻、預覽框顯示中的目標 {kind,id}
+  let locked = null; // 已達懸停門檻、預覽框顯示中的目標 {kind,id}｜{kind:'tabbar',winId}
   let cancelled = false;
+  let lastPointer = { x: -1, y: -1 };
+
+  function onPointerMove(e) { lastPointer = { x: e.clientX, y: e.clientY }; }
+  document.addEventListener('pointermove', onPointerMove, { passive: true });
 
   function stopTick() { if (timer) clearTimeout(timer); timer = null; }
   function onKeydown(e) {
@@ -968,15 +1032,24 @@ function startGroupWatch(panelId, el, myTelemetry) {
     const dragRect = el.getBoundingClientRect();
     let best = null;
     for (const t of groupTargets(panelId)) {
+      if (t.kind === 'tabbar') {
+        if (!pointInRect(lastPointer, t.rect)) continue;
+        // 指標同時落在多個重疊 tabbar 內（多視窗疊放）：取畫面最上層（rank 較
+        // 大）；tabbar 命中一律優先於下面 panel/page 的面積重疊判定（更精準的
+        // 手勢意圖）。
+        if (!best || best.kind !== 'tabbar' || t.rank > best.rank) best = t;
+        continue;
+      }
+      if (best && best.kind === 'tabbar') continue; // 已鎖定 tabbar，不被面積重疊覆蓋
       const ratio = rectOverlapRatio(dragRect, t.rect);
       if (ratio >= GROUP_OVERLAP_RATIO && (!best || ratio > best.ratio)) best = { ...t, ratio };
     }
     const now = performance.now();
-    const key = best ? best.kind + ':' + best.id : null;
+    const key = best ? best.kind + ':' + (best.kind === 'tabbar' ? best.winId : best.id) : null;
     if (key !== sinceKey) { sinceKey = key; sinceTs = now; } // 目標切換（含變回 null）重新起算懸停計時
     if (best && now - sinceTs >= GROUP_DWELL_MS) {
-      locked = { kind: best.kind, id: best.id };
-      showGroupPreview(best.rect);
+      locked = best.kind === 'tabbar' ? { kind: 'tabbar', winId: best.winId } : { kind: best.kind, id: best.id };
+      showGroupPreview(best.rect, best.kind === 'tabbar' ? '成為分頁' : '組成一頁');
     } else if (locked) {
       locked = null;
       hideGroupPreview();
@@ -988,16 +1061,22 @@ function startGroupWatch(panelId, el, myTelemetry) {
   return {
     finish() {
       document.removeEventListener('keydown', onKeydown);
+      document.removeEventListener('pointermove', onPointerMove);
       stopTick();
       hideGroupPreview();
       return cancelled ? null : locked;
     },
   };
 }
-// 放開時鎖定目標存在 → 成組接管：目標是既有 page 視窗則 addMember 併入，否則
-// PageEngine.create([目標id, 拖曳id])（spec §2：目標在前，拖曳面板在後）。
+// 放開時鎖定目標存在 → 成組接管：
+//   - tabbar 目標（九期B 回饋輪 Task 2）→ PageEngine.create([拖曳面板 id],
+//     { targetWindowId })：建單員 page 併入該視窗 tabbar（不 createPageWindow）；
+//   - 既有 page 視窗（page 內容區重疊）→ addMember 併入；
+//   - 一般面板（panel 重疊）→ PageEngine.create([目標id, 拖曳面板id])（spec §2：
+//     目標在前，拖曳面板在後）。
 // 回傳是否成組成功——成功時呼叫端不寫畫布 layout（成組即接管，spec §5.1）。
 function commitGroup(target, draggedPanelId) {
+  if (target.kind === 'tabbar') return !!pgCreate([draggedPanelId], { targetWindowId: target.winId });
   if (target.kind === 'page') return !!pgAddMember(target.id, draggedPanelId);
   return !!pgCreate([target.id, draggedPanelId]);
 }

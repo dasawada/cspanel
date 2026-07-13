@@ -875,7 +875,9 @@ await ctxJ.close();
 // leaveMember 還原——斷言 dt（帶 transition）入組期間 computed
 // transitionDuration 為 0s，dissolve 後回落 CSS 幾何的 0.3s（v1 語義不變）。
 // 沿用 A–I 區同一 `page`（success:false stub 語境，J 區的 pj/ctxJ 是獨立
-// context，兩者互不干擾，此刻 `page` 仍開著）；本區結束才 page.close()。
+// context，兩者互不干擾，此刻 `page` 仍開著）；L 區沿用同一 page，本區結束不
+// close（見 L 區檔頭說明，物理段落同樣挪到檔尾以維持「區段字母接續檔尾現況」
+// 慣例，L 結束才真正 page.close()）。
 console.log('— K. 入組成員抑制 transition（joinMember/leaveMember，回饋輪 Task 1）—');
 const pgK = await page.evaluate(() => window.PageEngine.create(['dt', 'optitle']));
 A(typeof pgK === 'string' && pgK.startsWith('pg:'), `K: 成組 dt+optitle（${pgK}）`);
@@ -886,6 +888,145 @@ await page.evaluate((id) => window.PageEngine.dissolve(id), pgK);
 await page.waitForTimeout(200);
 const k2 = await page.evaluate(() => getComputedStyle(document.querySelector('.DT_panel')).transitionDuration);
 A(k2 === '0.3s', `K2: dissolve 後 dt 的 transition 復原為 CSS 幾何 0.3s（transitionDuration=${k2}）`);
+
+// ===== L. pageSolo 面板——排除成組、拖進 wm 視窗 tabbar 成單獨分頁（九期B 回饋輪 Task 2）=====
+// 根因：groupTargets()（成組候選集組成點）原本無條件把「其他自由面板」與「既有
+// page 視窗內容區」都算進重疊候選——toggle 大面板（dt/consultant/assist）畫面
+// 尺寸夠大，日常操作很容易與其他面板／頁視窗重疊過門檻，違反使用者「這類大面板
+// 只想拖進視窗 tabbar 成獨立分頁，不該被誤觸成組」的期待。修法：manifest 新增
+// `pageSolo:true`（cs.js dt/consultant/assist），groupTargets() 雙向排除（來源
+// 是 pageSolo → panel/page 目標全排除；任何面板拖曳時 pageSolo 面板不出現在
+// panel 目標清單）；新增 tabbar 目標型別（指標座標 in-rect 命中，非面積重疊——
+// tabbar 僅 36px 高，面積比永遠達不到 GROUP_OVERLAP_RATIO），對所有面板（含一般
+// 面板）開放，drop 後 PageEngine.create([panelId], { targetWindowId }) 建單員
+// page 併入該視窗。沿用 K 區同一 `page`（此刻仍開著，K 結束未 close）。
+console.log('— L. pageSolo 面板：排除成組、拖進 tabbar 成單獨分頁（回饋輪 Task 2）—');
+
+// -- L1(a): 拖 dt（pageSolo 來源）疊上 optitle，懸停 700ms 不應出現成組預覽
+//    （來源排除——groupTargets 對 sourceIsSolo 直接跳過 panel/page 兩個迴圈，
+//    此刻無任何 wm 視窗存在，tabbar 候選亦為空，best 全程為 null）。--
+const dtBoxA = await page.locator('.DT_panel').boundingBox();
+const optBoxA = await page.locator('.optitlepanel').boundingBox();
+await page.mouse.move(dtBoxA.x + dtBoxA.width / 2, dtBoxA.y + 4);
+await page.mouse.down();
+await page.mouse.move(optBoxA.x + optBoxA.width / 2, optBoxA.y + optBoxA.height / 2, { steps: 8 });
+await page.waitForTimeout(700);
+A(await page.evaluate(() => !document.querySelector('.gl-group-preview')),
+  'L1a: pageSolo 來源（dt）疊上一般面板懸停 700ms 不出現成組預覽');
+await page.mouse.up();
+await page.waitForTimeout(200);
+A(await page.evaluate(() => JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 0),
+  'L1a: 放開後未成組（pages store 仍空）');
+// 防呆清場：RED（修復前）dt 其實會正常成組——若不清掉，optitle 會變成 page
+// 成員，導致 L1b 因「已是成員、joinMember 不啟動 groupWatch」而巧合通過，並非
+// 真的驗證到 pageSolo 目標排除；GREEN（修復後）這裡 pages store 應已是空，
+// dissolve 呼叫安全 no-op（找不到 page id 直接跳過）。
+await (async () => {
+  const leftoverId = await page.evaluate(() => {
+    const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+    return pgs[0] ? pgs[0].id : null;
+  });
+  if (leftoverId) {
+    await page.evaluate((id) => window.PageEngine.dissolve(id), leftoverId);
+    await page.waitForTimeout(200);
+  }
+})();
+
+// -- L1(b): 拖 optitle 疊上 dt（pageSolo 目標），懸停 700ms 不應出現成組預覽
+//    （目標排除——dt 被 groupTargets 的 panel 迴圈濾掉，不管誰拖過來）。--
+const optBoxB = await page.locator('.optitlepanel').boundingBox();
+const dtBoxB = await page.locator('.DT_panel').boundingBox();
+await page.mouse.move(optBoxB.x + optBoxB.width / 2, optBoxB.y + 4);
+await page.mouse.down();
+await page.mouse.move(dtBoxB.x + dtBoxB.width / 2, dtBoxB.y + dtBoxB.height / 2, { steps: 8 });
+await page.waitForTimeout(700);
+A(await page.evaluate(() => !document.querySelector('.gl-group-preview')),
+  'L1b: 一般面板疊上 pageSolo 目標（dt）懸停 700ms 不出現成組預覽');
+await page.mouse.up();
+await page.waitForTimeout(200);
+A(await page.evaluate(() => JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 0),
+  'L1b: 放開後未成組（pages store 仍空）');
+// 同上防呆清場，確保 L1(c) 開始時 dt/optitle 皆為自由面板。
+await (async () => {
+  const leftoverId = await page.evaluate(() => {
+    const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+    return pgs[0] ? pgs[0].id : null;
+  });
+  if (leftoverId) {
+    await page.evaluate((id) => window.PageEngine.dissolve(id), leftoverId);
+    await page.waitForTimeout(200);
+  }
+})();
+
+// -- L1(c): 先 API 建一個 page 視窗（shrturl+tooldl，兩者此刻皆為自由面板），
+//    拖 dt 使指標進入其 tabbar 懸停 → 預覽（文案含「成為分頁」）→ 放開 → 該
+//    視窗多一顆 tab、標題「測試報告生成」、dt 定位進內容區、pages store 多一筆
+//    單員 page 且不自動解散。--
+const pgL = await page.evaluate(() => window.PageEngine.create(['shrturl', 'tooldl']));
+A(typeof pgL === 'string' && pgL.startsWith('pg:'), `L1c: 先建一個 page 視窗（${pgL}）`);
+await page.waitForTimeout(200);
+const lBar = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const b = win.querySelector('.wm-tabbar').getBoundingClientRect();
+  return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
+}, pgL);
+const dtBoxC = await page.locator('.DT_panel').boundingBox();
+await page.mouse.move(dtBoxC.x + dtBoxC.width / 2, dtBoxC.y + 4);
+await page.mouse.down();
+await page.mouse.move((dtBoxC.x + dtBoxC.width / 2 + lBar.x) / 2, (dtBoxC.y + 4 + lBar.y) / 2, { steps: 6 });
+await page.mouse.move(lBar.x, lBar.y, { steps: 8 });
+// 軟性等待（不用 waitForSelector 的預設拋錯行為）：RED 階段（修復前）本就預期
+// 不會出現預覽，讓後續斷言能以清楚的失敗訊息呈現，而不是整支測試腳本中途拋例
+// 外中斷、後面 K 之外的區段全部無法回報。
+const lPreviewSeen = await page.waitForSelector('.gl-group-preview', { timeout: 3000 }).then(() => true).catch(() => false);
+const lPreviewText = lPreviewSeen ? await page.evaluate(() => document.querySelector('.gl-group-preview').textContent) : null;
+A(lPreviewSeen && lPreviewText.includes('成為分頁'),
+  `L1c: 拖 dt 指標進 tabbar 懸停浮現「成為分頁」預覽（文案=${lPreviewText}）`);
+await page.waitForTimeout(600);
+await page.mouse.up();
+await page.waitForTimeout(300);
+const l1c = await page.evaluate((id) => {
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === id));
+  const tabs = win ? [...win.querySelectorAll('.wm-tab')].map((t) => t.dataset.tab) : [];
+  const newTabId = tabs.find((t) => t !== id) || null;
+  const newTab = newTabId ? win.querySelector(`.wm-tab[data-tab="${CSS.escape(newTabId)}"]`) : null;
+  const content = win ? win.querySelector('.wm-content').getBoundingClientRect() : null;
+  const dt = document.querySelector('.DT_panel').getBoundingClientRect();
+  const pages = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  return {
+    tabCount: tabs.length,
+    newTabId,
+    newTabTitle: newTab ? newTab.textContent : null,
+    dtIn: content ? (dt.top >= content.top - 1 && dt.left >= content.left - 1) : false,
+    pagesLen: pages.length,
+    newPage: newTabId ? pages.find((p) => p.id === newTabId) : null,
+  };
+}, pgL);
+A(l1c.tabCount === 2, `L1c: 視窗多一顆 tab（tabCount=${l1c.tabCount}）`);
+A(!!l1c.newTabTitle && l1c.newTabTitle.includes('測試報告生成'), `L1c: 新 tab 標題正確（${l1c.newTabTitle}）`);
+A(l1c.dtIn, 'L1c: dt 定位進視窗內容區');
+A(l1c.pagesLen === 2, `L1c: pages store 多一筆單員 page（pagesLen=${l1c.pagesLen}）`);
+A(!!l1c.newPage && l1c.newPage.members.length === 1 && l1c.newPage.members[0].panelId === 'dt',
+  `L1c: 新 page 為單員（dt）且未自動解散（members=${l1c.newPage ? JSON.stringify(l1c.newPage.members) : l1c.newPage}）`);
+
+// -- L1(d): reload 後單員 page tab 存活 --
+await page.reload();
+await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
+await page.waitForTimeout(500);
+const l1d = await page.evaluate((id) => {
+  const tab = id ? document.querySelector(`.wm-tab[data-tab="${CSS.escape(id)}"]`) : null;
+  return {
+    tabAlive: !!tab,
+    title: tab ? tab.textContent : null,
+    pagesLen: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length,
+  };
+}, l1c.newTabId);
+A(l1d.tabAlive, 'L1d: reload 後單員 page tab 存活');
+A(!!l1d.title && l1d.title.includes('測試報告生成'), `L1d: reload 後標題仍正確（${l1d.title}）`);
+A(l1d.pagesLen === 2, `L1d: reload 後 pages store 仍是 2 筆（含單員 page）（pagesLen=${l1d.pagesLen}）`);
+
 await page.close();
 
 const anyFail = fails.length > 0;
