@@ -674,13 +674,30 @@ A(await hV1Snapshot() === hV1Base, 'H4: v1 keys 位元不變（CanvasEdit.toggle
 // handleMemberDrop 的兩條路徑——draggable.js 的 needsBounce 計時器（300ms 後
 // 無條件覆寫 el.style.left/top 為回彈落點）同樣會蓋掉：
 //   I1（頁內 free 分支）：syncPanes 剛寫入的頁內定位；
-//   I2（拖出退組分支）：leaveMember 剛寫回的 detachedRect。
+//   I2（拖出退組分支）：leaveMember 剛寫回的落點。
 // 手法沿用 E 區：把 page 視窗搬到 viewport 右下角貼邊，讓「頁內拖曳落點」與
 // 「拖曳面板自身觸發邊界回彈」同時成立。斷言比照 e2/e3 的冪等性檢查（settled
 // 位置手動補跑 syncPanes 不應再變）與 G4 的 detachedRect 回復比對。
+// 九期B 回饋輪 Task 3 更新：I2 原斷言「roof 回 detachedRect」是回饋輪修復前的
+// 舊語意（leaveMember 無條件套 detachedRect，正是使用者回報的落點錯誤本身）。
+// keepPosition 修復後，I2 的 roof 是 handleMemberDrop 實際拖曳退組的那個
+// panelId，pgRemoveMember 傳 { keepPosition:true }——但 draggable.js 的
+// needsBounce 分支下，onPositionChange（連帶 leaveMember/captureDetachedRect）
+// 在其自身 300ms setTimeout 寫回 el.style.left/top 之前就已同步執行，此刻讀到
+// 的 inline left/top 其實是「這次拖曳開始前」的值（即 I1 落定的頁內 free 位
+// 置，非本次拖曳意圖的落點、也不是 detachedRect）——見 leaveMember keepPosition
+// 分支與 handleMemberDrop 拖出分支重新斷言區塊的檔頭註解，此為已知、可接受的
+// 邊界情況（brief 明文：既有重新斷言快照機制無需為此改動）。新增 shrturl（同
+// 頁「被連帶退組的另一員」，未被拖曳、無 opts）作為對照——它應仍精確回到
+// detachedRect，呼應 task-3-brief.md Step 1「剩一自動解散的最後一員仍回
+// detachedRect」。
 console.log('— I. 頁內拖曳/拖出退組 ＋ 邊界回彈：計時器後仍是 canonical 位置 —');
 const iPreJoin = await page.evaluate(() => {
   const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const iShrturlPreJoin = await page.evaluate(() => {
+  const r = document.querySelector('.linkout').getBoundingClientRect();
   return { left: r.left, top: r.top };
 });
 const pgI = await page.evaluate(() => window.PageEngine.create(['roof', 'shrturl']));
@@ -723,8 +740,11 @@ A(i1.mode === 'free', `I1: 頁內拖曳轉 free（${i1.mode}）`);
 A(Math.abs(i1.settled.left - i1.canonical.left) < 1 && Math.abs(i1.settled.top - i1.canonical.top) < 1,
   `I1: 回彈計時器後 settled 已是 canonical 頁內定位（Δ=(${(i1.settled.left - i1.canonical.left).toFixed(1)},${(i1.settled.top - i1.canonical.top).toFixed(1)})）`);
 // -- I2: 拖出退組＋回彈——把 roof 拖離內容區、貼近 viewport 左緣（落點 x=5 →
-//    元素左緣 ≈-50 < 0 → 觸發 needsBounce）。兩員頁拖出一員 → 剩一自動解散，
-//    roof 應回 detachedRect（入組前座標），而非回彈計時器覆寫的邊界落點。--
+//    元素左緣 ≈-50 < 0 → 觸發 needsBounce）。兩員頁拖出一員 → 剩一自動解散：
+//    roof（實際被拖曳者，keepPosition）不應回 detachedRect（回饋輪 Task 3 修
+//    復核心，見上方檔頭更新註解——needsBounce 邊界情況下最終落在「本次拖曳前
+//    的 I1 落定位置」，非 detachedRect）；shrturl（被連帶退組的另一員，未經手
+//    opts）仍應精確回 detachedRect（對照）。--
 const iRoofBox2 = await page.locator('.roofbutton').boundingBox();
 await page.mouse.move(iRoofBox2.x + iRoofBox2.width / 2, iRoofBox2.y + 4);
 await page.mouse.down();
@@ -733,16 +753,23 @@ await page.mouse.up();
 await page.waitForTimeout(900);
 const i2 = await page.evaluate(() => {
   const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  const s = document.querySelector('.linkout').getBoundingClientRect();
   return {
     n: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length,
     roof: { left: r.left, top: r.top },
+    shrturl: { left: s.left, top: s.top },
     roofVisible: getComputedStyle(document.querySelector('.roofbutton')).display !== 'none',
   };
 });
 A(i2.n === 0, `I2: 拖出剩一自動解散，store 清空（n=${i2.n}）`);
 A(i2.roofVisible, 'I2: 退組面板回畫布可見');
-A(Math.abs(i2.roof.left - iPreJoin.left) < 3 && Math.abs(i2.roof.top - iPreJoin.top) < 3,
-  `I2: 回彈計時器後仍回 detachedRect（pre=(${iPreJoin.left.toFixed(1)},${iPreJoin.top.toFixed(1)}), post=(${i2.roof.left.toFixed(1)},${i2.roof.top.toFixed(1)})）`);
+const i2RoofDelta = Math.hypot(i2.roof.left - iPreJoin.left, i2.roof.top - iPreJoin.top);
+A(i2RoofDelta > 50,
+  `I2: 回饋輪 Task 3 後，roof（實際被拖曳退組者）不再回 detachedRect（keepPosition 生效，detachedRect=(${iPreJoin.left.toFixed(1)},${iPreJoin.top.toFixed(1)}), 實際=(${i2.roof.left.toFixed(1)},${i2.roof.top.toFixed(1)}), Δ=${i2RoofDelta.toFixed(1)}）`);
+A(Math.abs(i2.roof.left - i1.settled.left) < 3 && Math.abs(i2.roof.top - i1.settled.top) < 3,
+  `I2: needsBounce 邊界情況下 roof 落在本次拖曳前（I1 settled）的位置（I1 settled=(${i1.settled.left.toFixed(1)},${i1.settled.top.toFixed(1)}), I2 post=(${i2.roof.left.toFixed(1)},${i2.roof.top.toFixed(1)})）`);
+A(Math.abs(i2.shrturl.left - iShrturlPreJoin.left) < 3 && Math.abs(i2.shrturl.top - iShrturlPreJoin.top) < 3,
+  `I2: 被連帶退組的另一員（shrturl）仍精確回 detachedRect（對照斷言，pre=(${iShrturlPreJoin.left.toFixed(1)},${iShrturlPreJoin.top.toFixed(1)}), post=(${i2.shrturl.left.toFixed(1)},${i2.shrturl.top.toFixed(1)})）`);
 
 // K 區（九期B 回饋輪 Task 1）沿用本區同一 `page`（success:false stub 語境），
 // 但物理段落挪到檔尾（J 之後）以維持「區段字母接續檔尾現況」慣例——延後
@@ -1026,6 +1053,141 @@ const l1d = await page.evaluate((id) => {
 A(l1d.tabAlive, 'L1d: reload 後單員 page tab 存活');
 A(!!l1d.title && l1d.title.includes('測試報告生成'), `L1d: reload 後標題仍正確（${l1d.title}）`);
 A(l1d.pagesLen === 2, `L1d: reload 後 pages store 仍是 2 筆（含單員 page）（pagesLen=${l1d.pagesLen}）`);
+
+// ===== M. 拖出退組落點所見即所得（九期B 回饋輪 Task 3）=====
+// 根因（計畫 Architecture 3）：handleMemberDrop 拖出分支呼叫 pgRemoveMember →
+// leaveMember 無條件恢復 detachedRect，蓋掉 draggable 剛寫好的落點。修法：
+// leaveMember 加 opts.keepPosition，handleMemberDrop 拖出分支傳 true——僅套用在
+// 「實際被拖曳退組的那一員」；pgRemoveMember 剩一自動解散分支內 for 迴圈掃到的
+// 「被連帶退組的另一員」不受影響，仍走 detachedRect（task-3-brief.md Step 1
+// 「剩一自動解散的最後一員仍回 detachedRect」對照斷言）。沿用全檔既有 `page`
+// （L 區結束未 close，見該區檔頭說明）。
+console.log('— M. 拖出退組落點所見即所得（keepPosition，回饋輪 Task 3）—');
+
+// -- M0：入組前先把兩員都移離原位，讓 detachedRect 與稍後 M2 的落點必然不同
+//    （task-3-brief.md Step 1 前置要求，避免巧合相等讓斷言失去意義）。直接寫
+//    inline left/top（而非模擬滑鼠拖曳）——這裡只是測試前置的「擺放」，要驗證
+//    的拖曳手勢是 M2；captureDetachedRect／leaveMember 本就只讀 inline
+//    left/top／offsetLeft/Top（見 canvas-engine.js 檔頭註解），與是否經滑鼠拖
+//    曳寫入無關，直接賦值等價、更決定性（不受 headless 環境下 rAF 節流拖曳手
+//    勢的既有偶發性 flaky 干擾，同 H3 區「不動…改為在測試這端」同一取捨精
+//    神）。--
+const mDetached = await page.evaluate(() => {
+  const place = (sel, left, top) => {
+    const el = document.querySelector(sel);
+    el.style.left = left + 'px';
+    el.style.top = top + 'px';
+    const r = el.getBoundingClientRect();
+    return { left: r.left, top: r.top };
+  };
+  return { optitle: place('.optitlepanel', 0, 0), fudausearch: place('.fudausearch-container', 0, 700) };
+});
+
+// -- M1：成組兩員（optitle+fudausearch）——此刻各自的 detachedRect 即 M0 落點。
+//    明確傳 rect 把宿主視窗擺到右上角（1000,100,480,380），與預設視窗 rect
+//    （410,160,500,600，見 H1 區註解）及 M0 兩點皆不重疊，讓 M2 的拖出落點判定
+//    乾淨可控。--
+const pgM = await page.evaluate(() =>
+  window.PageEngine.create(['optitle', 'fudausearch'], { rect: { x: 1000, y: 100, w: 480, h: 380 } }));
+A(typeof pgM === 'string' && pgM.startsWith('pg:'), `M1: 成組兩員（${pgM}）`);
+await page.waitForTimeout(200);
+await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v2')); // 清空 layout store，供 M2 驗證「落點寫入 .v2」乾淨可判定
+
+// -- M2：把其中一員（optitle）拖出內容區、放開在畫布上刻意選定、與 M0/內容區
+//    （M 自己的 1000,100,480,380 與預設視窗 410,160,500,600）皆不重疊、且離
+//    document 邊界（scrollWidth/Height）留足夠 margin 的一點，避免誤觸
+//    draggable.js 的 needsBounce（邊界回彈——回彈分支下 onPositionChange 收到的
+//    是「已修正的落點」，但 panel.style.left/top 要等其自身 300ms setTimeout
+//    才真正寫入，此刻 keepPosition 讀到的會是回彈前的舊值，不是本斷言要驗證的
+//    對象；I2 區另有專門驗證回彈情境，見該區）→ 兩員頁 splice 後剩 1（<=1）
+//    觸發整頁自動解散，但「實際被拖曳的那一員」（optitle）應落在放開時的位
+//    置——不等於 detachedRect（keepPosition 修復核心）；「被連帶退組的另一員」
+//    （fudausearch，M3 驗證）仍應回 detachedRect（對照）。「放開時面板位置」以
+//    抓取點（grab offset）＋滑鼠終點數學算出預期落點。--
+const mOptBox1 = await page.locator('.optitlepanel').boundingBox();
+const mScrollDims = await page.evaluate(() =>
+  ({ w: document.documentElement.scrollWidth, h: document.documentElement.scrollHeight }));
+const mGrabX = mOptBox1.x + mOptBox1.width / 2, mGrabY = mOptBox1.y + 4;
+// x=1200：落在 M 自己視窗（1000-1480）內、預設視窗（410-910）外；離右緣
+// （scrollWidth）留至少 optitle 寬度＋200px 緩衝。y=600：離 M/預設視窗內容區
+// （最深到 y=760）與下緣（scrollHeight）皆留至少 200px 緩衝。
+const mDropX = Math.min(1200, mScrollDims.w - mOptBox1.width - 200);
+const mDropY = Math.min(600, mScrollDims.h - mOptBox1.height - 200);
+const mExpected = { left: mDropX - (mGrabX - mOptBox1.x), top: mDropY - (mGrabY - mOptBox1.y) };
+// draggable.js 的 handleDragMove 用 requestAnimationFrame 節流 pointermove→
+// updateElementPosition：一次到位的 mouse.move({steps:10}) 在本檔案這個位置
+// （DOM/監聽器已大量累積）偶爾會讓瀏覽器在送出「這次拖曳的第一顆動畫幀」之前
+// 就已處理完 pointerup，dragState.translateX/Y 全程停在 0，變成「零位移」的
+// mouseup（同九期B Task 4 A 區、H3 區既有 flaky 成因，見 H3 hDrag 檔頭註解）。
+// 比照 H3 的 hDrag：分段移動、每段之間留一次動畫幀空檔，確保 rAF 有機會真正
+// 處理過至少一次 move。
+await page.mouse.move(mGrabX, mGrabY);
+await page.mouse.down();
+const mSegs = 4;
+for (let i = 1; i <= mSegs; i++) {
+  const x = mGrabX + (mDropX - mGrabX) * (i / mSegs);
+  const y = mGrabY + (mDropY - mGrabY) * (i / mSegs);
+  await page.mouse.move(x, y, { steps: 3 });
+  await page.waitForTimeout(30);
+}
+await page.mouse.up();
+await page.waitForTimeout(900); // 跨過 draggable.js BOUNCE_DURATION(300ms)＋GROUP_BOUNCE_REASSERT_MS(500ms) 兩顆計時器，讓畫面完全落定
+const mAfterSettle = await page.evaluate((id) => {
+  const pages = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  const layout = JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}');
+  const optEl = document.querySelector('.optitlepanel');
+  const fudaEl = document.querySelector('.fudausearch-container');
+  const opt = optEl.getBoundingClientRect();
+  const fuda = fudaEl.getBoundingClientRect();
+  return {
+    // 全檔累積套件：localStorage 此刻仍留有 L 區未拆的兩筆 page（pgL＋單員 dt
+    // page），pagesLen 不能拿來當「pgM 是否已解散」的判準——改為明確找 pgM 這個
+    // id 是否還在 store 裡（自動解散後應被移除，見 pgRemoveMember 的剩一分支）。
+    pgMGone: !pages.some((p) => p.id === id),
+    optitle: { left: opt.left, top: opt.top },
+    fudausearch: { left: fuda.left, top: fuda.top },
+    optitleInline: { left: parseFloat(optEl.style.left), top: parseFloat(optEl.style.top) },
+    layoutOptitle: layout.optitle || null,
+  };
+}, pgM);
+A(mAfterSettle.pgMGone, `M2: 兩員頁拖出一員後剩一，自動解散（pgM 已從 store 移除）`);
+A(Math.abs(mAfterSettle.optitle.left - mExpected.left) < 5 && Math.abs(mAfterSettle.optitle.top - mExpected.top) < 5,
+  `M2: optitle computed left/top ≈ 放開時面板位置（預期=(${mExpected.left.toFixed(1)},${mExpected.top.toFixed(1)}), 實際=(${mAfterSettle.optitle.left.toFixed(1)},${mAfterSettle.optitle.top.toFixed(1)})）`);
+const mOptDelta = Math.hypot(mAfterSettle.optitle.left - mDetached.optitle.left, mAfterSettle.optitle.top - mDetached.optitle.top);
+A(mOptDelta > 50,
+  `M2: optitle 落點與 detachedRect 明顯不同（keepPosition 生效，Δ=${mOptDelta.toFixed(1)}px，detachedRect=(${mDetached.optitle.left.toFixed(1)},${mDetached.optitle.top.toFixed(1)})，落點=(${mAfterSettle.optitle.left.toFixed(1)},${mAfterSettle.optitle.top.toFixed(1)})）`);
+A(!!mAfterSettle.layoutOptitle &&
+  Math.abs(mAfterSettle.layoutOptitle.x - mAfterSettle.optitleInline.left) < 1 && Math.abs(mAfterSettle.layoutOptitle.y - mAfterSettle.optitleInline.top) < 1,
+  `M2: layout store .v2 記錄落點（layout=${JSON.stringify(mAfterSettle.layoutOptitle)}, inline=(${mAfterSettle.optitleInline.left},${mAfterSettle.optitleInline.top})）`);
+
+// -- M3：被連帶退組的另一員（fudausearch，對照）——未被拖曳、無 opts，仍回
+//    detachedRect（task-3-brief.md Step 1「剩一自動解散的最後一員仍回
+//    detachedRect」）。--
+A(Math.abs(mAfterSettle.fudausearch.left - mDetached.fudausearch.left) < 3 &&
+  Math.abs(mAfterSettle.fudausearch.top - mDetached.fudausearch.top) < 3,
+  `M3: 被連帶退組的另一員（fudausearch）仍回 detachedRect（對照斷言，pre=(${mDetached.fudausearch.left.toFixed(1)},${mDetached.fudausearch.top.toFixed(1)}), post=(${mAfterSettle.fudausearch.left.toFixed(1)},${mAfterSettle.fudausearch.top.toFixed(1)})）`);
+
+// -- M4：對照組——API removeMember（無 opts）／剩一自動解散維持 detachedRect
+//    語義不變（brief 明文：「API PageEngine.dissolve／removeMember（無 opts）與
+//    剩一自動解散維持 detachedRect 語義不變」）。用另一組面板（roof+consultant）
+//    純 API 操作（無滑鼠拖曳），驗證「不傳 opts」路徑完全不受 keepPosition 影響。--
+const mApiPreJoin = await page.evaluate(() => {
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  return { left: r.left, top: r.top };
+});
+const pgM2 = await page.evaluate(() => window.PageEngine.create(['roof', 'consultant']));
+A(typeof pgM2 === 'string' && pgM2.startsWith('pg:'), `M4: 成組兩員（純 API，${pgM2}）`);
+await page.waitForTimeout(200);
+await page.evaluate((id) => window.PageEngine.removeMember(id, 'roof'), pgM2); // 無 opts → 觸發剩一自動解散
+await page.waitForTimeout(200);
+const mApiAfter = await page.evaluate((id) => {
+  const r = document.querySelector('.roofbutton').getBoundingClientRect();
+  const pages = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  return { pgM2Gone: !pages.some((p) => p.id === id), left: r.left, top: r.top };
+}, pgM2);
+A(mApiAfter.pgM2Gone, 'M4: 剩一自動解散，pgM2 已從 store 移除');
+A(Math.abs(mApiAfter.left - mApiPreJoin.left) < 3 && Math.abs(mApiAfter.top - mApiPreJoin.top) < 3,
+  `M4: API removeMember（無 opts）維持 detachedRect 語義不變（pre=(${mApiPreJoin.left.toFixed(1)},${mApiPreJoin.top.toFixed(1)}), post=(${mApiAfter.left.toFixed(1)},${mApiAfter.top.toFixed(1)})）`);
 
 await page.close();
 

@@ -442,7 +442,19 @@ function joinMember(panelId, pageId, hostWinId) {
 // inline style（回落 canvas-geometry，僅在面板入組前從未被拖過時才等價於
 // detachedRect）更精確；沒有捕捉到時（例：hydratePageJoins 重新登入路徑）安全
 // 落回舊行為。
-function leaveMember(panelId) {
+// 九期B 回饋輪 Task 3：拖出退組落點所見即所得。根因——本函式原本無條件套用
+// detachedRect（入組前座標），蓋掉 handleMemberDrop 拖出分支剛由 draggable.js
+// 寫好的實際放開落點，使用者拖出成員時面板不落在鬆手位置，而是彈回入組前的
+// 舊座標。修法：opts.keepPosition（預設 false，維持既有 API dissolve／
+// removeMember（無 opts）與 pgRemoveMember 剩一自動解散分支內「被連帶退組的
+// 另一員」（for 迴圈掃到、未經 opts 傳遞）逐位元不變的 detachedRect 語義）——
+// true 時完全跳過 detachedRect 分支，保留呼叫當下 el.style.left/top（draggable
+// 已寫好的落點，不重寫），只清 display 並把該落點同步進 v2 layout store（spec
+// §7 統一 layout 語意，供之後 syncPanes/reload 沿用同一份權威）。罐頭
+// （body-mounted）同路徑成立——captureDetachedRect 只讀 inline style／
+// offsetLeft/Top，不管 containing block，與既有 detachedRect 分支共用同一組
+// 讀值邏輯。
+function leaveMember(panelId, { keepPosition = false } = {}) {
   const join = pageJoins.get(panelId);
   if (!join) return;
   join.el.removeEventListener('pointerdown', join.raiseHandler, true);
@@ -454,7 +466,11 @@ function leaveMember(panelId) {
   el.style.transition = join.transitionBefore;
   const detached = detachedRects.get(panelId);
   detachedRects.delete(panelId);
-  if (detached) {
+  if (keepPosition) {
+    el.style.removeProperty('display');
+    const pos = captureDetachedRect(panelId);
+    if (pos && activeCanvas) saveLayoutEntry(activeCanvas.manifest.id, panelId, pos);
+  } else if (detached) {
     el.style.left = detached.left + 'px';
     el.style.top = detached.top + 'px';
     el.style.removeProperty('display');
@@ -663,7 +679,15 @@ function pgAddMember(pageId, panelId) {
   if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
   return true;
 }
-function pgRemoveMember(pageId, panelId) {
+// 九期B 回饋輪 Task 3：opts（目前僅 { keepPosition }）只透傳給「呼叫端明確要
+// 移除的那個 panelId」的 leaveMember 呼叫（不論走剩一自動解散分支或一般分支）；
+// 剩一自動解散分支內 for 迴圈掃到的「被連帶退組的另一員」從未收到 opts，逐位元
+// 維持 detachedRect 語義不變——呼應 task-3-brief.md「API PageEngine.dissolve／
+// removeMember（無 opts）與剩一自動解散維持 detachedRect 語義不變」：無 opts 的
+// API 呼叫（本函式 opts 預設 {}）與被連帶退組的一方皆不受影響，僅
+// handleMemberDrop 拖出分支明確傳 { keepPosition: true } 的那個成員享有「落點
+// 所見即所得」。
+function pgRemoveMember(pageId, panelId, opts = {}) {
   if (!pageEngineOn()) return false;
   const canvasId = activeCanvas.manifest.id;
   const pages = readPages(canvasId);
@@ -675,7 +699,7 @@ function pgRemoveMember(pageId, panelId) {
   page.members.splice(memberIdx, 1);
   if (page.members.length <= 1) {
     // 剩一員（或零）→ 整頁自動解散：連同最後一員一起回畫布、page 與其 tab 移除（spec §3.4）。
-    leaveMember(panelId);
+    leaveMember(panelId, opts);
     for (const m of page.members) leaveMember(m.panelId);
     pages.splice(idx, 1);
     writePages(canvasId, pages);
@@ -686,7 +710,7 @@ function pgRemoveMember(pageId, panelId) {
   }
   page.name = computeTitle(page.members.map((m) => m.panelId));
   writePages(canvasId, pages);
-  leaveMember(panelId);
+  leaveMember(panelId, opts);
   const wm = window.WindowManager;
   if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
   return true;
@@ -1105,22 +1129,27 @@ function pageWinContentRect(pageId) {
 //   從未被移動過）換算成內容區相對 rect，讓 layout() 之後用 free 分支重算時
 //   算出同一個位置，視覺上「其餘成員不動」。凍結完才覆寫被拖成員自己的 rect，
 //   兩者共用同一個 contentRect 快照，換算基準一致。
-//   退組（spec §3.4）：直接呼叫既有 pgRemoveMember——它已實作「清除入組期間
-//   寫入的 inline left/top/display，回落 canvas-geometry／manifest 座標」
-//   （leaveMember），等同「恢復離組前座標（detachedRect）」；剩一員時
-//   pgRemoveMember 本身即會連帶最後一員一起自動解散（spec §3.4 對稱解散）。
+//   退組（spec §3.4）：呼叫既有 pgRemoveMember，並傳 { keepPosition: true }
+//   （九期B 回饋輪 Task 3：拖出退組落點所見即所得）——保留 draggable.js 剛寫好
+//   的放開落點，不再蓋回 detachedRect（入組前座標）；剩一員時 pgRemoveMember
+//   本身即會連帶最後一員一起自動解散（spec §3.4 對稱解散），但該「被連帶退組
+//   的另一員」從未經手 opts，仍走 detachedRect（見 pgRemoveMember 檔頭註解）。
 function handleMemberDrop(panelId, pageId, el) {
   const contentRect = pageWinContentRect(pageId);
   if (!contentRect) return;
   const dragRect = el.getBoundingClientRect();
   if (rectOverlapRatio(dragRect, contentRect) < GROUP_OVERLAP_RATIO) {
-    pgRemoveMember(pageId, panelId);
+    // 九期B 回饋輪 Task 3：keepPosition:true——保留 draggable.js 剛寫好的放開
+    // 落點，不套用 detachedRect（見 pgRemoveMember／leaveMember 檔頭註解）。
+    pgRemoveMember(pageId, panelId, { keepPosition: true });
     // 九期B 終審 I2：退組分支的回彈重新斷言——pgRemoveMember → leaveMember 剛把
-    // detachedRect 寫回（或清 inline、回 CSS 幾何），draggable.js 的 needsBounce
-    // 計時器仍會在 300ms 後把 el.style.left/top 覆寫成回彈落點。syncPanes 這裡
-    // 幫不上忙（面板已非任何 page 成員，pageHost.layout 不再管它），改為快照
-    // leaveMember 剛寫好的 inline left/top，計時器後原樣重申（空字串＝當時被
-    // 清除，重申時同樣移除，維持「回 CSS 幾何」語意）。
+    // inline left/top 寫回（keepPosition 下即放開落點；被連帶退組的另一員或
+    // 無 opts 呼叫仍是 detachedRect／清 inline、回 CSS 幾何），draggable.js 的
+    // needsBounce 計時器仍會在 300ms 後把 el.style.left/top 覆寫成回彈落點。
+    // syncPanes 這裡幫不上忙（面板已非任何 page 成員，pageHost.layout 不再管
+    // 它），改為快照 leaveMember 剛寫好的 inline left/top，計時器後原樣重申
+    // （空字串＝當時被清除，重申時同樣移除，維持「回 CSS 幾何」語意；keepPosition
+    // 下則是放開落點的座標字串，重申時原樣寫回，無需改動這段快照邏輯本身）。
     const left = el.style.left, top = el.style.top;
     reassertAfterBounce(() => {
       if (pageJoins.has(panelId)) return; // 重申前又入組：頁語義已接管，不覆寫
