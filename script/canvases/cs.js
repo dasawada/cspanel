@@ -76,21 +76,21 @@ export default {
       initArgs: ['dt-panel-placeholder'], clearArgs: ['dt-panel-placeholder'],
       slot: 'dt-panel-placeholder', rootSelector: '.DT_panel',
       geometryCss: '.DT_panel { position: absolute; top: 0; left: 523px; transition: all 0.3s ease; }', // panels.css:190-196（z 移入 zOrder；!important 廢除——模板 inline z 同步移除）
-      zOrder: 4, behaviors: ['draggable'] },
+      zOrder: 4, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：toggle 大面板排除成組，僅可拖進 wm 視窗 tabbar 成單獨分頁
 
     { id: 'consultant', label: '顧問清單', module: './toggle-panels.js',
       init: 'initConsultantPanel', clear: 'clearConsultantPanel',
       initArgs: ['consultant-panel-placeholder'], clearArgs: ['consultant-panel-placeholder'],
       slot: 'consultant-panel-placeholder', rootSelector: '.consultantlistgooglesheet',
       geometryCss: '.consultantlistgooglesheet { position: absolute; height: 700px; width: 950px; top: 0px; left: 636px; }', // panels.css:198-206；right:20px 雙宣告本無效，不搬（盤點異常 C）；z 由 zOrder 供給
-      zOrder: 3, behaviors: ['draggable'] },
+      zOrder: 3, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：同 dt
 
     { id: 'assist', label: '輔導班表', module: './toggle-panels.js',
       init: 'initAssistPanel', clear: 'clearAssistPanel',
       initArgs: ['assist-panel-placeholder'], clearArgs: ['assist-panel-placeholder'],
       slot: 'assist-panel-placeholder', rootSelector: '.assist_googlesheet',
       geometryCss: '.assist_googlesheet { position: absolute; top: 0px; left: 410px; height: 600px; width: 800px; vertical-align: middle; }', // panels.css:180-188
-      zOrder: 10, behaviors: ['draggable'] },
+      zOrder: 10, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：同 dt
 
     { id: 'canned', label: '代課回應生成器', module: './dragb_msg_pnl.js',
       init: 'initCannedMessagesPanel', clear: 'clearCannedMessagesPanel',
