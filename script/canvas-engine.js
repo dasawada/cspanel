@@ -412,6 +412,16 @@ function joinMember(panelId, pageId, hostWinId) {
     stackRaisers.splice(raiserIdx, 1);
   }
   stack.unregister(panelId);
+  // 九期B 回饋輪 Task 1：抑制入組期間的 CSS transition——sharedGeometryCss／
+  // dt geometryCss 的 transition:all 0.3s ease（cs.js 字面不動，v1 頁沿用）讓
+  // pageHost.layout 每幀寫入的 inline left/top 被動畫追趕，拖曳頁視窗移動時
+  // 成員視覺「慢一拍」。inline transition:none 勝過所有樣式表，退組時還原。
+  // 記錄原始 inline 值（通常空字串）於 pageJoins entry，供 leaveMember 還原；
+  // 冪等重入（existing 已存在，例：hydratePageJoins 在同一 session 重複登入時
+  // 對「仍是同一 DOM 節點」的面板重新 joinMember）沿用舊值，避免把「上次入組
+  // 已被覆寫成 none」的髒值誤記成原始值。
+  const transitionBefore = existing ? existing.transitionBefore : el.style.transition;
+  el.style.transition = 'none';
   const raiseHandler = () => {
     const wm = window.WindowManager;
     const winId = (wm && typeof wm.findWindowForTab === 'function' && wm.findWindowForTab(pageId)) || hostWinId;
@@ -423,7 +433,7 @@ function joinMember(panelId, pageId, hostWinId) {
     if (wm && typeof wm.syncPanes === 'function') wm.syncPanes();
   };
   el.addEventListener('pointerdown', raiseHandler, true);
-  pageJoins.set(panelId, { el, raiseHandler, pageId });
+  pageJoins.set(panelId, { el, raiseHandler, pageId, transitionBefore });
 }
 // 退組：卸除 join 監聽器＋清成員身上由 layout() 寫入的定位/疊序 inline 樣式，
 // 重新掛回個別 stack 疊序身分（比照 registerPanelStack 的註冊形狀）。九期B
@@ -439,6 +449,9 @@ function leaveMember(panelId) {
   pageJoins.delete(panelId);
   setQuirkPersistPaused(panelId, false);
   const el = join.el;
+  // 九期B 回饋輪 Task 1：還原 joinMember 記錄的原始 inline transition（通常
+  // 空字串——賦值等同 removeProperty，回落 CSS 幾何的 0.3s，v1 語義不變）。
+  el.style.transition = join.transitionBefore;
   const detached = detachedRects.get(panelId);
   detachedRects.delete(panelId);
   if (detached) {
