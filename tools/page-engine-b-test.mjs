@@ -744,7 +744,9 @@ A(i2.roofVisible, 'I2: 退組面板回畫布可見');
 A(Math.abs(i2.roof.left - iPreJoin.left) < 3 && Math.abs(i2.roof.top - iPreJoin.top) < 3,
   `I2: 回彈計時器後仍回 detachedRect（pre=(${iPreJoin.left.toFixed(1)},${iPreJoin.top.toFixed(1)}), post=(${i2.roof.left.toFixed(1)},${i2.roof.top.toFixed(1)})）`);
 
-await page.close();
+// K 區（九期B 回饋輪 Task 1）沿用本區同一 `page`（success:false stub 語境），
+// 但物理段落挪到檔尾（J 之後）以維持「區段字母接續檔尾現況」慣例——延後
+// page.close() 到 K 區結束（J 用獨立 context ctxJ/pj，兩者互不干擾）。
 
 // ===== J. 真伺服器路徑（success:true）：wm 生產路徑掛載＋二輪注入防護（九期B 終審 C1/I1）=====
 // A–I 區全程走 {"success":false} stub，從未覆蓋「fetch 成功、tabsHTML 注入、
@@ -865,6 +867,26 @@ const j2b = await pj.evaluate(() => {
 A(j2b.storedHasPg, 'J2: persist 後 windows .v2 存檔仍含 pg: tab（持久化未被淨化）');
 await pj.close();
 await ctxJ.close();
+
+// ===== K. 入組成員抑制 transition（九期B 回饋輪 Task 1：修「慢一拍」）=====
+// 根因：sharedGeometryCss／dt geometryCss 的 transition:all 0.3s ease 讓
+// pageHost.layout 每幀寫入的 inline left/top 被動畫追趕，拖曳視窗移動時視覺
+// 「慢一拍」。修法：joinMember 設 inline transition:none（inline 勝 CSS），
+// leaveMember 還原——斷言 dt（帶 transition）入組期間 computed
+// transitionDuration 為 0s，dissolve 後回落 CSS 幾何的 0.3s（v1 語義不變）。
+// 沿用 A–I 區同一 `page`（success:false stub 語境，J 區的 pj/ctxJ 是獨立
+// context，兩者互不干擾，此刻 `page` 仍開著）；本區結束才 page.close()。
+console.log('— K. 入組成員抑制 transition（joinMember/leaveMember，回饋輪 Task 1）—');
+const pgK = await page.evaluate(() => window.PageEngine.create(['dt', 'optitle']));
+A(typeof pgK === 'string' && pgK.startsWith('pg:'), `K: 成組 dt+optitle（${pgK}）`);
+await page.waitForTimeout(200);
+const k1 = await page.evaluate(() => getComputedStyle(document.querySelector('.DT_panel')).transitionDuration);
+A(k1 === '0s', `K1: 入組期間 dt 的 transition 被抑制（transitionDuration=${k1}）`);
+await page.evaluate((id) => window.PageEngine.dissolve(id), pgK);
+await page.waitForTimeout(200);
+const k2 = await page.evaluate(() => getComputedStyle(document.querySelector('.DT_panel')).transitionDuration);
+A(k2 === '0.3s', `K2: dissolve 後 dt 的 transition 復原為 CSS 幾何 0.3s（transitionDuration=${k2}）`);
+await page.close();
 
 const anyFail = fails.length > 0;
 await browser.close();
