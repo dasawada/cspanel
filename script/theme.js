@@ -71,32 +71,6 @@
     activeId = id; applyTheme(p);
     try { localStorage.setItem(LS_KEY, id); } catch (e) {}
     markActive();
-    // Persist to the signed-in user's D1 settings (best-effort; silently
-    // no-ops when anonymous / offline / served without the Worker).
-    try {
-      fetch('/api/me/preferences', {
-        method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ theme: id }),
-      }).catch(function () {});
-    } catch (e) {}
-  }
-  // On load, pull the signed-in user's saved theme from D1 and apply it
-  // (server is authoritative for authenticated users). Best-effort.
-  function syncFromServer() {
-    if (!authed) return;
-    try {
-      fetch('/api/me', { headers: { 'accept': 'application/json' } })
-        .then(function (r) { return r.ok ? r.json() : null; })
-        .then(function (d) {
-          if (!authed) return;
-          var t = d && d.preferences && d.preferences.theme;
-          if (t && byId[t] && t !== activeId) {
-            activeId = t; applyTheme(byId[t]);
-            try { localStorage.setItem(LS_KEY, t); } catch (e) {}
-            markActive();
-          }
-        }).catch(function () {});
-    } catch (e) {}
   }
   function loadTheme() {
     let id = DEFAULT_ID;
@@ -108,7 +82,7 @@
     const s = document.documentElement.style;
     ['--bg-base','--bg-mesh-1','--bg-mesh-2','--bg-mesh-3','--accent','--accent-hover','--accent-2','--accent-tint','--accent-ring','--selection-bg','--user-bubble','--link','--success','--warning','--danger','--code-bg','--code-fg','--tier-fast','--tier-grounded','--tier-deep','--tier-max'].forEach(function(k){ s.removeProperty(k); });
   }
-  function onAuthLogin() { authed = true; applyTheme(byId[activeId] || byId[DEFAULT_ID]); markActive(); syncFromServer(); }
+  function onAuthLogin() { authed = true; applyTheme(byId[activeId] || byId[DEFAULT_ID]); markActive(); }
   function onAuthLogout() { authed = false; closePicker(); resetTheme(); }
   window.addEventListener('firework-login-success', onAuthLogin);
   window.addEventListener('firework-logout-success', onAuthLogout);
