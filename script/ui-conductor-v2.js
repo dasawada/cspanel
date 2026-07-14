@@ -1,24 +1,21 @@
-// ===== 系統配置 =====
 const UI_CONFIG = {
   timing: {
-    overlayFade: 500,    // 轉場淡入淡出時間
-    contentReveal: 800,  // 內容揭示總時長
-    staggerDelay: 80,    // 內容錯落顯示的延遲間隔
+    overlayFade: 500,
+    contentReveal: 800,
+    staggerDelay: 80,
   },
   easing: {
-    smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',         // 標準曲線
-    cinematic: 'cubic-bezier(0.6, 0.1, 0.4, 0.9)',  // 電影感滑行曲線
+    smooth: 'cubic-bezier(0.4, 0, 0.2, 1)',
+    cinematic: 'cubic-bezier(0.6, 0.1, 0.4, 0.9)',
   },
   effects: {
     enableParticles: true,
-    particleCount: 6,    // 粒子數量 (適量即可，避免搶戲)
+    particleCount: 6,
   }
 };
 
-// 定義統一背景 (預載與正式一致，此處保留硬編碼供預遮罩使用，CSS 變數尚未載入)
 const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
 
-// ===== 0. 立即預遮罩 (防止畫面閃爍) =====
 (function immediateOverlayCheck() {
   const token = localStorage.getItem('firebase_id_token');
   if (token) {
@@ -38,7 +35,6 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
   }
 })();
 
-// ===== 1. 初始化基礎設施 (CSS & DOM) =====
 (function initUIInfrastructure() {
   const css = `
     /* ===== 色彩系統 — 三主色，其餘自動衍生 ===== */
@@ -234,12 +230,10 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
     }
   `;
 
-  // 注入樣式
   const style = document.createElement('style');
   style.textContent = css;
   document.head.appendChild(style);
 
-  // 構建 DOM 結構
   if (!document.getElementById('ui-transition-overlay')) {
     const overlay = document.createElement('div');
     overlay.id = 'ui-transition-overlay';
@@ -266,14 +260,12 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
     document.body.appendChild(overlay);
   }
   
-  // 清除預先遮罩
   const immediateStyle = document.getElementById('ui-conductor-immediate-overlay');
   if (immediateStyle) {
     requestAnimationFrame(() => immediateStyle.remove());
   }
 })();
 
-// ===== 2. 核心控制器類 =====
 class UITransitionController {
   constructor() {
     this.overlay = document.getElementById('ui-transition-overlay');
@@ -281,7 +273,6 @@ class UITransitionController {
     this.particleContainer = document.getElementById('ui-particle-container');
   }
 
-  // Promise 封裝的等待函數
   waitTransition(element, minWaitMs = 500) {
     return new Promise(resolve => {
       let resolved = false;
@@ -297,7 +288,6 @@ class UITransitionController {
       
       element.addEventListener('transitionend', handler);
       
-      // 安全閥 (Fail-safe)
       setTimeout(() => {
         element.removeEventListener('transitionend', handler);
         if (!resolved) {
@@ -339,15 +329,11 @@ class UITransitionController {
     }
   }
 
-  // === 狀態流程 ===
-
   async playLoginTransition() {
-    console.log('🎬 UI: 開始登入轉場');
     this.overlay.classList.add('active');
     this.spawnParticles();
     this.setStatus('驗證身分中...');
     
-    // 確保有足夠的時間展示動畫
     await this.waitTransition(this.overlay, 600);
     
     document.documentElement.classList.add('auth-active');
@@ -355,7 +341,6 @@ class UITransitionController {
   }
 
   async playLogoutTransition() {
-    console.log('🎬 UI: 開始登出轉場');
     this.overlay.classList.add('active');
     this.spawnParticles();
     this.setStatus('正在安全登出...');
@@ -367,7 +352,6 @@ class UITransitionController {
   }
 
   revealContent() {
-    console.log('🎬 UI: 揭示內容');
     this.setStatus('準備就緒');
 
     setTimeout(() => {
@@ -377,7 +361,6 @@ class UITransitionController {
   }
 
   animateContentEntry() {
-    // 搜尋可進行轉場的內容區塊
     const containers = document.querySelectorAll('main, .panel, .card, header, .dashboard-grid > div');
     
     if (containers.length === 0) return;
@@ -410,7 +393,6 @@ class UITransitionController {
   }
 }
 
-// ===== 3. 啟動與事件監聽 =====
 const uiConductor = new UITransitionController();
 
 window.addEventListener('fw-auth-state-change', async (e) => {
@@ -440,5 +422,3 @@ window.addEventListener('fw-auth-state-change', async (e) => {
       break;
   }
 });
-
-console.log('🚀 UI Conductor: 雙核反應爐系統已就緒 (繁體中文版)');
