@@ -1339,6 +1339,60 @@ A(mApiAfter.pgM2Gone, 'M4: 剩一自動解散，pgM2 已從 store 移除');
 A(Math.abs(mApiAfter.left - mApiPreJoin.left) < 3 && Math.abs(mApiAfter.top - mApiPreJoin.top) < 3,
   `M4: API removeMember（無 opts）維持 detachedRect 語義不變（pre=(${mApiPreJoin.left.toFixed(1)},${mApiPreJoin.top.toFixed(1)}), post=(${mApiAfter.left.toFixed(1)},${mApiAfter.top.toFixed(1)})）`);
 
+// ===== N. 成組視窗生成於手勢位置（WYSIWYG，回饋輪 2 Task 1）=====
+// 根因（計畫 Architecture 1）：commitGroup panel 分支呼叫 pgCreate([target.id,
+// dragged]) 未傳 rect，createPageWindow 落硬編碼預設值 (410,160)，與手勢實際
+// 觸發的畫面位置無關。修法：commitGroup 取目標與拖曳兩面板「成組當下」的
+// getBoundingClientRect() 聯集為新視窗初始 rect（見 canvas-engine.js
+// groupUnionRect）。本區段把 shrturl 拖疊 roof 成組，在放開前（beforeUp，兩者
+// 螢幕位置與 commitGroup 屆時讀到的完全一致）擷取聯集 bbox 左上角（viewport
+// 座標），與放開後新 .wm-window 的 boundingRect 左上角（同為 viewport 座標，
+// 兩者無需換算容器座標即可直接比較）比對，差距應 <40px（而非落在硬編碼預設值
+// 410,160）。
+console.log('— N. 成組視窗生成於手勢位置（WYSIWYG）—');
+await sectionGate(page, 'N');
+const nRoof = await page.locator('.roofbutton').boundingBox();
+const nShr = await page.locator('.linkout').boundingBox();
+let nUnion = null;
+await engineDrag(page, '.linkout', { x: nShr.x + nShr.width / 2, y: nShr.y + 4 }, { x: nRoof.x + nRoof.width / 2, y: nRoof.y + nRoof.height / 2 }, {
+  settle: 300,
+  beforeUp: async () => {
+    const seen = await page.waitForSelector('.gl-group-preview', { timeout: 3000 }).then(() => true).catch(() => false);
+    A(seen, 'N: 重疊懸停浮現成組預覽');
+    await page.waitForTimeout(600);
+    nUnion = await page.evaluate(() => {
+      const a = document.querySelector('.linkout').getBoundingClientRect();
+      const b = document.querySelector('.roofbutton').getBoundingClientRect();
+      return { left: Math.min(a.left, b.left), top: Math.min(a.top, b.top) };
+    });
+  },
+});
+A(!!nUnion, 'N: 成組當下聯集 bbox 已擷取');
+const nWin = await page.evaluate(() => {
+  const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
+  const pg = pgs[0];
+  if (!pg) return null;
+  const win = [...document.querySelectorAll('.wm-window')].find((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => t.dataset.tab === pg.id));
+  if (!win) return null;
+  const r = win.getBoundingClientRect();
+  return { left: r.left, top: r.top, members: pg.members.map((m) => m.panelId) };
+});
+A(!!nWin && nWin.members.includes('shrturl') && nWin.members.includes('roof'),
+  `N: 放開成組（members=${nWin ? nWin.members.join(',') : 'null'}）`);
+const nDelta = (nWin && nUnion) ? Math.hypot(nWin.left - nUnion.left, nWin.top - nUnion.top) : Infinity;
+A(nDelta < 40,
+  `N: 新視窗落於手勢聯集位置，非預設 410,160（視窗=(${nWin ? nWin.left.toFixed(1) : '?'},${nWin ? nWin.top.toFixed(1) : '?'}), 聯集=(${nUnion ? nUnion.left.toFixed(1) : '?'},${nUnion ? nUnion.top.toFixed(1) : '?'}), Δ=${Number.isFinite(nDelta) ? nDelta.toFixed(1) : '?'}）`);
+// 清場
+await page.evaluate(() => {
+  for (const pg of JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]')) {
+    try { window.PageEngine.dissolve(pg.id); } catch (e) {}
+  }
+});
+await page.waitForFunction(() => document.querySelectorAll('.wm-window').length === 0, { timeout: 5000 })
+  .catch(() => console.error('  [診斷] N 收尾殘留視窗 5s 內未拆完'));
+await page.waitForTimeout(200);
+
 await page.close();
 
 const anyFail = fails.length > 0;
