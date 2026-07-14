@@ -1092,17 +1092,49 @@ function startGroupWatch(panelId, el, myTelemetry) {
     },
   };
 }
+// 九期B 回饋輪 2 Task 1：成組視窗生成於手勢位置（WYSIWYG）——panel 分支成組時
+// 取目標與拖曳兩面板「成組當下」的 getBoundingClientRect() 聯集，換算
+// .panel_all_container 容器座標（數學比照 window-manager.js containingBlockRect()：
+// 容器 border-box rect 左上角＋clientLeft/Top border 寬度＝絕對定位原點），
+// 作為新視窗的初始 rect，取代 createPageWindow 的硬編碼預設值 (410,160)。
+// +60 為 tabbar/footer chrome 概算，避免成員被壓縮；240/160 為
+// window-manager.js 的 MIN_W/MIN_H（H1 先例：pgCreate 的 opts.rect 早已支援）。
+// elFor 任一為 null（理論上不會發生——commitGroup 呼叫時兩者必然都在 DOM 中）
+// 時安全回傳 null，pgCreate 的 opts.rect 落 undefined，createPageWindow 退回既有
+// 預設值分支，不炸。
+function groupUnionRect(idA, idB) {
+  const elA = elFor(idA);
+  const elB = elFor(idB);
+  if (!elA || !elB) return null;
+  const a = elA.getBoundingClientRect();
+  const b = elB.getBoundingClientRect();
+  const left = Math.min(a.left, b.left);
+  const top = Math.min(a.top, b.top);
+  const right = Math.max(a.right, b.right);
+  const bottom = Math.max(a.bottom, b.bottom);
+  const containerEl = document.querySelector('.panel_all_container');
+  const cRect = containerEl ? containerEl.getBoundingClientRect() : { left: 0, top: 0 };
+  const cLeft = cRect.left + (containerEl ? (containerEl.clientLeft || 0) : 0);
+  const cTop = cRect.top + (containerEl ? (containerEl.clientTop || 0) : 0);
+  return {
+    x: left - cLeft,
+    y: top - cTop,
+    w: Math.max(right - left, 240),
+    h: Math.max(bottom - top + 60, 160),
+  };
+}
 // 放開時鎖定目標存在 → 成組接管：
 //   - tabbar 目標（九期B 回饋輪 Task 2）→ PageEngine.create([拖曳面板 id],
 //     { targetWindowId })：建單員 page 併入該視窗 tabbar（不 createPageWindow）；
 //   - 既有 page 視窗（page 內容區重疊）→ addMember 併入；
 //   - 一般面板（panel 重疊）→ PageEngine.create([目標id, 拖曳面板id])（spec §2：
-//     目標在前，拖曳面板在後）。
+//     目標在前，拖曳面板在後；rect＝兩者聯集 bbox，見 groupUnionRect，九期B
+//     回饋輪 2 Task 1）。
 // 回傳是否成組成功——成功時呼叫端不寫畫布 layout（成組即接管，spec §5.1）。
 function commitGroup(target, draggedPanelId) {
   if (target.kind === 'tabbar') return !!pgCreate([draggedPanelId], { targetWindowId: target.winId });
   if (target.kind === 'page') return !!pgAddMember(target.id, draggedPanelId);
-  return !!pgCreate([target.id, draggedPanelId]);
+  return !!pgCreate([target.id, draggedPanelId], { rect: groupUnionRect(target.id, draggedPanelId) });
 }
 
 // ===== 九期B Task 5：頁內互動——自由佈局、拖出退組、剩一解散 =====
