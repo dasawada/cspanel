@@ -1,3 +1,6 @@
+import { CSPANEL_API } from './cspanel-api.js';
+import { authFetch, readApiError } from './auth-fetch.js';
+
 // ===== HTML 模板 =====
 const shrtUrlPanelHTML = `
 <div class="linkout">
@@ -125,31 +128,39 @@ function ShrtURL_shortenIsGd(longUrl) {
 }
 
 // ===== 呼叫 reurl.cc 短網址 API =====
-function ShrtURL_shortenReurl(longUrl) {
-    const apiUrl = 'https://stirring-pothos-28253d.netlify.app/.netlify/functions/shorten';
+async function ShrtURL_shortenReurl(longUrl) {
+    const outputField = document.getElementById('ShrtURL_reurlOutput');
+    try {
+        const response = await authFetch(CSPANEL_API.shorten, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ url: longUrl }),
+        });
+        if (!response.ok) {
+            const apiError = await readApiError(response);
+            const error = new Error(apiError.message);
+            error.code = apiError.code;
+            error.requestId = apiError.requestId;
+            throw error;
+        }
 
-    fetch(apiUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: longUrl }),
-    })
-        .then(response => response.json())
-        .then(data => {
-            const outputField = document.getElementById('ShrtURL_reurlOutput');
-            if (data.res === 'success') {
-                outputField.value = data.short_url;
-                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', true);
-            } else {
-                outputField.value = 'reurl.cc 短網址生成失敗';
-                ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            const outputField = document.getElementById('ShrtURL_reurlOutput');
+        const data = await response.json();
+        if (data.res === 'success') {
+            outputField.value = data.short_url;
+            ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', true);
+        } else {
             outputField.value = 'reurl.cc 短網址生成失敗';
             ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
-        });
+        }
+    } catch (error) {
+        console.error('reurl.cc proxy error:', error);
+        const code = error?.code ? `[${error.code}]` : '';
+        const requestId = error?.requestId ? ` requestId: ${error.requestId}` : '';
+        outputField.value = code || requestId
+            ? `reurl.cc 短網址生成失敗（${code}${requestId}）`
+            : 'reurl.cc 短網址生成失敗';
+        ShrtURL_toggleCopyButton('ShrtURL_reurlCopyButton', false);
+    }
 }
 
 // ===== 動態切換複製按鈕的顯示 =====

@@ -292,12 +292,69 @@
     max-width: 100%; /* 確保在較小的螢幕上寬度不超過容器 */
     margin: 0 auto; /* 讓面板在父容器中水平置中 */
 }
+        .meeting-auth-gate {
+            width: min(360px, calc(100% - 40px));
+            padding: 28px;
+            box-sizing: border-box;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 10px;
+            box-shadow: 0 8px 24px rgba(0, 0, 0, .12);
+        }
+        .meeting-auth-gate h1 { margin: 0 0 8px; font-size: 22px; }
+        .meeting-auth-gate p { margin: 0 0 18px; color: #666; }
+        .meeting-auth-field { display: grid; gap: 6px; margin-bottom: 12px; }
+        .meeting-auth-field input {
+            box-sizing: border-box;
+            width: 100%;
+            padding: 10px 12px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+        }
+        .meeting-auth-actions { display: flex; gap: 8px; }
+        .meeting-auth-actions button {
+            padding: 9px 14px;
+            border: 0;
+            border-radius: 6px;
+            color: #fff;
+            background: #2463a9;
+            cursor: pointer;
+        }
+        #meeting-auth-error { min-height: 1.4em; margin-top: 12px; color: #b3261e; }
+        #meeting-logout-btn {
+            position: absolute;
+            top: 12px;
+            right: 12px;
+            padding: 7px 11px;
+            border: 1px solid #bbb;
+            border-radius: 6px;
+            background: #fff;
+            cursor: pointer;
+        }
     </style>
 <link rel="stylesheet" href="style/v2/scrollbar.css">
 </head>
 <body>
 
-    <div class="meeting-menu-content-section">
+    <form id="meeting-auth-gate" class="meeting-auth-gate">
+        <h1>外部會議查詢</h1>
+        <p>請使用已授權帳號登入。</p>
+        <label class="meeting-auth-field">
+            <span>Email</span>
+            <input id="meeting-auth-email" type="email" autocomplete="username" required>
+        </label>
+        <label class="meeting-auth-field">
+            <span>Password</span>
+            <input id="meeting-auth-password" type="password" autocomplete="current-password" required>
+        </label>
+        <div class="meeting-auth-actions">
+            <button id="meeting-login-btn" type="submit">登入</button>
+        </div>
+        <div id="meeting-auth-error" role="alert"></div>
+    </form>
+
+    <div id="meeting-app" class="meeting-menu-content-section" hidden>
+        <button id="meeting-logout-btn" type="button">登出</button>
         <p class="meeting-description">
 輸入學生姓名、檢索符合條件的會議。<br>
 ※注意：此功能僅供輔導組查詢使用，請勿提供給學生家長。
@@ -317,6 +374,75 @@
             <div id="all-meeting-error"></div>
         </div>
     </div>
-	<script type="module" src="script/meeting-all.js"></script>
+	<script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js';
+        import {
+            getAuth,
+            onAuthStateChanged,
+            signInWithEmailAndPassword,
+            signOut
+        } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+
+        const firebaseConfig = {
+            apiKey: 'AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M',
+            authDomain: 'cstoolsapi.firebaseapp.com',
+            projectId: 'cstoolsapi'
+        };
+        const auth = getAuth(initializeApp(firebaseConfig));
+        window.auth = auth;
+
+        const authGate = document.getElementById('meeting-auth-gate');
+        const app = document.getElementById('meeting-app');
+        const errorBox = document.getElementById('meeting-auth-error');
+        const loginButton = document.getElementById('meeting-login-btn');
+        let meetingModuleLoaded = false;
+
+        authGate.addEventListener('submit', async (event) => {
+            event.preventDefault();
+            errorBox.textContent = '';
+            loginButton.disabled = true;
+            try {
+                await signInWithEmailAndPassword(
+                    auth,
+                    document.getElementById('meeting-auth-email').value.trim(),
+                    document.getElementById('meeting-auth-password').value
+                );
+            } catch {
+                errorBox.textContent = '登入失敗，請檢查帳號密碼。';
+            } finally {
+                loginButton.disabled = false;
+            }
+        });
+
+        document.getElementById('meeting-logout-btn').addEventListener('click', () => signOut(auth));
+        window.addEventListener('firework-force-logout', () => signOut(auth));
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                app.hidden = true;
+                authGate.hidden = false;
+                return;
+            }
+            if (!user.emailVerified) {
+                errorBox.textContent = '這個帳號尚未完成 Email 驗證。';
+                await signOut(auth);
+                return;
+            }
+
+            authGate.hidden = true;
+            app.hidden = false;
+            if (!meetingModuleLoaded) {
+                meetingModuleLoaded = true;
+                try {
+                    await import('./script/meeting-all.js');
+                } catch {
+                    meetingModuleLoaded = false;
+                    errorBox.textContent = '會議查詢模組載入失敗，請重新整理頁面。';
+                    app.hidden = true;
+                    authGate.hidden = false;
+                }
+            }
+        });
+    </script>
 </body>
 </html>

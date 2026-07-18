@@ -1,5 +1,6 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 import { CSPANEL_API } from './cspanel-api.js';
+import { authFetch, getFirebaseUser, readApiError } from './auth-fetch.js';
 import { ZVaccountEmailMap } from './ZVaccountEmailMap.js';
 
 // 初始化會議分類數組
@@ -465,8 +466,7 @@ function displayMeetingResults(resultDiv) {
         if (hasFilter) {
             resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">沒有符合搜尋條件的會議。</div>';
         } else {
-            const token = localStorage.getItem('firebase_id_token');
-            if (!token) {
+            if (!getFirebaseUser()) {
                 resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">請先登入。</div>';
             } else {
                 resultDiv.innerHTML += '<div style="padding: 20px; color: var(--fg-2);">今日沒有會議安排。</div>';
@@ -690,8 +690,7 @@ async function meetingsearchFetchMeetings(currentDate, currentTime, now, filterT
         cachedMeetingsData = []; // 清空快取
 
         // 檢查登入狀態
-        const token = localStorage.getItem('firebase_id_token');
-        if (!token) {
+        if (!getFirebaseUser()) {
             showErrorMessage('NOT_LOGGED_IN');
             return;
         }
@@ -984,62 +983,35 @@ async function fetchCourses(status, startAt, endAt) {
         return [];
     }
     
-    // 優先刷新 Firebase Token，避免過期導致 401
-    let token = localStorage.getItem('firebase_id_token');
-    try {
-        const user = window.firebase?.auth?.currentUser;
-        if (user) {
-            token = await user.getIdToken(true); // 強制刷新
-            localStorage.setItem('firebase_id_token', token);
-        }
-    } catch (e) {
-        console.warn('fetchCourses: 無法刷新 token，改用 localStorage', e);
-    }
-
-    if (!token) {
-        console.warn('fetchCourses: 尚未登入，無法取得 token');
-        throw new Error('NO_TOKEN');
-    }
-    
     while (retryCount <= maxRetries) {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
         try {
             const requestBody = {
                 action: 'fetchCourses',
                 courseStatus: status,
                 startAt: startAt,
-                endAt: endAt,
-                // 兼容後端 body.token 解析（以防某些環境過濾 Authorization header）
-                token
+                endAt: endAt
             };
-            
-            console.log(`Attempt ${retryCount + 1}: Fetching ${status} courses`, requestBody);
-            
-            // 添加 timeout 控制
-            const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 秒超時
-            
-            const response = await fetch(CSPANEL_API.orderTool, {
+
+            const response = await authFetch(CSPANEL_API.orderTool, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
+                    'Content-Type': 'application/json'
                 },
                 body: JSON.stringify(requestBody),
                 signal: controller.signal
             });
-            
-            clearTimeout(timeoutId);
 
             console.log(`Response status for ${status} courses:`, response.status);
             
             if (!response.ok) {
-                let errorDetails = '';
-                try {
-                    const errorBody = await response.text();
-                    errorDetails = `: ${errorBody}`;
-                } catch (e) { /* Ignore if can't read body */ }
-                
-                throw new Error(`API 請求失敗: ${response.status}${errorDetails}`);
+                const apiError = await readApiError(response);
+                const requestSuffix = apiError.requestId ? ` (requestId: ${apiError.requestId})` : '';
+                const error = new Error(`[${apiError.code}] ${apiError.message}${requestSuffix}`);
+                error.status = apiError.status;
+                error.code = apiError.code;
+                throw error;
             }
 
             const data = await response.json();
@@ -1052,6 +1024,11 @@ async function fetchCourses(status, startAt, endAt) {
                 console.error(`獲取${status}課程超時 (嘗試 ${retryCount + 1}/${maxRetries + 1})`);
                 throw new Error('請求逾時，請檢查網路連線');
             }
+
+            // authFetch 已完成唯一一次 401 強制刷新；403 也不應重試。
+            if (error.status === 401 || error.status === 403) {
+                throw error;
+            }
             
             console.error(`獲取${status}課程失敗 (嘗試 ${retryCount + 1}/${maxRetries + 1}):`, error);
             
@@ -1063,6 +1040,8 @@ async function fetchCourses(status, startAt, endAt) {
             const delay = Math.pow(2, retryCount) * 1000;
             await new Promise(resolve => setTimeout(resolve, delay));
             retryCount++;
+        } finally {
+            clearTimeout(timeoutId);
         }
     }
     

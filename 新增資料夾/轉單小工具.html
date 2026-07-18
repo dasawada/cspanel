@@ -322,7 +322,7 @@ html,body { margin:0; height:100%; }
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
-    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
+    import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { initFudausearchPanel, clearFudausearchPanel } from '../script/fusearch-panel.js';
 
     // Firebase 配置
@@ -339,45 +339,25 @@ html,body { margin:0; height:100%; }
     window.onAuthStateChanged = onAuthStateChanged;
 
     document.addEventListener('DOMContentLoaded', () => {
-      let currentUser = null;
-      
-      onAuthStateChanged(auth, (user) => {
-        currentUser = user;
+      onAuthStateChanged(auth, async (user) => {
         const loginContainer = document.getElementById('login-container');
         const appContainer = document.getElementById('app-container');
+
+        if (user && !user.emailVerified) {
+          document.getElementById('login-error').textContent = '這個帳號尚未完成 Email 驗證。';
+          await signOut(auth);
+          return;
+        }
         
         if (user) {
           loginContainer.style.display = 'none';
           appContainer.style.display = 'block';
-          user.getIdToken().then(token => {
-            window.userToken = token;
-            // 在取得 token 後再初始化面板，確保 API 呼叫有有效權杖
-            initFudausearchPanel('fudausearch-container');
-          });
-          
-          // ===== 新增: 背景自動更新 token (每 50 分鐘) =====
-          if (window.tokenRefreshInterval) {
-            clearInterval(window.tokenRefreshInterval);
-          }
-          
-          window.tokenRefreshInterval = setInterval(async () => {
-            try {
-              const newToken = await user.getIdToken(true);
-              window.userToken = newToken;
-              console.log('✅ Token 已自動更新');
-            } catch (error) {
-              console.error('❌ 背景更新 token 失敗:', error);
-            }
-          }, 50 * 60 * 1000); // 50 分鐘
+          // authFetch 會在每次請求時直接向 Firebase SDK 取得目前權杖。
+          initFudausearchPanel('fudausearch-container');
           
         } else {
           loginContainer.style.display = 'block';
           appContainer.style.display = 'none';
-          
-          // 登出時清除定時器
-          if (window.tokenRefreshInterval) {
-            clearInterval(window.tokenRefreshInterval);
-          }
           // 登出時清除 fudausearch 面板資料與綁定
           clearFudausearchPanel('fudausearch-container');
         }
@@ -421,12 +401,14 @@ html,body { margin:0; height:100%; }
               errorMessage = '登入嘗試次數過多，請稍後再試';
               break;
             default:
-              errorMessage = error.message || '登入過程發生錯誤';
+              errorMessage = '登入過程發生錯誤';
           }
           
           errorDiv.textContent = errorMessage;
         }
       });
+
+      window.addEventListener('firework-force-logout', () => signOut(auth));
     });
   </script>
 </head>
@@ -603,39 +585,6 @@ html,body { margin:0; height:100%; }
   </div>
 
   <script>
-    // ===== Token 處理函式 =====
-    async function fetchWithTokenRetry(url, options = {}, retryCount = 1) {
-      try {
-        let token = window.userToken;
-        if (!token && window.auth?.currentUser) {
-          token = await window.auth.currentUser.getIdToken();
-          window.userToken = token;
-        }
-
-        const headers = {
-          ...options.headers,
-          'Authorization': `Bearer ${token}`
-        };
-
-        const response = await fetch(url, {
-          ...options,
-          headers
-        });
-
-        if (response.status === 401 && retryCount > 0 && window.auth?.currentUser) {
-          console.log('Token 可能過期，嘗試更新...');
-          const newToken = await window.auth.currentUser.getIdToken(true);
-          window.userToken = newToken;
-          return fetchWithTokenRetry(url, options, retryCount - 1);
-        }
-
-        return response;
-      } catch (error) {
-        console.error('fetchWithTokenRetry 錯誤:', error);
-        throw error;
-      }
-    }
-
     // State management
     let sheetData = {
       colA: "",
@@ -658,7 +607,6 @@ html,body { margin:0; height:100%; }
     let currentDealResult = null; // 儲存最新的 API 回應
 
     // Constants
-    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app"
     const EDUCATION_MAP = {
       'K': '幼稚園',
       'E': '國小',
@@ -774,13 +722,12 @@ html,body { margin:0; height:100%; }
 
       try {
         // 使用 DealClient 取得整合資料
-        if (window.dealClient) {
-          window.dealClient.setToken(window.userToken);
-        }
         const result = await window.dealClient.fetchDealInfo(cleanDealId);
         
         if (!result.success) {
-          throw new Error(result.error || 'API 回傳失敗');
+          const codePrefix = result.errorCode ? `[${result.errorCode}] ` : '';
+          const requestSuffix = result.requestId ? ` (requestId: ${result.requestId})` : '';
+          throw new Error(`${codePrefix}${result.error || 'API 回傳失敗'}${requestSuffix}`);
         }
 
         // 儲存結果供後續使用
@@ -1241,7 +1188,7 @@ document.addEventListener("DOMContentLoaded", function() {
     });
   }
   document.getElementById("helpButton").addEventListener("click", function() {
-  window.open("https://stirring-pothos-28253d.netlify.app/testwhosthere", "HelpPopup", "width=650,height=700");
+  window.open("https://stirring-pothos-28253d.netlify.app/TESTwhosthere.html", "HelpPopup", "width=650,height=700");
 });
 
   </script>

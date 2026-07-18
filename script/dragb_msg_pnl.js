@@ -1,7 +1,9 @@
 import { makeDraggable } from './draggable.js';
+import { CSPANEL_API } from './cspanel-api.js';
+import { authFetch, readApiError } from './auth-fetch.js';
 
 // ===== 移除 checkAuthBeforeAction 函數 =====
-// 驗證已由 API 層的 TokenManager 處理，前端不需要重複檢查
+// 驗證由共用 authFetch 處理，前端不需要重複檢查
 
 // ===== 1. CSS 動態插入 =====
 const PANEL_CSS = `
@@ -383,17 +385,12 @@ export function createCannedMessagesPanel(options = {}) {
 
   // 工具函數：帶重試的 fetch（專門處理 500 錯誤）
   async function fetchWithRetry(url, options, retries = 3) {
-    const isInternalApi = url.includes('stirring-pothos-28253d.netlify.app');
-
-    if (isInternalApi) {
-        // 使用 TokenManager 處理內部 API
-        return await tokenManager.fetchWithAuth(url, options, retries);
-    }
-
-    // 外部 API 保持原邏輯
     for (let i = 0; i < retries; i++) {
         try {
-            const response = await fetch(url, options);
+            const response = await authFetch(url, options);
+            if (response.status === 401 || response.status === 403) {
+                return response;
+            }
             if (response.status === 500) {
                 if (i === retries - 1) {
                     throw new Error(`500 錯誤，重試 ${retries} 次後仍失敗`);
@@ -467,7 +464,7 @@ export function createCannedMessagesPanel(options = {}) {
 
   // 查詢入口（統一）- 移除前端認證檢查，API 層已處理
   async function dispatchSearchIfValid() {
-    // 移除 checkAuthBeforeAction - API 透過 TokenManager 處理驗證
+    // 移除 checkAuthBeforeAction - API 透過 authFetch 處理驗證
     
     const q = searchInput.value.trim();
     if (!isValidCourseIdFormat(q)) return;
@@ -524,14 +521,12 @@ export function createCannedMessagesPanel(options = {}) {
       throw new Error('無法解析出正確的課程ID，請確認貼上的網址格式');
     }
 
-    const NETLIFY_SITE_URL = "https://stirring-pothos-28253d.netlify.app";
-    const bundleApiUrl = `${NETLIFY_SITE_URL}/course-bundle`;
     let courseData, studentNames = '', tagNames = '', courseTime = '';
     let tutorToGroupMap = {};
     let preparingJson = null;
 
     // 單一聚合 API 請求（使用帶重試的 fetch）
-    const courseResponse = await fetchWithRetry(bundleApiUrl, {
+    const courseResponse = await fetchWithRetry(CSPANEL_API.courseBundle, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ courseId, checkPreparing: 'auto', includeParent: true, includeChat: true }),
@@ -539,12 +534,14 @@ export function createCannedMessagesPanel(options = {}) {
     });
 
     if (!courseResponse.ok) {
-      throw new Error('網路請求錯誤，狀態碼：' + courseResponse.status);
+      const apiError = await readApiError(courseResponse);
+      const requestSuffix = apiError.requestId ? ` (requestId: ${apiError.requestId})` : '';
+      throw new Error(`[${apiError.code}] ${apiError.message}${requestSuffix}`);
     }
 
     const json = await courseResponse.json();
     if (json.status !== 'success') {
-      throw new Error('API 回傳非 success: ' + JSON.stringify(json));
+      throw new Error('API 回傳非 success');
     }
 
     courseData = json.data;
@@ -1048,60 +1045,3 @@ async function getMinimalCourseInfo({ courseId }) {
     return { success: false, error: e.message || 'unknown error' };
   }
 }
-
-// ===== Token 管理工具 =====
-class TokenManager {
-    async getValidToken() {
-        if (!window.firebase?.auth) {
-            throw new Error('Firebase 未初始化');
-        }
-        
-        const user = window.firebase.auth().currentUser;
-        if (!user) {
-            throw new Error('用戶未登入');
-        }
-
-        try {
-            return await user.getIdToken(false);
-        } catch (error) {
-            console.error('Token 取得失敗,嘗試強制更新:', error);
-            return await user.getIdToken(true);
-        }
-    }
-
-    async fetchWithAuth(url, options = {}, retries = 3) {
-        const token = await this.getValidToken();
-        
-        const makeRequest = async (currentToken, attempt = 0) => {
-            const response = await fetch(url, {
-                ...options,
-                headers: {
-                    ...options.headers,
-                    'Authorization': `Bearer ${currentToken}`,
-                    'Content-Type': 'application/json'
-                }
-            });
-
-            if (response.status === 401 && attempt < retries - 1) {
-                console.log('Token 可能過期,嘗試更新...');
-                const newToken = await window.firebase.auth().currentUser.getIdToken(true);
-                localStorage.setItem('firebase_id_token', newToken);
-                return makeRequest(newToken, attempt + 1);
-            }
-            if (response.status === 401 && attempt >= retries - 1) {
-                window.dispatchEvent(new Event('firework-force-logout'));
-            }
-
-            if (response.status === 500 && attempt < retries - 1) {
-                await new Promise(resolve => setTimeout(resolve, 1000 * (attempt + 1)));
-                return makeRequest(currentToken, attempt + 1);
-            }
-
-            return response;
-        };
-
-        return await makeRequest(token);
-    }
-}
-
-const tokenManager = new TokenManager();

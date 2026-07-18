@@ -11,6 +11,7 @@
  */
 
 import { CSPANEL_API } from './cspanel-api.js';
+import { authFetch, readApiError } from './auth-fetch.js';
 
 /**
  * Deal Composite Client
@@ -18,41 +19,15 @@ import { CSPANEL_API } from './cspanel-api.js';
 export class DealClient {
   constructor(options = {}) {
     this.apiUrl = options.apiUrl || CSPANEL_API.dealComposite;
-    this.token = options.token || null;
     this.includeRaw = options.includeRaw || false;
-  }
-
-  /**
-   * 設定 Firebase Token
-   */
-  setToken(token) {
-    this.token = token;
-  }
-
-  /**
-   * 嘗試刷新 Token (需要 Firebase auth 在全域)
-   */
-  async refreshToken() {
-    if (typeof window !== 'undefined' && window.auth?.currentUser) {
-      try {
-        const newToken = await window.auth.currentUser.getIdToken(true);
-        this.token = newToken;
-        window.userToken = newToken;
-        return newToken;
-      } catch (err) {
-        console.warn('Token 刷新失敗:', err);
-      }
-    }
-    return null;
   }
 
   /**
    * 取得完整交易資料
    * @param {string} dealId - 交易 ID
-   * @param {number} retryCount - 重試次數 (用於 token 過期)
    * @returns {Promise<DealCompositeResponse>}
    */
-  async fetchDealInfo(dealId, retryCount = 1) {
+  async fetchDealInfo(dealId) {
     const cleanDealId = String(dealId).trim().replace(/[^A-Za-z0-9]/g, '');
     
     if (!cleanDealId) {
@@ -63,37 +38,34 @@ export class DealClient {
     }
 
     try {
-      const response = await fetch(this.apiUrl, {
+      const response = await authFetch(this.apiUrl, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          ...(this.token ? { 'Authorization': `Bearer ${this.token}` } : {})
+          'Content-Type': 'application/json'
         },
         body: JSON.stringify({
           dealId: cleanDealId,
-          token: this.token,
           includeRaw: this.includeRaw
         })
       });
 
-      // 處理 Token 過期
-      if (response.status === 401 && retryCount > 0) {
-        console.log('Token 可能過期，嘗試刷新...');
-        const newToken = await this.refreshToken();
-        if (newToken) {
-          return this.fetchDealInfo(dealId, retryCount - 1);
-        }
-      }
-
       if (!response.ok) {
-        throw new Error(`API 錯誤: ${response.status}`);
+        const apiError = await readApiError(response);
+        return {
+          success: false,
+          error: apiError.message,
+          errorCode: apiError.code,
+          requestId: apiError.requestId,
+          status: apiError.status
+        };
       }
 
       return await response.json();
     } catch (error) {
       return {
         success: false,
-        error: error.message || '連線失敗'
+        error: error.message || '連線失敗',
+        errorCode: error.code || ''
       };
     }
   }

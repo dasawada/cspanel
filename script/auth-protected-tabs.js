@@ -1,4 +1,5 @@
 import { CSPANEL_API } from './cspanel-api.js';
+import { authFetch, readApiError } from './auth-fetch.js';
 
 // 內部變數，用於儲存 interceptor 引用以便移除
 let currentInterceptor = null;
@@ -6,12 +7,21 @@ let currentInterceptor = null;
 let windowManager = null;
 // 再進入/併發防護（第三期，審查 #1）。
 let initInFlight = false;
+let diaryBridgeListener = null;
+
+const DIARY_CHILD_ORIGIN = 'https://stirring-pothos-28253d.netlify.app';
+const DIARY_CHILD_PATH = '/hhnueyfrsoj1na8pjj.html';
+const DIARY_COURSE_ID_RE = /^[0-9a-fA-F]{24}$/;
+const DIARY_NONCE_RE = /^[A-Za-z0-9_-]{16,128}$/;
+const DIARY_RATE_WINDOW_MS = 60_000;
+const DIARY_RATE_LIMIT = 10;
+const diaryRequestsBySource = new WeakMap();
 
 export async function initProtectedTabs() {
   // canvas-engine 有兩個各自獨立呼叫 initAllModules 的觸發點——checkExistingAuth
   // （有 firebase_id_token 即 await）與 firework-login-success 監聽器（onAuthStateChanged
   // 還原 session 時 fire-and-forget）。已登入重新整理時兩者可能「併發」呼叫本函式；
-  // 若不擋，兩條 fetchProtectedContentWithRetry 各自 innerHTML→(await import)→mount/destroy
+  // 若不擋，兩條 fetchProtectedContent 各自 innerHTML→(await import)→mount/destroy
   // 交錯，第二輪的 destroy 會把第一輪剛搬入常駐池的 iframe 連池一起銷毀，最壞落到
   // 「分頁整組消失」的空白終態。此處以 in-flight 旗標保證同一時刻只跑一輪 init。
   // 登出→再登入屬「循序」重入（旗標已在 finally 歸零），不受影響。
@@ -56,8 +66,8 @@ export async function initProtectedTabs() {
     if (tabsPlaceholder) tabsPlaceholder.addEventListener('click', interceptor, true);
     if (ipPlaceholder) ipPlaceholder.addEventListener('click', interceptor, true);
 
-    // ===== 2. 內容獲取邏輯 (含重試與強制登出) =====
-    await fetchProtectedContentWithRetry();
+    // ===== 2. 內容獲取邏輯（401 單次 refresh 由 authFetch 統一處理） =====
+    await fetchProtectedContent();
   } finally {
     initInFlight = false;
   }
@@ -72,6 +82,11 @@ export function clearProtectedTabs() {
     if (tabsPlaceholder) tabsPlaceholder.removeEventListener('click', currentInterceptor, true);
     if (ipPlaceholder) ipPlaceholder.removeEventListener('click', currentInterceptor, true);
     currentInterceptor = null;
+  }
+
+  if (diaryBridgeListener) {
+    window.removeEventListener('message', diaryBridgeListener);
+    diaryBridgeListener = null;
   }
 
   // 2. 拆除分頁視窗管理器（移除全域 pointer/scroll/resize 監聽與常駐池/視窗層），
@@ -96,38 +111,155 @@ function glDecorate(container) {
   });
 }
 
-// 內部輔助函式保持不變
-async function fetchProtectedContentWithRetry(retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      // 直接使用 verifyFireworkAuth 來確保 token 是最新的
-      // 注意：這裡不強制阻斷，因為這是背景獲取，若失敗會進 catch
-      const user = window.firebase?.auth()?.currentUser;
-      if (!user) throw new Error('No user');
-      
-      const token = await user.getIdToken(); 
+function isDiaryUrl(value) {
+  try {
+    const url = new URL(value, DIARY_CHILD_ORIGIN);
+    return url.origin === DIARY_CHILD_ORIGIN && url.pathname === DIARY_CHILD_PATH;
+  } catch {
+    return false;
+  }
+}
 
-      const response = await fetch(CSPANEL_API.orderTool, {
+function filterDiaryTab(container) {
+  if (!container) return;
+
+  container.querySelectorAll('iframe[src]').forEach((iframe) => {
+    if (!isDiaryUrl(iframe.getAttribute('src'))) return;
+
+    const content = iframe.closest('.panel-tab-content');
+    const label = content?.previousElementSibling;
+    const input = label?.previousElementSibling;
+    const isMatchedTab = label?.tagName === 'LABEL'
+      && input?.tagName === 'INPUT'
+      && input.type === 'radio'
+      && label.htmlFor === input.id;
+
+    content?.remove();
+    if (isMatchedTab) {
+      label.remove();
+      input.remove();
+    }
+  });
+
+  const firstRemainingTab = container.querySelector('.panel-tabs input[type="radio"]');
+  if (firstRemainingTab && !container.querySelector('.panel-tabs input[type="radio"]:checked')) {
+    firstRemainingTab.checked = true;
+  }
+}
+
+function createTabsStaging(tabsHTML, canReadCourseDiaries) {
+  const staging = document.createElement('div');
+  staging.innerHTML = tabsHTML;
+  if (canReadCourseDiaries !== true) filterDiaryTab(staging);
+  return staging;
+}
+
+function findDiaryIframeForSource(source) {
+  const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
+  if (!tabsPlaceholder || !source) return null;
+
+  return Array.from(tabsPlaceholder.querySelectorAll('iframe[src]')).find((iframe) => (
+    iframe.contentWindow === source && isDiaryUrl(iframe.getAttribute('src'))
+  )) || null;
+}
+
+function consumeDiaryRateLimit(source, nonce) {
+  const now = Date.now();
+  const previous = diaryRequestsBySource.get(source) || { timestamps: [], nonces: new Set() };
+  previous.timestamps = previous.timestamps.filter((timestamp) => now - timestamp < DIARY_RATE_WINDOW_MS);
+
+  if (previous.nonces.has(nonce) || previous.timestamps.length >= DIARY_RATE_LIMIT) {
+    diaryRequestsBySource.set(source, previous);
+    return false;
+  }
+
+  previous.timestamps.push(now);
+  previous.nonces.add(nonce);
+  if (previous.nonces.size > 100) {
+    previous.nonces.delete(previous.nonces.values().next().value);
+  }
+  diaryRequestsBySource.set(source, previous);
+  return true;
+}
+
+function installDiaryBridge() {
+  if (diaryBridgeListener) {
+    window.removeEventListener('message', diaryBridgeListener);
+  }
+
+  diaryBridgeListener = async (event) => {
+    if (event.origin !== DIARY_CHILD_ORIGIN) return;
+    const message = event.data;
+    if (!message || message.type !== 'cspanel:diary-request') return;
+    if (!findDiaryIframeForSource(event.source)) return;
+
+    const nonce = typeof message.nonce === 'string' ? message.nonce : '';
+    const courseId = typeof message.courseId === 'string' ? message.courseId.trim() : '';
+    const reply = (payload) => event.source?.postMessage?.({
+      type: 'cspanel:diary-response',
+      nonce,
+      courseId,
+      ...payload
+    }, DIARY_CHILD_ORIGIN);
+
+    if (!DIARY_NONCE_RE.test(nonce) || !DIARY_COURSE_ID_RE.test(courseId)) {
+      reply({ ok: false, error: { code: 'INVALID_REQUEST', message: '請求格式無效', requestId: '' } });
+      return;
+    }
+    if (!consumeDiaryRateLimit(event.source, nonce)) {
+      reply({ ok: false, error: { code: 'RATE_LIMITED', message: '請求過於頻繁', requestId: '' } });
+      return;
+    }
+
+    try {
+      const response = await authFetch(CSPANEL_API.courseDiaries, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ courseId })
+      });
+      if (!response.ok) {
+        const apiError = await readApiError(response);
+        reply({
+          ok: false,
+          error: {
+            code: apiError.code,
+            message: apiError.message,
+            requestId: apiError.requestId
+          }
+        });
+        return;
+      }
+      reply({ ok: true, data: await response.json() });
+    } catch (error) {
+      reply({
+        ok: false,
+        error: {
+          code: error?.code || 'DIARY_REQUEST_FAILED',
+          message: error?.code === 'AUTH_REQUIRED' ? '請先登入再查詢' : '課程日誌查詢失敗',
+          requestId: ''
+        }
+      });
+    }
+  };
+
+  window.addEventListener('message', diaryBridgeListener);
+}
+
+async function fetchProtectedContent() {
+      const response = await authFetch(CSPANEL_API.orderTool, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'getProtectedTabs' })
       });
 
-      if (response.status === 401 || response.status === 403) {
-        // 若 API 回傳 401，嘗試刷新 Token
-        if (i < retries - 1) {
-           await user.getIdToken(true); // 強制刷新
-           continue;
-        } else {
-           // 重試耗盡仍 401，視為 Token 失效，觸發全域登出
-           throw new Error('AUTH_FAILED');
-        }
+      if (!response.ok) {
+        const apiError = await readApiError(response);
+        const requestSuffix = apiError.requestId ? ` (requestId: ${apiError.requestId})` : '';
+        const error = new Error(`[${apiError.code}] ${apiError.message}${requestSuffix}`);
+        error.status = apiError.status;
+        error.code = apiError.code;
+        throw error;
       }
-
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
 
       if (data && data.success) {
@@ -164,8 +296,7 @@ async function fetchProtectedContentWithRetry(retries = 3) {
               if (typeof wm.hasTabs === 'function' && wm.hasTabs()) {
                 console.log('WindowManager 已認養 iframe tabs，跳過本輪 tabsHTML 注入（保護常駐池/視窗層）');
               } else {
-                const staging = document.createElement('div');
-                staging.innerHTML = data.tabsHTML;
+                const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
                 tabsPlaceholder.appendChild(staging);
                 // host 補 .gl-injected（池中內容依 .gl-injected 後代規則取色）＋
                 // staging 內 tables 標 .gl-table（class 跟著內容搬進池）。
@@ -186,12 +317,14 @@ async function fetchProtectedContentWithRetry(retries = 3) {
               // 性更大。降級：console.error＋直接注入保留伺服器原生 tab 可見
               // （此路徑 host 內必無 layer/pool，innerHTML 無誤傷對象）。
               console.error('❌ WindowManager 核心未掛載（v2 時序契約違反，見 canvas-engine.js initAllModules C1 註解）：略過認養，注入伺服器原生 tab 降級顯示');
-              tabsPlaceholder.innerHTML = data.tabsHTML;
+              const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
+              tabsPlaceholder.replaceChildren(...staging.childNodes);
               glDecorate(tabsPlaceholder);
             }
           } else {
             // v1 模式（旗標未設）：呼叫形狀與行為逐位元不變。
-            tabsPlaceholder.innerHTML = data.tabsHTML;
+            const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
+            tabsPlaceholder.replaceChildren(...staging.childNodes);
             glDecorate(tabsPlaceholder);
             // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
             // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
@@ -203,6 +336,13 @@ async function fetchProtectedContentWithRetry(retries = 3) {
             } catch (error) {
               console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
             }
+          }
+
+          if (data.canReadCourseDiaries === true) {
+            installDiaryBridge();
+          } else if (diaryBridgeListener) {
+            window.removeEventListener('message', diaryBridgeListener);
+            diaryBridgeListener = null;
           }
         }
 
@@ -219,15 +359,4 @@ async function fetchProtectedContentWithRetry(retries = 3) {
       }
 
       return data;
-
-    } catch (error) {
-      if (error.message === 'AUTH_FAILED') {
-         console.error('❌ 認證徹底失敗，執行強制登出');
-         window.dispatchEvent(new Event('firework-force-logout'));
-         return null;
-      }
-      if (i === retries - 1) throw error;
-      await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)));
-    }
-  }
 }

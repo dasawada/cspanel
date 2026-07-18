@@ -1,4 +1,6 @@
 import { callGoogleMapsAPI } from "./googleSheetAPI.js";
+import { CSPANEL_API } from "./cspanel-api.js";
+import { authFetch, readApiError } from "./auth-fetch.js";
 
 const logEntries = [];
 function log(eventType, details) {
@@ -29,7 +31,6 @@ window.downloadLogFile = function() {
 };
 
 const MIN_PANEL_HEIGHT = 36;
-const IP_SEARCH_API_BASE = "https://stirring-pothos-28253d.netlify.app/ipsearch/";
 let ipSearchSeq = 0;
 
 const STATUS_LABELS = {
@@ -1156,10 +1157,17 @@ async function IP_handleIpInput(ip, date) {
   setSearchSpinnerVisible(true);
 
   const ipinfoPromise = fetch(`https://ipinfo.io/${ip}?token=${ipinfoToken}`).then((res) => res.json());
-  const customApiUrl = date
-    ? `${IP_SEARCH_API_BASE}${ip}?date=${encodeURIComponent(date)}`
-    : `${IP_SEARCH_API_BASE}${ip}`;
-  const customApiPromise = fetch(customApiUrl).then((res) => res.json());
+  const customApiPromise = authFetch(CSPANEL_API.ipsearch(ip, { date })).then(async (res) => {
+    if (!res.ok) {
+      const apiError = await readApiError(res);
+      const requestSuffix = apiError.requestId ? ` (requestId: ${apiError.requestId})` : "";
+      const error = new Error(`[${apiError.code}] ${apiError.message}${requestSuffix}`);
+      error.code = apiError.code;
+      error.status = apiError.status;
+      throw error;
+    }
+    return res.json();
+  });
 
   try {
     const [ipinfoData, customData] = await Promise.all([ipinfoPromise, customApiPromise]);
