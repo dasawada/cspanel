@@ -5,6 +5,7 @@
 // 需本機 server（repo 根）：python3 -m http.server 8123
 // 用法：node tools/page-engine-b-test.mjs
 import { chromium } from 'playwright';
+import { installAccessFixture } from './access-test-fixture.mjs';
 
 const browser = await chromium.launch();
 const fails = [];
@@ -13,24 +14,8 @@ const A = (c, m) => { if (!c) { fails.push(m); console.error('  ✗ ' + m); } el
 const BASE = process.env.PE_URL || 'http://localhost:8123';
 const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
 
-// 登入 stub（同 page-engine-a-test.mjs）＋ order-tool-api 攔截。
-// loginStub 抽成具名函式：J 區（success:true 真伺服器路徑）的獨立 context 重用同一份。
-const loginStub = () => {
-  localStorage.setItem('firebase_id_token', 'parity-stub');
-  localStorage.setItem('cspanel.theme.v1', 'olive');
-  const fakeUser = { getIdToken: async () => 'parity-stub' };
-  window.firebase = {
-    apps: [{}], initializeApp: () => {},
-    auth: () => ({
-      onAuthStateChanged: (cb) => setTimeout(() => cb(fakeUser), 50),
-      currentUser: fakeUser, signOut: async () => {},
-      signInWithEmailAndPassword: async () => ({ user: fakeUser }),
-    }),
-    firestore: () => ({}),
-  };
-  window.verifyFireworkAuth = async () => true;
-};
-await page.addInitScript(loginStub);
+// Session/grant fixture＋order-tool-api business response。
+await installAccessFixture(page);
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 
 await page.goto(BASE + '/panel_all_v2.html');
@@ -917,7 +902,7 @@ const TABS_HTML = [
 ].join('\n');
 const ctxJ = await browser.newContext({ viewport: { width: 1800, height: 1200 } });
 const pj = await ctxJ.newPage();
-await pj.addInitScript(loginStub);
+await installAccessFixture(pj);
 await pj.route('**/api/order-tool-api', (r) => r.fulfill({
   status: 200, contentType: 'application/json',
   body: JSON.stringify({
@@ -927,11 +912,10 @@ await pj.route('**/api/order-tool-api', (r) => r.fulfill({
 }));
 await pj.goto(BASE + '/panel_all_v2.html');
 await pj.waitForSelector('.wm-pane[data-tab="naniclub"]', { state: 'attached', timeout: 15000 });
-await pj.waitForTimeout(300); // 自然第二輪窗口（onAuthStateChanged 50ms → firework-login-success）
+await pj.waitForTimeout(300); // 等候初始登入生命週期完成
 
 // -- J0: 二輪完整注入不殺 pool/layer（I1）——顯式再派發一次 firework-login-success
-//    （生產環境 checkExistingAuth 與 onAuthStateChanged 雙觸發的確定性重現；上面
-//    的自然第二輪與首輪的先後是計時競賽，不足以穩定覆蓋「首輪已完成後再來一輪」）。--
+//    （確定性重現重複登入生命週期訊號；必須穩定覆蓋「首輪已完成後再來一輪」）。
 await pj.evaluate(() => window.dispatchEvent(new Event('firework-login-success')));
 await pj.waitForTimeout(500);
 const j0 = await pj.evaluate(() => {

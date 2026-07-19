@@ -169,8 +169,8 @@ export class DealClient {
 /**
  * 簡化版函式 (直接替換舊版呼叫)
  */
-export async function fetchDealComposite(dealId, token = null) {
-  const client = new DealClient({ token, includeRaw: true });
+export async function fetchDealComposite(dealId) {
+  const client = new DealClient({ includeRaw: true });
   return client.fetchDealInfo(dealId);
 }
 

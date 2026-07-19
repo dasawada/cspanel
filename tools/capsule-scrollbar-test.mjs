@@ -1,15 +1,13 @@
 // 第六期回歸：膠囊輸入詞彙（單一定位機制、垂直置中）+ 捲軸單一權威（標準屬性）。
 // 需本機 server；node tools/capsule-scrollbar-test.mjs
 import { chromium } from 'playwright';
+import { installAccessFixture } from './access-test-fixture.mjs';
 const b = await chromium.launch();
 const p = await b.newPage({ viewport: { width: 1800, height: 1200 } });
 const fails = []; const A = (c, m) => { if (!c) { fails.push(m); console.error('  ✗ ' + m); } else console.log('  ✓ ' + m); };
+await installAccessFixture(p);
 await p.addInitScript(() => {
-  localStorage.setItem('firebase_id_token', 'x'); localStorage.setItem('cspanel.theme.v1', 'olive');
   localStorage.removeItem('cspanel.stack.cs.v1');
-  const u = { getIdToken: async () => 'x' };
-  window.firebase = { apps: [{}], initializeApp: () => {}, auth: () => ({ onAuthStateChanged: (cb) => setTimeout(() => cb(u), 50), currentUser: u, signOut: async () => {}, signInWithEmailAndPassword: async () => ({ user: u }) }), firestore: () => ({}) };
-  window.verifyFireworkAuth = async () => true;
 });
 await p.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 

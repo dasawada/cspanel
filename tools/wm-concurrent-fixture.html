@@ -1,10 +1,10 @@
 <!DOCTYPE html><html lang="zh-TW"><head><meta charset="utf-8">
 <title>window-manager 併發 init fixture（審查 #1 回歸）</title>
 <!--
-  重現「已登入 refresh 時 checkExistingAuth 與 firework-login-success 併發雙呼叫
-  initProtectedTabs」：無 in-flight 守衛時，兩條 fetch 各自 innerHTML→mount/destroy
+  重現兩個登入生命週期訊號併發呼叫 initProtectedTabs：無 in-flight 守衛時，
+  兩條 fetch 各自 innerHTML→mount/destroy
   交錯，第二輪 destroy 會把第一輪剛搬入常駐池的 iframe 連池一起銷毀 → 分頁整組消失。
-  用 tools/wm-concurrent-test.mjs 跑。stub fetch/firebase 以脫離真實後端。
+  用 tools/wm-concurrent-test.mjs 跑。stub access/session 與 Firebase 以脫離真實後端。
 -->
 <link rel="stylesheet" href="/style/v2/tokens.css">
 <link rel="stylesheet" href="/style/v2/window-manager.css">
@@ -39,13 +39,24 @@
   // 計數 fetch：有 in-flight 守衛 → 第二個併發 init 在 fetch 前就 return → 只 fetch 一次；
   // 無守衛 → 兩次（且可能雙掛載互相銷毀）。故 __fetchCount===1 即守衛生效的硬證據。
   window.__fetchCount = 0;
-  window.fetch = async () => {
+  window.fetch = async (input, init = {}) => {
+    const url = new URL(typeof input === 'string' ? input : input.url, location.href);
+    if (url.pathname === '/api/session') {
+      if (String(init.method || 'GET').toUpperCase() === 'HEAD') return new Response(null, { status: 204 });
+      return new Response(JSON.stringify({
+        revision: 1,
+        features: ['config'],
+        modules: ['protected']
+      }), { status: 200, headers: { 'Content-Type': 'application/json' } });
+    }
     window.__fetchCount++;
-    return { status: 200, ok: true, json: async () => ({ success: true, tabsHTML: TABS_HTML }) };
+    return new Response(JSON.stringify({ success: true, tabsHTML: TABS_HTML }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' }
+    });
   };
-  const fakeUser = { getIdToken: async () => 'stub-token' };
+  const fakeUser = { uid: 'wm-fixture-user', getIdToken: async () => 'stub-token' };
   window.firebase = { auth: () => ({ currentUser: fakeUser }) };
-  window.verifyFireworkAuth = async () => true;
   // 併發雙初始化
   Promise.all([initProtectedTabs(), initProtectedTabs()]).then(() => { window.__concurrentDone = true; });
 </script>

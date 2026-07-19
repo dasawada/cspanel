@@ -3,6 +3,7 @@
 // 單一視窗 + 四 tab + 四 pane，且 window.WindowManager 已設、.panel-tabs-container 已移除。
 // 需本機 server（repo 根）：python3 -m http.server 8123；node tools/wm-concurrent-test.mjs
 import { chromium } from 'playwright';
+import { installAccessFixture } from './access-test-fixture.mjs';
 
 const URL_ = process.env.WMC_URL || 'http://localhost:8123/tools/wm-concurrent-fixture.html';
 const browser = await chromium.launch();
@@ -10,6 +11,7 @@ const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
 const fails = [];
 const assert = (cond, msg) => { if (!cond) { fails.push(msg); console.error('  ✗ ' + msg); } else { console.log('  ✓ ' + msg); } };
 
+await installAccessFixture(page);
 await page.goto(URL_);
 await page.waitForFunction(() => window.__concurrentDone === true, { timeout: 10000 });
 await page.waitForTimeout(400);

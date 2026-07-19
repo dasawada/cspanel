@@ -1,3 +1,5 @@
+import { bootAccess, killAccess } from './auth-fetch.js';
+
 export async function loadLoginPanel() {
   // ===== Toast 通知系統 =====
   const toastStyles = `
@@ -207,51 +209,19 @@ export async function loadLoginPanel() {
     }
   }
 
-  // ----- [關鍵方法] 全域強制驗證 -----
-  window.verifyFireworkAuth = async function() {
-    const user = auth.currentUser;
-    if (!user) {
-      window.dispatchEvent(new Event('firework-force-logout'));
-      return false;
-    }
-    try {
-      // 第十期：拿掉 getIdToken(true) 的強制換發——參數 true 代表每次呼叫都向
-      // Firebase 走一趟真實網路往返（本函式被 60 秒輪詢與全域點擊攔截器高頻呼叫，
-      // 等於背景常態打 API）。改讀 SDK 快取：token 由 SDK 於到期前自動續期，
-      // 快取值恆有效；「後端已判定失效」的情境由 auth-fetch 的 401 攔截兜底。
-      const token = await user.getIdToken();
-      localStorage.setItem('firebase_id_token', token);
-      return true;
-    } catch (e) {
-      // 明確處理帳號被停用的錯誤碼
-      const disabledCodes = [
-        'auth/user-disabled',
-        'auth/user-token-expired', 
-        'auth/invalid-user-token',
-        'auth/user-not-found'
-      ];
-      
-      if (disabledCodes.includes(e.code)) {
-        console.error("⛔ 帳號已被停用或 Token 已失效:", e.code, e.message);
-        showToast('您的帳號已被停用，請聯繫管理員', 'error', 5000);
-      } else {
-        console.error("⛔ Auth Check Failed:", e.code, e.message);
-        showToast('驗證失敗，請重新登入', 'error', 4000);
-      }
-      
-      window.dispatchEvent(new Event('firework-force-logout'));
-      return false;
-    }
-  };
-
-  // ----- 監聽強制登出 -----
-  window.addEventListener('firework-force-logout', () => {
-    console.log("⚠️ 執行強制登出程序...");
-    wasLoggedIn = false; // 本監聽器已負責拆場，隨後 signOut 觸發的 onAuthStateChanged(null) 不需再拆
-    auth.signOut();
-    localStorage.removeItem('firebase_id_token');
+  function closeProtectedUi() {
+    const hadSession = wasLoggedIn;
+    wasLoggedIn = false;
+    window.fireworkAuthReady = false;
     updateUIState(false);
-    window.dispatchEvent(new Event('firework-logout-success'));
+    if (hadSession) window.dispatchEvent(new Event('firework-logout-success'));
+  }
+
+  // access client 先同步清空畫面，再決定重新載入或 Firebase sign-out。
+  window.addEventListener('cspanel:access-kill', closeProtectedUi);
+  window.addEventListener('firework-force-logout', () => {
+    closeProtectedUi();
+    void killAccess({ reason: 'USER_LOGOUT', signOut: true });
   });
 
   // ----- 取得 DOM 元素 -----
@@ -266,8 +236,8 @@ export async function loadLoginPanel() {
   // 重新整理時也會以 user 非空回呼（local persistence 恢復），不該重播「登入成功」
   // toast。只有 handleLogin（使用者實際送出帳密）才立此旗標。
   let pendingLoginToast = false;
-  // 第十期（審查修正）：本頁載入後是否曾建立 session——決定 onAuthStateChanged(null)
-  // 是「跨分頁登出／token 被撤銷的拆場」（曾登入）還是「開機即無 session」（未曾）。
+  // 本頁載入後是否曾建立 access session——決定 onAuthStateChanged(null)
+  // 是「跨分頁登出的拆場」（曾登入）還是「開機即無 identity」（未曾）。
   let wasLoggedIn = false;
 
   // ----- 核心登入邏輯 (統一處理) -----
@@ -360,15 +330,13 @@ export async function loadLoginPanel() {
   // ----- 監聽登入狀態變化 -----
   auth.onAuthStateChanged(async function(user) {
     if (user) {
-      // 第十期（審查修正）：getIdToken 不可裸 await——離線重載且 SDK 快取 token
-      // 已過期時，續期拋錯會中斷本回呼，'firework-login-success' 永不發出、開機
-      // overlay 永不解除（頁面鎖死）。失敗時沿用 localStorage 既有值繼續開場：
-      // 面板請求各自降級，網路恢復後 SDK 自動續期。
       try {
-        const token = await user.getIdToken();
-        localStorage.setItem('firebase_id_token', token);
+        await bootAccess();
       } catch (e) {
-        console.warn('⚠️ 取得 ID token 失敗（可能離線），以既有 token 繼續開場:', e && e.code);
+        closeProtectedUi();
+        showToast('帳號目前無法使用此系統', 'error', 4000);
+        window.dispatchEvent(new CustomEvent('fw-auth-state-change', { detail: { state: 'session-absent' } }));
+        return;
       }
       wasLoggedIn = true;
       updateUIState(true);
@@ -385,19 +353,17 @@ export async function loadLoginPanel() {
       window.dispatchEvent(new Event('firework-login-success'));
     } else {
       window.fireworkAuthReady = false;
-      localStorage.removeItem('firebase_id_token');
       updateUIState(false);
       if (wasLoggedIn) {
-        // 第十期（審查修正）：本頁曾建立 session 而 Firebase 判定已結束（跨分頁
-        // 登出、token 被撤銷）——完整拆場。否則背景分頁的 initPromise 停在已
+        // 本頁曾建立 session 而 Firebase 判定已結束（例如跨分頁登出）——完整拆場。
+        // 否則背景分頁的 initPromise 停在已
         // resolve 狀態，A 分頁換帳號重登入時本分頁會跳過整輪 init、以新帳號
         // token 掛著前一帳號的面板資料。
         wasLoggedIn = false;
         window.dispatchEvent(new Event('firework-logout-success'));
       } else {
-        // 開機即無 session（localStorage 殘留 token、Firebase persistence 已失或
-        // token 被撤銷後重載）：通知 conductor 撤下「系統啟動中」開機鎖屏，露出
-        // 登入列——否則 overlay（pointer-events:all）永久蓋住頁面。
+        // 開機即無可用Firebase/access session：通知conductor撤下「系統啟動中」
+        // 鎖屏並露出登入列，避免全螢幕overlay永久留著。
         window.dispatchEvent(new CustomEvent('fw-auth-state-change', { detail: { state: 'session-absent' } }));
       }
     }

@@ -13,7 +13,7 @@
 
 | 構件 | 檔案 | 是什麼 |
 |---|---|---|
-| **Canvas Engine** | `script/canvas-engine.js` | 泛化自 `firework-mediator.js` 的通用引擎。職責：讀 manifest 生成插槽（slot div）、把 manifest 座標／zOrder 注入成 `<style id="canvas-geometry">`、依 manifest 的 `init`/`clear` 呼叫面板模組、管理登入/登出調度（認證攔截器、定期驗證）、管理編輯模式（`enterEditMode`/`exitEditMode`/`resetLayout`）與 `window.CanvasEdit`。 |
+| **Canvas Engine** | `script/canvas-engine.js` | 泛化自 `firework-mediator.js` 的通用引擎。職責：讀 manifest 生成插槽（slot div）、把 manifest 座標／zOrder 注入成 `<style id="canvas-geometry">`、依 manifest 的 `init`/`clear` 呼叫面板模組、承接 access-client 發出的登入／清場生命週期、管理受管排程與編輯模式（`enterEditMode`/`exitEditMode`/`resetLayout`）及 `window.CanvasEdit`。它不判定身份或權限。 |
 | **Canvas Manifest** | `script/canvases/<id>.js`（目前唯一實例：`cs.js`） | 一個畫布的完整宣告：`{ id, name, visibility, sharedGeometryCss, panels: [...] }`，`export default`。**座標與 z 序的唯一權威來源**——CSS 檔案本身不再留任何座標或魔術 z-index。 |
 | **層級註冊表（層帶）** | `style/v2/tokens.css` 的 `--layer-*` 變數 | 全站疊層的六個語意帶，見第 4.2 節實際數值。manifest 的 `zOrder` 只在 `--layer-panel` 帶內做相對排序，不可能跨帶。 |
 | **表面階層（配方）** | 分散於 `style/v2/panels.css`／`style/v2/overlays.css`／`script/theme.js`／`script/fireworkeffect.js` | `panel`／`dropdown`／`modal`／`toast` 四種固定視覺語彙（毛玻璃深淺、背景色、陰影），見第 4.4 節配方對應表。 |
@@ -440,9 +440,9 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
   同步監聽。
 - 拆除：登出 `clearProtectedTabs` → `windowManager.destroy()`（中斷進行中拖曳、移除全域監聽、移除池/視窗層、
   清 `window.WindowManager`）→ 清空 placeholder。
-- **併發防護（審查 #1）**：`initProtectedTabs` 帶 in-flight 旗標。canvas-engine 有兩個各自呼叫
-  `initAllModules` 的觸發點（`checkExistingAuth` 與 `firework-login-success` 監聽器），已登入 refresh 時可能
-  「併發」雙呼叫 `initProtectedTabs`；若不擋，兩條 `fetchProtectedContentWithRetry` 各自
+- **併發防護（審查 #1）**：`initProtectedTabs` 帶 in-flight 旗標。access boot 的登入事件與
+  canvas-engine 為晚註冊監聽器所做的同源狀態補位可能重疊呼叫 `initAllModules`；若不擋，兩條
+  `fetchProtectedContentWithRetry` 各自
   `innerHTML→(await import)→mount/destroy` 交錯，第二輪的 `destroy` 會把第一輪剛搬入常駐池的 iframe 連池
   一起銷毀，最壞落到「分頁整組消失」的空白終態。旗標保證同一時刻只跑一輪 init（登出→再登入屬「循序」
   重入，旗標已歸零，不受影響）。回歸：`tools/wm-concurrent-test.mjs`。
@@ -586,8 +586,8 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 惟 iframe 惰性掛載以 `window.CSPANEL_ENGINE_V2` 閘控、v1 逐位元不變。
 
 1. **initAllModules 冪等＋觸發源收斂**：promise 單例（`initPromise`，失敗歸零可重試、
-   登出歸零允許重 init）；`checkExistingAuth` 搶快路徑（localStorage 有 token 即先行
-   init）整段移除，「已登入」唯一真相來源＝fireworkeffect 的 `onAuthStateChanged`。
+   登出歸零允許重 init）；不讀 local token hint。Firebase 恢復 identity 後必須先由
+   `AccessClient.boot()` 取得當下 server grant，成功才發 `firework-login-success`。
    **漏接補位鐵律**：loadCanvas 要 await 十餘個模組動態 import 後才掛
    `firework-login-success` 監聽器，事件可能先發而漏接（舊搶快路徑恰好蓋住此窗口）
    ——fireworkeffect 於廣播「前」設置 runtime 旗標 `window.fireworkAuthReady`，
@@ -595,15 +595,16 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
    移除補位即回歸「重載後面板全空」，headless 全套會抓到（materiality-test 起步即卡）。
    附帶修正：session 恢復（重載）不再誤彈「登入成功」toast（`pendingLoginToast`
    旗標，僅使用者主動送出帳密才立）。`wmMountClaimed` 保留作第三道防線。
-2. **受管排程器 `engineSchedule`**（canvas-engine.js export）：週期工作唯一合法管道
+2. **受管排程器 `engineSchedule`**（canvas-engine.js export）：畫布模組週期工作的唯一合法管道
    ——自動登記、`document.hidden` 跳過 tick、恢復可見錯過即補跑、`alignTo: 'half-hour'`
    供整/半點對齊（timeout 受追蹤），登出時模組 clear 各自 cancel＋引擎
-   `cancelAllScheduledTasks()` 兜底全清。三處輪詢全數遷移：auth 60s、衝堂 15 分、
-   會議自動刷新 30 分——背景分頁 API 流量歸零。舊 meeting-now 的對齊 setTimeout
+   `cancelAllScheduledTasks()` 兜底全清。兩處 UI 輪詢全數遷移：衝堂 15 分、
+   會議自動刷新 30 分——背景分頁 API 流量歸零。授權心跳屬共享 `AccessClient`，不由畫布引擎管理。
+   舊 meeting-now 的對齊 setTimeout
    未追蹤洩漏（登出後重建無人持有的 interval）由此結構性消滅。
-3. **auth 輪詢去強制換發**：`verifyFireworkAuth` 的 `getIdToken(true)` 改 `getIdToken()`
-   （讀 SDK 快取、到期自動續期）——每 60 秒一次的真實網路換發歸零；「後端判定失效」
-   由 auth-fetch 的 401 攔截兜底。
+3. **授權心跳集中化**：共享 `AccessClient` 每 60 秒以 `HEAD /api/session` 驗證 Firebase identity、
+   帳號狀態、compiled grant 與 `X-Grant-Revision`。每一支 business request 也重做相同 server gate；
+   任何 stale revision 或拒絕先同步派發 `cspanel:access-kill` 清空 UI，再依語意 reload 或 sign-out。
 4. **動畫一律綁可見狀態**：ui-conductor 過場 overlay 的 6 組 infinite 動畫改綁
    `#ui-transition-overlay.active` 後代、退場 transitionend 後補 `display:none`
    （進場前 `showOverlay()` 解除並強制 reflow 保過渡）；`.ip-search-spinner` 動畫
@@ -636,17 +637,12 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
    選擇器下（白名單載於工具內）、script/ 裸 `setInterval` 禁令（僅 canvas-engine.js
    排程器實作豁免）。既有 11 套 headless 全綠後收工。
 9. **審查修正（多代理對抗性審查，11 項覆核成立全數處理）**：
-   - **開機鎖死（high，最重要）**：ui-conductor 見 localStorage 有 token 即掛
-     pointer-events:all 的全螢幕 overlay，而觸發源收斂後「Firebase 判定未登入」
-     再無路徑發 login-ready——token 被撤銷／persistence 遺失時整頁永久卡在
-     「系統啟動中」。修法：fireworkeffect 的 onAuthStateChanged(null) 分支發
-     `fw-auth-state-change: session-absent`，conductor 收到即撤 overlay 露出登入列
-     （登出過場進行中則交由 finalizeLogout）；同函式 user 分支的 `await getIdToken()`
-     加 try/catch（離線重載續期拋錯不得中斷回呼），失敗沿用既有 token 繼續開場。
-   - **跨分頁換帳號殘留（medium）**：A 分頁登出→換帳號，B 背景分頁的 initPromise
-     停在 resolved、重登入跳過整輪 init。修法：`wasLoggedIn` 旗標——本頁曾建立
-     session 而 onAuthStateChanged(null) 抵達時（跨分頁登出／撤銷）直接派
-     'firework-logout-success' 完整拆場；force-logout 路徑先清旗標防雙拆。
+   - **開機鎖死（high，最重要）**：ui-conductor 開機一律 fail closed 顯示全螢幕 overlay；
+     Firebase 無 identity 或 server grant boot 失敗時，fireworkeffect 發
+     `fw-auth-state-change: session-absent` 撤下 overlay、露出登入列，但不初始化任何模組。
+   - **跨帳號殘留（medium）**：`AccessClient` 把 grant 綁定 Firebase UID；boot、request 與 heartbeat
+     都先比對 UID，變更時同步 access-kill。`wasLoggedIn` 再確保 Firebase 跨分頁登出會完整拆場，
+     `initPromise` 歸零後新帳號才可重新初始化。
    - **in-flight init × 登出交錯（low，舊碼同型）**：`initGeneration` 世代計數——
      clearAllModules 前進世代，doInitAllModules 的 allSettled 後驗世代，已登出即
      放棄尾段（不重掛 stack/hover、不廣播 login-ready）。殘餘窗口（個別面板 init

@@ -2,6 +2,7 @@
 // 需本機 server（repo 根）：python3 -m http.server 8123
 //   node tools/handle-chrome-test.mjs
 import { chromium } from 'playwright';
+import { installAccessFixture } from './access-test-fixture.mjs';
 
 const BASE = process.env.HC_URL || 'http://localhost:8123';
 const browser = await chromium.launch();
@@ -80,27 +81,10 @@ const after = await page.evaluate(() => ({
 assert(!after.dragging && after.bgi === 'none', '放開後恢復常態');
 assert(parseInt(after.left, 10) > 40, `拖曳行為正常（left=${after.left}）`);
 
-// ===== B. panel_all（quirks mode、有 tokens、登入 stub）=====
+// ===== B. panel_all（quirks mode、有 tokens、access session stub）=====
 // Task 3 會在此區塊追加罐頭面板斷言；本 Task 先驗靜態 link 與 quirks 相容。
-await page.addInitScript(() => {
-  localStorage.setItem('firebase_id_token', 'parity-stub');
-  localStorage.setItem('cspanel.theme.v1', 'olive');
-  const fakeUser = { getIdToken: async () => 'parity-stub' };
-  window.firebase = {
-    apps: [{}], initializeApp: () => {},
-    auth: () => ({
-      onAuthStateChanged: (cb) => setTimeout(() => cb(fakeUser), 50),
-      currentUser: fakeUser, signOut: async () => {},
-      signInWithEmailAndPassword: async () => ({ user: fakeUser }),
-    }),
-    firestore: () => ({}),
-  };
-  window.verifyFireworkAuth = async () => true;
-});
-// 修復（第八期 Task 1 審查 Important #1）：stub token 在真實後端 .../api/order-tool-api
-// 上會收到 401，觸發 script/auth-protected-tabs.js 的「❌ 認證徹底失敗，執行強制登出」，
-// 把 .canned-panel-handle 隱藏，且與 page.goto() 等待外部 CDN 資源 load 幾乎同時發生，
-// 造成下方 waitForSelector 100% 逾時。比照既有 tools/panel-stack-test.mjs 先例攔截此端點。
+await installAccessFixture(page);
+// 測試只驗證介面結構；攔截商業 API，避免後端資料與網路狀態影響版面斷言。
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 let panelAllOk = false;
 try {

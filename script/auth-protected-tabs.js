@@ -1,8 +1,6 @@
 import { CSPANEL_API } from './cspanel-api.js';
 import { authFetch, readApiError } from './auth-fetch.js';
 
-// 內部變數，用於儲存 interceptor 引用以便移除
-let currentInterceptor = null;
 // 分頁視窗管理器實例（第三期，子專案 B）：tabsHTML 注入完成後接管，登出時拆除。
 let windowManager = null;
 // 再進入/併發防護（第三期，審查 #1）。
@@ -18,13 +16,8 @@ const DIARY_RATE_LIMIT = 10;
 const diaryRequestsBySource = new WeakMap();
 
 export async function initProtectedTabs() {
-  // canvas-engine 有兩個各自獨立呼叫 initAllModules 的觸發點——checkExistingAuth
-  // （有 firebase_id_token 即 await）與 firework-login-success 監聽器（onAuthStateChanged
-  // 還原 session 時 fire-and-forget）。已登入重新整理時兩者可能「併發」呼叫本函式；
-  // 若不擋，兩條 fetchProtectedContent 各自 innerHTML→(await import)→mount/destroy
-  // 交錯，第二輪的 destroy 會把第一輪剛搬入常駐池的 iframe 連池一起銷毀，最壞落到
-  // 「分頁整組消失」的空白終態。此處以 in-flight 旗標保證同一時刻只跑一輪 init。
-  // 登出→再登入屬「循序」重入（旗標已在 finally 歸零），不受影響。
+  // 登入事件與 canvas 的漏接補位可能在同一時刻收斂到此處；用 in-flight 旗標
+  // 保證 innerHTML/import/mount 只執行一輪。登出後再登入屬循序重入，不受影響。
   if (initInFlight) {
     console.log('initProtectedTabs 已在進行中，略過重入');
     return;
@@ -34,39 +27,7 @@ export async function initProtectedTabs() {
     const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
     const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
 
-    // ===== 1. 注入點擊攔截器 (關鍵功能) =====
-    // 先用「舊」的 currentInterceptor 參照卸除上一輪掛上的攔截器（審查 #6）——原本
-    // 先建新閉包、再對「新閉包」removeEventListener 等於 no-op（它根本還沒掛上），
-    // 會在跨登出仍存活的 slot 元素（placeholder）上逐輪累積攔截器，多輪登入/登出後
-    // 同一次點擊觸發多次 verifyFireworkAuth。改成卸舊參照才真的避免累積。
-    if (currentInterceptor) {
-      if (tabsPlaceholder) tabsPlaceholder.removeEventListener('click', currentInterceptor, true);
-      if (ipPlaceholder) ipPlaceholder.removeEventListener('click', currentInterceptor, true);
-    }
-
-    // 使用 capture: true 確保在子元素事件觸發前先執行
-    const interceptor = async (e) => {
-      // 檢查 window.verifyFireworkAuth 是否存在 (可能 fireworkeffect 還沒載入完，雖不常見)
-      if (typeof window.verifyFireworkAuth === 'function') {
-        const isValid = await window.verifyFireworkAuth();
-        if (!isValid) {
-          // 驗證失敗：阻止事件傳播，並阻止默認行為
-          e.preventDefault();
-          e.stopPropagation();
-          console.log('⛔ 操作被攔截：Token 無效');
-          // verifyFireworkAuth 內部已經觸發了 firework-force-logout
-          return;
-        }
-      }
-    };
-
-    // 儲存引用以便 destroy / 下一輪 init 時移除
-    currentInterceptor = interceptor;
-
-    if (tabsPlaceholder) tabsPlaceholder.addEventListener('click', interceptor, true);
-    if (ipPlaceholder) ipPlaceholder.addEventListener('click', interceptor, true);
-
-    // ===== 2. 內容獲取邏輯（401 單次 refresh 由 authFetch 統一處理） =====
+    // Session boot 已先決定可見模組；每個 API request 再由 gateway 即時仲裁。
     await fetchProtectedContent();
   } finally {
     initInFlight = false;
@@ -77,19 +38,12 @@ export function clearProtectedTabs() {
   const tabsPlaceholder = document.getElementById('auth-protected-tabs-placeholder');
   const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
 
-  // 1. 移除監聽器
-  if (currentInterceptor) {
-    if (tabsPlaceholder) tabsPlaceholder.removeEventListener('click', currentInterceptor, true);
-    if (ipPlaceholder) ipPlaceholder.removeEventListener('click', currentInterceptor, true);
-    currentInterceptor = null;
-  }
-
   if (diaryBridgeListener) {
     window.removeEventListener('message', diaryBridgeListener);
     diaryBridgeListener = null;
   }
 
-  // 2. 拆除分頁視窗管理器（移除全域 pointer/scroll/resize 監聽與常駐池/視窗層），
+  // 1. 拆除分頁視窗管理器（移除全域 pointer/scroll/resize 監聽與常駐池/視窗層），
   //    再清空 UI。順序：先 destroy（收監聽器）→ 後清 DOM（innerHTML 會一併移除
   //    池/視窗，iframe 於登出被銷毀屬預期）。
   if (windowManager) {
@@ -97,7 +51,7 @@ export function clearProtectedTabs() {
     windowManager = null;
   }
 
-  // 3. 清空 UI
+  // 2. 清空 UI
   if (tabsPlaceholder) tabsPlaceholder.innerHTML = '';
   if (ipPlaceholder) ipPlaceholder.innerHTML = '';
 }
@@ -286,8 +240,8 @@ async function fetchProtectedContent() {
             // 的 await Promise.allSettled 之「前」掛妥——本函式屬該等待集，執行至
             // 此核心必已存在）。因此 v2 絕不可 `innerHTML = data.tabsHTML` 覆寫
             // host——第一輪會殺掉剛掛載核心的 layer（render 從此畫進 detached
-            // 節點，分頁整組不可見）；第二輪（checkExistingAuth 與
-            // firework-login-success 先後各觸發一輪 initAllModules 時發生）更會
+            // 節點，分頁整組不可見）；重複登入生命週期訊號各觸發一輪
+            // initAllModules 時，第二輪更會
             // 連 pool 帶 iframe 一起銷毀，而 adoptTabs 是冪等設計（同 id 略過）
             // 不會重建，iframe 一旦被摧毀也沒有任何「重新收養」能免重載救回
             // （違反 iframe 零重載鐵律）——唯一正確修法是「防止覆寫」而非「事後

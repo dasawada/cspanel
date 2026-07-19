@@ -5,6 +5,7 @@
 // 需本機 server（repo 根）：python3 -m http.server 8123
 // 用法：node tools/page-engine-a-test.mjs
 import { chromium } from 'playwright';
+import { installAccessFixture } from './access-test-fixture.mjs';
 
 const browser = await chromium.launch();
 const fails = [];
@@ -124,22 +125,8 @@ console.log('— panel_all_v2.html：v2 旗標／quirks／儲存隔離 —');
 const BASE = process.env.PE_URL || 'http://localhost:8123';
 const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
 
-// 登入 stub（同 handle-chrome-test B 區）＋ order-tool-api 攔截
-await page.addInitScript(() => {
-  localStorage.setItem('firebase_id_token', 'parity-stub');
-  localStorage.setItem('cspanel.theme.v1', 'olive');
-  const fakeUser = { getIdToken: async () => 'parity-stub' };
-  window.firebase = {
-    apps: [{}], initializeApp: () => {},
-    auth: () => ({
-      onAuthStateChanged: (cb) => setTimeout(() => cb(fakeUser), 50),
-      currentUser: fakeUser, signOut: async () => {},
-      signInWithEmailAndPassword: async () => ({ user: fakeUser }),
-    }),
-    firestore: () => ({}),
-  };
-  window.verifyFireworkAuth = async () => true;
-});
+// 新 access session fixture＋order-tool-api business response。
+await installAccessFixture(page);
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 
 // ===== A. v2 頁載入與旗標 =====

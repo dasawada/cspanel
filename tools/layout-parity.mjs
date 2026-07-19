@@ -3,6 +3,7 @@
 //       node tools/layout-parity.mjs compare baseline.json current.json
 import { chromium } from 'playwright';
 import { readFileSync, writeFileSync } from 'fs';
+import { installAccessFixture } from './access-test-fixture.mjs';
 
 const [, , cmd, a, b] = process.argv;
 const SELECTORS = JSON.parse(readFileSync(new URL('./parity-selectors.json', import.meta.url)));
@@ -11,28 +12,8 @@ const URL_ = process.env.PARITY_URL || 'http://localhost:8123/panel_all.html';
 async function capture(outfile) {
   const browser = await chromium.launch();
   const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
-  await page.addInitScript(() => {
-    localStorage.setItem('firebase_id_token', 'parity-stub');
-    localStorage.setItem('cspanel.theme.v1', 'olive');
-    const fakeUser = { getIdToken: async () => 'parity-stub' };
-    window.firebase = {
-      apps: [{}],
-      initializeApp: () => {},
-      auth: () => ({
-        onAuthStateChanged: (cb) => setTimeout(() => cb(fakeUser), 50),
-        currentUser: fakeUser,
-        signOut: async () => {},
-        signInWithEmailAndPassword: async () => ({ user: fakeUser }),
-      }),
-      firestore: () => ({}),
-    };
-    window.verifyFireworkAuth = async () => true;
-  });
-  // 攔截真實遠端 API：stub token 對真實後端一定回 401，會觸發
-  // auth-protected-tabs.js 的 fetchProtectedContentWithRetry 耗盡重試後
-  // dispatch firework-force-logout，進而 clearAllModules() 把所有剛渲染
-  // 的面板整個清空（.canned-panel 等 rect 全部消失）。回傳 200 + success:false
-  // 讓呼叫端視為「無資料」正常結束，不觸發全域登出，也不必依賴真實後端。
+  await installAccessFixture(page);
+  // 版面 parity 不應依賴正式後端資料；攔截商業 API，讓結果只反映版面差異。
   await page.route('**/api/order-tool-api', (route) =>
     route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ success: false }) })
   );

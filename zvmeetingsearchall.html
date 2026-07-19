@@ -382,6 +382,7 @@
             signInWithEmailAndPassword,
             signOut
         } from 'https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js';
+        import { bootAccess, killAccess } from './script/auth-fetch.js';
 
         const firebaseConfig = {
             apiKey: 'AIzaSyAhgA5nFE3bLTVyudYjKctSpnTCIgORg8M',
@@ -390,6 +391,7 @@
         };
         const auth = getAuth(initializeApp(firebaseConfig));
         window.auth = auth;
+        window.firebaseSignOut = () => signOut(auth);
 
         const authGate = document.getElementById('meeting-auth-gate');
         const app = document.getElementById('meeting-app');
@@ -414,8 +416,17 @@
             }
         });
 
-        document.getElementById('meeting-logout-btn').addEventListener('click', () => signOut(auth));
-        window.addEventListener('firework-force-logout', () => signOut(auth));
+        document.getElementById('meeting-logout-btn').addEventListener('click', () => {
+            void killAccess({ reason: 'USER_LOGOUT', signOut: true });
+        });
+        const lockMeetingUi = () => {
+            // 後端已判定為終態 auth failure 時先同步遮蔽／清空結果，
+            // 不等待 Firebase signOut 的非同步狀態回呼。
+            app.hidden = true;
+            authGate.hidden = false;
+            document.getElementById('all-meeting-result-container')?.replaceChildren();
+        };
+        window.addEventListener('cspanel:access-kill', lockMeetingUi);
 
         onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -423,9 +434,16 @@
                 authGate.hidden = false;
                 return;
             }
-            if (!user.emailVerified) {
-                errorBox.textContent = '這個帳號尚未完成 Email 驗證。';
-                await signOut(auth);
+            try {
+                await bootAccess({ requiredFeature: 'schedule' });
+            } catch (error) {
+                lockMeetingUi();
+                errorBox.textContent = error?.code === 'FEATURE_FORBIDDEN'
+                    ? '此帳號沒有會議查詢權限。'
+                    : '帳號目前無法使用此系統。';
+                if (error?.code === 'FEATURE_FORBIDDEN') {
+                    await killAccess({ reason: error.code, signOut: true });
+                }
                 return;
             }
 

@@ -17,22 +17,19 @@ const UI_CONFIG = {
 const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
 
 (function immediateOverlayCheck() {
-  const token = localStorage.getItem('firebase_id_token');
-  if (token) {
-    const style = document.createElement('style');
-    style.id = 'ui-conductor-immediate-overlay';
-    style.textContent = `
-      body::before {
-        content: '';
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: ${OVERLAY_BACKGROUND};
-        z-index: 9998;
-        pointer-events: all;
-      }
-    `;
-    document.head.appendChild(style);
-  }
+  const style = document.createElement('style');
+  style.id = 'ui-conductor-immediate-overlay';
+  style.textContent = `
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background: ${OVERLAY_BACKGROUND};
+      z-index: 9998;
+      pointer-events: all;
+    }
+  `;
+  document.head.appendChild(style);
 })();
 
 (function initUIInfrastructure() {
@@ -278,15 +275,8 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
       </div>
     `;
     
-    const token = localStorage.getItem('firebase_id_token');
-    if (token) {
-      overlay.classList.add('active');
-    } else {
-      // 第十期：非過場期間 overlay 整個 display:none——它是全視窗 fixed 元素，
-      // opacity:0 仍佔一整層合成面；display:none 連同層一起釋放（動畫另有
-      // .active 閘控，此為第二道保險）。過場開始前由 showOverlay() 恢復。
-      overlay.style.display = 'none';
-    }
+    // 開機一律 fail closed；Firebase identity + server grant boot 完成後才由事件撤下。
+    overlay.classList.add('active');
 
     document.body.appendChild(overlay);
   }
@@ -487,10 +477,8 @@ window.addEventListener('fw-auth-state-change', async (e) => {
       break;
 
     case 'session-absent':
-      // 第十期（審查修正）：開機 overlay 的前提「localStorage 有 token≈已登入」
-      // 被 Firebase 判定推翻（persistence 遺失、token 被撤銷後重載）——撤下
-      // 「系統啟動中」鎖屏露出登入列，否則 pointer-events:all 的全螢幕 overlay
-      // 永久蓋住頁面。登出過場進行中則交由 finalizeLogout 收尾。
+      // Firebase restore／server access boot確認沒有可用session後，撤下開機鎖屏並
+      // 露出登入列；登出過場進行中仍交由finalizeLogout收尾。
       if (uiConductor.inLogoutTransition) break;
       document.documentElement.classList.remove('auth-active');
       document.body.classList.remove('auth-active');

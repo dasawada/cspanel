@@ -1,4 +1,4 @@
-// Canvas Engine — 泛化自 firework-mediator.js（認證調度邏輯原樣保留）。
+// Canvas Engine — 泛化自 firework-mediator.js；模組載入受 server grant 清單約束。
 // 職責：slot 生成、幾何注入（manifest 為唯一座標權威）、init/clear 調度、
 //       編輯模式（enter/exitEditMode，Task 6 實作）。
 import { makeDraggable } from './draggable.js';
@@ -11,74 +11,15 @@ const LAYOUT_KEY = (canvasId, ver = 'v1') => `cspanel.layout.${canvasId}.${ver}`
 // window.PageEngine 的所有函式一律安全 no-op），單一固定 key 已足夠（spec §7）。
 const PAGES_KEY = (canvasId) => `cspanel.pages.${canvasId}.v1`;
 
-let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false, config }
-// 九期B Task 7 修復：initAllModules() 在同一次頁面載入可能被呼叫兩次——
-// （十期註：雙呼叫的兩個源頭已收斂——checkExistingAuth 搶快路徑移除、
-// initAllModules 改 promise 單例冪等，見 loadCanvas 尾與 initPromise 註解。
-// 本旗標保留作第三道防線，以下為歷史競態記錄。）
-// checkExistingAuth() 的 IIFE 見到 localStorage 已有 firebase_id_token 會直接呼叫
-// 一次；fireworkeffect.js 的 firebase.auth().onAuthStateChanged 之後又會
-// dispatchEvent('firework-login-success')，觸發 loadCanvas() 掛的另一個監聽器
-// 再呼叫一次（見下方 loadCanvas 內兩處呼叫點）。多數面板 init/registerPanelStack
-// 對重入是安全的（joinMember／stack.register 皆有「已存在」的冪等分支），但 v2
-// 模式下的 WindowManager 掛載本身沒有這種冪等性——`mountWindowManager()` 每次呼叫
-// 都會建一份全新的模組級閉包狀態＋一個新的 DOM layer；下方原本的
-// `!window.WindowManager` 檢查與實際指派（發生在 `await import(...)` 之後）之間
-// 有一段可被搶入的非同步縫隙：若兩次 initAllModules() 呼叫都在對方完成指派前讀到
-// `window.WindowManager` 仍是 undefined，會各自掛載一份，產生兩份重疊的
-// `.wm-window` DOM（同一批視窗座標各兩份）——後掛載者覆寫全域 `window.WindowManager`
-// 參照，但先掛載者的 DOM／內部監聽器從未被清理，導致「頁 tab 拖曳合併」等操作
-// 命中的是舊份實例的 tabBarAt()（看不到新份的視窗），偶發性把合併誤判成撕離
-// （page-engine-b-test.mjs H3 區揪出，重載後偶發触發，機率視模組載入時序而定）。
-// 用一個同步搶佔旗標關閉這段縫隙：進入掛載分支「當下」（await 之前）就搶佔，
-// 第二次呼叫即使 `window.WindowManager` 仍是 undefined 也會被這個旗標擋下。
-// 只在 v2（pageEngine）模式使用，登出時對稱重置（見 clearAllModules），v1 模式
-// 完全不受影響（該分支本就不會被 v1 進入）。
+let activeCanvas = null; // { sourceManifest, manifest, mods, moduleKey, editing, config }
+// 登入事件與載入補位可能同時要求初始化。WindowManager 的 async import 前先同步
+// claim，避免兩輪都觀察到尚未掛載而建立重複 DOM／監聽器；登出時對稱重置。
 let wmMountClaimed = false;
 
 // 九期A：儲存版本（v1/v2）一律以 activeCanvas.config.storageVersion 為準（loadCanvas
 // 正規化寫入），未設定（尚未 loadCanvas，或呼叫端沒傳 config）預設 'v1' —— production
 // （panel_all.html 不傳 config）因此永遠讀寫 .v1 key，行為零變化。
 function layoutVer() { return activeCanvas?.config?.storageVersion || 'v1'; }
-
-// ===== 全域認證狀態管理（原 mediator:20-88 逐字，僅 log 前綴 Mediator→Engine） =====
-let globalAuthInterceptor = null;
-let authCheckInterval = null;
-const AUTH_CHECK_INTERVAL_MS = 60000; // 每 60 秒檢查一次
-
-// ===== 全域點擊攔截器 =====
-function setupGlobalAuthInterceptor() {
-  if (globalAuthInterceptor) return;
-
-  globalAuthInterceptor = async (e) => {
-    const target = e.target;
-    const isInteractive = target.closest('button, a, [onclick], [role="button"], .clickable, input[type="submit"], input[type="button"]');
-
-    if (!isInteractive) return;
-
-    if (typeof window.verifyFireworkAuth === 'function') {
-      const isValid = await window.verifyFireworkAuth();
-      if (!isValid) {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        console.log('⛔ [Engine] 全域攔截：帳號已失效，操作被阻止');
-        return false;
-      }
-    }
-  };
-
-  document.addEventListener('click', globalAuthInterceptor, true);
-  console.log('Engine: 已啟用全域認證攔截器 🛡️');
-}
-
-function removeGlobalAuthInterceptor() {
-  if (globalAuthInterceptor) {
-    document.removeEventListener('click', globalAuthInterceptor, true);
-    globalAuthInterceptor = null;
-    console.log('Engine: 已移除全域認證攔截器');
-  }
-}
 
 // ===== 受管排程器（第十期）=====
 // 模組契約原本只有 init（登入）/clear（登出）兩個掛鉤，缺「分頁可見性」維度——
@@ -150,35 +91,6 @@ function cancelAllScheduledTasks() {
     task.timeoutId = task.intervalId = null;
   }
   scheduledTasks.clear();
-}
-
-// ===== 定期背景認證檢查 =====
-function startPeriodicAuthCheck() {
-  if (authCheckInterval) return;
-
-  authCheckInterval = engineSchedule({
-    every: AUTH_CHECK_INTERVAL_MS,
-    onTick: async () => {
-      console.log('Engine: 執行定期認證檢查...');
-      if (typeof window.verifyFireworkAuth === 'function') {
-        const isValid = await window.verifyFireworkAuth();
-        if (!isValid) {
-          console.log('⛔ [Engine] 定期檢查發現帳號已失效');
-          stopPeriodicAuthCheck();
-        }
-      }
-    },
-  });
-
-  console.log(`Engine: 已啟動定期認證檢查（每 ${AUTH_CHECK_INTERVAL_MS / 1000} 秒）⏰`);
-}
-
-function stopPeriodicAuthCheck() {
-  if (authCheckInterval) {
-    authCheckInterval.cancel();
-    authCheckInterval = null;
-    console.log('Engine: 已停止定期認證檢查');
-  }
 }
 
 // ===== 狀態廣播工具 =====
@@ -266,6 +178,32 @@ async function loadModules(manifest) {
   }
   return mods;
 }
+
+async function prepareAuthorizedModules() {
+  const access = window.CSPANelAuth?.getAccessSnapshot?.();
+  if (!access || !Array.isArray(access.modules)) {
+    throw new Error('Engine: access session is not ready');
+  }
+  const allowed = new Set(access.modules);
+  const source = activeCanvas.sourceManifest;
+  const manifest = { ...source, panels: source.panels.filter((panel) => allowed.has(panel.id)) };
+  const moduleKey = manifest.panels.map((panel) => panel.id).join('\u0000');
+
+  for (const panel of source.panels) {
+    const visible = allowed.has(panel.id);
+    for (const slotId of [panel.slot, ...(panel.extraSlots || [])]) {
+      if (!slotId) continue;
+      const slot = document.getElementById(slotId);
+      if (slot) slot.hidden = !visible;
+    }
+  }
+  if (activeCanvas.moduleKey !== moduleKey) {
+    activeCanvas.mods = await loadModules(manifest);
+    activeCanvas.moduleKey = moduleKey;
+  }
+  activeCanvas.manifest = manifest;
+  emitGeometry(manifest, readLayout(manifest.id, layoutVer()));
+}
 // 第十期：initAllModules 改 promise 單例冪等。檔頭 wmMountClaimed 註解記載的
 // 「同一次頁面載入被呼叫兩次」自此在源頭收斂——任何數量的呼叫者（現在只剩
 // firework-login-success 事件；未來若再加觸發路徑亦同）都拿到同一個 in-flight
@@ -290,11 +228,10 @@ function initAllModules() {
 }
 async function doInitAllModules() {
   const gen = initGeneration;
+  await prepareAuthorizedModules();
   const { manifest, mods } = activeCanvas;
   console.log('Engine: 初始化登入後模組...');
   broadcastAuthState('login-start');
-  setupGlobalAuthInterceptor();
-  startPeriodicAuthCheck();
   // 同步先行者（原 mediator:99）
   for (const p of manifest.panels) {
     if (!p.syncInit) continue;
@@ -374,8 +311,6 @@ function clearAllModules() {
   initPromise = null; // 第十期：歸零冪等單例，允許下次登入重新初始化
   initGeneration++; // in-flight 的 doInitAllModules 見世代前進即放棄尾段（見 initGeneration 註解）
   broadcastAuthState('logout-start');
-  removeGlobalAuthInterceptor();
-  stopPeriodicAuthCheck();
   for (const p of manifest.panels) {
     const m = mods.get(p.id);
     if (!m || !m[p.clear]) continue;
@@ -1491,22 +1426,23 @@ export async function loadCanvas(manifest, config = {}) {
   }
 
   emitGeometry(manifest, layout);
-  const mods = await loadModules(manifest);
-  activeCanvas = { manifest, mods, editing: false, config: engineConfig };
+  activeCanvas = {
+    sourceManifest: manifest,
+    manifest: { ...manifest, panels: [] },
+    mods: new Map(),
+    moduleKey: null,
+    editing: false,
+    config: engineConfig
+  };
 
   window.addEventListener('firework-login-success', () => { initAllModules(); });
   window.addEventListener('firework-logout-success', () => { exitEditMode(); clearAllModules(); });
 
-  // 第十期：原 checkExistingAuth 搶快路徑（localStorage 有 token 即先行 init）移除。
-  // 「已登入」的唯一真相來源收斂為 fireworkeffect 的 onAuthStateChanged →
-  // 'firework-login-success'——Firebase local persistence 下重載必發，且發出時
-  // auth.currentUser 已就緒，面板資料層不再有「搶快贏了發雙倍請求、輸了短暫
-  // NOT_LOGGED_IN」的競態（見 docs/superpowers/specs/2026-07-19-lowend-performance-design.md §3.3）。
-  // initAllModules 的 promise 單例冪等（見上方 initPromise）續留作第二道防線。
+  // 模組只由 Firebase restore + server access boot 完成後的登入事件啟動；不讀任何
+  // local token hint。initAllModules 的 promise 單例保護事件與下方漏接補位重疊。
   broadcastAuthState('init-logged-out');
-  // 漏接補位：上方 await loadModules（十餘個依序動態 import）期間 onAuthStateChanged
-  // 可能已廣播——事件在監聽器掛上前發出即漏接（舊 checkExistingAuth 輪詢恰好蓋住
-  // 這個窗口，收斂後需由狀態面補上）。fireworkAuthReady 由「同一真相來源」於廣播前
+  // 漏接補位：上方 await loadModules（十餘個依序動態 import）期間登入狀態
+  // 可能已廣播——事件在監聽器掛上前發出即漏接。fireworkAuthReady 由同一真相來源於廣播前
   // 設置（runtime 旗標、非持久化，無 localStorage 陳舊性），讀到 true＝事件已發而
   // 我們錯過，補呼一次；與事件路徑重疊時由 initPromise 冪等吸收。
   if (window.fireworkAuthReady) initAllModules();
