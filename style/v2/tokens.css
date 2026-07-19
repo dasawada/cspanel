@@ -9,7 +9,16 @@
   --glass-bg-hover: rgba(255,255,255,0.90);
   --glass-border:   rgba(255,255,255,0.50);
   --glass-shadow:   0 2px 24px rgba(0,0,0,0.06), 0 0 0 1px rgba(255,255,255,0.5) inset;
-  --glass-blur:     20px; /* 面板卡；modal 用 40px */
+  /* 模糊檔位（第十期：blur 值全面 token 化——值即改造前各處字面值，一字不改。
+     新規則禁用裸 blur(Npx)，一律引用下列檔位（tools/perf-hygiene-test.mjs 把關）；
+     JS 注入樣式引用時帶 fallback：var(--glass-blur, 20px)。 */
+  --glass-blur:        20px; /* 面板卡（含 wm-window、toast、tooltip、hover-overlay） */
+  --glass-blur-modal:  40px; /* modal 內容面 */
+  --glass-blur-scrim:   6px; /* 全視窗遮罩；拖曳中近透明輕量檔同值共用 */
+  --glass-blur-chrome: 28px; /* 登入列／編輯列等常駐 chrome */
+  --glass-blur-bar:     8px; /* update-header 角落列 */
+  /* 不支援 backdrop-filter（@supports 回退）與保險絲（見檔尾）共用的不透明退場底色 */
+  --glass-bg-solid: rgba(252,253,250,0.97);
 
   /* 背景 mesh（未登入單色基準，theme.js 於登入後覆寫） */
   --bg-base:   #f4f4f4;
@@ -104,3 +113,35 @@
   --input-pad-compact-y: var(--space-1); /* date/select 緊湊內距 2px */
   --input-pad-compact-x: var(--space-2); /* 4px */
 }
+
+/* ============================================================
+   第十期：低階機降級保險絲（預設不啟動）。兩個入口、同一份覆蓋：
+   (1) 使用者在 Windows「設定 > 個人化 > 色彩 > 透明效果」關閉——Chromium 118+
+       映射為 prefers-reduced-transparency，頁面跟原生視窗一起退不透明；
+   (2) html.perf-mode 手動 class（本期僅留鉤子，未做 UI；console 可切）。
+   語意：玻璃底退為不透明、backdrop-filter 全面停用（含 JS 注入樣式——
+   universal selector 才蓋得到，僅保險絲命中時生效，平時零成本）。
+   支援查詢「玻璃不見了」的回報即此開關命中，屬 by design（CANVAS.md §11）。
+   ============================================================ */
+@media (prefers-reduced-transparency: reduce) {
+  :root {
+    --glass-bg: var(--glass-bg-solid);
+    --glass-bg-hover: rgba(252,253,250,0.99);
+  }
+  * {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  /* 拖曳中罐頭面板的字面透明底（dragb_msg_pnl 注入、rgba 15% 白、特異度 0,2,0）
+     也退不透明——html 前綴抬升特異度至 0,2,1，蓋過 runtime <style> 的載入順序 */
+  html .canned-panel.gl-dragging { background: var(--glass-bg-solid); }
+}
+html.perf-mode {
+  --glass-bg: var(--glass-bg-solid);
+  --glass-bg-hover: rgba(252,253,250,0.99);
+}
+html.perf-mode * {
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+html.perf-mode .canned-panel.gl-dragging { background: var(--glass-bg-solid); }

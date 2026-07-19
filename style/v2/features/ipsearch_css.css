@@ -58,7 +58,6 @@
     border: 2px solid var(--border-2);
     border-top: 2px solid var(--accent);
     border-radius: 50%;
-    animation: ip-search-spin 1s linear infinite;
     margin-left: var(--space-4);
     vertical-align: middle;
     box-sizing: border-box;
@@ -69,8 +68,12 @@
     visibility: hidden;
 }
 
+/* 第十期：animation 移到 .is-visible 狀態下——visibility:hidden 只是不繪製，
+   動畫仍持續消耗（首次搜尋後 spinner 永不移除，等於永久空轉）；綁狀態即
+   「隱藏必停」。visibility 佔位機制（避免輸入列 reflow）不變。 */
 .ip-search-spinner.is-visible {
     visibility: visible;
+    animation: ip-search-spin 1s linear infinite;
 }
 
 @keyframes ip-search-spin {
@@ -78,7 +81,7 @@
     100% { transform: rotate(360deg); }
 }
 @media (prefers-reduced-motion: reduce) {
-    .ip-search-spinner { animation-duration: 2.5s; } /* 與 .gl-capsule__spinner 同步降速 */
+    .ip-search-spinner.is-visible { animation-duration: 2.5s; } /* 與 .gl-capsule__spinner 同步降速 */
 }
 
 /* IP dashboard layout */
@@ -310,8 +313,8 @@
     transform: translateY(-4px);
     transition: opacity 0.2s ease, transform 0.2s ease;
     box-shadow: var(--ip-tooltip-shadow);
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
     word-wrap: break-word;
     white-space: normal;
 }

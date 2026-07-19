@@ -99,14 +99,23 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
       transform: scale(1);
     }
 
+    /* 第十期：所有 infinite 動畫「預設 paused、僅 .active 期間 running」——
+       overlay 以 opacity:0 退場（為了淡出過渡不能立即 display:none），動畫若無條件
+       running 就會在不可見狀態永久空轉、每幀弄髒玻璃面板的 backdrop 取樣範圍。
+       用 play-state 而非「動畫宣告整個搬進 .active 後代」（審查修正）：後者在
+       remove('active') 當下（opacity 仍為 1 的淡出首幀）會讓 spinner 瞬間跳回
+       初始姿態，肉眼可見；paused 則凍結在當前姿態，隨淡出自然消失。
+       paused 的動畫不逐幀運算，效能上等同沒有動畫。 */
     .ui-spinner {
       width: 72px;  /* 加大尺寸以容納雙層細節 */
       height: 72px;
       /* 複合光暈：產生類似電影鏡頭的空氣感 */
       filter: drop-shadow(0 0 8px var(--ui-spinner-glow));
       /* 整體緩慢公轉，增加不確定性 */
-      animation: container-rotate 4s linear infinite; 
+      animation: container-rotate 4s linear infinite;
+      animation-play-state: paused;
     }
+    #ui-transition-overlay.active .ui-spinner { animation-play-state: running; }
 
     /* 0. 軌道層 (最底層) */
     .path-track {
@@ -121,32 +130,38 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
       stroke: var(--ui-spinner-primary);
       stroke-width: 2.5;
       stroke-linecap: round; /* 圓頭端點 */
-      
+
       /* 物理長度控制 */
       stroke-dasharray: 1, 200;
       stroke-dashoffset: 0;
-      
-      /* 複合動畫：伸縮 + 呼吸 */
-      animation: 
+
+      /* 複合動畫：伸縮 + 呼吸（預設 paused，僅 .active 期間 running） */
+      animation:
         beam-stretch 1.8s ease-in-out infinite,
         beam-pulse 3s ease-in-out infinite;
+      animation-play-state: paused;
     }
+    #ui-transition-overlay.active .path-beam { animation-play-state: running; }
 
     /* 2. 數據環 (內圈 - 負責精密度與對沖) */
     .path-data {
       fill: none;
-      stroke: var(--ui-spinner-secondary); 
+      stroke: var(--ui-spinner-secondary);
       stroke-width: 1.5;
       opacity: 0.8;
       transform-origin: center;
-      
+
       /* 數位訊號感：虛線 - 初始值 */
-      stroke-dasharray: 2, 10; 
-      /* 關鍵：逆時針旋轉 (reverse) + 數據收縮 (contract) 與外圈 1.8s 對稱 */
-      animation: 
+      stroke-dasharray: 2, 10;
+
+      /* 關鍵：逆時針旋轉 (reverse) + 數據收縮 (contract) 與外圈 1.8s 對稱
+         （預設 paused，僅 .active 期間 running） */
+      animation:
         spin-data 2s linear infinite reverse,
         data-contract 1.8s ease-in-out infinite;
+      animation-play-state: paused;
     }
+    #ui-transition-overlay.active .path-data { animation-play-state: running; }
 
     /* ===== 動畫 Keyframes ===== */
     @keyframes container-rotate {
@@ -209,12 +224,23 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
     
     .ui-particle.floating {
       animation: floatUp var(--duration) ease-in infinite;
+      animation-play-state: paused;
     }
+    #ui-transition-overlay.active .ui-particle.floating { animation-play-state: running; }
 
     @keyframes floatUp {
       0% { transform: translateY(0) scale(0.5); opacity: 0; }
       20% { opacity: 0.4; }
       100% { transform: translateY(-80px) scale(1.5); opacity: 0; }
+    }
+
+    /* 第十期：reduced-motion 分支（本注入樣式原為全庫唯一缺席處）——
+       粒子與光束/數據環的伸縮脈衝屬裝飾性動態，全數停用（審查修正：只降速
+       .ui-spinner 時，主要動態源 path-beam/path-data 仍全速，分支形同虛設）；
+       外圈公轉是唯一保留的載入回饋，比照 capsule/ipsearch 慣例降速。 */
+    @media (prefers-reduced-motion: reduce) {
+      .ui-particle.floating, .path-beam, .path-data { animation: none; }
+      .ui-spinner { animation-duration: 12s; }
     }
 
     /* ===== 內容揭示動畫 ===== */
@@ -255,8 +281,13 @@ const OVERLAY_BACKGROUND = 'linear-gradient(135deg, #f6f7f1 0%, #eceee3 100%)';
     const token = localStorage.getItem('firebase_id_token');
     if (token) {
       overlay.classList.add('active');
+    } else {
+      // 第十期：非過場期間 overlay 整個 display:none——它是全視窗 fixed 元素，
+      // opacity:0 仍佔一整層合成面；display:none 連同層一起釋放（動畫另有
+      // .active 閘控，此為第二道保險）。過場開始前由 showOverlay() 恢復。
+      overlay.style.display = 'none';
     }
-    
+
     document.body.appendChild(overlay);
   }
   
@@ -271,6 +302,34 @@ class UITransitionController {
     this.overlay = document.getElementById('ui-transition-overlay');
     this.statusText = document.getElementById('ui-status-text');
     this.particleContainer = document.getElementById('ui-particle-container');
+    // 登出過場進行中旗標：session-absent 若在此期間抵達（signOut 觸發的
+    // onAuthStateChanged(null)），收場交由 finalizeLogout，不得中途撤 overlay。
+    this.inLogoutTransition = false;
+  }
+
+  // 第十期：overlay 顯示/收場的 display 管理。淡入前先解除 display:none 並強制
+  // reflow（否則 display 與 .active 同幀變更會跳過 opacity 過渡）；淡出結束後
+  // （transitionend，waitTransition 內建 timeout 兜底涵蓋分頁隱藏時事件不觸發）
+  // 補 display:none 釋放合成層——若期間又被重新 activate 則跳過。
+  showOverlay() {
+    if (this.overlay && this.overlay.style.display === 'none') {
+      this.overlay.style.display = '';
+      void this.overlay.offsetWidth;
+    }
+  }
+
+  hideOverlayWhenFaded() {
+    if (!this.overlay) return;
+    // 固定延時而非 transitionend（審查修正）：淡入剛完成的殘留 transitionend 會
+    // 提早 resolve，在 opacity≈1 時就落 display:none 而截斷淡出。延時 ≥ 淡出全長
+    // 後再驗 opacity 已歸零才收場；仍在過渡（或又被 activate）就不動，交由下一輪
+    // 過場重試——overlay 停留在 opacity:0＋動畫 paused 的狀態，成本趨近零。
+    setTimeout(() => {
+      if (!this.overlay.classList.contains('active')
+        && getComputedStyle(this.overlay).opacity === '0') {
+        this.overlay.style.display = 'none';
+      }
+    }, UI_CONFIG.timing.overlayFade + 150);
   }
 
   waitTransition(element, minWaitMs = 500) {
@@ -330,6 +389,7 @@ class UITransitionController {
   }
 
   async playLoginTransition() {
+    this.showOverlay();
     this.overlay.classList.add('active');
     this.spawnParticles();
     this.setStatus('驗證身分中...');
@@ -341,6 +401,7 @@ class UITransitionController {
   }
 
   async playLogoutTransition() {
+    this.showOverlay();
     this.overlay.classList.add('active');
     this.spawnParticles();
     this.setStatus('正在安全登出...');
@@ -356,6 +417,7 @@ class UITransitionController {
 
     setTimeout(() => {
       this.overlay.classList.remove('active');
+      this.hideOverlayWhenFaded();
       this.animateContentEntry();
     }, 300);
   }
@@ -379,6 +441,7 @@ class UITransitionController {
     this.setStatus('登出完成');
     await new Promise(r => setTimeout(r, 400));
     this.overlay.classList.remove('active');
+    this.hideOverlayWhenFaded();
   }
 
   clearAutofilledInputs() {
@@ -409,16 +472,30 @@ window.addEventListener('fw-auth-state-change', async (e) => {
       break;
       
     case 'logout-start':
+      uiConductor.inLogoutTransition = true;
       await uiConductor.playLogoutTransition();
       break;
-      
+
     case 'logout-complete':
       await uiConductor.finalizeLogout();
+      uiConductor.inLogoutTransition = false;
       break;
-      
+
     case 'init-logged-out':
       document.documentElement.classList.remove('auth-active');
       document.body.classList.remove('auth-active');
+      break;
+
+    case 'session-absent':
+      // 第十期（審查修正）：開機 overlay 的前提「localStorage 有 token≈已登入」
+      // 被 Firebase 判定推翻（persistence 遺失、token 被撤銷後重載）——撤下
+      // 「系統啟動中」鎖屏露出登入列，否則 pointer-events:all 的全螢幕 overlay
+      // 永久蓋住頁面。登出過場進行中則交由 finalizeLogout 收尾。
+      if (uiConductor.inLogoutTransition) break;
+      document.documentElement.classList.remove('auth-active');
+      document.body.classList.remove('auth-active');
+      uiConductor.overlay.classList.remove('active');
+      uiConductor.hideOverlayWhenFaded();
       break;
   }
 });

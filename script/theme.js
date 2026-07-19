@@ -95,11 +95,11 @@
     const s = document.createElement('style');
     s.id = 'tk-theme-style';
     s.textContent = `
-      .tk-theme-modal{ position:fixed; inset:0; z-index:calc(var(--layer-modal) + 10); display:none; align-items:center; justify-content:center; padding:var(--space-8); background:rgba(18,22,26,0.45); backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px); }
+      .tk-theme-modal{ position:fixed; inset:0; z-index:calc(var(--layer-modal) + 10); display:none; align-items:center; justify-content:center; padding:var(--space-8); background:rgba(18,22,26,0.45); backdrop-filter:blur(var(--glass-blur-scrim, 6px)); -webkit-backdrop-filter:blur(var(--glass-blur-scrim, 6px)); }
       .tk-theme-modal.open{ display:flex; animation:tkfade .2s ease; }
       @keyframes tkfade{ from{ opacity:0 } }
       .tk-theme-panel{ width:min(920px,100%); max-height:88vh; display:flex; flex-direction:column; font-family:var(--sans, system-ui, sans-serif); color:var(--fg,#1d1d1f);
-        background:var(--glass-bg-hover, rgba(255,255,255,0.85)); backdrop-filter:blur(40px) saturate(1.7); -webkit-backdrop-filter:blur(40px) saturate(1.7);
+        background:var(--glass-bg-hover, rgba(255,255,255,0.85)); backdrop-filter:blur(var(--glass-blur-modal, 40px)) saturate(1.7); -webkit-backdrop-filter:blur(var(--glass-blur-modal, 40px)) saturate(1.7);
         border:1px solid var(--glass-border, rgba(255,255,255,0.5)); border-radius:20px; box-shadow:0 30px 80px rgba(0,0,0,0.3); overflow:hidden; }
       .tk-theme-head{ padding:16px 20px; border-bottom:1px solid var(--border, rgba(0,0,0,0.08)); display:flex; align-items:baseline; gap:var(--space-6); flex-shrink:0; }
       .tk-theme-title{ font-size:17px; font-weight:600; }

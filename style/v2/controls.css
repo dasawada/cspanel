@@ -306,7 +306,7 @@ input[type=datetime-local]::-webkit-calendar-picker-indicator {
             flex-direction: column; /* 使內部元素縱向排列 */
             line-height: 1.2;
             border-radius: 15px; /* 圓角 */
-            backdrop-filter: blur(20px); /* 背景模糊 */
+            backdrop-filter: blur(var(--glass-blur)); /* 背景模糊（app 圖示上的磨砂標籤，第十期 token 化） */
             overflow: hidden; /* 確保圓角內部內容不溢出 */
         }
 

@@ -31,8 +31,8 @@ const PANEL_CSS = `
    足以覆蓋統一玻璃規則）*/
 .canned-panel.gl-dragging {
   background: rgba(255,255,255,0.15);
-  backdrop-filter: blur(6px) saturate(1.2);
-  -webkit-backdrop-filter: blur(6px) saturate(1.2);
+  backdrop-filter: blur(var(--glass-blur-scrim, 6px)) saturate(1.2);
+  -webkit-backdrop-filter: blur(var(--glass-blur-scrim, 6px)) saturate(1.2);
   box-shadow: 0 18px 48px rgba(0,0,0,0.18);
 }
 .canned-panel-handle {

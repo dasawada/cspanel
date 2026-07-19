@@ -1,11 +1,12 @@
-/* 統一面板樣式 */
+/* 統一面板樣式
+   第十期清理：移除 4 個死 selector——.idsearchpanel/.ClassLogpanel（cs.js:16-18
+   載明伺服器已不注入該 markup）與 .temp2/.board（repo 全域查無 markup 生成來源，
+   僅 togglelayer.js/DT_fuction_confirm.js 殘留字串引用、對不存在的元素 no-op）。 */
 .roofbutton,
 .tool_zip_dl,
 .optitlepanel,
-.idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet,
+.consultantlistgooglesheet, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet,
 .linkout,
-.temp2,
-.board,
 .meeting-now-search,
 .meeting-check-search,
 .fudausearch-container,
@@ -22,12 +23,12 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .roofbutton, .tool_zip_dl, .optitlepanel,
-    .idsearchpanel, .consultantlistgooglesheet, .ClassLogpanel, .DT_panel,
+    .consultantlistgooglesheet, .DT_panel,
     .IPsearch_in_panelALL, .assist_googlesheet,
-    .linkout, .temp2, .board,
+    .linkout,
     .meeting-now-search, .meeting-check-search,
     .fudausearch-container, .canned-panel, .panel-tab-content {
-        background: rgba(252, 253, 250, 0.97);
+        background: var(--glass-bg-solid);
     }
 }
 
@@ -40,8 +41,8 @@
     z-index: 2; /* 確保在最底層 */
     /*pointer-events: none; 禁止鼠標事件 */
     background: var(--glass-bg); /* 可選，添加背景以確保文本可讀性 */
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
+    backdrop-filter: blur(var(--glass-blur-bar));
+    -webkit-backdrop-filter: blur(var(--glass-blur-bar));
     border-radius: 0 0 0 10px;
     padding: 5px; /* 可選，增加內邊距 */
 }
@@ -56,7 +57,7 @@
     padding: var(--space-2);
 }
 
-.idsearchpanel:hover, .consultantlistgooglesheet:hover, .ClassLogpanel:hover, .DT_panel:hover,
+.consultantlistgooglesheet:hover, .DT_panel:hover,
 .IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
 .meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover,.canned-panel:hover{
@@ -304,7 +305,7 @@ a.no-nth-child {
     height: 100%;
     overflow: auto;
     background-color: rgba(15, 18, 20, 0.45); /* 更深的背景讓彈窗更加突出 */
-    backdrop-filter: blur(6px); /* 添加模糊效果增強層次 */
+    backdrop-filter: blur(var(--glass-blur-scrim)); /* 添加模糊效果增強層次 */
     animation: fadeIn 0.3s ease; /* 添加淡入動畫 */
 }
 
@@ -315,8 +316,8 @@ a.no-nth-child {
 
 #modal-content {
     background: var(--glass-bg-hover);
-    backdrop-filter: blur(40px) saturate(1.8);
-    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.3);
@@ -422,7 +423,7 @@ a.no-nth-child {
     height: 100%;
     overflow: auto;
     background-color: rgba(15, 18, 20, 0.45); /* 深色背景突出彈窗 */
-    backdrop-filter: blur(6px); /* 模糊背景增強層次 */
+    backdrop-filter: blur(var(--glass-blur-scrim)); /* 模糊背景增強層次 */
     animation: fadeIn 0.1s ease; /* 添加淡入動畫 */
 }
 
@@ -435,8 +436,8 @@ a.no-nth-child {
 #zv-metting-list-modal-content {
     position: relative;
     background: var(--glass-bg-hover);
-    backdrop-filter: blur(40px) saturate(1.8);
-    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.3);
@@ -515,7 +516,7 @@ a.no-nth-child {
     height: 100%;
     background-color: rgba(15, 18, 20, 0.45);
     overflow: auto;
-    backdrop-filter: blur(6px);
+    backdrop-filter: blur(var(--glass-blur-scrim));
     animation: fadeIn 0.1s ease;
 }
 
@@ -523,8 +524,8 @@ a.no-nth-child {
 #vvgglesht_modal-content {
     position: relative;
     background: var(--glass-bg-hover);
-    backdrop-filter: blur(40px) saturate(1.8);
-    -webkit-backdrop-filter: blur(40px) saturate(1.8);
+    backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
+    -webkit-backdrop-filter: blur(var(--glass-blur-modal)) saturate(1.8);
     border: 1px solid var(--glass-border);
     border-radius: 20px;
     box-shadow: 0 30px 80px rgba(0,0,0,0.3);
@@ -585,8 +586,8 @@ a.no-nth-child {
     background-color: var(--elevated);
     border: 1px solid var(--border-2);
     border-radius: 10px;
-    backdrop-filter: blur(20px) saturate(1.6);
-    -webkit-backdrop-filter: blur(20px) saturate(1.6);
+    backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(1.6);
     box-shadow: 0 2px 12px rgba(0,0,0,0.06);
     z-index: 999;
     display: none;
