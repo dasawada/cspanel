@@ -147,10 +147,21 @@ function filterDiaryTab(container) {
   }
 }
 
-function createTabsStaging(tabsHTML, canReadCourseDiaries) {
+function createTabsStaging(tabsHTML, canReadCourseDiaries, lazyIframes = false) {
   const staging = document.createElement('div');
   staging.innerHTML = tabsHTML;
   if (canReadCourseDiaries !== true) filterDiaryTab(staging);
+  // 第十期（v2 惰性掛載）：src→data-src 摘除必須在 staging 接進 live DOM「之前」
+  // 完成（detached 節點的 iframe 不會載入），且必須在 filterDiaryTab「之後」
+  // （它依 iframe[src] 判別課程日誌 tab）。首次切到該 tab 時由 window-manager
+  // syncPanes 回填 src——「零重載鐵律」語意不變，只是首載從登入瞬間延到首次可見。
+  // v1 與降級路徑不傳 lazyIframes，行為逐位元不變。
+  if (lazyIframes) {
+    staging.querySelectorAll('iframe[src]').forEach((iframe) => {
+      iframe.dataset.src = iframe.getAttribute('src');
+      iframe.removeAttribute('src');
+    });
+  }
   return staging;
 }
 
@@ -296,7 +307,7 @@ async function fetchProtectedContent() {
               if (typeof wm.hasTabs === 'function' && wm.hasTabs()) {
                 console.log('WindowManager 已認養 iframe tabs，跳過本輪 tabsHTML 注入（保護常駐池/視窗層）');
               } else {
-                const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
+                const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries, true);
                 tabsPlaceholder.appendChild(staging);
                 // host 補 .gl-injected（池中內容依 .gl-injected 後代規則取色）＋
                 // staging 內 tables 標 .gl-table（class 跟著內容搬進池）。

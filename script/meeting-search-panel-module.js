@@ -1,4 +1,5 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
+import { engineSchedule } from './canvas-engine.js';
 
 // ===== 模組內部變數 =====
 let navEventHandlers = [];
@@ -12,7 +13,7 @@ let meetingCheckMouseoverHandler = null;
 let meetingCheckMouseoutHandler = null;
 
 // ===== 衝堂檢查器（整合版） =====
-let meetingConflictInterval = null; // interval id
+let conflictCheckHandle = null; // 排程 handle（第十期：engineSchedule，分頁隱藏跳過、恢復補跑）
 const CONFLICT_CHECK_INTERVAL = 15 * 60 * 1000; // 15 分鐘
 
 function parseTime(input) {
@@ -148,16 +149,18 @@ async function runConflictCheckAndUpdateUI() {
 }
 
 function startPeriodicConflictCheck() {
-    if (meetingConflictInterval) return;
-    // run immediately then schedule
-    runConflictCheckAndUpdateUI().catch(()=>{});
-    meetingConflictInterval = setInterval(()=>{
-        runConflictCheckAndUpdateUI().catch(()=>{});
-    }, CONFLICT_CHECK_INTERVAL);
+    if (conflictCheckHandle) return;
+    // immediate: 登記當下先跑一次，之後每 15 分鐘（第十期：engineSchedule 供給
+    // 分頁隱藏跳過／恢復可見補跑，登出由 clear 與引擎兜底雙重收掉）
+    conflictCheckHandle = engineSchedule({
+        every: CONFLICT_CHECK_INTERVAL,
+        immediate: true,
+        onTick: () => runConflictCheckAndUpdateUI().catch(()=>{}),
+    });
     console.log('ConflictChecker: started periodic checks');
 }
 function stopPeriodicConflictCheck() {
-    if (meetingConflictInterval) { clearInterval(meetingConflictInterval); meetingConflictInterval = null; console.log('ConflictChecker: stopped periodic checks'); }
+    if (conflictCheckHandle) { conflictCheckHandle.cancel(); conflictCheckHandle = null; console.log('ConflictChecker: stopped periodic checks'); }
 }
 
 
@@ -291,9 +294,19 @@ export function initMeetingSearchPanel(containerId = 'meeting-search-panel-place
         return;
     }
     
-    // 注入 HTML
-    container.innerHTML = meetingSearchPanelHTML;
-    
+    // 注入 HTML——第十期：先解析於 detached 節點（iframe 不載入），v2 模式把
+    // ggsheet iframe 的 src 摘存 data-src，首次開啟 vvgglesht modal 才回填
+    // （見 bindVvgglshtEvents）；v1 模式 src 原樣、接入即載，行為不變。
+    const tpl = document.createElement('div');
+    tpl.innerHTML = meetingSearchPanelHTML;
+    if (window.CSPANEL_ENGINE_V2) {
+        tpl.querySelectorAll('iframe[src]').forEach((iframe) => {
+            iframe.dataset.src = iframe.getAttribute('src');
+            iframe.removeAttribute('src');
+        });
+    }
+    container.replaceChildren(...tpl.childNodes);
+
     // 綁定所有事件
     bindNavEvents();
     bindZvListingEvents();
@@ -445,7 +458,14 @@ function bindVvgglshtEvents() {
     const openBtn = document.getElementById('vvgglesht-open-btn');
     if (openBtn) {
         openBtn.onclick = function() {
-            document.getElementById('vvgglesht_modal').style.display = 'block';
+            const modal = document.getElementById('vvgglesht_modal');
+            // 第十期：首次開啟才回填 ggsheet iframe 的 src（v2 惰性掛載，
+            // 見 initMeetingSearchPanel 的模板注入）；之後開關不重載
+            modal.querySelectorAll('iframe[data-src]').forEach((iframe) => {
+                if (!iframe.getAttribute('src')) iframe.src = iframe.dataset.src;
+                delete iframe.dataset.src;
+            });
+            modal.style.display = 'block';
         };
     }
     

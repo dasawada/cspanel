@@ -196,6 +196,14 @@ export function mountWindowManager(host, opts = {}) {
         const pane = panes[tabId];
         if (!pane) continue;
         if (tabId === win.active) {
+          // 第十期（v2 惰性掛載）：首次成為作用中 pane 才回填 src——
+          // createTabsStaging 於 v2 路徑把 src 摘存 data-src（detached 時不載入），
+          // 此處回填即觸發「唯一一次」載入；之後 data-src 已移除、零重載鐵律照舊。
+          // 已回填的 pane 查無 [data-src]，本段為 no-op。
+          pane.querySelectorAll('iframe[data-src]').forEach((iframe) => {
+            if (!iframe.getAttribute('src')) iframe.src = iframe.dataset.src;
+            delete iframe.dataset.src;
+          });
           pane.style.display = 'block';
           pane.style.left = (cr.left - cb.left) + 'px';
           pane.style.top = (cr.top - cb.top) + 'px';

@@ -212,6 +212,23 @@ function formatDateTime(datetime) {
     return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
+// ===== 模板注入（第十期）=====
+// 模板一律先解析於 detached 節點（此時 iframe 不載入）再接進容器；v2 模式
+// （window.CSPANEL_ENGINE_V2）把 iframe 的 src 摘存 data-src，首次展開面板才由
+// setupPanelToggle 回填——登入瞬間不再掛 SA_iframe/assist_list_scale（各巢狀一個
+// 完整 Google Sheets 編輯器）。v1 模式 src 原樣、接入即載，行為與 innerHTML 直注相同。
+function injectPanelHTML(container, html) {
+    const tpl = document.createElement('div');
+    tpl.innerHTML = html;
+    if (window.CSPANEL_ENGINE_V2) {
+        tpl.querySelectorAll('iframe[src]').forEach((iframe) => {
+            iframe.dataset.src = iframe.getAttribute('src');
+            iframe.removeAttribute('src');
+        });
+    }
+    container.replaceChildren(...tpl.childNodes);
+}
+
 // ===== 面板切換功能 =====
 function setupPanelToggle(containerClass, checkboxId) {
     const container = document.querySelector(containerClass);
@@ -229,6 +246,12 @@ function setupPanelToggle(containerClass, checkboxId) {
             if (this.checked) {
                 container.classList.remove('small-size');
                 if (content) {
+                    // 第十期：首次展開才回填 src（injectPanelHTML 於 v2 摘存
+                    // data-src）；回填後屬性移除，之後展開/收合為 no-op、不重載
+                    content.querySelectorAll('iframe[data-src]').forEach((iframe) => {
+                        if (!iframe.getAttribute('src')) iframe.src = iframe.dataset.src;
+                        delete iframe.dataset.src;
+                    });
                     content.style.display = 'block';
                 }
             } else {
@@ -596,9 +619,9 @@ export function initConsultantPanel(containerId = 'consultant-panel-placeholder'
         return;
     }
     
-    // 注入 HTML
-    container.innerHTML = consultantPanelHTML;
-    
+    // 注入 HTML（第十期：v2 惰性掛載見 injectPanelHTML）
+    injectPanelHTML(container, consultantPanelHTML);
+
     // 設定面板切換
     setupPanelToggle('.consultantlistgooglesheet', 'toggleCheckbox');
     
@@ -628,9 +651,9 @@ export function initAssistPanel(containerId = 'assist-panel-placeholder') {
         return;
     }
     
-    // 注入 HTML
-    container.innerHTML = assistPanelHTML;
-    
+    // 注入 HTML（第十期：v2 惰性掛載見 injectPanelHTML）
+    injectPanelHTML(container, assistPanelHTML);
+
     // 設定面板切換
     setupPanelToggle('.assist_googlesheet', 'assist_toggleCheckbox');
     
