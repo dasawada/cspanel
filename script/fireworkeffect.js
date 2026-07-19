@@ -13,8 +13,8 @@ export async function loadLoginPanel() {
     }
     .firework-toast {
       background: var(--elevated);
-      backdrop-filter: blur(20px) saturate(1.6);
-      -webkit-backdrop-filter: blur(20px) saturate(1.6);
+      backdrop-filter: blur(var(--glass-blur, 20px)) saturate(1.6);
+      -webkit-backdrop-filter: blur(var(--glass-blur, 20px)) saturate(1.6);
       color: var(--fg);
       padding: 12px 20px;
       border-radius: 12px;
@@ -215,7 +215,11 @@ export async function loadLoginPanel() {
       return false;
     }
     try {
-      const token = await user.getIdToken(true);
+      // 第十期：拿掉 getIdToken(true) 的強制換發——參數 true 代表每次呼叫都向
+      // Firebase 走一趟真實網路往返（本函式被 60 秒輪詢與全域點擊攔截器高頻呼叫，
+      // 等於背景常態打 API）。改讀 SDK 快取：token 由 SDK 於到期前自動續期，
+      // 快取值恆有效；「後端已判定失效」的情境由 auth-fetch 的 401 攔截兜底。
+      const token = await user.getIdToken();
       localStorage.setItem('firebase_id_token', token);
       return true;
     } catch (e) {
@@ -243,6 +247,7 @@ export async function loadLoginPanel() {
   // ----- 監聽強制登出 -----
   window.addEventListener('firework-force-logout', () => {
     console.log("⚠️ 執行強制登出程序...");
+    wasLoggedIn = false; // 本監聽器已負責拆場，隨後 signOut 觸發的 onAuthStateChanged(null) 不需再拆
     auth.signOut();
     localStorage.removeItem('firebase_id_token');
     updateUIState(false);
@@ -256,6 +261,14 @@ export async function loadLoginPanel() {
   const emailInput = document.getElementById('firebase-login-bar-email');
   const pwdInput = document.getElementById('firebase-login-bar-password');
   const statusMsg = document.getElementById('firebase-login-bar-message');
+
+  // 第十期：區分「新登入」與「session 恢復」——onAuthStateChanged 在已登入頁
+  // 重新整理時也會以 user 非空回呼（local persistence 恢復），不該重播「登入成功」
+  // toast。只有 handleLogin（使用者實際送出帳密）才立此旗標。
+  let pendingLoginToast = false;
+  // 第十期（審查修正）：本頁載入後是否曾建立 session——決定 onAuthStateChanged(null)
+  // 是「跨分頁登出／token 被撤銷的拆場」（曾登入）還是「開機即無 session」（未曾）。
+  let wasLoggedIn = false;
 
   // ----- 核心登入邏輯 (統一處理) -----
   async function handleLogin(e) {
@@ -285,10 +298,11 @@ export async function loadLoginPanel() {
     loginBtn.style.color = '';
     
     try {
+      pendingLoginToast = true; // 標記本輪為使用者主動登入（toast 於 onAuthStateChanged 顯示）
       await auth.signInWithEmailAndPassword(email, password);
-      // 登入成功的 toast 會在 onAuthStateChanged 中顯示
       return true;
     } catch(e) {
+      pendingLoginToast = false;
       loginBtn.style.color = 'var(--danger)';
       statusMsg.innerHTML = '';
       
@@ -346,14 +360,46 @@ export async function loadLoginPanel() {
   // ----- 監聽登入狀態變化 -----
   auth.onAuthStateChanged(async function(user) {
     if (user) {
-      const token = await user.getIdToken();
-      localStorage.setItem('firebase_id_token', token);
+      // 第十期（審查修正）：getIdToken 不可裸 await——離線重載且 SDK 快取 token
+      // 已過期時，續期拋錯會中斷本回呼，'firework-login-success' 永不發出、開機
+      // overlay 永不解除（頁面鎖死）。失敗時沿用 localStorage 既有值繼續開場：
+      // 面板請求各自降級，網路恢復後 SDK 自動續期。
+      try {
+        const token = await user.getIdToken();
+        localStorage.setItem('firebase_id_token', token);
+      } catch (e) {
+        console.warn('⚠️ 取得 ID token 失敗（可能離線），以既有 token 繼續開場:', e && e.code);
+      }
+      wasLoggedIn = true;
       updateUIState(true);
-      showToast('登入成功', 'success', 2500);
+      // 第十期：session 恢復（重新整理）不重播 toast——只有使用者主動登入才顯示
+      if (pendingLoginToast) {
+        showToast('登入成功', 'success', 2500);
+        pendingLoginToast = false;
+      }
+      // 狀態旗標先於事件設置：canvas-engine 的 loadCanvas 要 await 十餘個模組
+      // 動態 import 後才掛 'firework-login-success' 監聽器，事件可能在那之前就
+      // 發出而漏接。旗標是「同一真相來源」（本回呼）的狀態面，晚註冊的訂閱者
+      // 讀旗標補位，不需要第二個判定來源（見 canvas-engine loadCanvas 尾註解）。
+      window.fireworkAuthReady = true;
       window.dispatchEvent(new Event('firework-login-success'));
     } else {
+      window.fireworkAuthReady = false;
       localStorage.removeItem('firebase_id_token');
       updateUIState(false);
+      if (wasLoggedIn) {
+        // 第十期（審查修正）：本頁曾建立 session 而 Firebase 判定已結束（跨分頁
+        // 登出、token 被撤銷）——完整拆場。否則背景分頁的 initPromise 停在已
+        // resolve 狀態，A 分頁換帳號重登入時本分頁會跳過整輪 init、以新帳號
+        // token 掛著前一帳號的面板資料。
+        wasLoggedIn = false;
+        window.dispatchEvent(new Event('firework-logout-success'));
+      } else {
+        // 開機即無 session（localStorage 殘留 token、Firebase persistence 已失或
+        // token 被撤銷後重載）：通知 conductor 撤下「系統啟動中」開機鎖屏，露出
+        // 登入列——否則 overlay（pointer-events:all）永久蓋住頁面。
+        window.dispatchEvent(new CustomEvent('fw-auth-state-change', { detail: { state: 'session-absent' } }));
+      }
     }
   });
 }

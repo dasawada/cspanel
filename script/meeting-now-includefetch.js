@@ -2,6 +2,7 @@ import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 import { CSPANEL_API } from './cspanel-api.js';
 import { authFetch, getFirebaseUser, readApiError } from './auth-fetch.js';
 import { ZVaccountEmailMap } from './ZVaccountEmailMap.js';
+import { engineSchedule } from './canvas-engine.js';
 
 // 初始化會議分類數組
 let ongoingMeetings = [];
@@ -17,7 +18,7 @@ let lastFetchTime = null; // 上次 API 呼叫時間
 let listModalBtnHandler = null;
 let refreshBtnHandler = null;
 let filterInputHandler = null;
-let autoRefreshIntervalId = null; // 自動刷新計時器
+let autoRefreshHandle = null; // 自動刷新排程 handle（第十期：engineSchedule，含對齊 timeout 追蹤）
 
 // ===== 初始化函數 - 供 mediator 呼叫 =====
 export async function initMeetingNowPanel() {
@@ -54,10 +55,11 @@ export function clearMeetingNowPanel() {
         filterInputHandler = null;
     }
     
-    // 清除自動刷新計時器
-    if (autoRefreshIntervalId) {
-        clearInterval(autoRefreshIntervalId);
-        autoRefreshIntervalId = null;
+    // 清除自動刷新排程（cancel 連同尚未觸發的整/半點對齊 timeout 一併收掉——
+    // 舊實作的 setTimeout 未被追蹤，登出後仍會觸發並重建無人持有的 interval）
+    if (autoRefreshHandle) {
+        autoRefreshHandle.cancel();
+        autoRefreshHandle = null;
     }
     
     // 清空結果區域
@@ -80,45 +82,19 @@ export function clearMeetingNowPanel() {
 }
 
 // ===== 設定自動刷新（整點、半點）=====
+// 第十期：改走 engineSchedule——整/半點對齊由 alignTo: 'half-hour' 供給（對齊
+// timeout 受追蹤，cancel／登出兜底都收得掉）；分頁隱藏時跳過 tick、恢復可見時
+// 錯過即補刷一次，背景分頁 API 流量歸零而資料時效不變。
 function setupAutoRefresh() {
-    // 清除既有的計時器
-    if (autoRefreshIntervalId) {
-        clearInterval(autoRefreshIntervalId);
-    }
-    
-    // 計算到下一個整點或半點的時間
-    function getMillisecondsToNextHalfHour() {
-        const now = new Date();
-        const minutes = now.getMinutes();
-        const seconds = now.getSeconds();
-        const milliseconds = now.getMilliseconds();
-        
-        let minutesToNext;
-        if (minutes < 30) {
-            minutesToNext = 30 - minutes;
-        } else {
-            minutesToNext = 60 - minutes;
-        }
-        
-        // 計算精確的毫秒數
-        return (minutesToNext * 60 * 1000) - (seconds * 1000) - milliseconds;
-    }
-    
-    // 執行自動刷新
-    async function autoRefresh() {
-        console.log('⏰ 自動刷新觸發 - 整點/半點');
-        await refreshMeetingPanel();
-    }
-    
-    // 設定第一次刷新（到下一個整點或半點）
-    const msToNext = getMillisecondsToNextHalfHour();
-    console.log(`下次自動刷新將在 ${Math.round(msToNext / 1000 / 60)} 分鐘後`);
-    
-    setTimeout(() => {
-        autoRefresh();
-        // 之後每 30 分鐘刷新一次
-        autoRefreshIntervalId = setInterval(autoRefresh, 30 * 60 * 1000);
-    }, msToNext);
+    if (autoRefreshHandle) autoRefreshHandle.cancel();
+    autoRefreshHandle = engineSchedule({
+        every: 30 * 60 * 1000,
+        alignTo: 'half-hour',
+        onTick: async () => {
+            console.log('⏰ 自動刷新觸發 - 整點/半點');
+            await refreshMeetingPanel();
+        },
+    });
 }
 
 // ===== 顯示載入動畫 =====

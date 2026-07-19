@@ -13,6 +13,9 @@ const PAGES_KEY = (canvasId) => `cspanel.pages.${canvasId}.v1`;
 
 let activeCanvas = null; // { manifest, mods: Map<panelId, module>, editing: false, config }
 // 九期B Task 7 修復：initAllModules() 在同一次頁面載入可能被呼叫兩次——
+// （十期註：雙呼叫的兩個源頭已收斂——checkExistingAuth 搶快路徑移除、
+// initAllModules 改 promise 單例冪等，見 loadCanvas 尾與 initPromise 註解。
+// 本旗標保留作第三道防線，以下為歷史競態記錄。）
 // checkExistingAuth() 的 IIFE 見到 localStorage 已有 firebase_id_token 會直接呼叫
 // 一次；fireworkeffect.js 的 firebase.auth().onAuthStateChanged 之後又會
 // dispatchEvent('firework-login-success')，觸發 loadCanvas() 掛的另一個監聽器
@@ -77,27 +80,102 @@ function removeGlobalAuthInterceptor() {
   }
 }
 
+// ===== 受管排程器（第十期）=====
+// 模組契約原本只有 init（登入）/clear（登出）兩個掛鉤，缺「分頁可見性」維度——
+// 各模組只能各自裸寫 setInterval，結果是背景分頁照常輪詢打 API，且對齊用的
+// setTimeout 無人追蹤（登出清不掉，meeting-now 曾因此洩漏一份 30 分鐘 interval）。
+// 此處補上缺口：週期工作一律經 engineSchedule 登記——document.hidden 時跳過 tick、
+// 恢復可見時錯過即補跑一次、clearAllModules 對所有已登記工作全清（含 pending 的
+// 對齊 timeout）。script/ 下裸 setInterval 自此禁用（tools/perf-hygiene-test.mjs
+// 靜態把關，僅本檔的排程器實作可出現）。
+const scheduledTasks = new Set();
+let schedulerVisListener = null;
+
+function ensureSchedulerVisibilityListener() {
+  if (schedulerVisListener) return;
+  schedulerVisListener = () => {
+    if (document.hidden) return;
+    for (const task of scheduledTasks) {
+      if (task.missedWhileHidden) task.runTick();
+    }
+  };
+  document.addEventListener('visibilitychange', schedulerVisListener);
+}
+
+// engineSchedule({ every, alignTo, onTick, immediate }) → { cancel() }
+//   every: tick 間隔毫秒；alignTo: 'half-hour' 先以 setTimeout 對齊下個整/半點再起
+//   interval（timeout 有追蹤、cancel/全清都收得掉）；immediate: 登記當下先跑一次。
+export function engineSchedule({ every, alignTo = null, onTick, immediate = false }) {
+  const task = { timeoutId: null, intervalId: null, missedWhileHidden: false };
+
+  task.runTick = () => {
+    if (document.hidden) { task.missedWhileHidden = true; return; }
+    task.missedWhileHidden = false;
+    try {
+      const r = onTick();
+      if (r && typeof r.catch === 'function') r.catch((e) => console.error('Engine: 排程 tick 失敗:', e));
+    } catch (e) { console.error('Engine: 排程 tick 失敗:', e); }
+  };
+
+  const startInterval = () => { task.intervalId = setInterval(task.runTick, every); };
+
+  if (alignTo === 'half-hour') {
+    const now = new Date();
+    const ms = ((now.getMinutes() < 30 ? 30 : 60) - now.getMinutes()) * 60000
+      - now.getSeconds() * 1000 - now.getMilliseconds();
+    task.timeoutId = setTimeout(() => { task.timeoutId = null; task.runTick(); startInterval(); }, ms);
+  } else {
+    startInterval();
+  }
+  if (immediate) task.runTick();
+
+  ensureSchedulerVisibilityListener();
+  scheduledTasks.add(task);
+  return {
+    cancel() {
+      if (task.timeoutId) clearTimeout(task.timeoutId);
+      if (task.intervalId) clearInterval(task.intervalId);
+      task.timeoutId = task.intervalId = null;
+      scheduledTasks.delete(task);
+    },
+  };
+}
+
+// 登出兜底：模組 clear 各自 cancel 自己的 handle 之外，引擎最後整批掃一次——
+// 任何模組漏收的排程（含 pending 對齊 timeout）都在這裡歸零。
+function cancelAllScheduledTasks() {
+  for (const task of scheduledTasks) {
+    if (task.timeoutId) clearTimeout(task.timeoutId);
+    if (task.intervalId) clearInterval(task.intervalId);
+    task.timeoutId = task.intervalId = null;
+  }
+  scheduledTasks.clear();
+}
+
 // ===== 定期背景認證檢查 =====
 function startPeriodicAuthCheck() {
   if (authCheckInterval) return;
 
-  authCheckInterval = setInterval(async () => {
-    console.log('Engine: 執行定期認證檢查...');
-    if (typeof window.verifyFireworkAuth === 'function') {
-      const isValid = await window.verifyFireworkAuth();
-      if (!isValid) {
-        console.log('⛔ [Engine] 定期檢查發現帳號已失效');
-        stopPeriodicAuthCheck();
+  authCheckInterval = engineSchedule({
+    every: AUTH_CHECK_INTERVAL_MS,
+    onTick: async () => {
+      console.log('Engine: 執行定期認證檢查...');
+      if (typeof window.verifyFireworkAuth === 'function') {
+        const isValid = await window.verifyFireworkAuth();
+        if (!isValid) {
+          console.log('⛔ [Engine] 定期檢查發現帳號已失效');
+          stopPeriodicAuthCheck();
+        }
       }
-    }
-  }, AUTH_CHECK_INTERVAL_MS);
+    },
+  });
 
   console.log(`Engine: 已啟動定期認證檢查（每 ${AUTH_CHECK_INTERVAL_MS / 1000} 秒）⏰`);
 }
 
 function stopPeriodicAuthCheck() {
   if (authCheckInterval) {
-    clearInterval(authCheckInterval);
+    authCheckInterval.cancel();
     authCheckInterval = null;
     console.log('Engine: 已停止定期認證檢查');
   }
@@ -188,7 +266,30 @@ async function loadModules(manifest) {
   }
   return mods;
 }
-async function initAllModules() {
+// 第十期：initAllModules 改 promise 單例冪等。檔頭 wmMountClaimed 註解記載的
+// 「同一次頁面載入被呼叫兩次」自此在源頭收斂——任何數量的呼叫者（現在只剩
+// firework-login-success 事件；未來若再加觸發路徑亦同）都拿到同一個 in-flight
+// promise，模組 init、網路請求、計時器全部恰跑一輪。失敗時歸零允許重試；
+// clearAllModules（登出）歸零允許下次登入重新初始化。wmMountClaimed 旗標保留
+// 作第三道防線（歷史競態的最後保險，語意不變）。
+let initPromise = null;
+// 第十期（審查修正）：登出世代計數——doInitAllModules 停在 await（面板 init 的
+// Promise.allSettled）期間若發生登出（clearAllModules 同步跑完），in-flight 的
+// continuation 不可再執行尾段（registerPanelStack/attachHoverHandles/廣播
+// login-ready）——那會在已登出頁面上重掛疊序、清空輸入、干擾登出過場。
+// 已知殘餘窗口（接受並記錄於 CANVAS.md §11）：allSettled 集合內「尚未完成」的
+// 個別面板 init 在登出後才 resolve 時，其模組內部的 engineSchedule 註冊會落在
+// 兜底清掃之後——洩漏有界（下次登入的 handle guard 或下次登出的兜底會收掉），
+// 完整的 in-flight 取消（AbortController 貫穿全部模組）另案。
+let initGeneration = 0;
+function initAllModules() {
+  if (!initPromise) {
+    initPromise = doInitAllModules().catch((e) => { initPromise = null; throw e; });
+  }
+  return initPromise;
+}
+async function doInitAllModules() {
+  const gen = initGeneration;
   const { manifest, mods } = activeCanvas;
   console.log('Engine: 初始化登入後模組...');
   broadcastAuthState('login-start');
@@ -245,6 +346,12 @@ async function initAllModules() {
       return Promise.resolve(m[p.init](...(p.initArgs || [])));
     })
   );
+  // 第十期（審查修正）：上方 await 期間若已登出（世代前進），放棄尾段——
+  // 不在已登出頁面上重掛 stack/hover、不廣播 login-ready。
+  if (gen !== initGeneration) {
+    console.log('Engine: 初始化期間已登出，放棄尾段');
+    return;
+  }
   registerPanelStack();
   if (activeCanvas.config.pageEngine) {
     // 每次登入（含重新整理已登入態）都跑：registerPanelStack() 剛把「目前是
@@ -264,6 +371,8 @@ async function initAllModules() {
 function clearAllModules() {
   const { manifest, mods } = activeCanvas;
   console.log('Engine: 清理模組...');
+  initPromise = null; // 第十期：歸零冪等單例，允許下次登入重新初始化
+  initGeneration++; // in-flight 的 doInitAllModules 見世代前進即放棄尾段（見 initGeneration 註解）
   broadcastAuthState('logout-start');
   removeGlobalAuthInterceptor();
   stopPeriodicAuthCheck();
@@ -284,6 +393,7 @@ function clearAllModules() {
   }
   detachHoverHandles();
   unregisterPanelStack();
+  cancelAllScheduledTasks(); // 第十期：排程兜底全清（模組漏收的 handle 與 pending 對齊 timeout）
   broadcastAuthState('logout-complete');
   console.log('Engine: 所有模組已清理 🧹');
 }
@@ -1387,28 +1497,17 @@ export async function loadCanvas(manifest, config = {}) {
   window.addEventListener('firework-login-success', () => { initAllModules(); });
   window.addEventListener('firework-logout-success', () => { exitEditMode(); clearAllModules(); });
 
-  // 原 mediator checkExistingAuth（mediator.js:163-185 逐字搬入）
-  (async function checkExistingAuth() {
-    broadcastAuthState('init-logged-out');
-
-    const waitForFirebase = () => {
-      return new Promise((resolve) => {
-        const check = () => {
-          if (window.firebase?.auth) {
-            resolve();
-          } else {
-            setTimeout(check, 50);
-          }
-        };
-        check();
-      });
-    };
-
-    await waitForFirebase();
-
-    const token = localStorage.getItem('firebase_id_token');
-    if (token) {
-      await initAllModules();
-    }
-  })();
+  // 第十期：原 checkExistingAuth 搶快路徑（localStorage 有 token 即先行 init）移除。
+  // 「已登入」的唯一真相來源收斂為 fireworkeffect 的 onAuthStateChanged →
+  // 'firework-login-success'——Firebase local persistence 下重載必發，且發出時
+  // auth.currentUser 已就緒，面板資料層不再有「搶快贏了發雙倍請求、輸了短暫
+  // NOT_LOGGED_IN」的競態（見 docs/superpowers/specs/2026-07-19-lowend-performance-design.md §3.3）。
+  // initAllModules 的 promise 單例冪等（見上方 initPromise）續留作第二道防線。
+  broadcastAuthState('init-logged-out');
+  // 漏接補位：上方 await loadModules（十餘個依序動態 import）期間 onAuthStateChanged
+  // 可能已廣播——事件在監聽器掛上前發出即漏接（舊 checkExistingAuth 輪詢恰好蓋住
+  // 這個窗口，收斂後需由狀態面補上）。fireworkAuthReady 由「同一真相來源」於廣播前
+  // 設置（runtime 旗標、非持久化，無 localStorage 陳舊性），讀到 true＝事件已發而
+  // 我們錯過，補呼一次；與事件路徑重疊時由 initPromise 冪等吸收。
+  if (window.fireworkAuthReady) initAllModules();
 }
