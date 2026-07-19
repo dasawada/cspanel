@@ -574,3 +574,89 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
 5. **盤點記錄**：cspanel_netlify 全站無 draggable.js 使用——本期無跨 repo 部署順序約束。
 6. **回歸**：tools/handle-chrome-test.mjs 新套（詞彙注入冪等/fallback/拖曳態/色債清零/
    主題跟隨）；全套 headless 綠燈後上線。
+
+---
+
+## 11. 第十期刻意變更記錄（低階機流暢化：真毛玻璃保留）
+
+設計文件：`docs/superpowers/specs/2026-07-19-lowend-performance-design.md`。
+核心決策：**真毛玻璃一片不拔**——Chromium 損傷驅動渲染下，backdrop-filter 靜置
+成本為零，卡頓元凶是「玻璃背後永不停止的變動源」；本期殺變動源，不動玻璃。
+以下變更同時作用於 panel_all.html（v1）與 panel_all_v2.html（共用引擎），
+惟 iframe 惰性掛載以 `window.CSPANEL_ENGINE_V2` 閘控、v1 逐位元不變。
+
+1. **initAllModules 冪等＋觸發源收斂**：promise 單例（`initPromise`，失敗歸零可重試、
+   登出歸零允許重 init）；`checkExistingAuth` 搶快路徑（localStorage 有 token 即先行
+   init）整段移除，「已登入」唯一真相來源＝fireworkeffect 的 `onAuthStateChanged`。
+   **漏接補位鐵律**：loadCanvas 要 await 十餘個模組動態 import 後才掛
+   `firework-login-success` 監聽器，事件可能先發而漏接（舊搶快路徑恰好蓋住此窗口）
+   ——fireworkeffect 於廣播「前」設置 runtime 旗標 `window.fireworkAuthReady`，
+   loadCanvas 掛好監聽器後讀旗標補呼一次；旗標與事件同源，非第二判定來源。
+   移除補位即回歸「重載後面板全空」，headless 全套會抓到（materiality-test 起步即卡）。
+   附帶修正：session 恢復（重載）不再誤彈「登入成功」toast（`pendingLoginToast`
+   旗標，僅使用者主動送出帳密才立）。`wmMountClaimed` 保留作第三道防線。
+2. **受管排程器 `engineSchedule`**（canvas-engine.js export）：週期工作唯一合法管道
+   ——自動登記、`document.hidden` 跳過 tick、恢復可見錯過即補跑、`alignTo: 'half-hour'`
+   供整/半點對齊（timeout 受追蹤），登出時模組 clear 各自 cancel＋引擎
+   `cancelAllScheduledTasks()` 兜底全清。三處輪詢全數遷移：auth 60s、衝堂 15 分、
+   會議自動刷新 30 分——背景分頁 API 流量歸零。舊 meeting-now 的對齊 setTimeout
+   未追蹤洩漏（登出後重建無人持有的 interval）由此結構性消滅。
+3. **auth 輪詢去強制換發**：`verifyFireworkAuth` 的 `getIdToken(true)` 改 `getIdToken()`
+   （讀 SDK 快取、到期自動續期）——每 60 秒一次的真實網路換發歸零；「後端判定失效」
+   由 auth-fetch 的 401 攔截兜底。
+4. **動畫一律綁可見狀態**：ui-conductor 過場 overlay 的 6 組 infinite 動畫改綁
+   `#ui-transition-overlay.active` 後代、退場 transitionend 後補 `display:none`
+   （進場前 `showOverlay()` 解除並強制 reflow 保過渡）；`.ip-search-spinner` 動畫
+   移入 `.is-visible`（class 名不動——Firestore 契約；visibility 佔位防 reflow 機制
+   不變）。overlay 注入 CSS 補 `prefers-reduced-motion` 分支（原全庫唯一缺席處）。
+   「隱藏仍空轉」自此結構上不可表達。
+5. **玻璃衛生**：panels.css 統一面板規則移除 4 個死 selector（`.idsearchpanel`/
+   `.ClassLogpanel`＝cs.js 載明伺服器不再注入；`.temp2`/`.board`＝repo 查無 markup
+   來源，togglelayer.js/DT_fuction_confirm.js 殘留字串引用對不存在元素 no-op）。
+   blur 值全面 token 化（值一字不改）：`--glass-blur-modal: 40px`／`--glass-blur-scrim:
+   6px`／`--glass-blur-chrome: 28px`／`--glass-blur-bar: 8px` 入 tokens.css，10 個 CSS
+   規則點＋4 個 JS 注入點（theme/fireworkeffect/dragb_msg_pnl 帶 fallback 形式
+   `var(--glass-blur, 20px)`）全改引用；`--glass-bg-solid` 統一 @supports 回退底色。
+   `.hover-overlay` 查明結論：工具分頁 app 圖示上的 70×70 磨砂標籤，面積小、
+   pane 非作用中即 display:none 零成本——**保留**，僅 token 化。
+6. **降級保險絲（預設不啟動）**：tokens.css 檔尾——`@media (prefers-reduced-transparency:
+   reduce)`（跟隨 Windows「設定>個人化>色彩>透明效果」，Chromium 118+）與
+   `html.perf-mode` 手動 class（本期只留鉤子、無 UI），命中時玻璃底退
+   `--glass-bg-solid`＋universal `backdrop-filter: none !important`（蓋得到 JS 注入樣式）。
+   支援查詢：「玻璃不見了」＝此開關命中，by design。
+7. **iframe 首次可見才掛載**（僅 v2）：零重載鐵律語意不變（首載後永不動 src、
+   永不 re-parent），改變的只有首載時機。三個注入點統一手法「detached 解析→摘
+   src 存 data-src→首次可見回填」：`createTabsStaging(…, lazyIframes)`（netlify tabs，
+   摘除必須在 filterDiaryTab 之後、接進 live DOM 之前）→ wm `syncPanes` 作用中 pane
+   回填；toggle-panels `injectPanelHTML`（SA_iframe/assist）→ 首次展開回填；
+   meeting 模組模板（ggsheet）→ 首次開 vvgglesht modal 回填。登入瞬間 iframe
+   7–8 個（含兩個巢狀 Google Sheets 編輯器）→ 1 個（active tab）。
+8. **回歸**：新增 `tools/perf-hygiene-test.mjs` 靜態 gate 三規則——blur 字面值只准
+   tokens.css（@supports 探針 blur(1px) 豁免）、infinite 動畫必須位於可見狀態白名單
+   選擇器下（白名單載於工具內）、script/ 裸 `setInterval` 禁令（僅 canvas-engine.js
+   排程器實作豁免）。既有 11 套 headless 全綠後收工。
+9. **審查修正（多代理對抗性審查，11 項覆核成立全數處理）**：
+   - **開機鎖死（high，最重要）**：ui-conductor 見 localStorage 有 token 即掛
+     pointer-events:all 的全螢幕 overlay，而觸發源收斂後「Firebase 判定未登入」
+     再無路徑發 login-ready——token 被撤銷／persistence 遺失時整頁永久卡在
+     「系統啟動中」。修法：fireworkeffect 的 onAuthStateChanged(null) 分支發
+     `fw-auth-state-change: session-absent`，conductor 收到即撤 overlay 露出登入列
+     （登出過場進行中則交由 finalizeLogout）；同函式 user 分支的 `await getIdToken()`
+     加 try/catch（離線重載續期拋錯不得中斷回呼），失敗沿用既有 token 繼續開場。
+   - **跨分頁換帳號殘留（medium）**：A 分頁登出→換帳號，B 背景分頁的 initPromise
+     停在 resolved、重登入跳過整輪 init。修法：`wasLoggedIn` 旗標——本頁曾建立
+     session 而 onAuthStateChanged(null) 抵達時（跨分頁登出／撤銷）直接派
+     'firework-logout-success' 完整拆場；force-logout 路徑先清旗標防雙拆。
+   - **in-flight init × 登出交錯（low，舊碼同型）**：`initGeneration` 世代計數——
+     clearAllModules 前進世代，doInitAllModules 的 allSettled 後驗世代，已登出即
+     放棄尾段（不重掛 stack/hover、不廣播 login-ready）。殘餘窗口（個別面板 init
+     於登出後才 resolve 時的模組內部排程註冊）有界且下輪必收，完整取消另案。
+   - **overlay 淡出首幀跳變（low）**：動畫宣告搬回基底 class＋`animation-play-state:
+     paused`，`.active` 只切 running——淡出期間凍結當前姿態而非跳回初始；paused
+     不逐幀運算，效能等同無動畫。perf-hygiene R2 同步承認 paused-by-default 豁免。
+   - **reduced-motion 涵蓋不足（low）**：path-beam/path-data/粒子全停用，僅外圈
+     公轉降速 12s 作載入回饋。
+   - **hideOverlayWhenFaded 殘留 transitionend（low）**：改固定延時（淡出全長＋150ms）
+     ＋落地前驗 `opacity === '0'`，不再誤吃淡入的 transitionend 截斷淡出。
+   - **保險絲漏網（low）**：`.canned-panel.gl-dragging` 的字面 15% 白底在保險絲下
+     以 `html` 前綴特異度（0,2,1）蓋回 `--glass-bg-solid`。
