@@ -165,6 +165,9 @@ function stopPeriodicConflictCheck() {
 
 
 // ===== HTML 模板 =====
+// 三個全螢幕 modal 的 id：模板注入後由 init portal 到 document.body（見
+// initMeetingSearchPanel 內註解），clear 時對稱移除。
+const PORTAL_MODAL_IDS = ['results-modal', 'zv-metting-list-results-modal', 'vvgglesht_modal'];
 const meetingSearchPanelHTML = `
 <div class="meeting-search-panel-menu">
     <nav>
@@ -305,7 +308,24 @@ export function initMeetingSearchPanel(containerId = 'meeting-search-panel-place
             iframe.removeAttribute('src');
         });
     }
+    // 防禦性清掃：上一輪若異常退出未走 clear，body 上可能殘留同 id 的 portal
+    // modal——先移除，否則下方 portal 後 getElementById 會抓到舊節點（document
+    // order 在前），所有接線綁錯對象。
+    PORTAL_MODAL_IDS.forEach((id) => document.getElementById(id)?.remove());
     container.replaceChildren(...tpl.childNodes);
+
+    // modal portal 到 body：.meeting-now-search／.meeting-check-search 的
+    // backdrop-filter（panels.css 統一玻璃配方）使面板成為 position:fixed 後代的
+    // containing block——三個全螢幕 modal 的 fixed 座標被鎖進 360px 面板內，
+    // 而非 viewport。搬出面板子樹是唯一解（拔玻璃違反第十期「真毛玻璃一片不拔」）。
+    // appendChild 對已在 DOM 的節點是搬移非複製；此時三者皆 display:none 無視覺
+    // 跳動。iframe：v2 為 data-src 惰性（上方剛摘除、尚未回填）零載入；v1 的
+    // src 載入甫於本 tick 排程，搬移重排程一次，總載入次數不變、使用者無感。
+    // id 與所有 getElementById 接線零改動。先例：IP_search 的 .ip-tooltip-portal。
+    PORTAL_MODAL_IDS.forEach((id) => {
+        const el = document.getElementById(id);
+        if (el) document.body.appendChild(el);
+    });
 
     // 綁定所有事件
     bindNavEvents();
@@ -344,7 +364,11 @@ export function clearMeetingSearchPanel(containerId = 'meeting-search-panel-plac
     if (container) {
         container.innerHTML = '';
     }
-    
+
+    // modal 已於 init 時 portal 到 body（不在容器子樹內），上面清容器帶不走——
+    // 顯式移除，避免登出殘留、下次登入重複 id。
+    PORTAL_MODAL_IDS.forEach((id) => document.getElementById(id)?.remove());
+
     console.log('🧹 MeetingSearchPanel 已清除');
 }
 
