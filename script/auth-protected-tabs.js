@@ -258,21 +258,23 @@ async function fetchProtectedContent() {
             // hasTabs() 為 false 照常注入），跳過可免解析/丟棄一份多餘 DOM。
             const wm = window.WindowManager;
             if (wm && typeof wm.adoptTabs === 'function') {
-              if (typeof wm.hasTabs === 'function' && wm.hasTabs()) {
-                console.log('WindowManager 已認養 iframe tabs，跳過本輪 tabsHTML 注入（保護常駐池/視窗層）');
-              } else {
-                const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries, true);
-                tabsPlaceholder.appendChild(staging);
-                // host 補 .gl-injected（池中內容依 .gl-injected 後代規則取色）＋
-                // staging 內 tables 標 .gl-table（class 跟著內容搬進池）。
-                glDecorate(tabsPlaceholder);
-                try {
-                  wm.adoptTabs(staging.querySelector('.panel-tabs-container'));
-                } catch (error) {
-                  console.error('❌ 分頁視窗管理器認養失敗:', error);
-                } finally {
-                  staging.remove();
-                }
+              // 十一期修正：原以 hasTabs() 跳過重複注入——該推論（有 tab ⇒ 伺服
+              // 器 tabs 已認養）在 toggle-panels 三面板也走 adoptTabs 之後不再
+              // 成立（收納先到會使伺服器 tabs 永遠不被認養）。改為無條件建
+              // staging 交給 adoptTabs：adoptTabsInternal 本身冪等（已知 id 略
+              // 過、不重複搬池），重複登入訊號的代價只是解析/丟棄一份 detached
+              // DOM（原跳過所省下的），常駐池/視窗層保護不變。
+              const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries, true);
+              tabsPlaceholder.appendChild(staging);
+              // host 補 .gl-injected（池中內容依 .gl-injected 後代規則取色）＋
+              // staging 內 tables 標 .gl-table（class 跟著內容搬進池）。
+              glDecorate(tabsPlaceholder);
+              try {
+                wm.adoptTabs(staging.querySelector('.panel-tabs-container'));
+              } catch (error) {
+                console.error('❌ 分頁視窗管理器認養失敗:', error);
+              } finally {
+                staging.remove();
               }
             } else {
               // 理論不可達（C1 時序契約：核心先掛）。原 fallback「單段裸 mount」

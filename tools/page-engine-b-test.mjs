@@ -18,6 +18,20 @@ const page = await browser.newPage({ viewport: { width: 1800, height: 1200 } });
 await installAccessFixture(page);
 await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, contentType: 'application/json', body: '{"success":false}' }));
 
+// 十一期（dt/consultant/assist 收納為 wm 分頁）：v2 登入即存在一個工具視窗。
+// 預先把它釘在遠角（1240,840——避開各區段的拖曳幾何假設：面板預設區在左半、
+// H1 兩頁在下半左中、H 撕出落點 1600,1050 落在其內容區非 tabbar 故不誤併）。
+// 手法依 wm 既有契約：mount/render 不 persist，loadWindows 每次認養都重讀
+// localStorage 原始值並以「當下已知 tab」過濾——首次認養（trio）即命中本種子。
+// 僅首導覽播種（key 缺席才寫），reload 後保留測試中累積的 windows 狀態。
+await page.addInitScript(() => {
+  if (!localStorage.getItem('cspanel.windows.cs.v2')) {
+    localStorage.setItem('cspanel.windows.cs.v2', JSON.stringify({
+      windows: [{ id: 'w-toolshost', tabs: ['dt', 'consultant', 'assist'], active: 'dt', x: 1240, y: 840, w: 520, h: 330 }],
+    }));
+  }
+});
+
 await page.goto(BASE + '/panel_all_v2.html');
 await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
 
@@ -114,11 +128,17 @@ async function engineDrag(pg, panelSel, from, to, opts = {}) {
 //    注意：--stack-rank 是 stack-manager 對所有已註冊面板常態設置的疊序值，
 //    不是入組痕跡（H1 首輪取證曾誤判為髒污，全綠輪也帶 rank）；髒污判定只看
 //    pane class／display:none／pages store／殘留視窗／殘留預覽。rank 留在傾印供參。
+// 十一期：dt 自 probe 移除——已收納為 wm 分頁，.DT_panel 不再存在於畫布。
 const GATE_PROBE = [
   ['roof', '.roofbutton'], ['shrturl', '.linkout'], ['optitle', '.optitlepanel'],
   ['fudausearch', '.fudausearch-container'], ['tooldl', '.tool_zip_dl'],
-  ['dt', '.DT_panel'], ['canned', '.canned-panel'],
+  ['canned', '.canned-panel'],
 ];
+// 「乾淨畫布」基線（十一期改定義）：工具視窗（dt/consultant/assist 收納宿主）
+// 常駐，殘留判定只看「含 pg: tab 的視窗」。
+const pgWinCount = (pg) => pg.evaluate(() =>
+  [...document.querySelectorAll('.wm-window')].filter((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => (t.dataset.tab || '').startsWith('pg:'))).length);
 async function sectionGate(pg, label) {
   const residue = await pg.evaluate((probeList) => {
     const probe = {};
@@ -129,11 +149,13 @@ async function sectionGate(pg, label) {
     return {
       probe,
       pages: JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').map((p) => p.id),
-      wins: document.querySelectorAll('.wm-window').length,
+      // 十一期：只數含 pg: tab 的視窗——工具視窗（收納宿主）屬常駐基線、非殘留
+      pgWins: [...document.querySelectorAll('.wm-window')].filter((w) =>
+        [...w.querySelectorAll('.wm-tab')].some((t) => (t.dataset.tab || '').startsWith('pg:'))).length,
       preview: !!document.querySelector('.gl-group-preview'),
     };
   }, GATE_PROBE);
-  const dirty = residue.pages.length || residue.wins || residue.preview ||
+  const dirty = residue.pages.length || residue.pgWins || residue.preview ||
     Object.values(residue.probe).some((v) => v !== 'MISSING' && (v.pane || v.disp === 'none'));
   if (!dirty) return;
   console.error(`  [診斷] ${label} 前置殘留：${JSON.stringify(residue)}`);
@@ -142,8 +164,9 @@ async function sectionGate(pg, label) {
       try { window.PageEngine.dissolve(p.id); } catch (e) {}
     }
   });
-  await pg.waitForFunction(() => document.querySelectorAll('.wm-window').length === 0, { timeout: 5000 })
-    .catch(() => console.error(`  [診斷] ${label} 殘留視窗 5s 內未拆完`));
+  await pg.waitForFunction(() => [...document.querySelectorAll('.wm-window')].filter((w) =>
+    [...w.querySelectorAll('.wm-tab')].some((t) => (t.dataset.tab || '').startsWith('pg:'))).length === 0, { timeout: 5000 })
+    .catch(() => console.error(`  [診斷] ${label} 殘留 pg 視窗 5s 內未拆完`));
   await pg.waitForTimeout(200);
 }
 
@@ -171,6 +194,27 @@ A(await page.evaluate(() => !!window.WindowManager && typeof window.WindowManage
 // protected 注入完成後 iframe tabs 已被認養（stub 環境有 server markup 經 Firestore stub？
 // ——parity stub 不含 protectedContent，故此處斷言為「零 tab 啟動不炸」＋ hasTabs() 反映實況）
 A(await page.evaluate(() => typeof window.WindowManager.hasTabs === 'function'), 'hasTabs API 存在');
+// 十一期：dt/consultant/assist 收納為 wm 分頁（toggle-panels.js adoptPanelAsWmTab）
+// ——登入後即有工具視窗，三顆 tab 齊、iframe 惰性（data-src、未回填）、checkbox
+// 模式與畫布面板元素皆不存在。
+const bAdopt = await page.evaluate(() => ({
+  panes: ['dt', 'consultant', 'assist'].map((id) => !!document.querySelector(`.wm-pane[data-tab="${id}"]`)),
+  titles: [...document.querySelectorAll('.wm-tab')].map((t) => t.textContent.trim()),
+  hasTabs: window.WindowManager.hasTabs(),
+  lazy: [...document.querySelectorAll('.wm-pane[data-tab="consultant"] iframe, .wm-pane[data-tab="assist"] iframe')]
+    .map((f) => !f.getAttribute('src') && !!f.dataset.src),
+  legacy: !!(document.querySelector('.DT_panel') || document.querySelector('.consultantlistgooglesheet') ||
+    document.querySelector('.assist_googlesheet') || document.getElementById('DT_toggleCheckbox')),
+  seededPos: (() => { const w = document.querySelector('.wm-window'); const r = w.getBoundingClientRect(); return { x: Math.round(r.x), y: Math.round(r.y) }; })(),
+}));
+A(bAdopt.hasTabs && bAdopt.panes.every(Boolean), `B: 三面板收納為 wm 分頁（panes=${bAdopt.panes}）`);
+A(['測試報告生成', '顧問清單', '輔導班表'].every((t) => bAdopt.titles.includes(t)), `B: tab 標題＝manifest label（${bAdopt.titles}）`);
+A(bAdopt.lazy.length === 2 && bAdopt.lazy.every(Boolean), 'B: 非作用中 iframe 惰性未回填（data-src 待命）');
+A(!bAdopt.legacy, 'B: checkbox 展開模式與舊面板元素已不存在');
+// 視窗座標系原點＝.panel_all_container（margin/padding 各 10px），viewport rect
+// 帶 ~18px 常數偏移——斷言只需「釘在遠角」語義，取 ±30 容差。
+A(Math.abs(bAdopt.seededPos.x - 1240) <= 30 && Math.abs(bAdopt.seededPos.y - 840) <= 30,
+  `B: 工具視窗落在種子位置（loadWindows 歸位；got ${JSON.stringify(bAdopt.seededPos)}）`);
 
 // ===== C. page 資料流（API 驅動；手勢在 D 區）=====
 console.log('— C. page 資料流（API 驅動）—');
@@ -409,29 +453,33 @@ A(g3.roofVisible && g3.shrturlVisible, 'F3: 最後成員與被拖成員皆回畫
 console.log('— G. quirks 歸隊：罐頭可入組 ＋ iframe 零重載命門 —');
 await sectionGate(page, 'G');
 
-// -- G1：iframe 零重載命門——consultant 內嵌 iframe（SA_iframe.html，同源）
-//    種 contentWindow canary，成組/解散全程存活＝從未重載（零 re-parent）。--
-// iframe 的容器（.small-size 展開態的 #content）預設 display:none（收合狀態），
-// waitForSelector 預設等「visible」會逾時——只需等它已掛載（attached），
-// display:none 不影響 contentWindow 存在與否／canary 可寫入性。
-await page.waitForSelector('.consultantlistgooglesheet iframe', { state: 'attached', timeout: 15000 });
+// -- G1：iframe 零重載命門（十一期改）——consultant/assist 已收納為 wm 分頁，
+//    iframe 住常駐池 pane、走「唯一一次搬池」契約；零重載驗證改為：首次切到
+//    consultant tab 觸發惰性回填（data-src→src），種 contentWindow canary 後
+//    來回切換 tab，canary 全程存活＝display 切換、從未 re-parent。
+//    另斷言收納面板已結構性退出成組世界（PageEngine.create 對缺席 rootSelector
+//    回 null）——原「成組零重載」場景自此不可表達，此即本命門的結構性解法。--
+await page.click('.wm-tab[data-tab="consultant"]');
+await page.waitForFunction(() => {
+  const ifr = document.querySelector('.wm-pane[data-tab="consultant"] iframe');
+  return ifr && ifr.getAttribute('src') === 'SA_iframe.html';
+}, { timeout: 5000 });
+await page.waitForTimeout(500); // iframe 載入落定再種 canary
 await page.evaluate(() => {
-  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
-  ifr.contentWindow.__reloadCanary = 'alive';
+  document.querySelector('.wm-pane[data-tab="consultant"] iframe').contentWindow.__reloadCanary = 'alive';
 });
-const pg2 = await page.evaluate(() => window.PageEngine.create(['consultant', 'assist']));
-A(typeof pg2 === 'string' && pg2.startsWith('pg:'), `G1: consultant+assist 成組（${pg2}）`);
-await page.waitForTimeout(300);
-A(await page.evaluate(() => {
-  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
-  return !!ifr && !!ifr.contentWindow && ifr.contentWindow.__reloadCanary === 'alive';
-}), 'G1: 成組全程 iframe 零重載（canary 存活）');
-await page.evaluate((id) => window.PageEngine.dissolve(id), pg2);
+await page.click('.wm-tab[data-tab="assist"]');
+await page.waitForTimeout(200);
+await page.click('.wm-tab[data-tab="consultant"]');
 await page.waitForTimeout(200);
 A(await page.evaluate(() => {
-  const ifr = document.querySelector('.consultantlistgooglesheet iframe');
+  const ifr = document.querySelector('.wm-pane[data-tab="consultant"] iframe');
   return !!ifr && !!ifr.contentWindow && ifr.contentWindow.__reloadCanary === 'alive';
-}), 'G1: 解散後 iframe 仍零重載');
+}), 'G1: 收納 tab 來回切換全程 iframe 零重載（canary 存活）');
+A(await page.evaluate(() => window.PageEngine.create(['consultant', 'assist']) === null),
+  'G1: 收納面板結構性排除於成組之外（create 回 null）');
+await page.click('.wm-tab[data-tab="dt"]'); // 還原作用中 tab，不影響後續區段
+await page.waitForTimeout(200);
 
 // -- G2：罐頭（body-mounted/alwaysDraggable/self-persisted quirks）可入組——
 //    API create(['canned','optitle']) → 罐頭定位進視窗內容區。--
@@ -701,8 +749,9 @@ const hWinTabs = () => page.evaluate(() => [...document.querySelectorAll('.wm-wi
 const fromH1Tab = await hTabCenter(pgH1);
 const toH2BarEdge = await hTabBarEdge(pgH2);
 await hDrag(fromH1Tab, toH2BarEdge);
-const hMerged = await hWinTabs();
-A(hMerged.length === 1, `H3: 合併後只剩 1 個視窗（${hMerged.length}）`);
+// 十一期：只數含 pg: tab 的視窗（工具視窗屬常駐基線）
+const hMerged = (await hWinTabs()).filter((w) => w.tabs.some((t) => t.startsWith('pg:')));
+A(hMerged.length === 1, `H3: 合併後只剩 1 個 pg 視窗（${hMerged.length}）`);
 A(!!hMerged[0] && hMerged[0].tabs.includes(pgH1) && hMerged[0].tabs.includes(pgH2) && hMerged[0].active === pgH1,
   `H3: 合併視窗含兩頁 tab、剛拖入者作用中（tabs=${hMerged[0] && hMerged[0].tabs.join(',')}, active=${hMerged[0] && hMerged[0].active}）`);
 const hVisMerged = await page.evaluate(() => ({
@@ -719,8 +768,8 @@ A(hVisMerged.optitle === 'none' && hVisMerged.fudausearch === 'none' && hVisMerg
 // 撕出：把剛併入的頁一 tab 拖離任何視窗 tabbar 範圍 → 落回獨立新視窗。
 const fromMergedTab = await hTabCenter(pgH1);
 await hDrag(fromMergedTab, { x: 1600, y: 1050 });
-const hAfterTear = await hWinTabs();
-A(hAfterTear.length === 2, `H3: 撕出後恢復 2 個視窗（${hAfterTear.length}）`);
+const hAfterTear = (await hWinTabs()).filter((w) => w.tabs.some((t) => t.startsWith('pg:')));
+A(hAfterTear.length === 2, `H3: 撕出後恢復 2 個 pg 視窗（${hAfterTear.length}）`);
 const hTornWin = hAfterTear.find((w) => w.tabs.length === 1 && w.tabs[0] === pgH1);
 const hOtherWin = hAfterTear.find((w) => w.tabs.includes(pgH2));
 A(!!hTornWin, `H3: 撕出視窗只含頁一 tab（${JSON.stringify(hAfterTear.map((w) => w.tabs))}）`);
@@ -753,11 +802,12 @@ A(hAfterReset.layoutKey === null, 'H4: layout .v2 key 全清');
 // reset() 語意是「回到各 surface 的預設名次」，removeItem 後緊接著對仍註冊中的
 // surface（一般面板／視窗本體）重新 persist 一份新的預設 order，這是既有正確
 // 行為（wm-test.mjs「重設回預設」區段同樣不檢查 key 是否為 null）。這裡只驗證
-// 「疊序回預設」不留殘影：不再有任何 page id（'pg:' 前綴）或視窗 id（重設後
-// windows 已清空，不應殘留任何 'w' 開頭的視窗疊序條目）留在 order 內。
+// 「疊序回預設」不留殘影：不再有任何 page id（'pg:' 前綴）；視窗 id 條目
+// （十一期改）恰好一顆——重設後工具視窗（dt/consultant/assist 收納宿主）以
+// 預設 rect 重建並註冊疊序，屬合法常駐、非殘留。
 A(hAfterReset.stackOrder.every((k) => !k.startsWith('pg:')) &&
-  hAfterReset.stackOrder.every((k) => !/^w[0-9a-z]+$/.test(k)),
-  `H4: 疊序回預設，無殘留 page/視窗 id（order=${JSON.stringify(hAfterReset.stackOrder)}）`);
+  hAfterReset.stackOrder.filter((k) => /^w[0-9a-z]+$/.test(k)).length === 1,
+  `H4: 疊序回預設，無殘留 page id、僅工具視窗一筆視窗條目（order=${JSON.stringify(hAfterReset.stackOrder)}）`);
 A((await page.evaluate(() => window.PageEngine.list())).length === 0, 'H4: PageEngine.list() 為空');
 
 const hResetVisual = await page.evaluate(() => {
@@ -903,6 +953,19 @@ const TABS_HTML = [
 const ctxJ = await browser.newContext({ viewport: { width: 1800, height: 1200 } });
 const pj = await ctxJ.newPage();
 await installAccessFixture(pj);
+// 十一期：獨立 context 同樣播種——收納三 tab 釘遠角、伺服器兩 tab 維持既往
+// 預設位（410,160），J2 的 tabbar 拖曳目標（naniclub 視窗）藥丸數不變、幾何
+// 假設不受收納影響。loadWindows 每輪認養重讀原始存檔，兩批 tab 各自歸位。
+await pj.addInitScript(() => {
+  if (!localStorage.getItem('cspanel.windows.cs.v2')) {
+    localStorage.setItem('cspanel.windows.cs.v2', JSON.stringify({
+      windows: [
+        { id: 'w-toolshost', tabs: ['dt', 'consultant', 'assist'], active: 'dt', x: 1240, y: 840, w: 520, h: 330 },
+        { id: 'w-server', tabs: ['naniclub', 'tools'], active: 'naniclub', x: 410, y: 160, w: 500, h: 600 },
+      ],
+    }));
+  }
+});
 await pj.route('**/api/order-tool-api', (r) => r.fulfill({
   status: 200, contentType: 'application/json',
   body: JSON.stringify({
@@ -927,13 +990,17 @@ const j0 = await pj.evaluate(() => {
     winInDoc: !!win && win.isConnected,
     paneAlive: !!pane && pane.isConnected && !!ifr && ifr.isConnected,
     title: tab ? tab.textContent : null,
-    tabCount: document.querySelectorAll('.wm-window .wm-tab').length,
+    // 十一期：畫面上另有收納三 tab（dt/consultant/assist），改逐一驗證伺服器
+    // 兩顆 tab 的認養（總數斷言失去意義）
+    serverTabs: ['naniclub', 'tools'].map((id) => !!document.querySelector(`.wm-tab[data-tab="${id}"]`)),
+    adoptedTabs: ['dt', 'consultant', 'assist'].map((id) => !!document.querySelector(`.wm-tab[data-tab="${id}"]`)),
   };
 });
 A(j0.winInDoc, 'J0: 二輪注入後 .wm-window 仍在 DOM（pool/layer 未被 innerHTML 覆寫殺掉）');
 A(j0.paneAlive, 'J0: 常駐池 iframe pane（含 iframe）存活');
 A(j0.title === '🗝️帳號搜尋', `J0: iframe tab 標題正確（${j0.title}）`);
-A(j0.tabCount === 2, `J0: 兩顆 iframe tab 都被認養（${j0.tabCount}）`);
+A(j0.serverTabs.every(Boolean), `J0: 兩顆伺服器 iframe tab 都被認養（${j0.serverTabs}）`);
+A(j0.adoptedTabs.every(Boolean), `J0: 真伺服器路徑下收納三 tab 並存（${j0.adoptedTabs}）`);
 
 // -- J1: 引擎掛載的核心具 pageHost（C1）——PageEngine.create 後 page tab 標題是
 //    成員 label 串接（computeTitle）而非裸 'pg:' id，且成員定位進視窗內容區。--
@@ -1010,15 +1077,26 @@ await ctxJ.close();
 // close（見 L 區檔頭說明，物理段落同樣挪到檔尾以維持「區段字母接續檔尾現況」
 // 慣例，L 結束才真正 page.close()）。
 console.log('— K. 入組成員抑制 transition（joinMember/leaveMember，回饋輪 Task 1）—');
-const pgK = await page.evaluate(() => window.PageEngine.create(['dt', 'optitle']));
-A(typeof pgK === 'string' && pgK.startsWith('pg:'), `K: 成組 dt+optitle（${pgK}）`);
+// 十一期改：原受測面板 dt（自帶 transition:all 0.3s ease 幾何）已收納為 wm 分頁、
+// 退出成組世界；畫布上已無帶 transition 的 manifest 面板。抑制機制本身是成員
+// 通用的（joinMember inline transition:none / leaveMember 還原），改為顯式注入
+// 同款 transition 到 optitle 驗證同一機制，區段收尾拆除注入（不污染後續拖曳）。
+await page.evaluate(() => {
+  const st = document.createElement('style');
+  st.id = 'k-test-transition';
+  st.textContent = '.optitlepanel { transition: all 0.3s ease; }';
+  document.head.appendChild(st);
+});
+const pgK = await page.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));
+A(typeof pgK === 'string' && pgK.startsWith('pg:'), `K: 成組 optitle+fudausearch（${pgK}）`);
 await page.waitForTimeout(200);
-const k1 = await page.evaluate(() => getComputedStyle(document.querySelector('.DT_panel')).transitionDuration);
-A(k1 === '0s', `K1: 入組期間 dt 的 transition 被抑制（transitionDuration=${k1}）`);
+const k1 = await page.evaluate(() => getComputedStyle(document.querySelector('.optitlepanel')).transitionDuration);
+A(k1 === '0s', `K1: 入組期間 optitle 的 transition 被抑制（transitionDuration=${k1}）`);
 await page.evaluate((id) => window.PageEngine.dissolve(id), pgK);
 await page.waitForTimeout(200);
-const k2 = await page.evaluate(() => getComputedStyle(document.querySelector('.DT_panel')).transitionDuration);
-A(k2 === '0.3s', `K2: dissolve 後 dt 的 transition 復原為 CSS 幾何 0.3s（transitionDuration=${k2}）`);
+const k2 = await page.evaluate(() => getComputedStyle(document.querySelector('.optitlepanel')).transitionDuration);
+A(k2 === '0.3s', `K2: dissolve 後 optitle 的 transition 復原為注入 CSS 的 0.3s（transitionDuration=${k2}）`);
+await page.evaluate(() => document.getElementById('k-test-transition')?.remove());
 
 // ===== L. pageSolo 面板——排除成組、拖進 wm 視窗 tabbar 成單獨分頁（九期B 回饋輪 Task 2）=====
 // 根因：groupTargets()（成組候選集組成點）原本無條件把「其他自由面板」與「既有
@@ -1034,86 +1112,22 @@ A(k2 === '0.3s', `K2: dissolve 後 dt 的 transition 復原為 CSS 幾何 0.3s�
 console.log('— L. pageSolo 面板：排除成組、拖進 tabbar 成單獨分頁（回饋輪 Task 2）—');
 await sectionGate(page, 'L');
 
-// -- L1(a): 拖 dt（pageSolo 來源）疊上 optitle，懸停 700ms 不應出現成組預覽
-//    （來源排除——groupTargets 對 sourceIsSolo 直接跳過 panel/page 兩個迴圈，
-//    此刻無任何 wm 視窗存在，tabbar 候選亦為空，best 全程為 null）。--
-const dtBoxA = await page.locator('.DT_panel').boundingBox();
-const optBoxA = await page.locator('.optitlepanel').boundingBox();
-await engineDrag(page, '.DT_panel', { x: dtBoxA.x + dtBoxA.width / 2, y: dtBoxA.y + 4 }, { x: optBoxA.x + optBoxA.width / 2, y: optBoxA.y + optBoxA.height / 2 }, {
-  beforeUp: async () => {
-    await page.waitForTimeout(700);
-    A(await page.evaluate(() => !document.querySelector('.gl-group-preview')),
-      'L1a: pageSolo 來源（dt）疊上一般面板懸停 700ms 不出現成組預覽');
-  },
-});
-A(await page.evaluate(() => JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]').length === 0),
-  'L1a: 放開後未成組（pages store 仍空）');
-// 防呆清場：RED（修復前）dt 其實會正常成組——若不清掉，optitle 會變成 page
-// 成員，導致 L1b 因「已是成員、joinMember 不啟動 groupWatch」而巧合通過，並非
-// 真的驗證到 pageSolo 目標排除；GREEN（修復後）這裡 pages store 應已是空，
-// dissolve 呼叫安全 no-op（找不到 page id 直接跳過）。
-await (async () => {
-  const leftoverId = await page.evaluate(() => {
-    const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
-    return pgs[0] ? pgs[0].id : null;
-  });
-  if (leftoverId) {
-    await page.evaluate((id) => window.PageEngine.dissolve(id), leftoverId);
-    await page.waitForTimeout(200);
-  }
-})();
-
-// -- L1(b): 拖 optitle 疊上 dt（pageSolo 目標），懸停 700ms 不應出現成組預覽
-//    （目標排除——dt 被 groupTargets 的 panel 迴圈濾掉，不管誰拖過來）。--
-// 前置條件取證（間歇性失敗調查）：L1b 若成組，唯一合法目標來源是「前段殘留的
-// page 視窗內容區」。先斷言畫面乾淨；不乾淨即前段清場競態的直接證據——印診斷、
-// 確定性拆除後再進行，讓 L1b 只驗證 pageSolo 排除本身（閘門已抽成 sectionGate）。
-await sectionGate(page, 'L1b');
-// 幾何取證結論（間歇失敗根因）：dt 是 toggle 面板，縮小態僅 105×30 且緊鄰
-// shrturl（438,58）——「拖到 dt 中心」的 optitle（400×120）會同時疊上 shrturl，
-// 與 shrturl 的重疊比 ≥0.4 而合法成組（成組的是 shrturl+optitle，pageSolo 排除
-// 其實正常）。修法：先把 dt 移到空曠區（1150,760——遠離所有預設面板與罐頭），
-// 再拖 optitle 疊上去，讓斷言只量測「optitle×dt」一對重疊。
-await page.evaluate(() => {
-  const el = document.querySelector('.DT_panel');
-  el.style.left = '1150px'; el.style.top = '760px';
-});
-await page.waitForTimeout(100);
-const optBoxB = await page.locator('.optitlepanel').boundingBox();
-const dtBoxB = await page.locator('.DT_panel').boundingBox();
-// 落點 (dt.x+180, dt.y+50)：dt 縮小態（105×30）時 optitle 完整罩住 dt（比 1.0）、
-// 展開態（900 寬）時交集比 ≈0.87——兩種尺寸態皆穩超過 0.4 門檻且不碰其他面板。
-await engineDrag(page, '.optitlepanel', { x: optBoxB.x + optBoxB.width / 2, y: optBoxB.y + 4 }, { x: dtBoxB.x + 180, y: dtBoxB.y + 50 }, {
-  beforeUp: async () => {
-    await page.waitForTimeout(700);
-    const pv = await page.evaluate(() => {
-      const el = document.querySelector('.gl-group-preview');
-      return el ? { text: el.textContent.trim(), rect: el.getBoundingClientRect() } : null;
-    });
-    A(!pv, `L1b: 一般面板疊上 pageSolo 目標（dt）懸停 700ms 不出現成組預覽${pv ? `（診斷：預覽=${JSON.stringify(pv)}）` : ''}`);
-  },
-});
-{
-  const st = await page.evaluate(() => JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]'));
-  A(st.length === 0, `L1b: 放開後未成組（pages store 仍空）${st.length ? `（診斷：${JSON.stringify(st.map((pg) => ({ id: pg.id, m: pg.members.map((m) => m.panelId) })))}）` : ''}`);
-}
-// 同上防呆清場，確保 L1(c) 開始時 dt/optitle 皆為自由面板。
-await (async () => {
-  const leftoverId = await page.evaluate(() => {
-    const pgs = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
-    return pgs[0] ? pgs[0].id : null;
-  });
-  if (leftoverId) {
-    await page.evaluate((id) => window.PageEngine.dissolve(id), leftoverId);
-    await page.waitForTimeout(200);
-  }
-})();
+// -- L1(a)/L1(b)（十一期退役）：pageSolo 排除的兩個方向原以 dt 為受測面板——
+//    dt/consultant/assist 已收納為 wm 分頁、退出畫布，pageSolo 機制自此在 cs
+//    manifest 無任何使用者（引擎能力保留，供未來大面板宣告）。原兩段斷言的
+//    「不可成組」保證由收納本身結構性達成（G1 已斷言 create 回 null），不再
+//    需要行為層排除的驗證對象。合併定版時 pageSolo 欄位隨 manifest 清理一併
+//    盤點。--
 
 // -- L1(c): 先 API 建一個 page 視窗（shrturl+tooldl，兩者此刻皆為自由面板），
-//    拖 dt 使指標進入其 tabbar 懸停 → 預覽（文案含「成為分頁」）→ 放開 → 該
-//    視窗多一顆 tab、標題「測試報告生成」、dt 定位進內容區、pages store 多一筆
-//    單員 page 且不自動解散。--
-const pgL = await page.evaluate(() => window.PageEngine.create(['shrturl', 'tooldl']));
+//    拖 roof（檔次快捷，一般面板）使指標進入其 tabbar 懸停 → 預覽（文案含
+//    「成為分頁」）→ 放開 → 該視窗多一顆 tab、標題「檔次快捷」、roof 定位進
+//    內容區、pages store 多一筆單員 page 且不自動解散。（十一期改：原受測
+//    面板 dt 已收納，tabbar 目標型別本就對所有面板開放，改以 roof 驗證同一
+//    機制。）--
+// 十一期：H4 重設會把工具視窗放回預設 rect（410,160）——pgL 顯式給左下 rect，
+// 避免兩個 tabbar 像素重疊使 tabbar 目標判定失去對象意義（H1 同型手法）。
+const pgL = await page.evaluate(() => window.PageEngine.create(['shrturl', 'tooldl'], { rect: { x: 60, y: 640, w: 480, h: 320 } }));
 A(typeof pgL === 'string' && pgL.startsWith('pg:'), `L1c: 先建一個 page 視窗（${pgL}）`);
 await page.waitForTimeout(200);
 const lBar = await page.evaluate((id) => {
@@ -1122,19 +1136,19 @@ const lBar = await page.evaluate((id) => {
   const b = win.querySelector('.wm-tabbar').getBoundingClientRect();
   return { x: b.left + b.width / 2, y: b.top + b.height / 2 };
 }, pgL);
-const dtBoxC = await page.locator('.DT_panel').boundingBox();
+const roofBoxC = await page.locator('.roofbutton').boundingBox();
 // 「拖曳未啟動」單次重試防護（1/12 殘餘 flake 取證後的處置）已內建於
 // engineDrag 的 (a) 步驟；預覽用軟性等待（不用 waitForSelector 的預設拋錯行
 // 為）：RED 階段（修復前）本就預期不會出現預覽，讓後續斷言能以清楚的失敗訊
 // 息呈現，而不是整支測試腳本中途拋例外中斷、後面區段全部無法回報。
-await engineDrag(page, '.DT_panel', { x: dtBoxC.x + dtBoxC.width / 2, y: dtBoxC.y + 4 }, { x: lBar.x, y: lBar.y }, {
-  via: [{ x: (dtBoxC.x + dtBoxC.width / 2 + lBar.x) / 2, y: (dtBoxC.y + 4 + lBar.y) / 2 }],
+await engineDrag(page, '.roofbutton', { x: roofBoxC.x + roofBoxC.width / 2, y: roofBoxC.y + 4 }, { x: lBar.x, y: lBar.y }, {
+  via: [{ x: (roofBoxC.x + roofBoxC.width / 2 + lBar.x) / 2, y: (roofBoxC.y + 4 + lBar.y) / 2 }],
   settle: 300,
   beforeUp: async () => {
     const lPreviewSeen = await page.waitForSelector('.gl-group-preview', { timeout: 3000 }).then(() => true).catch(() => false);
     const lPreviewText = lPreviewSeen ? await page.evaluate(() => document.querySelector('.gl-group-preview').textContent) : null;
     A(lPreviewSeen && lPreviewText.includes('成為分頁'),
-      `L1c: 拖 dt 指標進 tabbar 懸停浮現「成為分頁」預覽（文案=${lPreviewText}）`);
+      `L1c: 拖 roof 指標進 tabbar 懸停浮現「成為分頁」預覽（文案=${lPreviewText}）`);
     await page.waitForTimeout(600);
   },
 });
@@ -1145,23 +1159,23 @@ const l1c = await page.evaluate((id) => {
   const newTabId = tabs.find((t) => t !== id) || null;
   const newTab = newTabId ? win.querySelector(`.wm-tab[data-tab="${CSS.escape(newTabId)}"]`) : null;
   const content = win ? win.querySelector('.wm-content').getBoundingClientRect() : null;
-  const dt = document.querySelector('.DT_panel').getBoundingClientRect();
+  const roof = document.querySelector('.roofbutton').getBoundingClientRect();
   const pages = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
   return {
     tabCount: tabs.length,
     newTabId,
     newTabTitle: newTab ? newTab.textContent : null,
-    dtIn: content ? (dt.top >= content.top - 1 && dt.left >= content.left - 1) : false,
+    roofIn: content ? (roof.top >= content.top - 1 && roof.left >= content.left - 1) : false,
     pagesLen: pages.length,
     newPage: newTabId ? pages.find((p) => p.id === newTabId) : null,
   };
 }, pgL);
 A(l1c.tabCount === 2, `L1c: 視窗多一顆 tab（tabCount=${l1c.tabCount}）`);
-A(!!l1c.newTabTitle && l1c.newTabTitle.includes('測試報告生成'), `L1c: 新 tab 標題正確（${l1c.newTabTitle}）`);
-A(l1c.dtIn, 'L1c: dt 定位進視窗內容區');
+A(!!l1c.newTabTitle && l1c.newTabTitle.includes('檔次快捷'), `L1c: 新 tab 標題正確（${l1c.newTabTitle}）`);
+A(l1c.roofIn, 'L1c: roof 定位進視窗內容區');
 A(l1c.pagesLen === 2, `L1c: pages store 多一筆單員 page（pagesLen=${l1c.pagesLen}）`);
-A(!!l1c.newPage && l1c.newPage.members.length === 1 && l1c.newPage.members[0].panelId === 'dt',
-  `L1c: 新 page 為單員（dt）且未自動解散（members=${l1c.newPage ? JSON.stringify(l1c.newPage.members) : l1c.newPage}）`);
+A(!!l1c.newPage && l1c.newPage.members.length === 1 && l1c.newPage.members[0].panelId === 'roof',
+  `L1c: 新 page 為單員（roof）且未自動解散（members=${l1c.newPage ? JSON.stringify(l1c.newPage.members) : l1c.newPage}）`);
 
 // -- L1(d): reload 後單員 page tab 存活 --
 await page.reload();
@@ -1176,7 +1190,7 @@ const l1d = await page.evaluate((id) => {
   };
 }, l1c.newTabId);
 A(l1d.tabAlive, 'L1d: reload 後單員 page tab 存活');
-A(!!l1d.title && l1d.title.includes('測試報告生成'), `L1d: reload 後標題仍正確（${l1d.title}）`);
+A(!!l1d.title && l1d.title.includes('檔次快捷'), `L1d: reload 後標題仍正確（${l1d.title}）`);
 A(l1d.pagesLen === 2, `L1d: reload 後 pages store 仍是 2 筆（含單員 page）（pagesLen=${l1d.pagesLen}）`);
 
 // L 區收尾清場：pgL 與單員 dt page 是本區建構產物，斷言完畢後明確拆除（比照
@@ -1188,8 +1202,9 @@ await page.evaluate(() => {
     try { window.PageEngine.dissolve(pg.id); } catch (e) {}
   }
 });
-await page.waitForFunction(() => document.querySelectorAll('.wm-window').length === 0, { timeout: 5000 })
-  .catch(() => console.error('  [診斷] L 收尾殘留視窗 5s 內未拆完'));
+await page.waitForFunction(() => [...document.querySelectorAll('.wm-window')].filter((w) =>
+  [...w.querySelectorAll('.wm-tab')].some((t) => (t.dataset.tab || '').startsWith('pg:'))).length === 0, { timeout: 5000 })
+  .catch(() => console.error('  [診斷] L 收尾殘留 pg 視窗 5s 內未拆完'));
 await page.waitForTimeout(200);
 
 // ===== M. 拖出退組落點所見即所得（九期B 回饋輪 Task 3）=====
@@ -1303,13 +1318,14 @@ A(Math.abs(mAfterSettle.fudausearch.left - mDetached.fudausearch.left) < 3 &&
 
 // -- M4：對照組——API removeMember（無 opts）／剩一自動解散維持 detachedRect
 //    語義不變（brief 明文：「API PageEngine.dissolve／removeMember（無 opts）與
-//    剩一自動解散維持 detachedRect 語義不變」）。用另一組面板（roof+consultant）
-//    純 API 操作（無滑鼠拖曳），驗證「不傳 opts」路徑完全不受 keepPosition 影響。--
+//    剩一自動解散維持 detachedRect 語義不變」）。用另一組面板（roof+shrturl；
+//    十一期改：原第二員 consultant 已收納為 wm 分頁退出成組世界）純 API 操作
+//    （無滑鼠拖曳），驗證「不傳 opts」路徑完全不受 keepPosition 影響。--
 const mApiPreJoin = await page.evaluate(() => {
   const r = document.querySelector('.roofbutton').getBoundingClientRect();
   return { left: r.left, top: r.top };
 });
-const pgM2 = await page.evaluate(() => window.PageEngine.create(['roof', 'consultant']));
+const pgM2 = await page.evaluate(() => window.PageEngine.create(['roof', 'shrturl']));
 A(typeof pgM2 === 'string' && pgM2.startsWith('pg:'), `M4: 成組兩員（純 API，${pgM2}）`);
 await page.waitForTimeout(200);
 await page.evaluate((id) => window.PageEngine.removeMember(id, 'roof'), pgM2); // 無 opts → 觸發剩一自動解散
@@ -1373,8 +1389,9 @@ await page.evaluate(() => {
     try { window.PageEngine.dissolve(pg.id); } catch (e) {}
   }
 });
-await page.waitForFunction(() => document.querySelectorAll('.wm-window').length === 0, { timeout: 5000 })
-  .catch(() => console.error('  [診斷] N 收尾殘留視窗 5s 內未拆完'));
+await page.waitForFunction(() => [...document.querySelectorAll('.wm-window')].filter((w) =>
+  [...w.querySelectorAll('.wm-tab')].some((t) => (t.dataset.tab || '').startsWith('pg:'))).length === 0, { timeout: 5000 })
+  .catch(() => console.error('  [診斷] N 收尾殘留 pg 視窗 5s 內未拆完'));
 await page.waitForTimeout(200);
 
 await page.close();
