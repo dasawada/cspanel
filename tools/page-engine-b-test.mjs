@@ -173,7 +173,7 @@ async function sectionGate(pg, label) {
 // ===== A. 零位移點擊不寫 layout（DRAG_THRESHOLD 泛化，九期A 審查歸位）=====
 console.log('— A. 零位移點擊不寫 layout ＋ 實際拖曳仍寫 layout —');
 const opt = '.optitlepanel';
-await page.waitForSelector(opt + ' .gl-hover-hot', { timeout: 15000 });
+await page.waitForSelector(opt + ' .gl-panel-handle', { timeout: 15000 });
 await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v2'));
 const b = await page.locator(opt).boundingBox();
 await page.mouse.move(b.x + b.width / 2, b.y + 4);

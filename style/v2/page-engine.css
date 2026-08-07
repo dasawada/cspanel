@@ -4,27 +4,20 @@
    hover 浮現機制與 page 引擎專屬佈局。不寫 z-index（§4.2）、
    不裸寫尺寸 px（§4.8，var fallback 除外）。 */
 
-/* 頂緣熱區：常駐可互動的隱形窄帶（拖曳起點＋浮現觸發）。高度刻意窄於把手帶，
-   避免吃掉面板頂部內容的點擊。 */
-.gl-hover-hot {
+/* 十一期：hover 浮現機制退役——標題帶 in-flow 常駐可見（完全向罐頭/wm 看齊，
+   全站把手收斂為一種）。版位由引擎預留（canvas-engine attachHoverHandles：
+   面板 padding-top ＋ --handle-h，把手 absolute 貼頂全寬——不同內距的面板
+   一體適用）。帶子視覺歸把手詞彙（draggable-chrome.css）；此處只補常駐標題
+   字樣式（比照 .canned-panel-handle 的消費者分工：詞彙不設字重/字色）。
+   圓角：詞彙 hover/拖曳態為 --radius-md(12px)、一般面板外框 10px（panels.css
+   統一規則）——2px 差僅見於 hover 淡染邊角、視覺不可辨；八期罐頭的解法是把
+   「面板」對齊 12px，一般面板外框歸 panels.css 管，本檔不越權改。 */
+.gl-panel-handle {
     position: absolute;
     top: 0; left: 0; right: 0;
-    height: var(--space-5, 10px);
-    cursor: grab;
-}
-/* 把手帶：常態隱形、不佔互動；熱區或自身 hover 時浮現（opacity 狀態切換，
-   非動畫——遵 materiality v1）。視覺全由把手詞彙供給。 */
-.gl-hover-handle {
-    position: absolute;
-    top: 0; left: 0; right: 0;
-    opacity: 0;
-    pointer-events: none;
-}
-.gl-hover-hot:hover ~ .gl-hover-handle,
-.gl-hover-handle:hover,
-.draggable-dragging .gl-hover-handle {
-    opacity: 1;
-    pointer-events: auto;
+    font-size: var(--text-sm, 12px);
+    font-weight: 600;
+    color: var(--fg-2, #666);
 }
 
 /* 成組預覽框（九期B Task 4）：拖曳重疊目標面積 ≥40% 且懸停 ≥500ms 顯示，

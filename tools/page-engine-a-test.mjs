@@ -139,32 +139,33 @@ A(await page.evaluate(() => document.compatMode === 'BackCompat'), 'quirks mode 
 const v1Snapshot = await page.evaluate(() =>
   JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
     .map((k) => [k, localStorage.getItem(k)])));
-// ===== C. hover 把手：浮現、可拖、即時持久化 =====
+// ===== C. 常駐標題把手（十一期：hover 浮現退役）：版位預留、可拖、即時持久化 =====
 const opt = '.optitlepanel'; // 標題生成面板：一般面板代表
 await page.waitForSelector(opt, { timeout: 10000 });
-const hotCount = await page.evaluate((sel) =>
-  document.querySelector(sel).querySelectorAll('.gl-hover-hot').length, opt);
-A(hotCount === 1, `一般面板有頂緣熱區（實得 ${hotCount}）`);
+const handleCount = await page.evaluate((sel) =>
+  document.querySelector(sel).querySelectorAll('.gl-panel-handle').length, opt);
+A(handleCount === 1, `一般面板有常駐標題把手（實得 ${handleCount}）`);
 A(await page.evaluate(() =>
-  document.querySelector('.canned-panel .gl-hover-hot') === null), '罐頭不重複生成（自帶把手）');
+  document.querySelector('.canned-panel .gl-panel-handle') === null), '罐頭不重複生成（自帶把手）');
 
-// 常態：把手帶隱形且不吃事件
+// 常態：把手常駐可見、可互動、標題＝manifest label、版位已預留（padding-top ＋36）
 const restState = await page.evaluate((sel) => {
-  const h = document.querySelector(sel + ' .gl-hover-handle');
+  const el = document.querySelector(sel);
+  const h = el.querySelector('.gl-panel-handle');
   const cs = getComputedStyle(h);
-  return { op: cs.opacity, pe: cs.pointerEvents, cls: h.classList.contains('draggable-handle') };
+  return {
+    op: cs.opacity, pe: cs.pointerEvents, cls: h.classList.contains('draggable-handle'),
+    text: h.textContent, padTop: getComputedStyle(el).paddingTop,
+  };
 }, opt);
-A(restState.op === '0' && restState.pe === 'none', `常態隱形不佔互動（op=${restState.op} pe=${restState.pe}）`);
+A(restState.op === '1' && restState.pe !== 'none', `常駐可見且可互動（op=${restState.op} pe=${restState.pe}）`);
 A(restState.cls, '把手帶掛 .draggable-handle 詞彙');
+A(restState.text === '標題生成', `標題＝manifest label（${restState.text}）`);
+A(restState.padTop === '46px', `版位預留：padding-top＝原 10px ＋ --handle-h 36px（got ${restState.padTop}）`);
 
-// 熱區 hover → 浮現
+// 拖曳：從把手帶壓下拖 60,40 → 面板位移且寫入 v2 layout
 const optBox = await page.locator(opt).boundingBox();
-await page.mouse.move(optBox.x + optBox.width / 2, optBox.y + 4); // 頂緣熱區內
-await page.waitForFunction((sel) =>
-  getComputedStyle(document.querySelector(sel + ' .gl-hover-handle')).opacity === '1', opt, { timeout: 3000 });
-A(true, '熱區 hover 浮現把手');
-
-// 拖曳：從熱區壓下拖 60,40 → 面板位移且寫入 v2 layout
+await page.mouse.move(optBox.x + optBox.width / 2, optBox.y + 4); // 把手帶內（absolute 貼頂）
 await page.mouse.down();
 await page.mouse.move(optBox.x + optBox.width / 2 + 60, optBox.y + 4 + 40, { steps: 5 });
 await page.mouse.up();
@@ -178,7 +179,7 @@ A(afterDrag.v2 && JSON.parse(afterDrag.v2).optitle, 'v2 layout 即時持久化�
 
 // reload 還原
 await page.reload();
-await page.waitForSelector(opt + ' .gl-hover-hot', { timeout: 15000 });
+await page.waitForSelector(opt + ' .gl-panel-handle', { timeout: 15000 });
 const restored = await page.evaluate((sel) => {
   const saved = JSON.parse(localStorage.getItem('cspanel.layout.cs.v2')).optitle;
   const el = document.querySelector(sel);
@@ -196,17 +197,21 @@ await page.evaluate(() => window.CanvasEdit.toggle());
 A(await page.evaluate(() =>
   !document.documentElement.classList.contains('canvas-editing')), 'toggle 不進編輯模式（改重設 confirm）');
 
-// ===== E. 登出→再登入：hover 把手冪等重建（真實 lifecycle 事件路徑）=====
+// ===== E. 登出→再登入：常駐標題把手冪等重建（真實 lifecycle 事件路徑）=====
 const afterLogout = await page.evaluate(() => {
   window.dispatchEvent(new CustomEvent('firework-logout-success'));
-  return document.querySelectorAll('.gl-hover-hot').length;
+  // 面板 DOM 隨模組 clear 一併消滅（版位歸還的 inline padding 還原只對「跨登出
+  // 存活的 DOM」有意義，而這類面板不經引擎把手）——只驗把手歸零
+  return document.querySelectorAll('.gl-panel-handle').length;
 });
-A(afterLogout === 0, `登出清空 hover 把手（實得 ${afterLogout}）`);
+A(afterLogout === 0, `登出清空標題把手（實得 ${afterLogout}）`);
 await page.evaluate(() => window.dispatchEvent(new CustomEvent('firework-login-success')));
-await page.waitForFunction(() => document.querySelectorAll('.gl-hover-hot').length > 0, { timeout: 10000 });
+await page.waitForFunction(() => document.querySelectorAll('.gl-panel-handle').length > 0, { timeout: 10000 });
 const dup = await page.evaluate(() =>
-  [...document.querySelectorAll('.gl-hover-hot')].some((h) => h.parentElement.querySelectorAll('.gl-hover-hot').length !== 1));
+  [...document.querySelectorAll('.gl-panel-handle')].some((h) => h.parentElement.querySelectorAll('.gl-panel-handle').length !== 1));
 A(!dup, '再登入冪等重建（每面板恰一組把手，無重複掛載）');
+A(await page.evaluate(() => getComputedStyle(document.querySelector('.optitlepanel')).paddingTop) === '46px',
+  '再登入版位重新預留（padding-top 回 46px，無累加）');
 
 // 最終隔離快照刻意放在 E 區之後：登出/登入整輪擾動也不得觸 v1 keys
 const v2PageV1After = await page.evaluate(() =>

@@ -142,12 +142,19 @@ function readLayout(canvasId, ver) {
     return (obj && typeof obj === 'object') ? obj : {};
   } catch (e) { return {}; }
 }
-function emitGeometry(manifest, layout) {
+// pageEngine 參數：loadCanvas 初次呼叫時 activeCanvas 尚未設定（見 line ~1437
+// 呼叫序），由呼叫端顯式傳 engineConfig.pageEngine；其餘呼叫端走預設值。
+function emitGeometry(manifest, layout, pageEngine = activeCanvas?.config?.pageEngine) {
   const prev = document.getElementById('canvas-geometry');
   if (prev) prev.remove();
   let css = manifest.sharedGeometryCss || '';
   for (const p of manifest.panels) {
     if (p.geometryCss) css += '\n' + p.geometryCss;
+    // 十一期 gate 期專用（合併定版時折回 geometryCss、本欄位退役）：v2 常駐標題
+    // 帶使部分面板長高，預設座標需讓位——差異幾何以 manifest 欄位 geometryCssV2
+    // 表達（§4.1 幾何唯一權威，不走 CSS 檔特異度 hack）。注入順序在 geometryCss
+    // 之後、saved layout 之前：同特異度後者勝 → 蓋預設、不蓋使用者存檔。
+    if (pageEngine && p.geometryCssV2) css += '\n' + p.geometryCssV2;
     // 第四期：不再注入 `${rootSelector} { z-index: calc(--layer-panel + zOrder) }`。
     // 面板疊序改由 stack-manager 以 .gl-stack-surface + --stack-rank 動態供給
     // （見 style/v2/stack.css / stack-manager.js）；zOrder 降級為 registerPanelStack
@@ -1282,19 +1289,25 @@ function cannedOnPositionChange(pos) {
 }
 
 const hoverState = { detachers: [] };
+// 十一期：hover 浮現機制退役——標題帶 in-flow 常駐可見（使用者決策：完全向罐頭
+// /wm 看齊）。版位以「面板既有 padding-top ＋ --handle-h」預留、把手 absolute
+// 貼頂全寬：不同內距的面板一體適用、不 re-flow 各模組注入的內容結構，內容
+// 永不被蓋。熱區（.gl-hover-hot）與 pointerdown 轉發隨浮現機制一併退役——
+// 把手本身常駐可按，即唯一拖曳表面。函式名沿用（call site 與歷代註解眾多）。
 function attachHoverHandles() {
   if (!activeCanvas?.config?.pageEngine) return;
+  // 版位高度＝把手詞彙 --handle-h（tokens.css 唯一權威），讀不到退詞彙 fallback 同值 36
+  const handleHRaw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--handle-h'));
+  const handleH = Number.isFinite(handleHRaw) ? handleHRaw : 36;
   for (const { p, el } of panelRoots(activeCanvas.manifest)) {
-    if (el.querySelector('.gl-hover-hot')) continue; // 冪等（登入登出循環）
-    const hot = document.createElement('div');
-    hot.className = 'gl-hover-hot';
+    if (el.querySelector('.gl-panel-handle')) continue; // 冪等（登入登出循環）
     const handle = document.createElement('div');
-    handle.className = 'gl-hover-handle draggable-handle';
+    handle.className = 'gl-panel-handle draggable-handle';
     handle.textContent = p.label || p.id;
-    el.append(hot, handle);
-    // 熱區與把手帶都是拖曳表面：兩者對同一 panel 各綁一次 makeDraggable 會產生
-    // 兩份獨立 dragState——改為把 pointerdown 從熱區轉發到把手帶（把手帶為唯一
-    // 綁定點），熱區只負責「常駐可按」與浮現觸發。
+    const prevInlinePadTop = el.style.paddingTop; // detach 還原，登出重進讀到的 base 恆為 CSS 原值
+    const basePadTop = parseFloat(getComputedStyle(el).paddingTop) || 0;
+    el.style.paddingTop = `${basePadTop + handleH}px`;
+    el.append(handle);
     // startLeft/startTop：down 時的 offset（與 draggable.js 內部 dragState.elementX/Y
     // 同一座標系、同一取值公式），供 onPositionChange 計算「與拖曳起點位移」用。
     let startLeft = 0, startTop = 0;
@@ -1343,12 +1356,10 @@ function attachHoverHandles() {
         saveLayoutEntry(activeCanvas.manifest.id, p.id, pos);
       },
     });
-    const forward = (e) => { handle.dispatchEvent(new PointerEvent('pointerdown', e)); e.preventDefault(); };
-    hot.addEventListener('pointerdown', forward);
     hoverState.detachers.push(() => {
-      hot.removeEventListener('pointerdown', forward);
       handle.removeEventListener('pointerdown', onHandleDown);
-      detach(); hot.remove(); handle.remove();
+      detach(); handle.remove();
+      el.style.paddingTop = prevInlinePadTop; // 版位歸還
     });
   }
   // 九期B Task 6：alwaysDraggable 面板（目前僅罐頭）不落入上方 panelRoots 迴圈
@@ -1425,7 +1436,7 @@ export async function loadCanvas(manifest, config = {}) {
     cannedPanel.initArgs = [null, { ...base, onPositionChange: cannedOnPositionChange }];
   }
 
-  emitGeometry(manifest, layout);
+  emitGeometry(manifest, layout, engineConfig.pageEngine);
   activeCanvas = {
     sourceManifest: manifest,
     manifest: { ...manifest, panels: [] },

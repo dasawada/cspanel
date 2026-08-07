@@ -55,6 +55,8 @@ export default {
       initArgs: ['optitle-placeholder'], clearArgs: ['optitle-placeholder'],
       slot: 'optitle-placeholder', rootSelector: '.optitlepanel',
       geometryCss: '.optitlepanel { padding: 10px; width: 400px; height: 120px; box-sizing: border-box; position: absolute; top: 0px; left: 0px; }', // panels.css:92-100
+      // 十一期 gate 期（合併定版折回 geometryCss）：常駐標題帶讓高，內容區高度不變
+      geometryCssV2: '.optitlepanel { height: calc(120px + var(--handle-h, 36px)); }',
       zOrder: 0, behaviors: ['draggable'] },
 
     { id: 'fudausearch', label: '職代查詢', module: './fusearch-panel.js',
@@ -62,6 +64,8 @@ export default {
       initArgs: ['fudausearch-placeholder'], clearArgs: ['fudausearch-placeholder'],
       slot: 'fudausearch-placeholder', rootSelector: '.fudausearch-container',
       geometryCss: '.fudausearch-container { left: 0px; top: 130px; width: 400px; height: 105px; position: absolute; padding: 10px 5px 10px 5px; box-sizing: border-box; gap: 10px; }', // 原模板 inline + panels.css:802-811 幾何合併（Task 4）
+      // 十一期 gate 期：讓高＋預設 top 讓位（上方 optitle 長高 36px；saved layout 較晚注入、照常勝出）
+      geometryCssV2: '.fudausearch-container { height: calc(105px + var(--handle-h, 36px)); top: calc(130px + var(--handle-h, 36px)); }',
       zOrder: 0, behaviors: ['draggable'] },
 
     { id: 'shrturl', label: '短網址', module: './shrturl.js',
@@ -103,6 +107,8 @@ export default {
       initArgs: ['roof-buttons-placeholder'], clearArgs: ['roof-buttons-placeholder'],
       slot: 'roof-buttons-placeholder', rootSelector: '.roofbutton',
       geometryCss: '.roofbutton { width: 110px; height: auto; font-size: 12px; padding: 10px; box-sizing: border-box; position: absolute; left: 0px; top: 240px; gap: 10px; display: flex; flex-wrap: nowrap; flex-direction: column; }', // panels.css:67-82
+      // 十一期 gate 期：預設 top 讓位（同欄上方 optitle＋fudausearch 各長高 36px）
+      geometryCssV2: '.roofbutton { top: calc(240px + 2 * var(--handle-h, 36px)); }',
       zOrder: 5, behaviors: ['draggable'] },
 
     { id: 'tooldl', label: '工具下載', module: './tool-download-panel.js',
