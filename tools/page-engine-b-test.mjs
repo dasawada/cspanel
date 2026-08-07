@@ -1,6 +1,6 @@
 // 九期B 回歸套件：page 引擎（成組、wm 泛化、quirks 歸隊、持久化）。
 // 骨架比照 page-engine-a-test.mjs 的 stub/攔截/A() 收集器/收尾 exit code 結構——
-// 全程走 v2 頁（panel_all_v2.html）＋登入 stub＋**/api/order-tool-api 攔截。
+// 全程走 production 頁（panel_all.html，十一期合併定版）＋登入 stub＋**/api/order-tool-api 攔截。
 // 各 Task 依序增補區段（A、B、C、D…），本檔案為累積套件、每次 commit 前完整跑一次。
 // 需本機 server（repo 根）：python3 -m http.server 8123
 // 用法：node tools/page-engine-b-test.mjs
@@ -25,14 +25,14 @@ await page.route('**/api/order-tool-api', (r) => r.fulfill({ status: 200, conten
 // localStorage 原始值並以「當下已知 tab」過濾——首次認養（trio）即命中本種子。
 // 僅首導覽播種（key 缺席才寫），reload 後保留測試中累積的 windows 狀態。
 await page.addInitScript(() => {
-  if (!localStorage.getItem('cspanel.windows.cs.v2')) {
-    localStorage.setItem('cspanel.windows.cs.v2', JSON.stringify({
+  if (!localStorage.getItem('cspanel.windows.cs.v1')) {
+    localStorage.setItem('cspanel.windows.cs.v1', JSON.stringify({
       windows: [{ id: 'w-toolshost', tabs: ['dt', 'consultant', 'assist'], active: 'dt', x: 1240, y: 840, w: 520, h: 330 }],
     }));
   }
 });
 
-await page.goto(BASE + '/panel_all_v2.html');
+await page.goto(BASE + '/panel_all.html');
 await page.waitForSelector('.canned-panel-handle', { timeout: 15000 });
 
 // ===== 共用工具（回饋輪收尾：三類結構性 flake 的架構性收斂）=====
@@ -174,17 +174,17 @@ async function sectionGate(pg, label) {
 console.log('— A. 零位移點擊不寫 layout ＋ 實際拖曳仍寫 layout —');
 const opt = '.optitlepanel';
 await page.waitForSelector(opt + ' .gl-panel-handle', { timeout: 15000 });
-await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v2'));
+await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v1'));
 const b = await page.locator(opt).boundingBox();
 await page.mouse.move(b.x + b.width / 2, b.y + 4);
 await page.mouse.down(); await page.mouse.up();           // 熱區點一下，零位移
 await page.waitForTimeout(100);
 A(await page.evaluate(() => {
-  const raw = localStorage.getItem('cspanel.layout.cs.v2');
+  const raw = localStorage.getItem('cspanel.layout.cs.v1');
   return !raw || !JSON.parse(raw).optitle;
 }), '零位移點擊不寫 layout');
 await engineDrag(page, opt, { x: b.x + b.width / 2, y: b.y + 4 }, { x: b.x + b.width / 2 + 40, y: b.y + 44 }, { settle: 100 });
-A(await page.evaluate(() => !!JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}').optitle),
+A(await page.evaluate(() => !!JSON.parse(localStorage.getItem('cspanel.layout.cs.v1') || '{}').optitle),
   '實際拖曳仍寫 layout');
 
 // ===== B. wm 兩段掛載：核心先起、adoptTabs 認養 =====
@@ -552,18 +552,13 @@ A(cannedKeyAfterLeaveDrag !== CANNED_KEY_SENTINEL,
 // 字母延續全檔既有序列——G 已被 Task 6 佔用（見該區段標頭與 task-6-report.md
 // 「疑慮 1」的明文交接：Task 7 應遞補為 H）；task-7-brief.md「G 區」以其描述的
 // 測試意圖為準（成組兩頁→reload 全還原→page tab 拖到另一視窗 tabbar 合併→撕
-// 出→v1 keys 位元不變→CanvasEdit.toggle 重設全清），非字面字母對應，同 F/G 區
+// 出→CanvasEdit.toggle 重設全清），非字面字母對應，同 F/G 區
 // 標頭一貫精神。
 console.log('— H. 持久化整合終驗：reload 還原＋撕出合併＋推版前全套 —');
 await sectionGate(page, 'H');
 
-// v1 keys 快照（比照 page-engine-a-test.mjs 的 v1Snapshot 慣例）：整個 H 區操作
-// （成組→頁內拖曳→reload→合併→撕出→最終重設）全程都不得使 production（v1）
-// 儲存 key 出現任何一次寫入，逐點重新比對同一份快照。
-const hV1Snapshot = () => page.evaluate(() =>
-  JSON.stringify(['cspanel.layout.cs.v1', 'cspanel.windows.cs.v1', 'cspanel.stack.cs.v1']
-    .map((k) => [k, localStorage.getItem(k)])));
-const hV1Base = await hV1Snapshot();
+// （十一期合併定版：原「v1 keys 位元不變」隔離快照退役——.v1 即 production
+// 唯一命名空間，本區操作本就該寫入它。）
 
 const hWinSnapshot = (tabId) => page.evaluate((id) => {
   const win = [...document.querySelectorAll('.wm-window')].find((w) =>
@@ -674,7 +669,6 @@ for (const key of ['roof', 'shrturl', 'optitle', 'fudausearch', 'tooldl']) {
   A(near(p.left, q.left, 3) && near(p.top, q.top, 3),
     `H2: 成員 ${key} 定位跨 reload 還原（pre=(${p.left},${p.top}) post=(${q.left},${q.top})）`);
 }
-A(await hV1Snapshot() === hV1Base, 'H2: v1 keys 位元不變（reload 後）');
 
 // -- H3：page tab 拖到另一視窗 tabbar 合併（滑鼠模擬，比照 wm-test 拖 tab 手
 //    法：mousedown 於來源 tab → 移動穿越門檻 → 落在目標視窗 tabbar 範圍內 →
@@ -780,9 +774,8 @@ const hVisTorn = await page.evaluate(() => ({
   optitle: getComputedStyle(document.querySelector('.optitlepanel')).display,
 }));
 A(hVisTorn.roof !== 'none' && hVisTorn.optitle !== 'none', 'H3: 撕出後兩頁成員皆可見（各自視窗作用中 tab）');
-A(await hV1Snapshot() === hV1Base, 'H3: v1 keys 位元不變（合併/撕出後）');
 
-// -- H4：最後 CanvasEdit.toggle（confirm 接受）重設 → pages/windows/layout .v2
+// -- H4：最後 CanvasEdit.toggle（confirm 接受）重設 → pages/windows/layout .v1
 //    全清、面板回 manifest 預設 --
 console.log('  — H4: CanvasEdit.toggle（confirm 接受）重設 → 全清＋面板回預設 —');
 page.once('dialog', (d) => d.accept()); // toggle 觸發 confirm → 接受（比照 page-engine-a-test.mjs 的 dismiss 分支，這裡走 accept）
@@ -791,13 +784,13 @@ await page.waitForTimeout(500);
 
 const hAfterReset = await page.evaluate(() => ({
   pages: localStorage.getItem('cspanel.pages.cs.v1'),
-  windowsKey: localStorage.getItem('cspanel.windows.cs.v2'),
-  layoutKey: localStorage.getItem('cspanel.layout.cs.v2'),
-  stackOrder: JSON.parse(localStorage.getItem('cspanel.stack.cs.v2') || '{"order":[]}').order,
+  windowsKey: localStorage.getItem('cspanel.windows.cs.v1'),
+  layoutKey: localStorage.getItem('cspanel.layout.cs.v1'),
+  stackOrder: JSON.parse(localStorage.getItem('cspanel.stack.cs.v1') || '{"order":[]}').order,
 }));
 A(!hAfterReset.pages || JSON.parse(hAfterReset.pages).length === 0, `H4: pages store 全清（${hAfterReset.pages}）`);
-A(hAfterReset.windowsKey === null, 'H4: windows .v2 key 全清');
-A(hAfterReset.layoutKey === null, 'H4: layout .v2 key 全清');
+A(hAfterReset.windowsKey === null, 'H4: windows .v1 key 全清');
+A(hAfterReset.layoutKey === null, 'H4: layout .v1 key 全清');
 // stack key 不比照 pages/windows/layout 要求「全清為 null」——stack-manager.js 的
 // reset() 語意是「回到各 surface 的預設名次」，removeItem 後緊接著對仍註冊中的
 // surface（一般面板／視窗本體）重新 persist 一份新的預設 order，這是既有正確
@@ -829,7 +822,6 @@ for (const key of ['roof', 'shrturl', 'optitle', 'fudausearch', 'tooldl']) {
 const hWinsAfterReset = await page.evaluate(() =>
   [...document.querySelectorAll('.wm-window')].map((w) => [...w.querySelectorAll('.wm-tab')].map((t) => t.dataset.tab)));
 A(hWinsAfterReset.every((tabs) => tabs.every((t) => !t.startsWith('pg:'))), 'H4: 重設後無殘留 page tab');
-A(await hV1Snapshot() === hV1Base, 'H4: v1 keys 位元不變（CanvasEdit.toggle 重設後，全程終驗）');
 
 // ===== I. 邊界回彈重新斷言：handleMemberDrop 全路徑（九期B 終審 I2）=====
 // E 區已驗 commitGroup 成功分支的 GROUP_BOUNCE_REASSERT_MS 重新斷言；本區補齊
@@ -957,8 +949,8 @@ await installAccessFixture(pj);
 // 預設位（410,160），J2 的 tabbar 拖曳目標（naniclub 視窗）藥丸數不變、幾何
 // 假設不受收納影響。loadWindows 每輪認養重讀原始存檔，兩批 tab 各自歸位。
 await pj.addInitScript(() => {
-  if (!localStorage.getItem('cspanel.windows.cs.v2')) {
-    localStorage.setItem('cspanel.windows.cs.v2', JSON.stringify({
+  if (!localStorage.getItem('cspanel.windows.cs.v1')) {
+    localStorage.setItem('cspanel.windows.cs.v1', JSON.stringify({
       windows: [
         { id: 'w-toolshost', tabs: ['dt', 'consultant', 'assist'], active: 'dt', x: 1240, y: 840, w: 520, h: 330 },
         { id: 'w-server', tabs: ['naniclub', 'tools'], active: 'naniclub', x: 410, y: 160, w: 500, h: 600 },
@@ -973,7 +965,7 @@ await pj.route('**/api/order-tool-api', (r) => r.fulfill({
     ipHTML: '<div class="IPsearch_in_panelALL"><table><tbody><tr><td>ip-stub</td></tr></tbody></table></div>',
   }),
 }));
-await pj.goto(BASE + '/panel_all_v2.html');
+await pj.goto(BASE + '/panel_all.html');
 await pj.waitForSelector('.wm-pane[data-tab="naniclub"]', { state: 'attached', timeout: 15000 });
 await pj.waitForTimeout(300); // 等候初始登入生命週期完成
 
@@ -1059,10 +1051,10 @@ await pj.waitForTimeout(50);
 await pj.mouse.up();
 await pj.waitForTimeout(200);
 const j2b = await pj.evaluate(() => {
-  const stored = JSON.parse(localStorage.getItem('cspanel.windows.cs.v2') || '{"windows":[]}');
+  const stored = JSON.parse(localStorage.getItem('cspanel.windows.cs.v1') || '{"windows":[]}');
   return { storedHasPg: (stored.windows || []).some((w) => (w.tabs || []).some((t) => String(t).startsWith('pg:'))) };
 });
-A(j2b.storedHasPg, 'J2: persist 後 windows .v2 存檔仍含 pg: tab（持久化未被淨化）');
+A(j2b.storedHasPg, 'J2: persist 後 windows .v1 存檔仍含 pg: tab（持久化未被淨化）');
 await pj.close();
 await ctxJ.close();
 
@@ -1246,7 +1238,7 @@ const pgM = await page.evaluate(() =>
   window.PageEngine.create(['optitle', 'fudausearch'], { rect: { x: 500, y: 100, w: 480, h: 380 } }));
 A(typeof pgM === 'string' && pgM.startsWith('pg:'), `M1: 成組兩員（${pgM}）`);
 await page.waitForTimeout(200);
-await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v2')); // 清空 layout store，供 M2 驗證「落點寫入 .v2」乾淨可判定
+await page.evaluate(() => localStorage.removeItem('cspanel.layout.cs.v1')); // 清空 layout store，供 M2 驗證「落點寫入 .v1」乾淨可判定
 
 // -- M2：把其中一員（optitle）拖出內容區、放開在畫布上「相對於宿主視窗實際
 //    contentRect」算出的一點（回饋輪收尾：取代 magic 1200/600——那組值假設 M
@@ -1283,7 +1275,7 @@ const mExpected = { left: mDropX - (mGrabX - mOptBox1.x), top: mDropY - (mGrabY 
 await engineDrag(page, '.optitlepanel', { x: mGrabX, y: mGrabY }, { x: mDropX, y: mDropY }, { settle: 900 });
 const mAfterSettle = await page.evaluate((id) => {
   const pages = JSON.parse(localStorage.getItem('cspanel.pages.cs.v1') || '[]');
-  const layout = JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}');
+  const layout = JSON.parse(localStorage.getItem('cspanel.layout.cs.v1') || '{}');
   const optEl = document.querySelector('.optitlepanel');
   const fudaEl = document.querySelector('.fudausearch-container');
   const opt = optEl.getBoundingClientRect();
@@ -1307,7 +1299,7 @@ A(mOptDelta > 50,
   `M2: optitle 落點與 detachedRect 明顯不同（keepPosition 生效，Δ=${mOptDelta.toFixed(1)}px，detachedRect=(${mDetached.optitle.left.toFixed(1)},${mDetached.optitle.top.toFixed(1)})，落點=(${mAfterSettle.optitle.left.toFixed(1)},${mAfterSettle.optitle.top.toFixed(1)})）`);
 A(!!mAfterSettle.layoutOptitle &&
   Math.abs(mAfterSettle.layoutOptitle.x - mAfterSettle.optitleInline.left) < 1 && Math.abs(mAfterSettle.layoutOptitle.y - mAfterSettle.optitleInline.top) < 1,
-  `M2: layout store .v2 記錄落點（layout=${JSON.stringify(mAfterSettle.layoutOptitle)}, inline=(${mAfterSettle.optitleInline.left},${mAfterSettle.optitleInline.top})）`);
+  `M2: layout store .v1 記錄落點（layout=${JSON.stringify(mAfterSettle.layoutOptitle)}, inline=(${mAfterSettle.optitleInline.left},${mAfterSettle.optitleInline.top})）`);
 
 // -- M3：被連帶退組的另一員（fudausearch，對照）——未被拖曳、無 opts，仍回
 //    detachedRect（task-3-brief.md Step 1「剩一自動解散的最後一員仍回

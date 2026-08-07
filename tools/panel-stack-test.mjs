@@ -51,10 +51,9 @@ A(afterReload === topReload, `reload 後 meeting 仍最高（持久化）(${afte
   await p.mouse.move(10, 1100);
 }
 
-// 3) 編輯把手顯示中文標籤（非原始 id）
-await p.evaluate(() => window.CanvasEdit.enter());
-await p.waitForTimeout(150);
-const labels = await p.evaluate(() => [...document.querySelectorAll('.gl-edit-handle')].map((h) => h.textContent.trim()));
+// 3) 常駐標題把手顯示中文標籤（非原始 id）——十一期：編輯模式物理拆除，
+//    label 消費者改為 .gl-panel-handle（常駐、無須進入任何模式）
+const labels = await p.evaluate(() => [...document.querySelectorAll('.gl-panel-handle')].map((h) => h.textContent.trim()));
 A(labels.includes('標題生成'), `把手含「標題生成」(${JSON.stringify(labels.slice(0, 12))})`);
 A(labels.includes('外部會議面板'), `把手含「外部會議面板」`);
 A(!labels.includes('optitle') && !labels.includes('meeting-shell'), `把手不再顯示原始 id`);

@@ -1,11 +1,12 @@
 /* 統一面板樣式
-   第十期清理：移除 4 個死 selector——.idsearchpanel/.ClassLogpanel（cs.js:16-18
-   載明伺服器已不注入該 markup）與 .temp2/.board（repo 全域查無 markup 生成來源，
-   僅 togglelayer.js/DT_fuction_confirm.js 殘留字串引用、對不存在的元素 no-op）。 */
+   第十期清理：移除 4 個死 selector——.idsearchpanel/.ClassLogpanel（cs.js 載明
+   伺服器已不注入該 markup）與 .temp2/.board（repo 全域查無 markup 生成來源）。
+   十一期：.DT_panel/.consultantlistgooglesheet/.assist_googlesheet 隨 checkbox
+   展開模式退役（三面板收納為 wm 分頁，玻璃歸 wm-window 供給）。 */
 .roofbutton,
 .tool_zip_dl,
 .optitlepanel,
-.consultantlistgooglesheet, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet,
+.IPsearch_in_panelALL,
 .linkout,
 .meeting-now-search,
 .meeting-check-search,
@@ -23,8 +24,7 @@
 
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
     .roofbutton, .tool_zip_dl, .optitlepanel,
-    .consultantlistgooglesheet, .DT_panel,
-    .IPsearch_in_panelALL, .assist_googlesheet,
+    .IPsearch_in_panelALL,
     .linkout,
     .meeting-now-search, .meeting-check-search,
     .fudausearch-container, .canned-panel, .panel-tab-content {
@@ -50,15 +50,8 @@
     color: var(--fg-2);
 }
 
-.toggle-container label {
-    cursor: pointer;
-}
-.toggle-container {
-    padding: var(--space-2);
-}
 
-.consultantlistgooglesheet:hover, .DT_panel:hover,
-.IPsearch_in_panelALL:hover,.assist_googlesheet:hover,.optitlepanel:hover,
+.IPsearch_in_panelALL:hover,.optitlepanel:hover,
 .fudausearch-container:hover,.roofbutton:hover,.meeting-check-search:hover,
 .meeting-now-search:hover,.tool_zip_dl:hover,.linkout:hover,.canned-panel:hover{
     background: var(--glass-bg-hover);

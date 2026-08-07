@@ -57,6 +57,12 @@
   };
   const fakeUser = { uid: 'wm-fixture-user', getIdToken: async () => 'stub-token' };
   window.firebase = { auth: () => ({ currentUser: fakeUser }) };
+  // 十一期合併定版：production 唯一形態＝引擎先掛 wm 核心（兩段掛載，帶 opts
+  // 判準），auth-protected-tabs 的交棒點只剩 adoptTabs——fixture 比照掛核心，
+  // 再打併發雙 init（守衛與認養冪等的受測面不變）。
+  const { mountWindowManager } = await import('/script/window-manager.js');
+  mountWindowManager(document.getElementById('auth-protected-tabs-placeholder'),
+    { canvasId: 'cs', isPageId: () => false, pageHost: null });
   // 併發雙初始化
   Promise.all([initProtectedTabs(), initProtectedTabs()]).then(() => { window.__concurrentDone = true; });
 </script>

@@ -1,25 +1,18 @@
 // Canvas Engine — 泛化自 firework-mediator.js；模組載入受 server grant 清單約束。
 // 職責：slot 生成、幾何注入（manifest 為唯一座標權威）、init/clear 調度、
-//       編輯模式（enter/exitEditMode，Task 6 實作）。
+//       常駐標題把手與 page 引擎（十一期起編輯模式已物理拆除，重設入口見 CanvasEdit）。
 import { makeDraggable } from './draggable.js';
 import { stack } from './stack-manager.js';
 
-const LAYOUT_KEY = (canvasId, ver = 'v1') => `cspanel.layout.${canvasId}.${ver}`;
-// 九期B Task 3：pages store 固定 `.v1` 尾碼——不比照 layout/windows/stack 隨
-// storageVersion 分流。理由：pages 是全新 schema（v1 引擎從未寫過、也不會讀），
-// 沒有既有 v1 資料需要隔離；PageEngine 本身即 v2 模式限定（pageEngine 關閉時
-// window.PageEngine 的所有函式一律安全 no-op），單一固定 key 已足夠（spec §7）。
+// 十一期合併定版：v1/v2 儲存分流退役（預覽頁退役＝分流理由消失）。`.v1` 尾碼
+// 凍結為唯一命名空間——全體使用者既有佈局原封保留；殘留 `.v2` key 不讀不寫。
+const LAYOUT_KEY = (canvasId) => `cspanel.layout.${canvasId}.v1`;
 const PAGES_KEY = (canvasId) => `cspanel.pages.${canvasId}.v1`;
 
 let activeCanvas = null; // { sourceManifest, manifest, mods, moduleKey, editing, config }
 // 登入事件與載入補位可能同時要求初始化。WindowManager 的 async import 前先同步
 // claim，避免兩輪都觀察到尚未掛載而建立重複 DOM／監聽器；登出時對稱重置。
 let wmMountClaimed = false;
-
-// 九期A：儲存版本（v1/v2）一律以 activeCanvas.config.storageVersion 為準（loadCanvas
-// 正規化寫入），未設定（尚未 loadCanvas，或呼叫端沒傳 config）預設 'v1' —— production
-// （panel_all.html 不傳 config）因此永遠讀寫 .v1 key，行為零變化。
-function layoutVer() { return activeCanvas?.config?.storageVersion || 'v1'; }
 
 // ===== 受管排程器（第十期）=====
 // 模組契約原本只有 init（登入）/clear（登出）兩個掛鉤，缺「分頁可見性」維度——
@@ -134,27 +127,20 @@ function buildSlots(manifest) {
 }
 
 // ===== 幾何注入（manifest 座標 + 使用者佈局覆蓋） =====
-function readLayout(canvasId, ver) {
+function readLayout(canvasId) {
   try {
-    const raw = localStorage.getItem(LAYOUT_KEY(canvasId, ver));
+    const raw = localStorage.getItem(LAYOUT_KEY(canvasId));
     if (!raw) return {};
     const obj = JSON.parse(raw);
     return (obj && typeof obj === 'object') ? obj : {};
   } catch (e) { return {}; }
 }
-// pageEngine 參數：loadCanvas 初次呼叫時 activeCanvas 尚未設定（見 line ~1437
-// 呼叫序），由呼叫端顯式傳 engineConfig.pageEngine；其餘呼叫端走預設值。
-function emitGeometry(manifest, layout, pageEngine = activeCanvas?.config?.pageEngine) {
+function emitGeometry(manifest, layout) {
   const prev = document.getElementById('canvas-geometry');
   if (prev) prev.remove();
   let css = manifest.sharedGeometryCss || '';
   for (const p of manifest.panels) {
     if (p.geometryCss) css += '\n' + p.geometryCss;
-    // 十一期 gate 期專用（合併定版時折回 geometryCss、本欄位退役）：v2 常駐標題
-    // 帶使部分面板長高，預設座標需讓位——差異幾何以 manifest 欄位 geometryCssV2
-    // 表達（§4.1 幾何唯一權威，不走 CSS 檔特異度 hack）。注入順序在 geometryCss
-    // 之後、saved layout 之前：同特異度後者勝 → 蓋預設、不蓋使用者存檔。
-    if (pageEngine && p.geometryCssV2) css += '\n' + p.geometryCssV2;
     // 第四期：不再注入 `${rootSelector} { z-index: calc(--layer-panel + zOrder) }`。
     // 面板疊序改由 stack-manager 以 .gl-stack-surface + --stack-rank 動態供給
     // （見 style/v2/stack.css / stack-manager.js）；zOrder 降級為 registerPanelStack
@@ -209,7 +195,7 @@ async function prepareAuthorizedModules() {
     activeCanvas.moduleKey = moduleKey;
   }
   activeCanvas.manifest = manifest;
-  emitGeometry(manifest, readLayout(manifest.id, layoutVer()));
+  emitGeometry(manifest, readLayout(manifest.id));
 }
 // 第十期：initAllModules 改 promise 單例冪等。檔頭 wmMountClaimed 註解記載的
 // 「同一次頁面載入被呼叫兩次」自此在源頭收斂——任何數量的呼叫者（現在只剩
@@ -785,69 +771,32 @@ window.PageEngine = {
 };
 
 // ===== 編輯模式 =====
-const editState = { detachers: [] };
 function panelRoots(manifest) {
   return manifest.panels
     .filter((p) => p.rootSelector && (p.behaviors || []).includes('draggable') && !p.alwaysDraggable)
     .map((p) => ({ p, el: document.querySelector(p.rootSelector) }))
     .filter((x) => x.el);
 }
-// ver 可選——預設 layoutVer()（讀 activeCanvas.config）；loadCanvas 內 activeCanvas
-// 尚未設好前呼叫（canned 舊 key 一次性遷移）需顯式傳 engineConfig.storageVersion，
-// 否則會落回預設 'v1'，違反 v2 頁儲存隔離鐵律。
-function saveLayoutEntry(canvasId, panelId, pos, ver = layoutVer()) {
-  const layout = readLayout(canvasId, ver);
+function saveLayoutEntry(canvasId, panelId, pos) {
+  const layout = readLayout(canvasId);
   layout[panelId] = { x: pos.left, y: pos.top };
-  try { localStorage.setItem(LAYOUT_KEY(canvasId, ver), JSON.stringify(layout)); } catch (e) {}
+  try { localStorage.setItem(LAYOUT_KEY(canvasId), JSON.stringify(layout)); } catch (e) {}
 }
-export function enterEditMode() {
-  if (activeCanvas?.config?.pageEngine) return; // 九期A：v2 隨時可拖，編輯模式停用（物理拆除屬九期C）
-  if (!activeCanvas || activeCanvas.editing) return;
-  activeCanvas.editing = true;
-  document.documentElement.classList.add('canvas-editing');
-  ensureEditBar();
-  for (const { p, el } of panelRoots(activeCanvas.manifest)) {
-    el.classList.add('gl-editable');
-    const handle = document.createElement('div');
-    handle.className = 'gl-edit-handle';
-    handle.textContent = p.label || p.id;
-    el.appendChild(handle);
-    // persist:false —— 編輯把手的位置權威是引擎自身的統一 layout
-    // （由 onPositionChange 寫入 LAYOUT_KEY），draggable.js 不應再讀寫
-    // 各面板獨立的 draggable:<path>:<id> key（見檔案內註解與任務報告）。
-    const detach = makeDraggable(el, handle, {
-      persist: false,
-      onPositionChange: (pos) => saveLayoutEntry(activeCanvas.manifest.id, p.id, pos),
-    });
-    // detach()：卸除 makeDraggable 內部掛在 handle/window/document 上的事件
-    // 監聽器（原本只在 panel 被移出 DOM 時由其內部 MutationObserver 觸發，
-    // 進出編輯模式本身並不會移除 panel，等於每次 enter 都疊加一組新監聽器
-    // 而從不回收）。退出編輯模式時連同把手一起主動收掉，避免監聽器洩漏。
-    editState.detachers.push(() => { detach(); handle.remove(); el.classList.remove('gl-editable'); });
-  }
-}
-export function exitEditMode() {
-  if (!activeCanvas || !activeCanvas.editing) return;
-  activeCanvas.editing = false;
-  document.documentElement.classList.remove('canvas-editing');
-  editState.detachers.forEach((fn) => fn());
-  editState.detachers = [];
-  emitGeometry(activeCanvas.manifest, readLayout(activeCanvas.manifest.id, layoutVer()));
-  for (const { el } of panelRoots(activeCanvas.manifest)) { el.style.left = ''; el.style.top = ''; }
-}
+// 十一期（九期C 懸案落地）：編輯模式物理拆除——pageEngine 合併定版後
+// enter/exit 恆為 no-op 死碼（面板隨時可拖、把手常駐），編排列/編輯把手/
+// gl-editable 整組移除。CanvasEdit.toggle 保留為「重設佈局」唯一入口
+// （confirm 後 resetLayout，H4 回歸涵蓋）。
 export function resetLayout() {
   if (!activeCanvas) return;
-  try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id, layoutVer())); } catch (e) {}
+  try { localStorage.removeItem(LAYOUT_KEY(activeCanvas.manifest.id)); } catch (e) {}
   // 同時清掉 canned 的舊版 per-panel key，否則「重設」對話術面板不完整
   // （見 loadCanvas 的一次性遷移邏輯）。已知行為：canned 目前畫面位置在
   // 面板存續期間由 draggable.js 自己的 inline left/top 主導，此處刪 key
   // 不會讓它立即跳回預設值，要等下次 loadCanvas（頁面重新載入）才會套用。
   try { localStorage.removeItem(`draggable:${location.pathname}:canned-panel-main`); } catch (e) {}
   // 九期B Task 7 修復：pages store／入組狀態一併回預設，見 resetAllPages() 檔頭
-  // 註解。必須在 window.WindowManager.reset() 之前——leaveMember() 只處理面板
-  // 自身狀態，不觸碰 wm 的 windows／tabs，執行順序與 wm.reset() 互不相依，這裡
-  // 依語意順序（先讓成員退組，再讓視窗回預設）安排。v1 模式（pageEngine 關閉）
-  // 完全不進此分支，零變化。
+  // 註解。必須在 window.WindowManager.reset() 之前——依語意順序（先讓成員退組，
+  // 再讓視窗回預設）安排。
   if (activeCanvas.config.pageEngine) resetAllPages();
   // 分頁視窗管理器是獨立常駐系統（不受編輯模式管轄），但「重設佈局」語義上
   // 應一併把視窗回預設：委派給 window.WindowManager.reset()（清 windows key +
@@ -867,29 +816,11 @@ export function resetLayout() {
   }
   emitGeometry(activeCanvas.manifest, {});
 }
-function ensureEditBar() {
-  if (document.getElementById('gl-edit-bar')) return;
-  const bar = document.createElement('div');
-  bar.id = 'gl-edit-bar';
-  bar.innerHTML = `<span style="font-size:var(--text-sm);color:var(--fg-2)">編排模式</span>
-    <button type="button" class="gl-edit-reset">重設佈局</button>
-    <button type="button" class="gl-edit-done">完成</button>`;
-  document.body.appendChild(bar);
-  bar.querySelector('.gl-edit-done').addEventListener('click', () => exitEditMode());
-  bar.querySelector('.gl-edit-reset').addEventListener('click', () => resetLayout());
-  document.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && activeCanvas && activeCanvas.editing) exitEditMode();
-  });
-}
 window.CanvasEdit = {
   toggle: () => {
-    if (activeCanvas?.config?.pageEngine) {
-      if (window.confirm('重設佈局？（面板位置、視窗、疊序都會回到預設）')) resetLayout();
-      return;
-    }
-    return activeCanvas && activeCanvas.editing ? exitEditMode() : enterEditMode();
+    if (window.confirm('重設佈局？（面板位置、視窗、疊序都會回到預設）')) resetLayout();
   },
-  enter: enterEditMode, exit: exitEditMode, reset: resetLayout,
+  reset: resetLayout,
 };
 
 // ===== 九期A：hover 浮現把手（pageEngine 模式；隨時可拖，取代編輯模式）=====
@@ -1395,10 +1326,10 @@ function detachHoverHandles() {
 
 // ===== 入口 =====
 export async function loadCanvas(manifest, config = {}) {
-  // 九期A：引擎設定參數化。呼叫端不傳 config（production panel_all.html 現況）→
-  // 全走 v1 預設，行為與改動前逐位元相同。storageVersion 決定 layout/stack/windows
-  // 三個 schema 的 key 尾碼命名空間（見 layoutVer()、stack-manager.js、window-manager.js）。
-  const engineConfig = { pageEngine: false, storageVersion: 'v1', ...config };
+  // 十一期合併定版：pageEngine 成為唯一形態（預設 true——production panel_all.html
+  // 以單參數 loadCanvas(cs) 呼叫）；config 保留為測試 fixture 的顯式關閉鉤子。
+  // storageVersion 分流已退役（見檔頭 LAYOUT_KEY 註解），傳入即忽略。
+  const engineConfig = { pageEngine: true, ...config };
   const problems = validateManifest(manifest);
   if (problems.length) {
     console.warn('Engine: manifest 異常，問題面板將被跳過', problems.map((p) => p.reason));
@@ -1413,15 +1344,13 @@ export async function loadCanvas(manifest, config = {}) {
   // 話術面板（canned）舊版每頁獨立 storage key 一次性遷移入統一 layout
   // （不刪舊 key——canned 自身仍以 quirks:['self-persisted'] 走原本機制）
   const oldCanned = localStorage.getItem(`draggable:${location.pathname}:canned-panel-main`);
-  // activeCanvas 尚未賦值（見下方），layoutVer() 此刻無從得知本次 config，故兩處
-  // readLayout 呼叫與 saveLayoutEntry 的 ver 皆顯式傳 engineConfig.storageVersion。
-  if (oldCanned && !readLayout(manifest.id, engineConfig.storageVersion).canned) {
+  if (oldCanned && !readLayout(manifest.id).canned) {
     try {
       const p = JSON.parse(oldCanned);
-      saveLayoutEntry(manifest.id, 'canned', { left: p.left, top: p.top }, engineConfig.storageVersion);
+      saveLayoutEntry(manifest.id, 'canned', { left: p.left, top: p.top });
     } catch (e) {}
   }
-  const layout = readLayout(manifest.id, engineConfig.storageVersion);
+  const layout = readLayout(manifest.id);
   const cannedPanel = manifest.panels.find((x) => x.id === 'canned');
   if (layout.canned && cannedPanel) {
     cannedPanel.initArgs = [null, { left: layout.canned.x, top: layout.canned.y }];
@@ -1436,7 +1365,7 @@ export async function loadCanvas(manifest, config = {}) {
     cannedPanel.initArgs = [null, { ...base, onPositionChange: cannedOnPositionChange }];
   }
 
-  emitGeometry(manifest, layout, engineConfig.pageEngine);
+  emitGeometry(manifest, layout);
   activeCanvas = {
     sourceManifest: manifest,
     manifest: { ...manifest, panels: [] },
@@ -1447,7 +1376,7 @@ export async function loadCanvas(manifest, config = {}) {
   };
 
   window.addEventListener('firework-login-success', () => { initAllModules(); });
-  window.addEventListener('firework-logout-success', () => { exitEditMode(); clearAllModules(); });
+  window.addEventListener('firework-logout-success', () => { clearAllModules(); });
 
   // 模組只由 Firebase restore + server access boot 完成後的登入事件啟動；不讀任何
   // local token hint。initAllModules 的 promise 單例保護事件與下方漏接補位重疊。
