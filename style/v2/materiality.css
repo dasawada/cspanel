@@ -6,8 +6,8 @@
    規則沿用審查定案的排除條款，不可移除：
    - :not(.meeting-search-panel-menu)——透明無影容器，畫玻璃影會是懸空影子框
    - :not(.gl-dragging)（高度規則）——拖曳中交給 lift 影
+   - :not(.gl-editable)（聚焦 outline）——編輯模式的虛線 outline 不可覆蓋
    - :not(:hover):not(:focus-within)（退後）——正在互動的面板不退暗
-   （原 :not(.gl-editable) 條款隨十一期編輯模式物理拆除退役）
    運動軸定案為「無」：materiality 不引入任何 transition（DT/顧問/IPsearch/輔導四個
    legacy 面板的 transition:all 0.3s 沿舊，屬既有行為）。 */
 :root {
@@ -30,7 +30,7 @@
 }
 
 /* 聚焦表現：最上層邊框微亮（outline 模型，不參與 box-shadow 組合） */
-.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu) {
+.gl-stack-surface.is-stack-top:not(.meeting-search-panel-menu):not(.gl-editable) {
     outline: var(--mat-focus-outline);
     outline-offset: var(--mat-focus-outline-offset);
 }

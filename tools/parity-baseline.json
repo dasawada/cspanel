@@ -2,43 +2,61 @@
   "rects": {
     ".roofbutton": {
       "x": 18,
-      "y": 330,
+      "y": 258,
       "w": 110,
-      "h": 198
+      "h": 162
     },
     ".tool_zip_dl": {
       "x": 1308,
       "y": 18,
       "w": 277.3125,
-      "h": 94.5
+      "h": 58.5
     },
     ".optitlepanel": {
       "x": 18,
       "y": 18,
       "w": 400,
-      "h": 156
+      "h": 120
     },
     ".fudausearch-container": {
       "x": 18,
-      "y": 184,
+      "y": 148,
       "w": 400,
-      "h": 141
+      "h": 105
     },
     ".linkout": {
       "x": 438,
       "y": 58,
       "w": 309,
-      "h": 142.5
+      "h": 106.5
+    },
+    ".DT_panel": {
+      "x": 541,
+      "y": 18,
+      "w": 105,
+      "h": 30
+    },
+    ".consultantlistgooglesheet": {
+      "x": 654,
+      "y": 18,
+      "w": 105,
+      "h": 30
+    },
+    ".assist_googlesheet": {
+      "x": 428,
+      "y": 18,
+      "w": 105,
+      "h": 30
     },
     ".meeting-search-panel-menu": {
       "x": 938,
       "y": 18,
       "w": 360,
-      "h": 76
+      "h": 40
     },
     ".canned-panel": {
       "x": 1308,
-      "y": 128,
+      "y": 83,
       "w": 402,
       "h": 333
     },
@@ -64,8 +82,11 @@
   "zorder": [
     "#firebase-login-bar",
     ".canned-panel",
+    ".assist_googlesheet",
     ".roofbutton",
+    ".DT_panel",
     ".tool_zip_dl",
+    ".consultantlistgooglesheet",
     ".linkout",
     ".fudausearch-container",
     ".optitlepanel",

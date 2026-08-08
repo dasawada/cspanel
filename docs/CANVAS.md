@@ -13,7 +13,7 @@
 
 | 構件 | 檔案 | 是什麼 |
 |---|---|---|
-| **Canvas Engine** | `script/canvas-engine.js` | 泛化自 `firework-mediator.js` 的通用引擎。職責：讀 manifest 生成插槽（slot div）、把 manifest 座標／zOrder 注入成 `<style id="canvas-geometry">`、依 manifest 的 `init`/`clear` 呼叫面板模組、承接 access-client 發出的登入／清場生命週期、管理受管排程、常駐標題把手（十一期）與重設入口（`resetLayout`；`window.CanvasEdit` 僅餘 `toggle`/`reset`——編輯模式已於十一期物理拆除）。它不判定身份或權限。 |
+| **Canvas Engine** | `script/canvas-engine.js` | 泛化自 `firework-mediator.js` 的通用引擎。職責：讀 manifest 生成插槽（slot div）、把 manifest 座標／zOrder 注入成 `<style id="canvas-geometry">`、依 manifest 的 `init`/`clear` 呼叫面板模組、承接 access-client 發出的登入／清場生命週期、管理受管排程與編輯模式（`enterEditMode`/`exitEditMode`/`resetLayout`）及 `window.CanvasEdit`。它不判定身份或權限。 |
 | **Canvas Manifest** | `script/canvases/<id>.js`（目前唯一實例：`cs.js`） | 一個畫布的完整宣告：`{ id, name, visibility, sharedGeometryCss, panels: [...] }`，`export default`。**座標與 z 序的唯一權威來源**——CSS 檔案本身不再留任何座標或魔術 z-index。 |
 | **層級註冊表（層帶）** | `style/v2/tokens.css` 的 `--layer-*` 變數 | 全站疊層的六個語意帶，見第 4.2 節實際數值。manifest 的 `zOrder` 只在 `--layer-panel` 帶內做相對排序，不可能跨帶。 |
 | **表面階層（配方）** | 分散於 `style/v2/panels.css`／`style/v2/overlays.css`／`script/theme.js`／`script/fireworkeffect.js` | `panel`／`dropdown`／`modal`／`toast` 四種固定視覺語彙（毛玻璃深淺、背景色、陰影），見第 4.4 節配方對應表。 |
@@ -43,7 +43,7 @@
 2. 在對應畫布的 manifest（例如 `script/canvases/cs.js`）的 `panels` 陣列尾端（或依第 2.3 節順序契約決定的位置）加一筆物件，欄位見第 2.2 節欄位表。
 3. 若面板需要拖曳：
    - `geometryCss` 內的 `rootSelector` 對應規則要有 `position: absolute`（見第 4.5 節「幾何規則」）。
-   - `behaviors: ['draggable']`——引擎登入後對其 `rootSelector` 元素掛**常駐標題把手**（隨時可拖，十一期起無編輯模式）；面板若自帶把手（模組自行 `makeDraggable`）則改用 `alwaysDraggable: true`，引擎不再生成把手。
+   - `behaviors: ['draggable']`；若面板要「不受編輯模式管制、隨時可拖」則改用 `alwaysDraggable: true`（此時面板模組自己要負責呼叫 `makeDraggable`，`alwaysDraggable` 只是告訴引擎「編輯模式進出時不要對它掛/卸把手」）。
 4. 驗證（見第 2.4 節）。
 
 ### 2.2 Manifest 面板欄位表（完整 16 欄，型別＋一句話說明＋來自 `cs.js` 的真實範例值）
@@ -59,11 +59,11 @@
 | `clearArgs` | `array`（可省略，預設等同 `[]`） | 呼叫 `clear` 時展開傳入的參數陣列。 | `['optitle-placeholder']` |
 | `slot` | `string \| null` | 引擎要生成/標記的插槽 div id：引擎會在 `.panel_all_container` 內找該 id 的既有元素並加上 `gl-canvas-slot` class，不存在則新建一個 `<div id="..." class="gl-canvas-slot">`。`null` 表示這個面板不需要引擎生成插槽（例如綁定伺服器渲染的既有 DOM，或像話術面板自己掛到 `document.body`）。 | `'optitle-placeholder'`；`null`（`meeting-now`／`canned`） |
 | `extraSlots` | `array<string>`（可省略） | 除了 `slot` 外，該面板還需要引擎生成的額外插槽 id 清單，處理方式與 `slot` 相同。 | `['auth-protected-ip-placeholder']`（`protected` 面板） |
-| `rootSelector` | `string`（可省略） | 面板渲染後根元素的 CSS selector。引擎用它做三件事：(a) 供 `zOrder` 初始名次註冊統一疊序；(b) 判斷要不要掛常駐標題把手（十一期）；(c) 讀寫使用者拖曳後存檔的 `left`/`top`。沒有 `rootSelector` 的面板不受把手與 zOrder 機制管轄，幾何交給 `sharedGeometryCss`、伺服器 markup，或如 dt/consultant/assist 收納為 wm 分頁（幾何歸視窗）。 | `'.optitlepanel'` |
+| `rootSelector` | `string`（可省略） | 面板渲染後根元素的 CSS selector。引擎用它做三件事：(a) 寫入 `zOrder` 對應的 `z-index`；(b) 編輯模式判斷要不要對它掛拖曳把手；(c) 讀寫使用者拖曳後存檔的 `left`/`top`。沒有 `rootSelector` 的面板（如 `protected`）不受編輯模式與 zOrder 機制管轄，幾何完全交給 `sharedGeometryCss` 或伺服器 markup。 | `'.optitlepanel'` |
 | `geometryCss` | `string`（可省略） | 該面板專屬的幾何/外觀 CSS 逐字字串，由引擎注入到 `<style id="canvas-geometry">`。**內容嚴禁出現 `z-index`**（z-index 一律由 `zOrder` 欄位供給，見第 4.6 節）。 | `'.optitlepanel { padding: 10px; width: 400px; height: 120px; box-sizing: border-box; position: absolute; top: 0px; left: 0px; }'` |
 | `zOrder` | `number`（可省略） | 面板在 `--layer-panel` 帶內的相對排序；引擎寫入 `z-index: calc(var(--layer-panel) + zOrder)`。只有同時具備 `rootSelector` 才會生效。數值只是「同帶內誰蓋誰」，換帶要換 `--layer-*`，不要把 `zOrder` 當全域魔術數字亂加大。 | `4`（`dt` 面板，即 `z-index: calc(var(--layer-panel) + 4)`） |
-| `behaviors` | `array<string>`（可省略，預設等同 `[]`） | 面板行為清單。目前唯一定義值是 `'draggable'`：登入後引擎對其 `rootSelector` 元素掛常駐標題把手（`.gl-panel-handle`＋把手詞彙，`makeDraggable` 綁定）；登出卸除。 | `['draggable']` |
-| `alwaysDraggable` | `boolean`（可省略，預設 `false`） | `true` 時引擎的 `panelRoots()` 排除它、**不**生成常駐標題把手——拖曳能力由面板模組自己呼叫 `makeDraggable` 提供（自帶把手）。目前唯一使用者是話術面板。 | `true`（`canned`） |
+| `behaviors` | `array<string>`（可省略，預設等同 `[]`） | 面板行為清單。目前唯一定義值是 `'draggable'`：編輯模式進入時，引擎對其 `rootSelector` 元素掛 `makeDraggable` 把手；退出時卸除。 | `['draggable']` |
+| `alwaysDraggable` | `boolean`（可省略，預設 `false`） | `true` 時面板不受編輯模式管制：引擎的 `panelRoots()` 會排除它，編輯模式進出時**不會**對它掛/卸把手，因為它的拖曳能力已經由面板模組自己呼叫 `makeDraggable` 提供、且應隨時可拖。目前唯一使用者是話術面板。 | `true`（`canned`） |
 | `syncInit` | `boolean`（可省略，預設 `false`） | `true` 時該面板的 `init` 會在其餘面板以 `Promise.allSettled` 並行初始化**之前**、同步先行執行（原 `firework-mediator.js:99` 既有時序）。目前唯一使用者是 `meeting-shell`，因為 `meeting-now`/`meeting-match`/`meeting-all` 的邏輯依賴它先建好容器 DOM。此欄位只影響 **init** 的先後，不影響 clear 的順序（clear 順序由 manifest 陣列順序決定，見第 2.3 節）。 | `true`（`meeting-shell`） |
 | `quirks` | `array<string>`（可省略） | 自由文字標記，記錄該面板偏離「標準模式」的既知例外，供人類/AI 閱讀理解；**引擎本身不消費此欄位**（純文件用途）。已知值：`'server-markup'`（幾何由伺服器渲染的 class 提供，不在 `geometryCss`，見 `sharedGeometryCss` 內的「伺服器注入 markup 的幾何」區塊）、`'body-mounted'`（面板元素由模組自行 `appendChild` 到 `document.body`，不經過引擎的 slot 機制）、`'self-persisted'`（面板自己用 `draggable.js` 的 per-panel localStorage key 管理位置，不是統一 layout 存檔——僅話術面板如此，且已在 `loadCanvas` 內做過一次性遷移，見第 5 節）。 | `['server-markup']`（`protected`）；`['body-mounted', 'self-persisted']`（`canned`） |
 
@@ -120,7 +120,7 @@ DOM 疊序——這在二、三期（多面板共享同一 `zOrder`，見第 4.2
 ## 3. 新增畫布 SOP
 
 新增一個部門畫布 = **一份新 manifest**＋**一個薄殼 html 頁**（複製 `panel_all.html`，只改兩行 import）。
-引擎、視覺語彙、常駐把手全部共用，不需要複製或修改 `script/canvas-engine.js`。
+引擎、視覺語彙、編輯模式全部共用，不需要複製或修改 `script/canvas-engine.js`。
 
 ### 3.1 步驟
 
@@ -133,7 +133,7 @@ DOM 疊序——這在二、三期（多面板共享同一 `zOrder`，見第 4.2
        loadCanvas(<dept>);
    </script>
    ```
-   其餘 `<head>` 內的共用樣式表（`tokens.css`／`base.css`／`panels.css`／`controls.css`／`overlays.css`／`page-engine.css`）與 `fireworkeffect.js`／`ui-conductor-v2.js` 一律保留不動，確保視覺語彙與登入流程一致；該部門專屬的 `style/v2/features/*.css` 才依需要增減 `<link>`。
+   其餘 `<head>` 內的共用樣式表（`tokens.css`／`base.css`／`panels.css`／`controls.css`／`overlays.css`／`canvas-edit.css`）與 `fireworkeffect.js`／`ui-conductor-v2.js` 一律保留不動，確保視覺語彙與登入/編輯模式一致；該部門專屬的 `style/v2/features/*.css` 才依需要增減 `<link>`。
 3. 上線前跑 parity harness，**為這個新畫布建立自己的 baseline**（不要覆蓋 `tools/parity-baseline.json`，那是 `cs` 畫布專用）：
    ```bash
    python3 -m http.server 8123 &
@@ -164,7 +164,7 @@ DOM 疊序——這在二、三期（多面板共享同一 `zOrder`，見第 4.2
 | `--layer-panel` | `100` | 面板本體（manifest `zOrder` 的基準） |
 | `--layer-panel-active` | `200` | 互動中浮起（拖曳中、`focus-within` 提升） |
 | `--layer-dropdown` | `300` | 下拉/建議選單/tooltip portal |
-| `--layer-bar` | `400` | 登入列等常駐 chrome（編輯模式浮動列已隨十一期拆除） |
+| `--layer-bar` | `400` | 登入列等常駐 chrome、編輯模式浮動列 |
 | `--layer-modal` | `500` | modal 與 scrim |
 | `--layer-toast` | `600` | toast |
 
@@ -220,7 +220,7 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
 `behaviors: ['draggable']` 或 `alwaysDraggable: true` 的面板，其 `rootSelector` 對應元素**必須**在
 `geometryCss`（或面板模組自行注入的 CSS）中宣告 `position: absolute`。
 
-原因：常駐標題把手呼叫 `makeDraggable(el, handle, { persist: false, ... })`（`script/canvas-engine.js`
+原因：編輯模式呼叫 `makeDraggable(el, handle, { persist: false, ... })`（`script/canvas-engine.js`
 `enterEditMode()`）；`draggable.js` 在 `persist === false` 時會**提早 return、跳過自動設定
 `position/left/top` 的初始化區塊**（`script/draggable.js:372`）。若面板本身沒有 `position: absolute`，
 把手仍會顯示，但拖曳時 `left`/`top` 在 static/relative 定位語境下不會產生預期的視覺位移。
@@ -241,7 +241,7 @@ div 的順序（見第 2.1 節、`buildSlots()` 實作）；因此 **tie 疊序 
   寫在 `sharedGeometryCss` 裡的 `calc(var(--layer-panel) + n)` 是它們進入層帶的唯一途徑。**第三期變更**：
   `.idsearchpanel`／`.ClassLogpanel` 為死樣式已整組移除；
   `.IPsearch_in_panelALL` 的 z-index 已遷至 `protected` 面板的 `zOrder: 5`——`protected` 現在帶
-  `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 掛常駐把手可拖、佈局存於 `layout['protected']`），
+  `rootSelector: '.IPsearch_in_panelALL'`（讓 IPsearch 在編輯模式可拖、佈局存於 `layout['protected']`），
   依本規則不得再於 `sharedGeometryCss` 為它宣告 z-index。
 - **`sharedGeometryCss` 不得對「有 `rootSelector` 的面板」宣告 `z-index`**：這種宣告若以較高特異度
   selector 寫成（例如 `.DT_panel:not(.small-size)`，特異度 0-2-0），會永久遮蔽引擎依 `zOrder` 注入的
@@ -284,8 +284,8 @@ cspanel 先於 netlify）。
   （會繼承進 wm 藥丸 tab），字樣式歸各消費者。token 皆帶 fallback，未載 tokens.css
   的獨立頁亦可用。draggable.js 以 `<link data-draggable-chrome>` 冪等注入本檔；
   panel_all.html 另有靜態 link（同 data 屬性）先行。高度 token `--handle-h`。
-  （原編輯模式把手 `.gl-edit-handle` 的「刻意例外」條款已隨十一期編輯模式
-  物理拆除而退役——全站把手自此收斂為單一詞彙。）
+  編輯模式把手 `.gl-edit-handle` 為刻意例外（特異度較高的專屬樣式，漸層配方與
+  詞彙拖曳態同源），不受本詞彙管轄。
 
 ### 4.8 尺寸鐵律：階梯 + 元件映射（第七期）
 
@@ -341,7 +341,7 @@ netlify 頁自有樣式不納入（僅共用捲軸）。
 - **分頁視窗佈局（另一把 key，第三期新增）**：分頁視窗管理器（見第 7 節）用**獨立**的
   `` `cspanel.windows.${canvasId}.v1` `` 存視窗佈局，**不走本節的 layout 機制**（那是面板拖曳位移）。
   `resetLayout()` 除了清本節的 `LAYOUT_KEY`，還會額外委派 `window.WindowManager.reset()`（若已掛載）一併
-  把視窗清回預設單視窗，故 `CanvasEdit.toggle` 的「重設佈局」對「面板位移」與「分頁視窗」兩套系統同時生效。
+  把視窗清回預設單視窗，故編輯模式的「重設佈局」對「面板位移」與「分頁視窗」兩套系統同時生效。
   （第四期：`cspanel.windows.*` 不再存 `z`——疊序改由下方 stack key 統一管理。）
 - **統一疊序（第三把 key，第四期新增）**：`script/stack-manager.js` 用 `` `cspanel.stack.${canvasId}.v1` ``
   存**所有 surface（面板 + tab 視窗）的相對疊序**，格式 `{ order: [key, ...] }`（由下往上；面板 key = 面板
@@ -656,51 +656,3 @@ radio/label CSS tab 呈現，改由**分頁視窗管理器**渲染成 Chrome 式
      ＋落地前驗 `opacity === '0'`，不再誤吃淡入的 transitionend 截斷淡出。
    - **保險絲漏網（low）**：`.canned-panel.gl-dragging` 的字面 15% 白底在保險絲下
      以 `html` 前綴特異度（0,2,1）蓋回 `--glass-bg-solid`。
-
----
-
-## 12. 第十一期刻意變更記錄（合併定版：v2 預覽退役、標題帶常駐、三面板收納、modal portal）
-
-四條線依序落地（各自獨立 commit，headless 全套綠燈後推進）：
-
-1. **modal portal 到 body**（`9a46843`）：`.meeting-now-search`／`.meeting-check-search`
-   的 backdrop-filter 使面板成為 `position:fixed` 後代的 containing block，
-   `#results-modal`／`#zv-metting-list-results-modal`／`#vvgglesht_modal` 的全螢幕
-   座標被鎖進 360px 面板內。init 模板注入後把三者搬到 `document.body`（搬移非
-   複製；先例 `.ip-tooltip-portal`），clear 對稱移除、init 前防禦性清掃。
-   拔玻璃違反十期鐵律，portal 是唯一解。id 與接線零改動。
-2. **dt/consultant/assist 收納為 wm 分頁**（`96625cb`）：「checkbox 展開」模式退役
-   ——三面板的 init 改建 staging（discoverTabs 契約結構）交 `WindowManager.adoptTabs`
-   收納進工具視窗；tab 藥丸即標題，checkbox label 與標題帶搶頂部空間的競態
-   結構性消失。iframe 沿十期惰性（data-src → syncPanes 首次可見回填）。
-   **附帶修正（真實 bug）**：auth-protected-tabs 交棒點原以 `hasTabs()` 跳過重複
-   注入——「有 tab ⇒ 伺服器 tabs 已認養」推論在收納 tab 先到時不成立（伺服器
-   tabs 永不被認養）；拆除跳過，改靠 `adoptTabsInternal` 冪等。
-3. **標題帶 in-flow 常駐**（`30dbedc`）：hover 浮現機制（`.gl-hover-hot`＋opacity
-   切換）退役，把手（`.gl-panel-handle`＋把手詞彙）常駐可見。版位預留手法：
-   引擎以「面板既有 padding-top ＋ `--handle-h`」墊高、把手 absolute 貼頂全寬
-   ——不同內距面板一體適用、不 re-flow 模組注入的內容、內容永不被蓋；detach
-   對稱歸還。固定高面板（optitle/fudausearch）讓高、同欄預設 top 讓位，全數
-   落在 manifest geometryCss（§4.1 幾何唯一權威）。
-4. **合併定版（本 commit）**：
-   - `panel_all_v2.html` 刪除；`panel_all.html` 補 `page-engine.css`，`loadCanvas(cs)`
-     單參數呼叫即得 pageEngine（引擎預設 true，config 留 fixture 顯式關閉鉤子）。
-   - **儲存分流退役**：`CSPANEL_ENGINE_V2` 頁旗標與 `storageVersion` config 全數
-     拆除，layout/windows/stack 一律凍結 `.v1` 命名空間——全體使用者既有佈局
-     原封保留；`.v2` 殘留 key 不讀不寫（page-engine-a-test 以「殘留旗標/殘留
-     config 皆無效果」回歸）。
-   - **wm 兩段掛載成唯一 production 形態**：判準由頁旗標改 opts 形狀
-     （engine 恆傳 canvasId/pageHost/isPageId；獨立 fixture 不傳 opts 沿用
-     單段掛載語義）。auth-protected-tabs 的 v1 自掛 leg 刪除。
-   - **編輯模式物理拆除（九期C 懸案落地）**：enter/exit/編排列/`.gl-edit-handle`/
-     `canvas-edit.css` 整組移除（`.gl-canvas-slot` 標記遷入 base.css）；
-     `CanvasEdit` 僅餘 `toggle`（confirm → `resetLayout`）與 `reset`。
-   - **checkbox 機制清場**：`setupPanelToggle`/`injectPanelHTML`/`.small-size`/
-     `.toggle-container` CSS/三面板玻璃 selector/`.DT_panel #content` 規則退役；
-     manifest 三筆條目瘦身為 `{ id, label, module, init, clear, slot: null }`。
-   - **預設座標重排**：canned 預設 top 75→120（tooldl 長高讓位）。
-   - **回歸收斂**：page-engine-a/b 全面轉單軌（production 頁）；「v1 keys 位元
-     不變」隔離斷言退役（`.v1` 即唯一命名空間）；wm-concurrent fixture 改
-     production 形狀（先掛核心再併發 init）；panel-stack 標籤斷言改讀
-     `.gl-panel-handle`；editbar-center-test 隨編輯模式刪除；parity-selectors
-     移除三面板、baseline 重建（合併後新真相）。

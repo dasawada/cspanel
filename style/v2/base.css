@@ -69,7 +69,3 @@ html.auth-active .canned-panel {
     opacity: 1;
     visibility: visible;
 }
-
-/* 通用 slot 標記（十一期自 canvas-edit.css 遷入——該檔隨編輯模式物理拆除退役）。
-   防閃爍由上方既有 id 規則供給；此標記僅供未來畫布辨識引擎生成的插槽。 */
-.gl-canvas-slot { }

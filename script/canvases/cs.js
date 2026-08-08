@@ -5,17 +5,18 @@ export default {
   name: '客服小工具',
   visibility: 'all', // 預留：部門權限（本期不實作）
 
-  // 共用狀態幾何（原 panels.css 之 .panel_all_container 與伺服器 markup 幾何，逐字）
-  // 十一期合併定版：.small-size 收合機制與 .DT_panel/.consultantlistgooglesheet/
-  // .assist_googlesheet 幾何隨 checkbox 展開模式退役（三面板收納為 wm 分頁）。
+  // 共用狀態幾何（原 panels.css 之 .panel_all_container / .small-size / 展開態，逐字）
   sharedGeometryCss: `
 .panel_all_container { position: relative; width: 100%; height: 100vh; min-height: 800px; overflow: visible; box-sizing: border-box; margin: 0; padding: 10px; gap: 10px; height: auto; position: absolute; left: 0px; top: 0px; border: 10px; padding: 10px; margin: 10px; }
+.small-size { position: absolute !important; width: 105px !important; height: 30px !important; min-width: 0px !important; flex-basis: 110px !important; overflow: hidden !important; } /* 第四期：移除 z-index——原本 calc(+10) 會蓋掉 stack-manager 的 --stack-rank，讓「最小化的面板點擊也無法置頂」（動態疊序失效）。改由統一疊序管理，最小化面板與其他面板一樣可點擊置頂。 */
+.consultantlistgooglesheet:not(.small-size) { width: 950px; height: 700px; }
+.DT_panel:not(.small-size) { width: 900px; height: auto; overflow: visible; } /* z-index 已移除：0-2-0 特異度會遮蔽 dt 面板 zOrder 注入的 0-1-0 規則，疊序一律由 zOrder 供給 */
+.assist_googlesheet:not(.small-size) { width: 800px; height: 600px; }
+.consultantlistgooglesheet, .DT_panel, .IPsearch_in_panelALL, .assist_googlesheet { display: flex; flex-direction: column; position: absolute; transition: all 0.3s ease; box-sizing: border-box; overflow: hidden; }
 /* 伺服器注入 markup 的幾何（repo 內無模板，class 為既定契約）。
    第三期：.idsearchpanel／.ClassLogpanel 為死樣式（實測伺服器不再注入該 markup，
-   真實 markup 只有 .panel-tabs-container 與 .IPsearch_in_panelALL），整組移除。
-   十一期：原四面板共用 flex/transition 行只剩 IPsearch 一個消費者，
-   transition/box-sizing 併入本行、共用行退役。 */
-.IPsearch_in_panelALL { top: 240px; left: 115px; display: flex; flex-direction: column; justify-content: normal; align-items: flex-start; padding: 0px 6px 0px 6px; min-height: 42px; width: 285px; overflow: hidden; position: absolute; height: auto; transition: all 0.3s ease; box-sizing: border-box; } /* z-index 移至 protected 面板 zOrder:5 供給（§4.6：有 rootSelector 者不得在 sharedGeometryCss 宣告 z-index） */
+   真實 markup 只有 .panel-tabs-container 與 .IPsearch_in_panelALL），整組移除。 */
+.IPsearch_in_panelALL { top: 240px; left: 115px; display: flex; flex-direction: column; justify-content: normal; align-items: flex-start; padding: 0px 6px 0px 6px; min-height: 42px; width: 285px; overflow: hidden; position: absolute; height: auto; } /* z-index 移至 protected 面板 zOrder:5 供給（§4.6：有 rootSelector 者不得在 sharedGeometryCss 宣告 z-index） */
 .panel-tabs-container { position: absolute; left: 410px; top: 160px; width: 500px; height: 600px; z-index: calc(var(--layer-panel) + 2); }
 `,
 
@@ -53,14 +54,18 @@ export default {
       init: 'initOptitlePanel', clear: 'clearOptitlePanel',
       initArgs: ['optitle-placeholder'], clearArgs: ['optitle-placeholder'],
       slot: 'optitle-placeholder', rootSelector: '.optitlepanel',
-      geometryCss: '.optitlepanel { padding: 10px; width: 400px; height: calc(120px + var(--handle-h, 36px)); box-sizing: border-box; position: absolute; top: 0px; left: 0px; }', // 原 panels.css:92-100；十一期：常駐標題帶讓高（內容區 120px 不變）
+      geometryCss: '.optitlepanel { padding: 10px; width: 400px; height: 120px; box-sizing: border-box; position: absolute; top: 0px; left: 0px; }', // panels.css:92-100
+      // 十一期 gate 期（合併定版折回 geometryCss）：常駐標題帶讓高，內容區高度不變
+      geometryCssV2: '.optitlepanel { height: calc(120px + var(--handle-h, 36px)); }',
       zOrder: 0, behaviors: ['draggable'] },
 
     { id: 'fudausearch', label: '職代查詢', module: './fusearch-panel.js',
       init: 'initFudausearchPanel', clear: 'clearFudausearchPanel',
       initArgs: ['fudausearch-placeholder'], clearArgs: ['fudausearch-placeholder'],
       slot: 'fudausearch-placeholder', rootSelector: '.fudausearch-container',
-      geometryCss: '.fudausearch-container { left: 0px; top: calc(130px + var(--handle-h, 36px)); width: 400px; height: calc(105px + var(--handle-h, 36px)); position: absolute; padding: 10px 5px 10px 5px; box-sizing: border-box; gap: 10px; }', // 原模板 inline + panels.css:802-811；十一期：讓高＋預設 top 讓位（上方 optitle 長高）
+      geometryCss: '.fudausearch-container { left: 0px; top: 130px; width: 400px; height: 105px; position: absolute; padding: 10px 5px 10px 5px; box-sizing: border-box; gap: 10px; }', // 原模板 inline + panels.css:802-811 幾何合併（Task 4）
+      // 十一期 gate 期：讓高＋預設 top 讓位（上方 optitle 長高 36px；saved layout 較晚注入、照常勝出）
+      geometryCssV2: '.fudausearch-container { height: calc(105px + var(--handle-h, 36px)); top: calc(130px + var(--handle-h, 36px)); }',
       zOrder: 0, behaviors: ['draggable'] },
 
     { id: 'shrturl', label: '短網址', module: './shrturl.js',
@@ -70,23 +75,30 @@ export default {
       geometryCss: '.linkout { padding: 5px 8px; height: auto; width: auto; box-sizing: border-box; position: absolute; top: 40px; left: 420px; display: flex; flex-direction: column; justify-content: center; align-items: flex-start; }', // panels.css:225-237
       zOrder: 0, behaviors: ['draggable'] },
 
-    // 十一期合併定版：dt/consultant/assist 收納為 wm 分頁（toggle-panels.js
-    // adoptPanelAsWmTab）——非畫布自由面板，slot/rootSelector/geometryCss/zOrder/
-    // behaviors/pageSolo 全數退役；init 建 staging 交 WindowManager.adoptTabs，
-    // clear 只清模組內狀態（pane 由 clearAllModules 的 WindowManager.destroy() 拆）。
-    // label 仍為 wm tab 藥丸標題的語義來源（init 內字面同步）。
     { id: 'dt', label: '測試報告生成', module: './toggle-panels.js',
-      init: 'initDTPanel', clear: 'clearDTPanel', slot: null },
+      init: 'initDTPanel', clear: 'clearDTPanel',
+      initArgs: ['dt-panel-placeholder'], clearArgs: ['dt-panel-placeholder'],
+      slot: 'dt-panel-placeholder', rootSelector: '.DT_panel',
+      geometryCss: '.DT_panel { position: absolute; top: 0; left: 523px; transition: all 0.3s ease; }', // panels.css:190-196（z 移入 zOrder；!important 廢除——模板 inline z 同步移除）
+      zOrder: 4, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：toggle 大面板排除成組，僅可拖進 wm 視窗 tabbar 成單獨分頁
 
     { id: 'consultant', label: '顧問清單', module: './toggle-panels.js',
-      init: 'initConsultantPanel', clear: 'clearConsultantPanel', slot: null },
+      init: 'initConsultantPanel', clear: 'clearConsultantPanel',
+      initArgs: ['consultant-panel-placeholder'], clearArgs: ['consultant-panel-placeholder'],
+      slot: 'consultant-panel-placeholder', rootSelector: '.consultantlistgooglesheet',
+      geometryCss: '.consultantlistgooglesheet { position: absolute; height: 700px; width: 950px; top: 0px; left: 636px; }', // panels.css:198-206；right:20px 雙宣告本無效，不搬（盤點異常 C）；z 由 zOrder 供給
+      zOrder: 3, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：同 dt
 
     { id: 'assist', label: '輔導班表', module: './toggle-panels.js',
-      init: 'initAssistPanel', clear: 'clearAssistPanel', slot: null },
+      init: 'initAssistPanel', clear: 'clearAssistPanel',
+      initArgs: ['assist-panel-placeholder'], clearArgs: ['assist-panel-placeholder'],
+      slot: 'assist-panel-placeholder', rootSelector: '.assist_googlesheet',
+      geometryCss: '.assist_googlesheet { position: absolute; top: 0px; left: 410px; height: 600px; width: 800px; vertical-align: middle; }', // panels.css:180-188
+      zOrder: 10, behaviors: ['draggable'], pageSolo: true }, // 九期B 回饋輪 Task 2：同 dt
 
     { id: 'canned', label: '代課回應生成器', module: './dragb_msg_pnl.js',
       init: 'initCannedMessagesPanel', clear: 'clearCannedMessagesPanel',
-      initArgs: [null, { left: 1300, top: 120 }], // 十一期：tooldl 常駐標題帶長高，預設 top 讓位（自 75）
+      initArgs: [null, { left: 1300, top: 75 }],
       slot: null, rootSelector: '.canned-panel',
       zOrder: 15, alwaysDraggable: true, quirks: ['body-mounted', 'self-persisted'] },
 
@@ -94,7 +106,9 @@ export default {
       init: 'initRoofButtons', clear: 'clearRoofButtons',
       initArgs: ['roof-buttons-placeholder'], clearArgs: ['roof-buttons-placeholder'],
       slot: 'roof-buttons-placeholder', rootSelector: '.roofbutton',
-      geometryCss: '.roofbutton { width: 110px; height: auto; font-size: 12px; padding: 10px; box-sizing: border-box; position: absolute; left: 0px; top: calc(240px + 2 * var(--handle-h, 36px)); gap: 10px; display: flex; flex-wrap: nowrap; flex-direction: column; }', // 原 panels.css:67-82；十一期：預設 top 讓位（同欄上方兩面板各長高 36px）
+      geometryCss: '.roofbutton { width: 110px; height: auto; font-size: 12px; padding: 10px; box-sizing: border-box; position: absolute; left: 0px; top: 240px; gap: 10px; display: flex; flex-wrap: nowrap; flex-direction: column; }', // panels.css:67-82
+      // 十一期 gate 期：預設 top 讓位（同欄上方 optitle＋fudausearch 各長高 36px）
+      geometryCssV2: '.roofbutton { top: calc(240px + 2 * var(--handle-h, 36px)); }',
       zOrder: 5, behaviors: ['draggable'] },
 
     { id: 'tooldl', label: '工具下載', module: './tool-download-panel.js',

@@ -11,9 +11,11 @@
 //
 // 對外：`stack.register/unregister/raise/reset/setCanvasId`，並掛 window.CanvasStack。
 
-// 十一期合併定版：v1/v2 儲存分流退役——`.v1` 凍結為唯一命名空間（頁級旗標
-// CSPANEL_ENGINE_V2 已隨 v2 預覽頁一併退役），全體使用者既有疊序原封保留。
-const KEY = (id) => `cspanel.stack.${id}.v1`;
+// 九期A：頁級旗標 window.CSPANEL_ENGINE_V2（<head> 最早的 inline script 設定，
+// 模組載入時必已可讀）選 v1/v2 儲存命名空間。未設旗標（production panel_all.html
+// 現況）→ 恆 v1，key 與改動前逐位元相同。
+const STORE_VER = (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) ? 'v2' : 'v1';
+const KEY = (id) => `cspanel.stack.${id}.${STORE_VER}`;
 
 let canvasId = 'cs';
 const surfaces = new Map(); // key -> { el, pane, levels, _initialRank }

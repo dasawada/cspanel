@@ -1,6 +1,7 @@
 <html lang="zh-Hant">
 <head>
 <link rel="icon" href="style/favicon.ico">
+<script>window.CSPANEL_ENGINE_V2 = true;</script>
 <script async src="https://www.googletagmanager.com/gtag/js?id=G-1638R1H1FB"></script>
 <script>
   window.dataLayer = window.dataLayer || [];
@@ -12,7 +13,7 @@
 <script src="https://apis.google.com/js/api.js"></script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>客服小工具</title>
+<title>客服小工具（v2 預覽）</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <link rel="stylesheet" href="style/v2/tokens.css">
 <script src="script/theme.js"></script>
@@ -26,6 +27,7 @@
 <link rel="stylesheet" href="style/v2/materiality.css">
 <link rel="stylesheet" href="style/v2/capsule.css">
 <link rel="stylesheet" href="style/v2/scrollbar.css">
+<link rel="stylesheet" href="style/v2/page-engine.css">
 <link rel="stylesheet" href="style/v2/draggable-chrome.css" data-draggable-chrome>
 <link rel="stylesheet" href="style/v2/features/DT_CSS.css">
 <link rel="stylesheet" href="style/v2/features/ipsearch_css.css">
@@ -43,7 +45,7 @@
 <script type="module">
     import { loadCanvas } from './script/canvas-engine.js';
     import cs from './script/canvases/cs.js';
-    loadCanvas(cs);
+    loadCanvas(cs, { pageEngine: true, storageVersion: 'v2' });
 </script>
 
 </head>

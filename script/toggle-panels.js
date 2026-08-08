@@ -212,11 +212,27 @@ function formatDateTime(datetime) {
     return `${year}/${month}/${day} ${hours}:${minutes}`;
 }
 
-// ===== 三面板收納為 wm 分頁（十一期）=====
-// 「checkbox 展開」模式退役（合併定版）：dt/consultant/assist 一律經
-// WindowManager.adoptTabs 收納進工具視窗成分頁——tab 藥丸即標題，checkbox label
-// 與面板標題帶搶頂部空間的競態在結構上不存在。模板常數保留 #content 包裝
-// （extractTabContentHTML 的取材來源），wrapper 本身不進 DOM。
+// ===== 模板注入（第十期）=====
+// 模板一律先解析於 detached 節點（此時 iframe 不載入）再接進容器；v2 模式
+// （window.CSPANEL_ENGINE_V2）把 iframe 的 src 摘存 data-src，首次展開面板才由
+// setupPanelToggle 回填——登入瞬間不再掛 SA_iframe/assist_list_scale（各巢狀一個
+// 完整 Google Sheets 編輯器）。v1 模式 src 原樣、接入即載，行為與 innerHTML 直注相同。
+function injectPanelHTML(container, html) {
+    const tpl = document.createElement('div');
+    tpl.innerHTML = html;
+    if (window.CSPANEL_ENGINE_V2) {
+        tpl.querySelectorAll('iframe[src]').forEach((iframe) => {
+            iframe.dataset.src = iframe.getAttribute('src');
+            iframe.removeAttribute('src');
+        });
+    }
+    container.replaceChildren(...tpl.childNodes);
+}
+
+// ===== v2：三個 checkbox 展開式面板收納為 wm 分頁（十一期）=====
+// 「checkbox 展開」模式在 v2 退役：dt/consultant/assist 改經 WindowManager.adoptTabs
+// 收納進工具視窗成分頁——tab 藥丸即標題，checkbox label 與面板標題帶搶頂部空間的
+// 競態在結構上不存在。v1 完全不進此路徑，checkbox 行為逐位元不變（合併定版時退役）。
 
 // 從既有面板模板抽出 #content 的內容（v1/v2 共用同一份 markup 來源，不維護兩份）。
 function extractTabContentHTML(panelHTML) {
@@ -255,6 +271,41 @@ function adoptPanelAsWmTab(tabId, title, contentHTML) {
     wm.adoptTabs(staging.querySelector('.panel-tabs-container'));
     staging.remove();
     return true;
+}
+
+// ===== 面板切換功能 =====
+function setupPanelToggle(containerClass, checkboxId) {
+    const container = document.querySelector(containerClass);
+    const checkbox = document.getElementById(checkboxId);
+
+    if (container && checkbox) {
+        const content = container.querySelector('#content');
+        checkbox.checked = false;
+        container.classList.add('small-size');
+        if (content) {
+            content.style.display = 'none';
+        }
+
+        checkbox.addEventListener('change', function() {
+            if (this.checked) {
+                container.classList.remove('small-size');
+                if (content) {
+                    // 第十期：首次展開才回填 src（injectPanelHTML 於 v2 摘存
+                    // data-src）；回填後屬性移除，之後展開/收合為 no-op、不重載
+                    content.querySelectorAll('iframe[data-src]').forEach((iframe) => {
+                        if (!iframe.getAttribute('src')) iframe.src = iframe.dataset.src;
+                        delete iframe.dataset.src;
+                    });
+                    content.style.display = 'block';
+                }
+            } else {
+                container.classList.add('small-size');
+                if (content) {
+                    content.style.display = 'none';
+                }
+            }
+        });
+    }
 }
 
 // ===== 設備管理功能 =====
@@ -550,33 +601,62 @@ function bindDTEvents() {
             generateOutput();
         });
     }
+
+    // 面板切換
+    setupPanelToggle('.DT_panel', 'DT_toggleCheckbox');
 }
 
 // ===== 初始化函數 =====
 
 /**
- * 初始化測試報告生成面板（收納為 wm 分頁）
+ * 初始化測試模板面板
+ * @param {string} containerId - 容器 ID
  */
-export function initDTPanel() {
-    // 十一期合併定版：收納為 wm 分頁是唯一形態（checkbox 展開模式退役）。
+export function initDTPanel(containerId = 'dt-panel-placeholder') {
+    // v2：收納為 wm 分頁（十一期，見 adoptPanelAsWmTab 檔頭註解）。
     // pane 存在＝同 session 重複 init（adoptTabs 冪等會略過，但事件不可重綁）→ 早退。
-    if (document.querySelector('.wm-pane[data-tab="dt"]')) return;
+    if (window.CSPANEL_ENGINE_V2) {
+        if (document.querySelector('.wm-pane[data-tab="dt"]')) return;
+        deviceCount = 1;
+        connectionCount = 1;
+        // 表單直接住 pane（pane 自帶 overflow:auto 捲動；v1 的 #content max-height
+        // 機制不隨行）。外層薄墊片給表單留內距，token 帶 fallback 比照詞彙慣例。
+        const body = `<div style="padding: var(--space-5, 10px); box-sizing: border-box;">${extractTabContentHTML(dtPanelHTML)}</div>`;
+        if (!adoptPanelAsWmTab('dt', '測試報告生成', body)) return;
+        bindDTEvents(); // 全部 getElementById 定位，pane 內同樣命中；setupPanelToggle 無 .DT_panel 自安全 no-op
+        console.log('✅ DTPanel 已收納為 wm 分頁');
+        return;
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`initDTPanel: 找不到容器 #${containerId}`);
+        return;
+    }
+
+    // 重置計數器
     deviceCount = 1;
     connectionCount = 1;
-    // 表單直接住 pane（pane 自帶 overflow:auto 捲動）。外層薄墊片給表單留內距，
-    // token 帶 fallback 比照詞彙慣例。
-    const body = `<div style="padding: var(--space-5, 10px); box-sizing: border-box;">${extractTabContentHTML(dtPanelHTML)}</div>`;
-    if (!adoptPanelAsWmTab('dt', '測試報告生成', body)) return;
-    bindDTEvents(); // 全部 getElementById 定位，pane 內同樣命中
-    console.log('✅ DTPanel 已收納為 wm 分頁');
+
+    // 注入 HTML
+    container.innerHTML = dtPanelHTML;
+
+    // 綁定事件
+    bindDTEvents();
+
+    console.log('✅ DTPanel (測試模板) 已初始化');
 }
 
 /**
- * 清除測試報告生成面板
+ * 清除測試模板面板
+ * @param {string} containerId - 容器 ID
  */
-export function clearDTPanel() {
-    // pane 與表單 DOM 由 clearAllModules 的 WindowManager.destroy() 連池帶層拆除，
-    // 此處只清模組自身狀態。
+export function clearDTPanel(containerId = 'dt-panel-placeholder') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
+    }
+    // 重置計數器
     deviceCount = 1;
     connectionCount = 1;
     // 關閉報告視窗
@@ -588,37 +668,100 @@ export function clearDTPanel() {
 }
 
 /**
- * 初始化顧問名單面板（收納為 wm 分頁）
+ * 初始化顧問名單面板
+ * @param {string} containerId - 容器 ID
  */
-export function initConsultantPanel() {
-    // 十一期合併定版：收納為 wm 分頁是唯一形態。內容僅一個 iframe，直接成為 pane
-    // 直屬子節點（.wm-pane > iframe 既有規則供 100% 尺寸）；惰性 data-src 由
-    // adoptPanelAsWmTab 統一處理。
-    if (document.querySelector('.wm-pane[data-tab="consultant"]')) return;
-    adoptPanelAsWmTab('consultant', '顧問清單', extractTabContentHTML(consultantPanelHTML));
-    console.log('✅ ConsultantPanel 已收納為 wm 分頁');
+export function initConsultantPanel(containerId = 'consultant-panel-placeholder') {
+    // v2：收納為 wm 分頁（十一期）。內容僅一個 iframe，直接成為 pane 直屬子節點
+    // （.wm-pane > iframe 既有規則供 100% 尺寸）；惰性 data-src 由 adoptPanelAsWmTab 統一處理。
+    if (window.CSPANEL_ENGINE_V2) {
+        if (document.querySelector('.wm-pane[data-tab="consultant"]')) return;
+        adoptPanelAsWmTab('consultant', '顧問清單', extractTabContentHTML(consultantPanelHTML));
+        console.log('✅ ConsultantPanel 已收納為 wm 分頁');
+        return;
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`initConsultantPanel: 找不到容器 #${containerId}`);
+        return;
+    }
+
+    // 注入 HTML（第十期：v2 惰性掛載見 injectPanelHTML）
+    injectPanelHTML(container, consultantPanelHTML);
+
+    // 設定面板切換
+    setupPanelToggle('.consultantlistgooglesheet', 'toggleCheckbox');
+
+    console.log('✅ ConsultantPanel (顧問名單) 已初始化');
 }
 
 /**
- * 清除顧問名單面板（pane 由 WindowManager.destroy() 拆除，無模組內狀態）
+ * 清除顧問名單面板
+ * @param {string} containerId - 容器 ID
  */
-export function clearConsultantPanel() {
+export function clearConsultantPanel(containerId = 'consultant-panel-placeholder') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
+    }
     console.log('🧹 ConsultantPanel (顧問名單) 已清除');
 }
 
 /**
- * 初始化輔導班表面板（收納為 wm 分頁）
+ * 初始化輔導通訊錄面板
+ * @param {string} containerId - 容器 ID
  */
-export function initAssistPanel() {
-    // 十一期合併定版：收納為 wm 分頁是唯一形態，同 consultant。
-    if (document.querySelector('.wm-pane[data-tab="assist"]')) return;
-    adoptPanelAsWmTab('assist', '輔導班表', extractTabContentHTML(assistPanelHTML));
-    console.log('✅ AssistPanel 已收納為 wm 分頁');
+export function initAssistPanel(containerId = 'assist-panel-placeholder') {
+    // v2：收納為 wm 分頁（十一期），同 consultant。
+    if (window.CSPANEL_ENGINE_V2) {
+        if (document.querySelector('.wm-pane[data-tab="assist"]')) return;
+        adoptPanelAsWmTab('assist', '輔導班表', extractTabContentHTML(assistPanelHTML));
+        console.log('✅ AssistPanel 已收納為 wm 分頁');
+        return;
+    }
+
+    const container = document.getElementById(containerId);
+    if (!container) {
+        console.error(`initAssistPanel: 找不到容器 #${containerId}`);
+        return;
+    }
+
+    // 注入 HTML（第十期：v2 惰性掛載見 injectPanelHTML）
+    injectPanelHTML(container, assistPanelHTML);
+
+    // 設定面板切換
+    setupPanelToggle('.assist_googlesheet', 'assist_toggleCheckbox');
+
+    console.log('✅ AssistPanel (輔導通訊錄) 已初始化');
 }
 
 /**
- * 清除輔導班表面板（pane 由 WindowManager.destroy() 拆除，無模組內狀態）
+ * 清除輔導通訊錄面板
+ * @param {string} containerId - 容器 ID
  */
-export function clearAssistPanel() {
-    console.log('🧹 AssistPanel (輔導班表) 已清除');
+export function clearAssistPanel(containerId = 'assist-panel-placeholder') {
+    const container = document.getElementById(containerId);
+    if (container) {
+        container.innerHTML = '';
+    }
+    console.log('🧹 AssistPanel (輔導通訊錄) 已清除');
+}
+
+/**
+ * 一次初始化所有三個面板
+ */
+export function initAllTogglePanels() {
+    initDTPanel('dt-panel-placeholder');
+    initConsultantPanel('consultant-panel-placeholder');
+    initAssistPanel('assist-panel-placeholder');
+}
+
+/**
+ * 一次清除所有三個面板
+ */
+export function clearAllTogglePanels() {
+    clearDTPanel('dt-panel-placeholder');
+    clearConsultantPanel('consultant-panel-placeholder');
+    clearAssistPanel('assist-panel-placeholder');
 }

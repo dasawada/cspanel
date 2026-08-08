@@ -1,6 +1,8 @@
 import { CSPANEL_API } from './cspanel-api.js';
 import { authFetch, readApiError } from './auth-fetch.js';
 
+// 分頁視窗管理器實例（第三期，子專案 B）：tabsHTML 注入完成後接管，登出時拆除。
+let windowManager = null;
 // 再進入/併發防護（第三期，審查 #1）。
 let initInFlight = false;
 let diaryBridgeListener = null;
@@ -41,9 +43,15 @@ export function clearProtectedTabs() {
     diaryBridgeListener = null;
   }
 
-  // 分頁視窗管理器生命週期歸 canvas-engine（clearAllModules 的
-  // WindowManager.destroy() 先收監聽器與常駐池/視窗層）；此處只清空 UI
-  // （innerHTML 一併移除殘餘節點，iframe 於登出被銷毀屬預期）。
+  // 1. 拆除分頁視窗管理器（移除全域 pointer/scroll/resize 監聽與常駐池/視窗層），
+  //    再清空 UI。順序：先 destroy（收監聽器）→ 後清 DOM（innerHTML 會一併移除
+  //    池/視窗，iframe 於登出被銷毀屬預期）。
+  if (windowManager) {
+    try { windowManager.destroy(); } catch (e) { console.error('視窗管理器 destroy 失敗:', e); }
+    windowManager = null;
+  }
+
+  // 2. 清空 UI
   if (tabsPlaceholder) tabsPlaceholder.innerHTML = '';
   if (ipPlaceholder) ipPlaceholder.innerHTML = '';
 }
@@ -224,7 +232,8 @@ async function fetchProtectedContent() {
         const ipPlaceholder = document.getElementById('auth-protected-ip-placeholder');
 
         if (tabsPlaceholder && data.tabsHTML) {
-          {
+          const engineV2 = typeof window !== 'undefined' && !!window.CSPANEL_ENGINE_V2;
+          if (engineV2) {
             // 九期B 終審 C1/I1 修復：v2 模式下 wm 核心的視窗層（layer）與常駐池
             // （pool，含所有 iframe）都住在 tabsPlaceholder「裡面」（mountWindowManager
             // 的 host 即本 placeholder，且核心已由 canvas-engine 在 initAllModules
@@ -278,6 +287,21 @@ async function fetchProtectedContent() {
               const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
               tabsPlaceholder.replaceChildren(...staging.childNodes);
               glDecorate(tabsPlaceholder);
+            }
+          } else {
+            // v1 模式（旗標未設）：呼叫形狀與行為逐位元不變。
+            const staging = createTabsStaging(data.tabsHTML, data.canReadCourseDiaries);
+            tabsPlaceholder.replaceChildren(...staging.childNodes);
+            glDecorate(tabsPlaceholder);
+            // 交棒分頁視窗管理器：把 .panel-tabs-container 的四個 tab 內容一次性
+            // 搬進常駐池、丟棄伺服器 tab chrome、改渲染 Chrome 式可拖/可縮放視窗
+            // （見 window-manager.js）。此刻 iframe 本就在載入，唯一一次 DOM 移動免費。
+            try {
+              const { mountWindowManager } = await import('./window-manager.js');
+              if (windowManager) { windowManager.destroy(); windowManager = null; }
+              windowManager = mountWindowManager(tabsPlaceholder);
+            } catch (error) {
+              console.error('❌ 分頁視窗管理器掛載失敗（保留伺服器原生 tab）:', error);
             }
           }
 

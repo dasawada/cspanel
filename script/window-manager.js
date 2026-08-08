@@ -17,8 +17,8 @@
 // 透明 shield 防 iframe 吃滑鼠事件。
 //
 // 幾何 / 疊序鐵律：
-//   - 視窗座標存於 localStorage['cspanel.windows.<canvasId>.v1']（唯一權威；
-//     十一期合併定版：v1/v2 分流退役，`.v1` 凍結為唯一命名空間）。
+//   - 視窗座標存於 localStorage['cspanel.windows.<canvasId>.v1'|'.v2']（唯一權威；
+//     九期A 起依頁級旗標 window.CSPANEL_ENGINE_V2 選版本，見 mountWindowManager 內）。
 //   - z-index 只引用 --layer-panel 層帶：視窗 = calc(var(--layer-panel) + z*2)、
 //     其作用中 pane = calc(var(--layer-panel) + z*2 + 1)（pane 疊在自己的視窗
 //     之上，才看得到 iframe 且可互動）；z 為 0..n-1 的視窗堆疊名次，提升時
@@ -78,20 +78,17 @@ export function mountWindowManager(host, opts = {}) {
   // （canvas-engine 的 pageHostImpl；未傳則 page tab 只剩裸 tab 殼，無成員定位——
   // 理論上不會發生，isPageId 與 pageHost 恆同時由 canvas-engine 一起傳入）。
   const pageHost = opts.pageHost || null;
-  // 十一期合併定版：儲存分流退役——`.v1` 凍結為唯一命名空間（旗標已隨 v2 預覽頁
-  // 退役），全體使用者既有視窗座標原封保留。
-  const WKEY = `cspanel.windows.${canvasId}.v1`;
-  // 兩段掛載（原 v2 形態）成為 production 唯一形態：canvas-engine 先掛核心
-  // （零 tab 啟動）、稍後 adoptTabs 認養。判準改 opts 形狀（engine 恆傳
-  // canvasId/pageHost/isPageId）——獨立 fixture（wm-fixture 等）不傳 opts，沿用
-  // 「單段掛載＋tabsContainer 必在」的既有語義，fixture 行為零改動。
-  const coreFirst = !!(opts.canvasId || opts.pageHost || opts.isPageId);
+  // 九期A：同 stack-manager.js——頁級旗標 window.CSPANEL_ENGINE_V2 選 v1/v2 儲存
+  // 命名空間；未設旗標恆 v1，key 與改動前逐位元相同。
+  const STORE_VER = (typeof window !== 'undefined' && window.CSPANEL_ENGINE_V2) ? 'v2' : 'v1';
+  const isV2 = STORE_VER === 'v2';
+  const WKEY = `cspanel.windows.${canvasId}.${STORE_VER}`;
 
   const tabsContainer = host.querySelector('.panel-tabs-container');
-  // 單段路徑鐵律：tabsContainer 必在，否則安靜退場，回無操作管理器。兩段路徑：
-  // 核心不需要 tabsContainer 就能掛載（零 tab 啟動），稍後由 api.adoptTabs()
-  // 認養注入的 tabs。
-  if (!coreFirst && !tabsContainer) {
+  // v1 路徑鐵律：tabsContainer 必在，否則安靜退場，回無操作管理器（行為逐位元
+  // 不變）。v2 路徑：核心不需要 tabsContainer 就能掛載（零 tab 啟動），稍後由
+  // api.adoptTabs() 認養伺服器注入的 iframe tabs。
+  if (!isV2 && !tabsContainer) {
     console.warn('WindowManager: 找不到 .panel-tabs-container，略過');
     return { destroy() {}, reset() {}, syncPanes() {} };
   }
@@ -148,10 +145,10 @@ export function mountWindowManager(host, opts = {}) {
     return newOnes;
   }
 
-  if (coreFirst) {
+  if (isV2) {
     adoptTabsInternal(tabsContainer); // tabsContainer 可能為 null（零 tab 啟動）——no-op
   } else {
-    // 單段（fixture）：mount 內直接呼叫，行為不變（tabsContainer 已由上方鐵律保證存在）。
+    // v1：mount 內直接呼叫，行為不變（tabsContainer 已由上方鐵律保證存在）。
     adoptTabsInternal(tabsContainer);
     if (!tabOrder.length) {
       console.warn('WindowManager: 未探索到任何 tab，略過');

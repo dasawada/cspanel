@@ -297,15 +297,17 @@ export function initMeetingSearchPanel(containerId = 'meeting-search-panel-place
         return;
     }
     
-    // 注入 HTML——第十期：先解析於 detached 節點（iframe 不載入），ggsheet iframe
-    // 的 src 摘存 data-src，首次開啟 vvgglesht modal 才回填（見 bindVvgglshtEvents）。
-    // 十一期合併定版：惰性掛載成為唯一形態（原 v2 旗標閘控退役）。
+    // 注入 HTML——第十期：先解析於 detached 節點（iframe 不載入），v2 模式把
+    // ggsheet iframe 的 src 摘存 data-src，首次開啟 vvgglesht modal 才回填
+    // （見 bindVvgglshtEvents）；v1 模式 src 原樣、接入即載，行為不變。
     const tpl = document.createElement('div');
     tpl.innerHTML = meetingSearchPanelHTML;
-    tpl.querySelectorAll('iframe[src]').forEach((iframe) => {
-        iframe.dataset.src = iframe.getAttribute('src');
-        iframe.removeAttribute('src');
-    });
+    if (window.CSPANEL_ENGINE_V2) {
+        tpl.querySelectorAll('iframe[src]').forEach((iframe) => {
+            iframe.dataset.src = iframe.getAttribute('src');
+            iframe.removeAttribute('src');
+        });
+    }
     // 防禦性清掃：上一輪若異常退出未走 clear，body 上可能殘留同 id 的 portal
     // modal——先移除，否則下方 portal 後 getElementById 會抓到舊節點（document
     // order 在前），所有接線綁錯對象。

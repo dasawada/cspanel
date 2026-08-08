@@ -162,6 +162,14 @@
     opacity: .7;
 }
 
+.DT_panel #content {
+    transition: all 0.3s ease;
+}
+
+.DT_panel #content.expanded {
+    overflow-y: auto;
+}
+
 .DT_top_panel {
     padding: 15px;
     border-radius: 5px;
@@ -196,8 +204,17 @@
     min-width: 0;    /* 防止內容撐開 */
 }
 
-/* 十一期：.DT_panel #content 收合/捲動規則隨 checkbox 展開模式退役——
-   表單住 wm pane（pane 自帶 overflow:auto），wrapper 不進 DOM。 */
+.DT_panel #content {
+    background: var(--bg-soft);
+    border-radius: 5px;
+    margin-top: 5px;
+}
+
+/* 處理滾動條 */
+.DT_panel #content {
+    max-height: calc(100vh - 250px); /* 限制最大高度 */
+    overflow-y: auto;
+}
 
 /* 新增橫向排列的表單元素 */
 .form-row {
