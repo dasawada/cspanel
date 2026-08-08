@@ -84,23 +84,30 @@
    （--handle-h）與拖曳態沿用；軌道底/inset 圈歸 segtab 詞彙；藥丸的底色/邊框/
    陰影讓位給滑動 thumb。 */
 .wm-tabbar.gl-segtab {
-    --segtab-h: var(--handle-h, 36px); /* 實例參數：軌道高沿把手詞彙，非 segtab 預設 30 */
+    /* 回饋輪 3②：回到 nav 原版的浮起軌道——高 30（segtab 預設，蓋掉把手詞彙
+       的 --handle-h 36）、四角全圓（浮起軌道下緣不可直角）、與下方內容留間隔
+       （nav 的 margin-bottom 節奏）、無內距（thumb/tab 貼軌道緣、thumb 全高）。 */
+    height: var(--segtab-h, 30px);
+    padding: 0;
+    margin: var(--space-2, 4px) var(--space-2, 4px) var(--space-5, 10px);
     background: var(--bg-soft);
     box-shadow: 0 0 0 1px var(--border) inset;
-    border-radius: 12px 12px 0 0; /* 對齊 .wm-window 外框 12px（本檔既有字面值） */
+    border-radius: var(--segtab-radius, 10px);
     gap: 0;
 }
-/* thumb 垂直內縮到把手帶 padding 內（視覺對齊原藥丸列的內距節奏） */
-.wm-tabbar.gl-segtab .gl-segtab__thumb {
-    top: var(--space-2, 4px);
-    height: calc(100% - 2 * var(--space-2, 4px));
-}
-/* 藥丸視覺讓位：底/框/陰影歸 thumb，字色歸 segtab 詞彙 */
+/* 把手詞彙的 :hover 微加深（draggable-chrome.css 較晚載入、同特異度）會蓋掉
+   軌道底色——浮起軌道保持安靜（nav 原版無 hover 變化；拖曳中 accent 漸層仍由
+   詞彙供給不受影響）。 */
+.wm-tabbar.gl-segtab:hover { background: var(--bg-soft); }
+
+/* 藥丸視覺讓位：底/框/陰影歸 thumb，字色歸 segtab 詞彙。cursor 回饋輪 3②：
+   靜置＝點擊語義（pointer），抓手只在真正進入拖曳（shield 越閾值切換）出現。 */
 .wm-tabbar.gl-segtab .wm-tab {
     background: transparent;
     border: none;
     box-shadow: none;
-    border-radius: calc(var(--radius-md, 10px) - 2px);
+    border-radius: calc(var(--segtab-radius, 10px) - 2px);
+    cursor: pointer;
 }
 .wm-tabbar.gl-segtab .wm-tab:hover { background: transparent; color: var(--fg); }
 .wm-tabbar.gl-segtab .wm-tab.is-active {

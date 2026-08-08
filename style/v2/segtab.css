@@ -15,7 +15,9 @@
     display: flex;
     height: var(--segtab-h, 30px);
     background: var(--bg-soft, #ececec);
-    border-radius: var(--radius-md, 10px);
+    /* 半徑走自有參數（非 --radius-md——tokens 將其解析為 12px，會失去 nav 原版
+       10/8 的細緻節奏）；tokens.css 於定版時可收編 --segtab-radius。 */
+    border-radius: var(--segtab-radius, 10px);
     box-shadow: 0 0 0 1px var(--border, #ddd) inset;
 }
 
@@ -26,7 +28,7 @@
     left: var(--segtab-thumb-x, 0px);
     width: var(--segtab-thumb-w, 0px);
     background: var(--elevated, #fff);
-    border-radius: calc(var(--radius-md, 10px) - 2px);
+    border-radius: calc(var(--segtab-radius, 10px) - 2px);
     box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
     transition: left 0.5s ease, width 0.5s ease;
 }

@@ -484,6 +484,9 @@ export function mountWindowManager(host, opts = {}) {
         activeDrag = null;
       },
     };
+    // 供呼叫端於「拖曳真正啟動」（越過閾值）時切換 cursor——回饋輪 3②：
+    // tab 按下未拖時不得出現抓手。
+    return { setCursor(c) { shield.style.cursor = c; } };
   }
 
   function startWindowMove(win, e) {
@@ -526,13 +529,17 @@ export function mountWindowManager(host, opts = {}) {
     const sx = e.clientX, sy = e.clientY;
     let dragging = false;
     let ghost = null;
-    beginPointerDrag({
-      cursor: 'grabbing',
+    // 回饋輪 3②（segTabs 閘控，v1 逐位元不變）：按下尚未越過閾值＝仍是點擊
+    // 語義，shield 維持 pointer；真正進入拖曳（閾值越過、ghost 出現）才換
+    // grabbing。
+    const drag = beginPointerDrag({
+      cursor: segTabs ? 'pointer' : 'grabbing',
       onMove: (ev) => {
         const dx = ev.clientX - sx, dy = ev.clientY - sy;
         if (!dragging && Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
         if (!dragging) {
           dragging = true;
+          if (segTabs && drag) drag.setCursor('grabbing');
           ghost = document.createElement('div');
           ghost.className = 'wm-drag-ghost';
           ghost.textContent = (isPageTab(tabId) && pageHost) ? pageHost.getTitle(tabId)
