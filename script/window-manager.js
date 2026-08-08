@@ -58,6 +58,7 @@
 //     pageHost.onPageEmpty(pageId)（引擎端實作＝清 store＋成員回畫布）。
 
 import { stack } from './stack-manager.js';
+import { positionSegThumb as segThumb } from './segtab.js';
 
 const SHIELD_Z = '2147483647'; // 與 draggable.js:142 同一個全螢幕事件盾（白名單）
 const MIN_W = 240;
@@ -362,24 +363,10 @@ export function mountWindowManager(host, opts = {}) {
     syncPanes();
   }
 
-  // ---- 分段滑塊 thumb 定位（segtab 詞彙的消費者量測義務）----
-  // active tab 的 offsetLeft/offsetWidth 寫入 CSS 變數；滑移動畫由 segtab.css 的
-  // transition 供給。animate=false（重建/首繪）時暫停 transition 直落，避免
-  // 「從 0 滑進來」的假動畫。offsetLeft 與 absolute left 同以 padding box 為原點，
-  // 量測值可直接互換。
+  // ---- 分段滑塊 thumb 定位（量測共用 util 見 script/segtab.js）----
   function positionSegThumb(bar, animate) {
     if (!segTabs || !bar) return;
-    const thumb = bar.querySelector('.gl-segtab__thumb');
-    const active = bar.querySelector('.wm-tab.is-active');
-    if (!thumb || !active) return;
-    if (!animate) thumb.style.transition = 'none';
-    bar.style.setProperty('--segtab-thumb-x', `${active.offsetLeft}px`);
-    bar.style.setProperty('--segtab-thumb-w', `${active.offsetWidth}px`);
-    if (!animate) {
-      // 強制 reflow 讓直落生效後再恢復 transition（下次切換即有滑移）
-      thumb.offsetWidth; // eslint-disable-line no-unused-expressions
-      thumb.style.transition = '';
-    }
+    segThumb(bar, '.wm-tab.is-active', animate);
   }
 
   // ---- 就地切換作用中 tab（十一期回饋輪 3）----

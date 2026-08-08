@@ -1,5 +1,6 @@
 import { callGoogleSheetBatchAPI } from './googleSheetAPI.js';
 import { engineSchedule } from './canvas-engine.js';
+import { positionSegThumb } from './segtab.js';
 
 // ===== 模組內部變數 =====
 let navEventHandlers = [];
@@ -326,6 +327,54 @@ export function initMeetingSearchPanel(containerId = 'meeting-search-panel-place
         const el = document.getElementById(id);
         if (el) document.body.appendChild(el);
     });
+
+    // 十一期回饋輪 3④（v2 限定）：nav 結構退役——以模板 nav 為資料來源就地改建
+    // segtab 詞彙 strip（軌道＋滑動 thumb＋button 分頁），此即「新的 tab 管理」：
+    // 語義正確（tablist/tab/button）、thumb 泛化量測（無 nth-child/寬度硬編碼）、
+    // 衝堂警示 ⚠️ 移入分頁尾端 badge 槽。v1 nav 逐位元不變（下方 bindNavEvents
+    // 於 v2 查無 nav a、自安全 no-op）。strip 同時是面板拖曳面（manifest
+    // handleSelector: '.gl-segtab'——engine 綁 makeDraggable 時 handleChrome:false，
+    // 不讓把手詞彙的直角下緣蓋掉軌道圓角）。
+    if (window.CSPANEL_ENGINE_V2) {
+        const nav = container.querySelector('.meeting-search-panel-menu nav');
+        if (nav) {
+            const strip = document.createElement('div');
+            strip.className = 'gl-segtab meeting-segtab';
+            strip.setAttribute('role', 'tablist');
+            strip.setAttribute('aria-label', '會議查詢');
+            const thumb = document.createElement('div');
+            thumb.className = 'gl-segtab__thumb';
+            strip.appendChild(thumb); // thumb 必為首子節點（DOM 序分層，詞彙契約）
+            nav.querySelectorAll('a[data-target]').forEach((link) => {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.className = 'gl-segtab__tab' + (link.classList.contains('active') ? ' is-active' : '');
+                btn.dataset.target = link.dataset.target;
+                btn.setAttribute('role', 'tab');
+                btn.setAttribute('aria-selected', link.classList.contains('active') ? 'true' : 'false');
+                // 純文字標籤（丟棄 a 的其餘結構）；⚠️ 衝堂警示 span 移入 badge 槽
+                btn.append(document.createTextNode(link.childNodes[0].textContent.trim()));
+                const warn = link.querySelector('#settings-button');
+                if (warn) {
+                    warn.classList.add('gl-segtab__badge');
+                    btn.appendChild(warn);
+                }
+                btn.addEventListener('click', () => {
+                    document.querySelectorAll('.meeting-menu-content-section').forEach((sec) => sec.classList.remove('active'));
+                    document.getElementById(btn.dataset.target)?.classList.add('active');
+                    strip.querySelectorAll('.gl-segtab__tab').forEach((t) => {
+                        const on = t === btn;
+                        t.classList.toggle('is-active', on);
+                        t.setAttribute('aria-selected', on ? 'true' : 'false');
+                    });
+                    positionSegThumb(strip, '.gl-segtab__tab.is-active', true);
+                });
+                strip.appendChild(btn);
+            });
+            nav.replaceWith(strip);
+            positionSegThumb(strip, '.gl-segtab__tab.is-active', false); // 首繪直落，不播假滑移
+        }
+    }
 
     // 綁定所有事件
     bindNavEvents();

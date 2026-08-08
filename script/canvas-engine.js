@@ -1350,6 +1350,9 @@ function attachHoverHandles() {
     handle.addEventListener('pointerdown', onHandleDown);
     const detach = makeDraggable(el, handle, {
       persist: false,
+      // 自帶欄（ownHandle）不掛把手詞彙 class——其視覺自給（segtab 軌道），
+      // 自動掛載會以較高特異度蓋掉圓角/高度（回饋輪 3④ 方角根因）。
+      handleChrome: !ownHandle,
       onPositionChange: (pos) => {
         // 結束時機（回彈與直接兩路徑皆會呼叫一次，涵蓋 blur/visibilitychange
         // 觸發的 handleDragEnd）——dragTelemetry 在此收尾，不留殘留狀態。

@@ -25,8 +25,12 @@ export function makeDraggable(panel, handle, options = {}) {
     document.head.appendChild(link);
   }
 
-  // 自動加上通用 handle 樣式 class
-  if (!handle.classList.contains('draggable-handle')) {
+  // 自動加上通用 handle 樣式 class。
+  // 十一期回饋輪 3④：options.handleChrome === false 可退出——面板自帶欄（如
+  // segtab 軌道）已有自己的完整視覺，自動掛把手詞彙會以較高特異度蓋掉其
+  // 圓角/高度/內距（實測：會議 nav 下緣被 12px 12px 0 0 蓋成直角）。
+  // 預設 true，既有呼叫端逐位元不變。
+  if (options.handleChrome !== false && !handle.classList.contains('draggable-handle')) {
     handle.classList.add('draggable-handle');
   }
 

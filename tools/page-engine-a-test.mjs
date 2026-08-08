@@ -163,24 +163,39 @@ A(restState.cls, '把手帶掛 .draggable-handle 詞彙');
 A(restState.text === '標題生成', `標題＝manifest label（${restState.text}）`);
 A(restState.padTop === '36px', `版位預留：padding-top 取代為 --handle-h 36px（回饋輪 2：帶下不留原 padding 空隙，got ${restState.padTop}）`);
 
-// 回饋輪 2：自帶 nav 的會議面板不生成標題帶——nav 即拖曳面（handleSelector）
+// 回饋輪 3④：會議 nav 就地改建 segtab strip——strip 即拖曳面（handleSelector）
 const meetSel = '.meeting-search-panel-menu';
 const meetState = await page.evaluate((sel) => {
   const el = document.querySelector(sel);
-  const nav = el.querySelector('nav');
+  const strip = el.querySelector('.gl-segtab');
+  const cs = strip ? getComputedStyle(strip) : null;
   return {
     band: !!el.querySelector('.gl-panel-handle'),
-    navBound: nav ? nav.dataset.glHandleBound : null,
+    navGone: !el.querySelector('nav'),
+    stripBound: strip ? strip.dataset.glHandleBound : null,
     padTop: getComputedStyle(el).paddingTop,
-    navCursor: nav ? getComputedStyle(nav).cursor : null,
+    cursor: cs && cs.cursor,
+    // 方角根因回歸：makeDraggable 不得把把手詞彙 class 掛上 strip（handleChrome:false）
+    chromeLeak: strip ? strip.classList.contains('draggable-handle') : null,
+    radiusBL: cs && cs.borderBottomLeftRadius,
+    thumbFirst: strip ? strip.firstElementChild?.classList.contains('gl-segtab__thumb') : null,
+    tabs: strip ? [...strip.querySelectorAll('.gl-segtab__tab')].map((b) => b.dataset.target) : [],
+    badgeInTab: !!el.querySelector('.gl-segtab__tab #settings-button.gl-segtab__badge'),
   };
 }, meetSel);
-A(!meetState.band, '會議面板不生成標題帶（自帶 nav）');
-A(meetState.navBound === '1', `nav 已綁定為拖曳面（got ${meetState.navBound}）`);
+A(!meetState.band, '會議面板不生成標題帶（自帶 strip）');
+A(meetState.navGone, 'nav 結構已退役（v2 就地改建）');
+A(meetState.stripBound === '1', `strip 已綁定為拖曳面（got ${meetState.stripBound}）`);
 A(meetState.padTop === '0px', `會議面板不佔版位（padding-top=${meetState.padTop}）`);
-A(meetState.navCursor === 'grab', `nav 帶 grab cursor（got ${meetState.navCursor}）`);
-// 拖 nav 空白處（右緣內縮 8px，避開 tab 連結）→ 面板位移並寫入 v2 layout
-const meetBox = await page.locator(meetSel + ' nav').boundingBox();
+A(meetState.cursor === 'grab', `strip 帶 grab cursor（got ${meetState.cursor}）`);
+A(meetState.chromeLeak === false, '把手詞彙 class 未滲入 strip（handleChrome:false——方角根因回歸）');
+A(meetState.radiusBL === '10px', `軌道下緣圓角完整（border-bottom-left-radius=${meetState.radiusBL}）`);
+A(meetState.thumbFirst === true, 'thumb 為 strip 首子節點（DOM 序分層）');
+A(JSON.stringify(meetState.tabs) === JSON.stringify(['meeting-now-search', 'meeting-check-search', 'all-meeting-search-panel']),
+  `三分頁齊備（got ${meetState.tabs}）`);
+A(meetState.badgeInTab, '衝堂警示 ⚠️ 移入分頁 badge 槽');
+// 拖 strip 空白處（右緣內縮 8px，分頁 button 靠左、右側為空白）→ 面板位移並寫入 v2 layout
+const meetBox = await page.locator(meetSel + ' .gl-segtab').boundingBox();
 await page.mouse.move(meetBox.x + meetBox.width - 8, meetBox.y + meetBox.height / 2);
 await page.mouse.down();
 await page.mouse.move(meetBox.x + meetBox.width - 8 - 50, meetBox.y + meetBox.height / 2 + 30, { steps: 5 });
@@ -190,17 +205,28 @@ const meetAfter = await page.evaluate(() => ({
   left: document.querySelector('.meeting-search-panel-menu').style.left,
   saved: JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}')['meeting-shell'] || null,
 }));
-A(!!meetAfter.left && !!meetAfter.saved, `拖 nav 移動會議面板並持久化（left=${meetAfter.left} saved=${JSON.stringify(meetAfter.saved)}）`);
-// 互動子元素防護：nav 上的 tab 連結點擊仍是點擊（不觸發拖曳、不被事件盾吃掉）
-const meetPosBefore = await page.evaluate(() => document.querySelector('.meeting-search-panel-menu').style.left);
-await page.click('.meeting-search-panel-menu nav a[data-target="meeting-check-search"]');
-await page.waitForTimeout(200);
-const navClick = await page.evaluate(() => ({
-  active: document.querySelector('#meeting-check-search')?.classList.contains('active') || false,
+A(!!meetAfter.left && !!meetAfter.saved, `拖 strip 移動會議面板並持久化（left=${meetAfter.left} saved=${JSON.stringify(meetAfter.saved)}）`);
+// 互動子元素防護：分頁 button 點擊仍是點擊（不觸發拖曳、不被事件盾吃掉）＋ thumb 滑移
+const meetPosBefore = await page.evaluate(() => ({
   left: document.querySelector('.meeting-search-panel-menu').style.left,
+  thumbX: document.querySelector('.meeting-search-panel-menu .gl-segtab').style.getPropertyValue('--segtab-thumb-x'),
 }));
-A(navClick.active, 'nav tab 連結點擊仍切換分頁（互動防護生效）');
-A(navClick.left === meetPosBefore, `tab 點擊不位移面板（${meetPosBefore} → ${navClick.left}）`);
+await page.click('.meeting-search-panel-menu .gl-segtab__tab[data-target="meeting-check-search"]');
+await page.waitForTimeout(650);
+const stripClick = await page.evaluate(() => {
+  const strip = document.querySelector('.meeting-search-panel-menu .gl-segtab');
+  const active = strip.querySelector('.gl-segtab__tab.is-active');
+  return {
+    active: document.querySelector('#meeting-check-search')?.classList.contains('active') || false,
+    left: document.querySelector('.meeting-search-panel-menu').style.left,
+    thumbX: strip.style.getPropertyValue('--segtab-thumb-x'),
+    thumbCovers: Math.abs(parseFloat(strip.style.getPropertyValue('--segtab-thumb-x')) - active.offsetLeft) < 1,
+    activeTarget: active.dataset.target,
+  };
+});
+A(stripClick.active && stripClick.activeTarget === 'meeting-check-search', '分頁 button 點擊切換 section（互動防護生效）');
+A(stripClick.left === meetPosBefore.left, `分頁點擊不位移面板（${meetPosBefore.left} → ${stripClick.left}）`);
+A(stripClick.thumbX !== meetPosBefore.thumbX && stripClick.thumbCovers, `thumb 滑移到新分頁（${meetPosBefore.thumbX} → ${stripClick.thumbX}）`);
 
 // 拖曳：從把手帶壓下拖 60,40 → 面板位移且寫入 v2 layout
 const optBox = await page.locator(opt).boundingBox();

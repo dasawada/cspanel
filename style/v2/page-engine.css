@@ -20,20 +20,15 @@
     color: var(--fg-2, #666);
 }
 
-/* 十一期回饋輪 2：自帶頂部欄面板（manifest handleSelector）的拖曳指示——
-   欄本身即把手（會議面板 nav），只補 cursor 暗示，不套把手詞彙視覺
-   （會變形既有 nav）。tab 連結維持自身 pointer cursor。 */
-.meeting-search-panel-menu nav { cursor: grab; }
-.meeting-search-panel-menu nav:active { cursor: grabbing; }
-
-/* 十一期回饋輪 3③：會議 nav 比照 wm 軌道浮起（收納時隨 nav 一併退役）。
-   panels.css 的 nav width:100% 全寬貼緣——inset 描邊直通面板側邊，下緣讀起來
-   是方角橫帶。內縮浮起讓四角圓角現形，與 wm 換裝後的軌道同節奏
-   （下方間隔沿 panels.css 既有 margin-bottom: --space-5）。 */
-.meeting-search-panel-menu nav {
-    width: auto;
+/* 十一期回饋輪 3④：會議 nav 已就地改建為 segtab strip（v2 限定，見
+   meeting-search-panel-module.js）。軌道視覺歸詞彙；此處只補消費者實例——
+   浮起節奏（與 wm 軌道同：內縮＋下方間隔）與拖曳面 cursor（軌道空白處＝
+   拖曳；分頁 button 的 pointer 歸詞彙）。 */
+.meeting-segtab {
+    cursor: grab;
     margin: var(--space-2, 4px) var(--space-2, 4px) var(--space-5, 10px);
 }
+.meeting-segtab:active { cursor: grabbing; }
 
 /* 成組預覽框（九期B Task 4）：拖曳重疊目標面積 ≥40% 且懸停 ≥500ms 顯示，
    罩在目標矩形上（JS 逐幀寫 left/top/width/height，見 canvas-engine.js
