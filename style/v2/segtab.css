@@ -34,6 +34,16 @@
 }
 
 .gl-segtab__tab {
+    /* 元素自帶樣式全面歸零（回饋輪 3⑤：視覺統一鐵則）——分頁可能是 button
+       （會議 strip）、div（wm-tab）或 a；controls.css 的全域 button 規則（白底/
+       邊框/內距/hover 玻璃/active 縮放）與 UA 預設在此一律清除，詞彙是唯一
+       視覺權威，任何元素掛上本 class 都渲染一致。 */
+    appearance: none;
+    -webkit-appearance: none;
+    background: none;
+    border: none;
+    margin: 0;
+    font: inherit; /* 承頁面字族（button 預設不繼承字族）；字級/字重由下方與 is-active 供給 */
     position: relative; /* 疊於 thumb 之上（DOM 序分層，非 z-index） */
     align-self: stretch; /* 填滿軌道高——點擊目標為整條分頁，非僅文字（沿 nav a height:100% 語義） */
     display: inline-flex;
@@ -41,6 +51,7 @@
     justify-content: center;
     gap: var(--space-2, 4px);
     padding: 0 var(--space-6, 12px);
+    border-radius: calc(var(--segtab-radius, 10px) - 2px); /* focus 外框形狀 */
     color: var(--muted, #888);
     font-size: var(--text-sm, 12px);
     line-height: 1;
@@ -48,6 +59,18 @@
     user-select: none;
     white-space: nowrap;
     transition: color 0.3s ease;
+}
+/* 明確覆蓋全域 button 的 :hover 玻璃與 :active 縮放（同特異度靠載入序勝出
+   不可靠——顯式宣告） */
+.gl-segtab__tab:hover {
+    background: none;
+    border: none;
+    color: var(--fg, #1d1d1f);
+}
+.gl-segtab__tab:active { transform: none; }
+.gl-segtab__tab:focus-visible {
+    outline: 2px solid var(--accent-ring, rgba(58, 58, 60, 0.25));
+    outline-offset: -2px;
 }
 .gl-segtab__tab.is-active {
     color: var(--fg, #1d1d1f);

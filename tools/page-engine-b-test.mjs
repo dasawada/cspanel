@@ -252,6 +252,34 @@ A(segB2.coversActive, 'B: thumb 滑移到新 active tab');
 await page.click('.wm-tab[data-tab="dt"]'); // 還原
 await page.waitForTimeout(650);
 
+// 回饋輪 3⑤：視覺統一鐵則——兩個 segtab 消費者（wm div tab／會議 button tab）
+// 的 computed style 逐項相等。此前 controls.css 全域 button 規則（白底/邊框/
+// control 內距/hover 玻璃）漏進會議 strip，詞彙已全面歸零元素自帶樣式。
+const segUni = await page.evaluate(() => {
+  const pick = (el) => {
+    const cs = getComputedStyle(el);
+    return {
+      fontFamily: cs.fontFamily, fontSize: cs.fontSize, lineHeight: cs.lineHeight,
+      paddingLeft: cs.paddingLeft, paddingTop: cs.paddingTop,
+      backgroundColor: cs.backgroundColor, borderTopWidth: cs.borderTopWidth,
+      color: cs.color,
+    };
+  };
+  const wmTab = document.querySelector('.wm-tabbar .wm-tab:not(.is-active)');
+  const mtTab = document.querySelector('.meeting-segtab .gl-segtab__tab:not(.is-active)');
+  const wmBar = document.querySelector('.wm-tabbar.gl-segtab');
+  const mtBar = document.querySelector('.meeting-segtab');
+  const barPick = (el) => {
+    const cs = getComputedStyle(el);
+    return { height: cs.height, backgroundColor: cs.backgroundColor, borderRadius: cs.borderRadius, marginBottom: cs.marginBottom };
+  };
+  return { wmTab: pick(wmTab), mtTab: pick(mtTab), wmBar: barPick(wmBar), mtBar: barPick(mtBar) };
+});
+A(JSON.stringify(segUni.wmTab) === JSON.stringify(segUni.mtTab),
+  `B: 兩消費者分頁 computed style 逐項相等（wm=${JSON.stringify(segUni.wmTab)} mt=${JSON.stringify(segUni.mtTab)}）`);
+A(JSON.stringify(segUni.wmBar) === JSON.stringify(segUni.mtBar),
+  `B: 兩消費者軌道 computed style 逐項相等（wm=${JSON.stringify(segUni.wmBar)} mt=${JSON.stringify(segUni.mtBar)}）`);
+
 // ===== C. page 資料流（API 驅動；手勢在 D 區）=====
 console.log('— C. page 資料流（API 驅動）—');
 const pgId = await page.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));
