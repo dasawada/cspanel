@@ -26,6 +26,15 @@
 .meeting-search-panel-menu nav { cursor: grab; }
 .meeting-search-panel-menu nav:active { cursor: grabbing; }
 
+/* 十一期回饋輪 3③：會議 nav 比照 wm 軌道浮起（收納時隨 nav 一併退役）。
+   panels.css 的 nav width:100% 全寬貼緣——inset 描邊直通面板側邊，下緣讀起來
+   是方角橫帶。內縮浮起讓四角圓角現形，與 wm 換裝後的軌道同節奏
+   （下方間隔沿 panels.css 既有 margin-bottom: --space-5）。 */
+.meeting-search-panel-menu nav {
+    width: auto;
+    margin: var(--space-2, 4px) var(--space-2, 4px) var(--space-5, 10px);
+}
+
 /* 成組預覽框（九期B Task 4）：拖曳重疊目標面積 ≥40% 且懸停 ≥500ms 顯示，
    罩在目標矩形上（JS 逐幀寫 left/top/width/height，見 canvas-engine.js
    startGroupWatch/showGroupPreview；left/top/width/height 為運算所得的動態
