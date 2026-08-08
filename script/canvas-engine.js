@@ -1300,14 +1300,39 @@ function attachHoverHandles() {
   const handleHRaw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--handle-h'));
   const handleH = Number.isFinite(handleHRaw) ? handleHRaw : 36;
   for (const { p, el } of panelRoots(activeCanvas.manifest)) {
-    if (el.querySelector('.gl-panel-handle')) continue; // 冪等（登入登出循環）
-    const handle = document.createElement('div');
-    handle.className = 'gl-panel-handle draggable-handle';
-    handle.textContent = p.label || p.id;
-    const prevInlinePadTop = el.style.paddingTop; // detach 還原，登出重進讀到的 base 恆為 CSS 原值
-    const basePadTop = parseFloat(getComputedStyle(el).paddingTop) || 0;
-    el.style.paddingTop = `${basePadTop + handleH}px`;
-    el.append(handle);
+    // 十一期回饋輪 2：自帶頂部欄的面板（manifest handleSelector）不生成標題帶
+    // ——既有欄（如會議面板的 nav）本身就是拖曳面（比照 wm-tabbar「結構性共用
+    // 把手」的先例），不佔額外版位、不重複標題。
+    const ownHandle = p.handleSelector ? el.querySelector(p.handleSelector) : null;
+    let interactiveGuard = null;
+    if (ownHandle) {
+      if (ownHandle.dataset.glHandleBound) continue; // 冪等（登入登出循環）
+      ownHandle.dataset.glHandleBound = '1';
+      // 互動子元素防護：draggable.js 在 pointerdown 即 preventDefault ＋ 蓋全螢幕
+      // 事件盾，pointerup 落在盾上會使子連結的 click 合成到 body——tab 連結會
+      // 失效。capture 相位先攔：按在互動元素上就 stopImmediatePropagation，
+      // 拖曳不啟動、點擊原樣通過（生成帶無互動子元素，不需此防護）。
+      interactiveGuard = (e) => {
+        if (e.target.closest('a, button, input, select, textarea, label')) e.stopImmediatePropagation();
+      };
+      for (const evt of ['pointerdown', 'mousedown', 'touchstart']) {
+        ownHandle.addEventListener(evt, interactiveGuard, true);
+      }
+    } else {
+      if (el.querySelector('.gl-panel-handle')) continue; // 冪等（登入登出循環）
+    }
+    const handle = ownHandle || document.createElement('div');
+    let prevInlinePadTop = '';
+    if (!ownHandle) {
+      handle.className = 'gl-panel-handle draggable-handle';
+      handle.textContent = p.label || p.id;
+      // 版位預留（十一期回饋輪 2 修正）：paddingTop「取代為」把手高，非疊加——
+      // 比照罐頭（內容 wrapper top padding 為 0），標題帶下不留原 top padding
+      // 的多餘空隙；detach 還原 inline 值。
+      prevInlinePadTop = el.style.paddingTop;
+      el.style.paddingTop = `${handleH}px`;
+      el.append(handle);
+    }
     // startLeft/startTop：down 時的 offset（與 draggable.js 內部 dragState.elementX/Y
     // 同一座標系、同一取值公式），供 onPositionChange 計算「與拖曳起點位移」用。
     let startLeft = 0, startTop = 0;
@@ -1358,8 +1383,16 @@ function attachHoverHandles() {
     });
     hoverState.detachers.push(() => {
       handle.removeEventListener('pointerdown', onHandleDown);
-      detach(); handle.remove();
-      el.style.paddingTop = prevInlinePadTop; // 版位歸還
+      detach();
+      if (ownHandle) {
+        for (const evt of ['pointerdown', 'mousedown', 'touchstart']) {
+          ownHandle.removeEventListener(evt, interactiveGuard, true);
+        }
+        delete ownHandle.dataset.glHandleBound; // 面板自有欄不移除、不動 padding
+      } else {
+        handle.remove();
+        el.style.paddingTop = prevInlinePadTop; // 版位歸還
+      }
     });
   }
   // 九期B Task 6：alwaysDraggable 面板（目前僅罐頭）不落入上方 panelRoots 迴圈

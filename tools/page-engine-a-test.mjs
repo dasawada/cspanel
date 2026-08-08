@@ -161,7 +161,46 @@ const restState = await page.evaluate((sel) => {
 A(restState.op === '1' && restState.pe !== 'none', `常駐可見且可互動（op=${restState.op} pe=${restState.pe}）`);
 A(restState.cls, '把手帶掛 .draggable-handle 詞彙');
 A(restState.text === '標題生成', `標題＝manifest label（${restState.text}）`);
-A(restState.padTop === '46px', `版位預留：padding-top＝原 10px ＋ --handle-h 36px（got ${restState.padTop}）`);
+A(restState.padTop === '36px', `版位預留：padding-top 取代為 --handle-h 36px（回饋輪 2：帶下不留原 padding 空隙，got ${restState.padTop}）`);
+
+// 回饋輪 2：自帶 nav 的會議面板不生成標題帶——nav 即拖曳面（handleSelector）
+const meetSel = '.meeting-search-panel-menu';
+const meetState = await page.evaluate((sel) => {
+  const el = document.querySelector(sel);
+  const nav = el.querySelector('nav');
+  return {
+    band: !!el.querySelector('.gl-panel-handle'),
+    navBound: nav ? nav.dataset.glHandleBound : null,
+    padTop: getComputedStyle(el).paddingTop,
+    navCursor: nav ? getComputedStyle(nav).cursor : null,
+  };
+}, meetSel);
+A(!meetState.band, '會議面板不生成標題帶（自帶 nav）');
+A(meetState.navBound === '1', `nav 已綁定為拖曳面（got ${meetState.navBound}）`);
+A(meetState.padTop === '0px', `會議面板不佔版位（padding-top=${meetState.padTop}）`);
+A(meetState.navCursor === 'grab', `nav 帶 grab cursor（got ${meetState.navCursor}）`);
+// 拖 nav 空白處（右緣內縮 8px，避開 tab 連結）→ 面板位移並寫入 v2 layout
+const meetBox = await page.locator(meetSel + ' nav').boundingBox();
+await page.mouse.move(meetBox.x + meetBox.width - 8, meetBox.y + meetBox.height / 2);
+await page.mouse.down();
+await page.mouse.move(meetBox.x + meetBox.width - 8 - 50, meetBox.y + meetBox.height / 2 + 30, { steps: 5 });
+await page.mouse.up();
+await page.waitForTimeout(150);
+const meetAfter = await page.evaluate(() => ({
+  left: document.querySelector('.meeting-search-panel-menu').style.left,
+  saved: JSON.parse(localStorage.getItem('cspanel.layout.cs.v2') || '{}')['meeting-shell'] || null,
+}));
+A(!!meetAfter.left && !!meetAfter.saved, `拖 nav 移動會議面板並持久化（left=${meetAfter.left} saved=${JSON.stringify(meetAfter.saved)}）`);
+// 互動子元素防護：nav 上的 tab 連結點擊仍是點擊（不觸發拖曳、不被事件盾吃掉）
+const meetPosBefore = await page.evaluate(() => document.querySelector('.meeting-search-panel-menu').style.left);
+await page.click('.meeting-search-panel-menu nav a[data-target="meeting-check-search"]');
+await page.waitForTimeout(200);
+const navClick = await page.evaluate(() => ({
+  active: document.querySelector('#meeting-check-search')?.classList.contains('active') || false,
+  left: document.querySelector('.meeting-search-panel-menu').style.left,
+}));
+A(navClick.active, 'nav tab 連結點擊仍切換分頁（互動防護生效）');
+A(navClick.left === meetPosBefore, `tab 點擊不位移面板（${meetPosBefore} → ${navClick.left}）`);
 
 // 拖曳：從把手帶壓下拖 60,40 → 面板位移且寫入 v2 layout
 const optBox = await page.locator(opt).boundingBox();
@@ -210,8 +249,8 @@ await page.waitForFunction(() => document.querySelectorAll('.gl-panel-handle').l
 const dup = await page.evaluate(() =>
   [...document.querySelectorAll('.gl-panel-handle')].some((h) => h.parentElement.querySelectorAll('.gl-panel-handle').length !== 1));
 A(!dup, '再登入冪等重建（每面板恰一組把手，無重複掛載）');
-A(await page.evaluate(() => getComputedStyle(document.querySelector('.optitlepanel')).paddingTop) === '46px',
-  '再登入版位重新預留（padding-top 回 46px，無累加）');
+A(await page.evaluate(() => getComputedStyle(document.querySelector('.optitlepanel')).paddingTop) === '36px',
+  '再登入版位重新預留（padding-top 回 36px，無累加）');
 
 // 最終隔離快照刻意放在 E 區之後：登出/登入整輪擾動也不得觸 v1 keys
 const v2PageV1After = await page.evaluate(() =>

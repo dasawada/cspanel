@@ -20,6 +20,12 @@
     color: var(--fg-2, #666);
 }
 
+/* 十一期回饋輪 2：自帶頂部欄面板（manifest handleSelector）的拖曳指示——
+   欄本身即把手（會議面板 nav），只補 cursor 暗示，不套把手詞彙視覺
+   （會變形既有 nav）。tab 連結維持自身 pointer cursor。 */
+.meeting-search-panel-menu nav { cursor: grab; }
+.meeting-search-panel-menu nav:active { cursor: grabbing; }
+
 /* 成組預覽框（九期B Task 4）：拖曳重疊目標面積 ≥40% 且懸停 ≥500ms 顯示，
    罩在目標矩形上（JS 逐幀寫 left/top/width/height，見 canvas-engine.js
    startGroupWatch/showGroupPreview；left/top/width/height 為運算所得的動態

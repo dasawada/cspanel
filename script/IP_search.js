@@ -1656,6 +1656,14 @@ const container = document.querySelector(".IPsearch_in_panelALL");
 const ipInput = document.getElementById("ip_input");
 const DEFAULT_PLACEHOLDER = "請輸入 IP (支援 IPv4/IPv6)";
 
+// 十一期回饋輪 2：面板高度由本模組全權管理（style.height 直寫、border-box），
+// v2 常駐標題帶以 inline paddingTop 預留版位——高度目標必須把它算進去，
+// 否則 overflow:hidden 會把查詢欄整個裁掉。v1 無把手時 paddingTop 為 0，加零等效。
+function reservedPadTop() {
+  if (!container) return 0;
+  return parseFloat(getComputedStyle(container).paddingTop) || 0;
+}
+
 function adjustHeightToMin() {
   if (!container) {
     return;
@@ -1670,7 +1678,7 @@ function adjustHeightToMin() {
 
   requestAnimationFrame(() => {
     container.style.transition = "height 0.5s cubic-bezier(0.4, 0, 0.2, 1)";
-    container.style.height = `${MIN_PANEL_HEIGHT}px`;
+    container.style.height = `${MIN_PANEL_HEIGHT + reservedPadTop()}px`;
   });
 }
 
@@ -1707,7 +1715,7 @@ const adjustHeight = (animate = true) => {
       targetHeight = MIN_PANEL_HEIGHT;
     }
 
-    targetHeight = Math.max(targetHeight, MIN_PANEL_HEIGHT);
+    targetHeight = Math.max(targetHeight, MIN_PANEL_HEIGHT) + reservedPadTop();
 
     if (container.style.height !== `${targetHeight}px`) {
       container.style.height = `${targetHeight}px`;

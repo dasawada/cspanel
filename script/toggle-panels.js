@@ -257,8 +257,14 @@ function adoptPanelAsWmTab(tabId, title, contentHTML) {
     }
     const host = document.querySelector('.panel_all_container') || document.body;
     const staging = document.createElement('div');
+    // 十一期回饋輪 2：三面板都是寬版內容（dt 表單 900、consultant iframe 950×700、
+    // assist iframe 800×600），預設視窗必須容得下最大者——staging 容器以 inline
+    // 幾何蓋過 sharedGeometryCss 的 .panel-tabs-container 500×600（defaultRect 由
+    // 首次認養的容器 rect 決定；三面板 init 同步先行、恆先於伺服器 tabs）。
+    // 740 = 700 內容 + tabbar 帶。太小的 iframe 會被 Google Sheets 拒絕嵌入瀏覽。
+    // 使用者縮放/搬移後由 wm 持久化，本值僅首用預設。
     staging.innerHTML = `
-    <div class="panel-tabs-container">
+    <div class="panel-tabs-container" style="width: 950px; height: 740px;">
         <input type="radio" name="panel-tab" id="panel-tab-${tabId}">
         <label for="panel-tab-${tabId}">${title}</label>
         <div class="panel-tab-content">${contentHTML}</div>

@@ -37,6 +37,9 @@ export default {
       syncInit: true, // mediator:99 原為同步先行
       slot: 'meeting-search-panel-placeholder', rootSelector: '.meeting-search-panel-menu',
       geometryCss: '.meeting-search-panel-menu { height: auto; width: 360px; position: absolute; left: 920px; top: 0px; }', // 原 panels.css:441-447
+      // 十一期回饋輪 2（v2 限定欄位）：自帶 nav 分頁列＝拖曳面，不生成標題帶
+      // （比照 wm-tabbar 結構性共用把手；點 tab 仍是點擊——拖曳閾值分流）
+      handleSelector: 'nav',
       zOrder: 0, behaviors: ['draggable'] }, // 原 CSS 無 z-index（auto，與 optitle/fudausearch/linkout 同層），Task 2 manifest 誤填 1，Task 4 parity 迭代時修正
 
     // protected：伺服器注入 tabsHTML（→ 分頁視窗管理器 window-manager.js）與
