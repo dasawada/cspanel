@@ -84,6 +84,11 @@ export function mountWindowManager(host, opts = {}) {
   const isV2 = STORE_VER === 'v2';
   const WKEY = `cspanel.windows.${canvasId}.${STORE_VER}`;
 
+  // 十一期回饋輪 3（v2 預覽期閘控，合併定版時退役改恆真）：tabbar 換裝分段滑塊
+  // 詞彙（segtab.css）。v1 藥丸視覺逐位元不變——.gl-segtab class 僅在旗標下附加，
+  // CSS 覆蓋以該 class scoped、自帶閘控。
+  const segTabs = (typeof window !== 'undefined' && !!window.CSPANEL_ENGINE_V2);
+
   const tabsContainer = host.querySelector('.panel-tabs-container');
   // v1 路徑鐵律：tabsContainer 必在，否則安靜退場，回無操作管理器（行為逐位元
   // 不變）。v2 路徑：核心不需要 tabsContainer 就能掛載（零 tab 啟動），稍後由
@@ -308,13 +313,19 @@ export function mountWindowManager(host, opts = {}) {
       // z-index 由 stack-manager 經 .gl-stack-surface + --stack-rank 供給（見迴圈尾 register）。
 
       const bar = document.createElement('div');
-      bar.className = 'wm-tabbar draggable-handle';
+      bar.className = 'wm-tabbar draggable-handle' + (segTabs ? ' gl-segtab' : '');
       bar.setAttribute('role', 'tablist');
       bar.setAttribute('aria-label', '分頁視窗');
+      if (segTabs) {
+        // thumb 必須是第一個子節點：分頁靠 DOM 序疊在其上（詞彙不寫 z-index）
+        const thumb = document.createElement('div');
+        thumb.className = 'gl-segtab__thumb';
+        bar.appendChild(thumb);
+      }
       for (const tabId of win.tabs) {
         const tab = document.createElement('div');
         const isActive = tabId === win.active;
-        tab.className = 'wm-tab' + (isActive ? ' is-active' : '');
+        tab.className = 'wm-tab' + (segTabs ? ' gl-segtab__tab' : '') + (isActive ? ' is-active' : '');
         tab.dataset.tab = tabId;
         // page tab 標題即時委派 pageHost.getTitle（不快取——成員增減會變動）；
         // iframe tab 沿用既有 tabMeta 快取。
@@ -346,7 +357,51 @@ export function mountWindowManager(host, opts = {}) {
       // 存檔的 stack 順序若存在則覆蓋（stack-manager savedSnapshot）。重繪時同 key 再
       // register 只更新 el/pane 指向、不動疊序。
       stack.register(win.id, el, { levels: 2, pane: panes[win.active], initialRank: 100 + i });
+      positionSegThumb(bar, false); // 重建屬結構變更：thumb 直接落位，不播滑移
     });
+    syncPanes();
+  }
+
+  // ---- 分段滑塊 thumb 定位（segtab 詞彙的消費者量測義務）----
+  // active tab 的 offsetLeft/offsetWidth 寫入 CSS 變數；滑移動畫由 segtab.css 的
+  // transition 供給。animate=false（重建/首繪）時暫停 transition 直落，避免
+  // 「從 0 滑進來」的假動畫。offsetLeft 與 absolute left 同以 padding box 為原點，
+  // 量測值可直接互換。
+  function positionSegThumb(bar, animate) {
+    if (!segTabs || !bar) return;
+    const thumb = bar.querySelector('.gl-segtab__thumb');
+    const active = bar.querySelector('.wm-tab.is-active');
+    if (!thumb || !active) return;
+    if (!animate) thumb.style.transition = 'none';
+    bar.style.setProperty('--segtab-thumb-x', `${active.offsetLeft}px`);
+    bar.style.setProperty('--segtab-thumb-w', `${active.offsetWidth}px`);
+    if (!animate) {
+      // 強制 reflow 讓直落生效後再恢復 transition（下次切換即有滑移）
+      thumb.offsetWidth; // eslint-disable-line no-unused-expressions
+      thumb.style.transition = '';
+    }
+  }
+
+  // ---- 就地切換作用中 tab（十一期回饋輪 3）----
+  // 原本切換走全量 render()（tabbar DOM 整個重建）——thumb 的 CSS transition
+  // 在新 DOM 上沒有「起點」可言，滑移動畫結構上不可能發生。改為就地更新：
+  // class/aria/tabindex 切換＋thumb 滑移＋stack 的 pane 指向更新（同 key 再
+  // register 只更新指向、不動疊序——render 檔頭既有契約）＋syncPanes。
+  // 結構性變更（重排/撕離/合併/認養）仍走 render()。
+  function setActiveTab(win, tabId) {
+    if (win.active === tabId) return;
+    win.active = tabId;
+    persist();
+    const bar = win.el && win.el.querySelector('.wm-tabbar');
+    if (!bar) { render(); return; }
+    bar.querySelectorAll('.wm-tab').forEach((t) => {
+      const on = t.dataset.tab === tabId;
+      t.classList.toggle('is-active', on);
+      t.setAttribute('aria-selected', on ? 'true' : 'false');
+      t.tabIndex = on ? 0 : -1;
+    });
+    positionSegThumb(bar, true);
+    stack.register(win.id, win.el, { levels: 2, pane: panes[win.active], initialRank: 100 + windows.indexOf(win) });
     syncPanes();
   }
 
@@ -384,13 +439,9 @@ export function mountWindowManager(host, opts = {}) {
       } else if (e.key === 'Enter' || e.key === ' ') {
         e.preventDefault();
         const tabId = focused.dataset.tab;
-        if (win.active !== tabId) {
-          win.active = tabId;
-          persist();
-          render();
-          const nt = win.el && win.el.querySelector(`.wm-tab[data-tab="${CSS.escape(tabId)}"]`);
-          if (nt) nt.focus();
-        }
+        // 就地切換：DOM 不重建，焦點自然留在原 tab 元素上（原 render 路徑的
+        // 「重繪後還焦點」補償不再需要）。
+        setActiveTab(win, tabId);
       }
     });
     // 右下角縮放。
@@ -495,7 +546,7 @@ export function mountWindowManager(host, opts = {}) {
         if (ghost && ghost.parentNode) ghost.remove();
         if (!dragging) {
           // 點擊：切換該視窗的作用中 tab
-          if (win.active !== tabId) { win.active = tabId; persist(); render(); }
+          setActiveTab(win, tabId); // 就地切換（thumb 滑移；結構不重建）
           return;
         }
         applyTabDrop(win, tabId, ev);

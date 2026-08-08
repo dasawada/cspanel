@@ -78,6 +78,38 @@
     outline-offset: 1px;
 }
 
+/* ===== 十一期回饋輪 3：tabbar 換裝分段滑塊詞彙（segtab.css）＝＝＝
+   .gl-segtab class 僅 v2 JS（window-manager.js segTabs 旗標）附加——本區覆蓋
+   以該 class scoped、自帶閘控，v1 藥丸視覺逐位元不變。把手詞彙的高度
+   （--handle-h）與拖曳態沿用；軌道底/inset 圈歸 segtab 詞彙；藥丸的底色/邊框/
+   陰影讓位給滑動 thumb。 */
+.wm-tabbar.gl-segtab {
+    --segtab-h: var(--handle-h, 36px); /* 實例參數：軌道高沿把手詞彙，非 segtab 預設 30 */
+    background: var(--bg-soft);
+    box-shadow: 0 0 0 1px var(--border) inset;
+    border-radius: 12px 12px 0 0; /* 對齊 .wm-window 外框 12px（本檔既有字面值） */
+    gap: 0;
+}
+/* thumb 垂直內縮到把手帶 padding 內（視覺對齊原藥丸列的內距節奏） */
+.wm-tabbar.gl-segtab .gl-segtab__thumb {
+    top: var(--space-2, 4px);
+    height: calc(100% - 2 * var(--space-2, 4px));
+}
+/* 藥丸視覺讓位：底/框/陰影歸 thumb，字色歸 segtab 詞彙 */
+.wm-tabbar.gl-segtab .wm-tab {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: calc(var(--radius-md, 10px) - 2px);
+}
+.wm-tabbar.gl-segtab .wm-tab:hover { background: transparent; color: var(--fg); }
+.wm-tabbar.gl-segtab .wm-tab.is-active {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    color: var(--fg);
+}
+
 /* 內容區：作用中 pane 對位貼合這塊（pane 是常駐池的兄弟、疊在其上）。 */
 .wm-content {
     flex: 1 1 auto;

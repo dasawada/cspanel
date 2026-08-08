@@ -216,6 +216,42 @@ A(!bAdopt.legacy, 'B: checkbox 展開模式與舊面板元素已不存在');
 A(Math.abs(bAdopt.seededPos.x - 1240) <= 30 && Math.abs(bAdopt.seededPos.y - 840) <= 30,
   `B: 工具視窗落在種子位置（loadWindows 歸位；got ${JSON.stringify(bAdopt.seededPos)}）`);
 
+// 十一期回饋輪 3：tabbar 換裝分段滑塊詞彙＋就地切換
+const segB1 = await page.evaluate(() => {
+  const bar = document.querySelector('.wm-tabbar');
+  const thumb = bar.querySelector('.gl-segtab__thumb');
+  const active = bar.querySelector('.wm-tab.is-active');
+  bar.dataset.segProbe = 'same-bar'; // 就地切換身分證：切換後仍在＝未重建
+  return {
+    seg: bar.classList.contains('gl-segtab'),
+    thumbFirst: !!thumb && bar.firstElementChild === thumb,
+    tabCls: [...bar.querySelectorAll('.wm-tab')].every((t) => t.classList.contains('gl-segtab__tab')),
+    x: bar.style.getPropertyValue('--segtab-thumb-x'),
+    w: bar.style.getPropertyValue('--segtab-thumb-w'),
+    coversActive: !!active && Math.abs(parseFloat(bar.style.getPropertyValue('--segtab-thumb-x')) - active.offsetLeft) < 1,
+  };
+});
+A(segB1.seg && segB1.thumbFirst && segB1.tabCls, `B: tabbar 換裝 segtab 詞彙（seg=${segB1.seg} thumbFirst=${segB1.thumbFirst} tabCls=${segB1.tabCls}）`);
+A(!!segB1.x && !!segB1.w && segB1.coversActive, `B: thumb 對位 active tab（x=${segB1.x} w=${segB1.w}）`);
+await page.click('.wm-tab[data-tab="consultant"]');
+await page.waitForTimeout(650); // 滑移 0.5s 落定
+const segB2 = await page.evaluate(() => {
+  const bar = document.querySelector('.wm-tabbar');
+  const active = bar.querySelector('.wm-tab.is-active');
+  return {
+    sameBar: bar.dataset.segProbe === 'same-bar',
+    activeId: active && active.dataset.tab,
+    coversActive: Math.abs(parseFloat(bar.style.getPropertyValue('--segtab-thumb-x')) - active.offsetLeft) < 1,
+    aria: active.getAttribute('aria-selected') === 'true',
+    paneShown: document.querySelector('.wm-pane[data-tab="consultant"]').style.display !== 'none',
+  };
+});
+A(segB2.sameBar, 'B: 切換為就地更新（tabbar DOM 未重建——thumb 滑移的結構前提）');
+A(segB2.activeId === 'consultant' && segB2.aria && segB2.paneShown, `B: 就地切換語義完整（active/aria/pane；got ${segB2.activeId}）`);
+A(segB2.coversActive, 'B: thumb 滑移到新 active tab');
+await page.click('.wm-tab[data-tab="dt"]'); // 還原
+await page.waitForTimeout(650);
+
 // ===== C. page 資料流（API 驅動；手勢在 D 區）=====
 console.log('— C. page 資料流（API 驅動）—');
 const pgId = await page.evaluate(() => window.PageEngine.create(['optitle', 'fudausearch']));

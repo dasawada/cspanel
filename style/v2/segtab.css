@@ -1,0 +1,66 @@
+/* ===== 分段滑塊 tab 詞彙（十一期回饋輪 3）=====
+   全站 tab 列視覺唯一來源（比照 capsule.css / scrollbar.css / draggable-chrome.css
+   單一輪子）。視覺源自會議面板 nav 的 segmented control（軌道＋滑動 thumb＋字色
+   過渡），泛化改造：
+   - 不寫死寬度/nth-child——thumb 位置由消費者 JS 量測 active tab 的
+     offsetLeft/offsetWidth 寫入 --segtab-thumb-x/w（滑移仍由本檔 transition 供給）。
+   - 分層靠 DOM 序（thumb 為軌道第一個子節點、分頁在後自然疊上）——本檔不寫
+     z-index（§4.2）。
+   - token 皆帶 fallback；badge 槽供分頁尾端狀態指示（如衝堂警示）。
+   消費者：wm-tabbar（v2 換裝，見 window-manager.css scoped 區）；會議面板 nav
+   於收納進 wm 時退役、由本詞彙接手。 */
+
+.gl-segtab {
+    position: relative;
+    display: flex;
+    height: var(--segtab-h, 30px);
+    background: var(--bg-soft, #ececec);
+    border-radius: var(--radius-md, 10px);
+    box-shadow: 0 0 0 1px var(--border, #ddd) inset;
+}
+
+.gl-segtab__thumb {
+    position: absolute;
+    top: 0;
+    height: 100%;
+    left: var(--segtab-thumb-x, 0px);
+    width: var(--segtab-thumb-w, 0px);
+    background: var(--elevated, #fff);
+    border-radius: calc(var(--radius-md, 10px) - 2px);
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+    transition: left 0.5s ease, width 0.5s ease;
+}
+
+.gl-segtab__tab {
+    position: relative; /* 疊於 thumb 之上（DOM 序分層，非 z-index） */
+    align-self: stretch; /* 填滿軌道高——點擊目標為整條分頁，非僅文字（沿 nav a height:100% 語義） */
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-2, 4px);
+    padding: 0 var(--space-6, 12px);
+    color: var(--muted, #888);
+    font-size: var(--text-sm, 12px);
+    line-height: 1;
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+    transition: color 0.3s ease;
+}
+.gl-segtab__tab.is-active {
+    color: var(--fg, #1d1d1f);
+    font-weight: 600;
+}
+
+/* badge 槽：分頁尾端狀態指示（例：衝堂 ⚠️）。空槽不佔位。 */
+.gl-segtab__badge {
+    display: inline-flex;
+    align-items: center;
+    font-size: var(--text-xs, 10px);
+}
+.gl-segtab__badge:empty { display: none; }
+
+@media (prefers-reduced-motion: reduce) {
+    .gl-segtab__thumb { transition: none; }
+    .gl-segtab__tab { transition: none; }
+}
