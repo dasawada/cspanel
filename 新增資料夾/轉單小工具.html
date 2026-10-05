@@ -324,6 +324,7 @@ html,body { margin:0; height:100%; }
     import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-app.js";
     import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/9.22.0/firebase-auth.js";
     import { initFudausearchPanel, clearFudausearchPanel } from '../script/fusearch-panel.js';
+    import { bootAccess, killAccess, getAccessSnapshot } from '../script/auth-fetch.js';
 
     // Firebase 配置
     const firebaseConfig = {
@@ -336,31 +337,87 @@ html,body { margin:0; height:100%; }
     const auth = getAuth(app);
 
     window.auth = auth;
+    window.firebaseSignOut = () => signOut(auth);
     window.onAuthStateChanged = onAuthStateChanged;
 
     document.addEventListener('DOMContentLoaded', () => {
-      onAuthStateChanged(auth, async (user) => {
-        const loginContainer = document.getElementById('login-container');
-        const appContainer = document.getElementById('app-container');
+      const loginContainer = document.getElementById('login-container');
+      const appContainer = document.getElementById('app-container');
+      const loginError = document.getElementById('login-error');
+      let enteredUid = null;
+      let entering = null;
 
-        if (user && !user.emailVerified) {
-          document.getElementById('login-error').textContent = '這個帳號尚未完成 Email 驗證。';
+      const denyMessage = (code) => (code === 'FEATURE_FORBIDDEN'
+        ? '此帳號沒有使用這項工具的權限。'
+        : '帳號目前無法使用此系統。');
+
+      // 清掉畫面上所有查詢結果：權限被停用或登出後，不能留下資料給下一位使用者。
+      const purgeProtectedData = () => {
+        if (typeof window.clearSheetFields === 'function') window.clearSheetFields();
+        document.querySelector('.link-selector')?.remove();
+        document.getElementById('dealId').value = '';
+        document.getElementById('result').textContent = '等待搜尋...';
+        document.getElementById('linksContainer').replaceChildren();
+        document.getElementById('orderLink').textContent = '無可用連結';
+        document.getElementById('orderFrame').src = 'about:blank';
+        clearFudausearchPanel('fudausearch-container');
+      };
+
+      // 預設關閉：主畫面只有在伺服器確認「有效且具 orders 權限」之後才會開啟。
+      const lockUi = (message) => {
+        enteredUid = null;
+        appContainer.hidden = true;
+        loginContainer.style.display = 'block';
+        purgeProtectedData();
+        if (message) loginError.textContent = message;
+      };
+
+      const enterApp = (user) => {
+        if (enteredUid === user.uid) return Promise.resolve();
+        if (entering?.uid === user.uid) return entering.promise;
+        const promise = (async () => {
+          try {
+            await bootAccess({ requiredFeature: 'orders' });
+          } catch (error) {
+            lockUi(denyMessage(error?.code));
+            if (error?.code === 'FEATURE_FORBIDDEN') {
+              await killAccess({ reason: error.code, signOut: true });
+            }
+            return;
+          }
+          // 啟動途中若已被登出、換人或被 kill，就不能再開啟畫面。
+          if (!getAccessSnapshot() || auth.currentUser?.uid !== user.uid) return;
+          enteredUid = user.uid;
+          loginContainer.style.display = 'none';
+          appContainer.hidden = false;
+          // authFetch 會在每次請求時直接向 Firebase SDK 取得目前權杖。
+          initFudausearchPanel('fudausearch-container');
+        })().finally(() => {
+          if (entering?.promise === promise) entering = null;
+        });
+        entering = { uid: user.uid, promise };
+        return promise;
+      };
+
+      const handleUser = async (user) => {
+        if (!user) {
+          lockUi();
+          return;
+        }
+        if (!user.emailVerified) {
+          loginError.textContent = '這個帳號尚未完成 Email 驗證。';
           await signOut(auth);
           return;
         }
-        
-        if (user) {
-          loginContainer.style.display = 'none';
-          appContainer.style.display = 'block';
-          // authFetch 會在每次請求時直接向 Firebase SDK 取得目前權杖。
-          initFudausearchPanel('fudausearch-container');
-          
-        } else {
-          loginContainer.style.display = 'block';
-          appContainer.style.display = 'none';
-          // 登出時清除 fudausearch 面板資料與綁定
-          clearFudausearchPanel('fudausearch-container');
-        }
+        await enterApp(user);
+      };
+
+      onAuthStateChanged(auth, handleUser);
+
+      // 後端判定停用（含每 60 秒的心跳偵測）時，同步遮蔽畫面並清空資料，
+      // 不等待 Firebase signOut 的非同步回呼。
+      window.addEventListener('cspanel:access-kill', (event) => {
+        lockUi(denyMessage(event.detail?.reason));
       });
 
       // 使用 Firebase Client-Side SDK 登入
@@ -379,7 +436,9 @@ html,body { margin:0; height:100%; }
         try {
           // 使用 Firebase SDK 直接登入
           await signInWithEmailAndPassword(auth, email, password);
-          // onAuthStateChanged 會自動觸發，不需手動處理
+          // onAuthStateChanged 通常會觸發；但被 kill 後（尚未登出）以同一帳號重新登入
+          // 不一定會再通知，所以明確再進場一次（enterApp 會去除重複進場）。
+          await handleUser(auth.currentUser);
         } catch (error) {
           console.error('Login error:', error);
           let errorMessage = '登入失敗';
@@ -447,7 +506,7 @@ html,body { margin:0; height:100%; }
   </div>
 
   <!-- App Container (hidden until authenticated) -->
-  <div id="app-container" style="display: none;">
+  <div id="app-container" data-auth-content hidden>
     <div class="fudausearch-container" id="fudausearch-container" style="z-index: 998;">
       <div class="fudausearch-drag-handle" id="fudausearch-drag-handle">
           職代是誰 (⁎⁍̴̛ᴗ⁍̴̛⁎)
